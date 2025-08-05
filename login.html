@@ -207,6 +207,9 @@
 
         <!-- Login Section -->
         <div id="loginSection">
+            <h3>Sign in with Google to continue</h3>
+            <p style="color: #666; margin-bottom: 1rem;">If you're already registered, you'll be logged in. If not, you'll be prompted to complete registration.</p>
+            
             <div id="g_id_onload"
                  data-client_id="715560457951-4ti03g5176854alkdku3slr1sufbue0l.apps.googleusercontent.com"
                  data-callback="handleCredentialResponse"
@@ -220,19 +223,12 @@
                  data-shape="rectangular"
                  data-logo_alignment="left">
             </div>
-
-            <div class="divider">
-                <span>or</span>
-            </div>
-
-            <button class="register-btn" onclick="showRegistration()">
-                Register as Tradesman
-            </button>
         </div>
 
         <!-- Registration Section -->
         <div id="registrationSection" class="hidden">
-            <h3>Register as Tradesman</h3>
+            <h3>Complete Your Registration</h3>
+            <p style="color: #666; margin-bottom: 1rem;">You're signed in with Google. Please provide your trade details to complete registration.</p>
             <form id="registrationForm">
                 <div class="form-group">
                     <label for="tradeType">Trade Type</label>
@@ -309,17 +305,20 @@
                 console.log('API response:', JSON.stringify(data, null, 2));
                 
                 if (data.success) {
+                    console.log('✅ Login successful! User data:', JSON.stringify(data.user, null, 2));
                     currentUser = data.user;
                     showUserDashboard();
-                    showMessage('Successfully signed in!', 'success');
+                    showMessage('Welcome back! You are now logged in.', 'success');
                 } else if (data.needsRegistration) {
-                    showMessage('Please complete your registration first', 'error');
+                    console.log('⚠️ User needs registration. Email:', data.email, 'Name:', data.name);
+                    showMessage('Welcome! Please complete your registration to continue.', 'success');
                     // Store the email for registration
                     window.registrationEmail = data.email;
                     window.registrationName = data.name;
-                    console.log('Storing registration data:', JSON.stringify({ email: data.email, name: data.name }, null, 2));
+                    console.log('📝 Storing registration data:', JSON.stringify({ email: data.email, name: data.name }, null, 2));
                     showRegistration();
                 } else {
+                    console.log('❌ Login failed:', data.error);
                     showMessage(data.error || 'Sign-in failed', 'error');
                 }
             } catch (error) {
@@ -383,20 +382,27 @@
                 console.log('Registration response:', JSON.stringify(data, null, 2));
                 
                 if (data.success) {
-                    showMessage('Registration successful! Please sign in with Google.', 'success');
+                    console.log('✅ Registration successful! User data:', JSON.stringify(data.user, null, 2));
+                    currentUser = data.user;
+                    showUserDashboard();
+                    showMessage('Registration successful! You are now logged in.', 'success');
                     
                     // Check database contents after registration
                     try {
                         const debugResponse = await fetch('/api/debug');
                         const debugData = await debugResponse.json();
-                        console.log('Database after registration:', JSON.stringify(debugData, null, 2));
+                        console.log('📊 Database after registration:', JSON.stringify(debugData, null, 2));
                     } catch (e) {
-                        console.log('Could not check database:', e);
+                        console.log('❌ Could not check database:', e);
                     }
-                    
-                    setTimeout(() => showLogin(), 2000);
                 } else {
-                    showMessage(data.error || 'Registration failed', 'error');
+                    console.log('❌ Registration failed:', data.error);
+                    if (data.alreadyRegistered) {
+                        showMessage('You are already registered! Please sign in with Google.', 'error');
+                        setTimeout(() => showLogin(), 2000);
+                    } else {
+                        showMessage(data.error || 'Registration failed', 'error');
+                    }
                 }
             } catch (error) {
                 console.error('Registration error:', error);

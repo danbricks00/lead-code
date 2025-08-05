@@ -25,7 +25,8 @@ export default function handler(req, res) {
       return res.json({ 
         success: false, 
         message: 'User already registered. Please sign in with Google.',
-        user: existingUser
+        user: existingUser,
+        alreadyRegistered: true
       });
     }
     

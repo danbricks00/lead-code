@@ -306,7 +306,7 @@
                 });
 
                 const data = await result.json();
-                console.log('API response:', data);
+                console.log('API response:', JSON.stringify(data, null, 2));
                 
                 if (data.success) {
                     currentUser = data.user;
@@ -317,7 +317,7 @@
                     // Store the email for registration
                     window.registrationEmail = data.email;
                     window.registrationName = data.name;
-                    console.log('Storing registration data:', { email: data.email, name: data.name });
+                    console.log('Storing registration data:', JSON.stringify({ email: data.email, name: data.name }, null, 2));
                     showRegistration();
                 } else {
                     showMessage(data.error || 'Sign-in failed', 'error');
@@ -368,7 +368,7 @@
                 location: document.getElementById('location').value
             };
 
-            console.log('Submitting registration with data:', formData);
+            console.log('Submitting registration with data:', JSON.stringify(formData, null, 2));
 
             try {
                 const response = await fetch('/api/register', {
@@ -380,10 +380,20 @@
                 });
 
                 const data = await response.json();
-                console.log('Registration response:', data);
+                console.log('Registration response:', JSON.stringify(data, null, 2));
                 
                 if (data.success) {
                     showMessage('Registration successful! Please sign in with Google.', 'success');
+                    
+                    // Check database contents after registration
+                    try {
+                        const debugResponse = await fetch('/api/debug');
+                        const debugData = await debugResponse.json();
+                        console.log('Database after registration:', JSON.stringify(debugData, null, 2));
+                    } catch (e) {
+                        console.log('Could not check database:', e);
+                    }
+                    
                     setTimeout(() => showLogin(), 2000);
                 } else {
                     showMessage(data.error || 'Registration failed', 'error');

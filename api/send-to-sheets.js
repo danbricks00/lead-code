@@ -100,11 +100,13 @@ export default async function handler(req, res) {
     }
 
     // 2. Try to send email to customer (if Gmail credentials are available)
-    console.log('🔍 Checking Gmail credentials...');
+    console.log('🔍 Checking Gmail credentials for customer email...');
     
     try {
       if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
         console.log('✅ Gmail credentials found, attempting to send customer email...');
+        console.log('📧 From:', process.env.GMAIL_USER);
+        console.log('📧 To:', leadData.customerEmail);
         
         const transporter = nodemailer.createTransporter({
           service: 'gmail',
@@ -130,16 +132,16 @@ export default async function handler(req, res) {
           <p>Best regards,<br>The LeadBot Team</p>
         `;
 
-        console.log('📧 Sending email to customer:', leadData.customerEmail);
+        console.log('📧 Sending customer email...');
 
-        await transporter.sendMail({
+        const customerEmailResult = await transporter.sendMail({
           from: process.env.GMAIL_USER,
           to: leadData.customerEmail,
           subject: 'Your Project Request - LeadBot',
           html: customerEmailContent
         });
 
-        console.log('✅ Customer email sent successfully');
+        console.log('✅ Customer email sent successfully:', customerEmailResult);
         customerEmailSent = true;
       } else {
         console.log('⚠️ Gmail credentials not configured - skipping customer email');
@@ -151,9 +153,12 @@ export default async function handler(req, res) {
     } catch (emailError) {
       console.error('❌ Customer email error:', emailError);
       console.error('❌ Error details:', emailError.message);
+      console.error('❌ Error stack:', emailError.stack);
     }
 
     // 3. Try to send email to tradesmen (if Gmail credentials are available)
+    console.log('🔍 Checking Gmail credentials for tradesman email...');
+    
     try {
       if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
         console.log('✅ Gmail credentials found, attempting to send tradesman email...');
@@ -179,6 +184,7 @@ export default async function handler(req, res) {
         };
 
         const tradesmenEmailsList = tradesmenEmails[leadData.selectedService] || tradesmenEmails.other;
+        console.log('📧 Tradesmen emails for service:', leadData.selectedService, ':', tradesmenEmailsList);
         
         const tradesmanEmailContent = `
           <h2>New Lead Alert!</h2>
@@ -203,17 +209,19 @@ export default async function handler(req, res) {
 
         for (const email of tradesmenEmailsList) {
           try {
-            await transporter.sendMail({
+            console.log(`📧 Attempting to send email to: ${email}`);
+            const tradesmanEmailResult = await transporter.sendMail({
               from: process.env.GMAIL_USER,
               to: email,
               subject: `New ${leadData.selectedService} Lead - ${leadData.location}`,
               html: tradesmanEmailContent
             });
-            console.log(`✅ Email sent to tradesman: ${email}`);
+            console.log(`✅ Email sent to tradesman: ${email}`, tradesmanEmailResult);
             tradesmanEmailSent = true;
           } catch (emailError) {
             console.error(`❌ Failed to send email to ${email}:`, emailError);
             console.error(`❌ Error details:`, emailError.message);
+            console.error(`❌ Error stack:`, emailError.stack);
           }
         }
       } else {
@@ -222,6 +230,7 @@ export default async function handler(req, res) {
     } catch (emailError) {
       console.error('❌ Tradesman email error:', emailError);
       console.error('❌ Error details:', emailError.message);
+      console.error('❌ Error stack:', emailError.stack);
     }
 
     // Return success response with detailed status
@@ -245,6 +254,7 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('❌ Error processing lead:', error);
     console.error('❌ Error details:', error.message);
+    console.error('❌ Error stack:', error.stack);
     res.status(500).json({ 
       success: false, 
       error: 'Failed to process lead',

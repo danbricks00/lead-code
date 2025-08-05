@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Lead Submission</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 3px; white-space: pre-wrap; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Lead Submission</h1>
+    
+    <div class="test-section">
+        <h3>1. Test Simple API (GET)</h3>
+        <button onclick="testSimpleGet()">Test Simple GET</button>
+        <div id="simple-get-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Test Simple API (POST)</h3>
+        <button onclick="testSimplePost()">Test Simple POST</button>
+        <div id="simple-post-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Test Lead API (POST Method)</h3>
+        <button onclick="testLeadSubmission()">Submit Test Lead</button>
+        <div id="lead-result" class="result"></div>
+    </div>
+
+    <script>
+        const baseUrl = 'https://lead-code-git-main-dan-buis-projects-e44a173c.vercel.app';
+
+        async function testSimpleGet() {
+            const resultDiv = document.getElementById('simple-get-result');
+            resultDiv.textContent = 'Testing simple GET...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/test-simple`);
+                const data = await response.json();
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testSimplePost() {
+            const resultDiv = document.getElementById('simple-post-result');
+            resultDiv.textContent = 'Testing simple POST...';
+            resultDiv.className = 'result';
+            
+            try {
+                const testData = { test: "data", message: "Hello" };
+                const response = await fetch(`${baseUrl}/api/test-simple`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                const data = await response.json();
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testLeadSubmission() {
+            const resultDiv = document.getElementById('lead-result');
+            resultDiv.textContent = 'Submitting test lead...';
+            resultDiv.className = 'result';
+            
+            try {
+                const testData = {
+                    customerName: "Test Customer",
+                    customerEmail: "test@example.com",
+                    customerPhone: "1234567890",
+                    selectedService: "builder",
+                    projectDetails: "Test project for API testing",
+                    projectSize: "Medium",
+                    specificDetails: "Test details for verification",
+                    location: "Test Location",
+                    budget: "£5000",
+                    timeline: "1 month"
+                };
+
+                console.log('📤 Sending test data:', testData);
+
+                const response = await fetch(`${baseUrl}/api/send-to-sheets`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                const data = await response.json();
+                console.log('📥 Response received:', data);
+                
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                resultDiv.className = 'result success';
+                
+                // Check if emails and sheets were updated
+                if (data.status) {
+                    console.log('📊 Status:', data.status);
+                }
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+    </script>
+</body>
+</html> 

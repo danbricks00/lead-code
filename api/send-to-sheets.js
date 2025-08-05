@@ -98,146 +98,19 @@ export default async function handler(req, res) {
       console.error('❌ Error details:', sheetsError.message);
     }
 
-    // 2. Try to send email to customer (if Gmail credentials are available)
-    console.log('🔍 Checking Gmail credentials for customer email...');
+    // 2. Email functionality (temporarily disabled due to Nodemailer import issues)
+    console.log('🔍 Email functionality temporarily disabled - Nodemailer import issue');
+    console.log('📧 Would send customer email to:', leadData.customerEmail);
+    console.log('📧 Would send tradesman email to: danbricks18@gmail.com');
     
-    try {
-      if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
-        console.log('✅ Gmail credentials found, attempting to send customer email...');
-        console.log('📧 From:', process.env.GMAIL_USER);
-        console.log('📧 To:', leadData.customerEmail);
-        
-        const nodemailer = await import('nodemailer');
-        const transporter = nodemailer.default.createTransporter({
-          service: 'gmail',
-          auth: {
-            user: process.env.GMAIL_USER,
-            pass: process.env.GMAIL_APP_PASSWORD
-          }
-        });
-
-        const customerEmailContent = `
-          <h2>Thank you for your inquiry!</h2>
-          <p>Dear ${leadData.customerName},</p>
-          <p>Thank you for submitting your project request. Here's a summary of your inquiry:</p>
-          <ul>
-            <li><strong>Service:</strong> ${leadData.selectedService}</li>
-            <li><strong>Project Details:</strong> ${leadData.projectDetails}</li>
-            <li><strong>Location:</strong> ${leadData.location}</li>
-            <li><strong>Budget:</strong> ${leadData.budget}</li>
-            <li><strong>Timeline:</strong> ${leadData.timeline}</li>
-          </ul>
-          <p>We've forwarded your request to qualified tradesmen in your area. You should receive quotes and contact information within 24-48 hours.</p>
-          <p>If you have any questions, please don't hesitate to contact us.</p>
-          <p>Best regards,<br>The LeadBot Team</p>
-        `;
-
-        console.log('📧 Sending customer email...');
-
-        const customerEmailResult = await transporter.sendMail({
-          from: process.env.GMAIL_USER,
-          to: leadData.customerEmail,
-          subject: 'Your Project Request - LeadBot',
-          html: customerEmailContent
-        });
-
-        console.log('✅ Customer email sent successfully:', customerEmailResult);
-        customerEmailSent = true;
-      } else {
-        console.log('⚠️ Gmail credentials not configured - skipping customer email');
-        console.log('Missing:', {
-          user: !process.env.GMAIL_USER,
-          password: !process.env.GMAIL_APP_PASSWORD
-        });
-      }
-    } catch (emailError) {
-      console.error('❌ Customer email error:', emailError);
-      console.error('❌ Error details:', emailError.message);
-      console.error('❌ Error stack:', emailError.stack);
-    }
-
-    // 3. Try to send email to tradesmen (if Gmail credentials are available)
-    console.log('🔍 Checking Gmail credentials for tradesman email...');
-    
-    try {
-      if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
-        console.log('✅ Gmail credentials found, attempting to send tradesman email...');
-        
-        const nodemailer = await import('nodemailer');
-        const transporter = nodemailer.default.createTransporter({
-          service: 'gmail',
-          auth: {
-            user: process.env.GMAIL_USER,
-            pass: process.env.GMAIL_APP_PASSWORD
-          }
-        });
-
-        // Tradesmen email configuration
-        const tradesmenEmails = {
-          builder: ['danbricks18@gmail.com'],
-          electrician: ['electrician1@example.com'],
-          plumber: ['plumber1@example.com'],
-          painter: ['painter1@example.com'],
-          roofer: ['roofer1@example.com'],
-          landscaper: ['landscaper1@example.com'],
-          heating: ['heating1@example.com'],
-          other: ['general@example.com']
-        };
-
-        const tradesmenEmailsList = tradesmenEmails[leadData.selectedService] || tradesmenEmails.other;
-        console.log('📧 Tradesmen emails for service:', leadData.selectedService, ':', tradesmenEmailsList);
-        
-        const tradesmanEmailContent = `
-          <h2>New Lead Alert!</h2>
-          <p>A new customer is looking for ${leadData.selectedService} services.</p>
-          <h3>Project Details:</h3>
-          <ul>
-            <li><strong>Customer Name:</strong> ${leadData.customerName}</li>
-            <li><strong>Customer Email:</strong> ${leadData.customerEmail}</li>
-            <li><strong>Customer Phone:</strong> ${leadData.customerPhone}</li>
-            <li><strong>Project Description:</strong> ${leadData.projectDetails}</li>
-            <li><strong>Project Size:</strong> ${leadData.projectSize}</li>
-            <li><strong>Specific Requirements:</strong> ${leadData.specificDetails}</li>
-            <li><strong>Location:</strong> ${leadData.location}</li>
-            <li><strong>Budget:</strong> ${leadData.budget}</li>
-            <li><strong>Timeline:</strong> ${leadData.timeline}</li>
-          </ul>
-          <p>Please contact the customer directly to discuss the project and provide a quote.</p>
-          <p>This lead was generated by LeadBot.</p>
-        `;
-
-        console.log('📧 Sending email to tradesmen:', tradesmenEmailsList);
-
-        for (const email of tradesmenEmailsList) {
-          try {
-            console.log(`📧 Attempting to send email to: ${email}`);
-            const tradesmanEmailResult = await transporter.sendMail({
-              from: process.env.GMAIL_USER,
-              to: email,
-              subject: `New ${leadData.selectedService} Lead - ${leadData.location}`,
-              html: tradesmanEmailContent
-            });
-            console.log(`✅ Email sent to tradesman: ${email}`, tradesmanEmailResult);
-            tradesmanEmailSent = true;
-          } catch (emailError) {
-            console.error(`❌ Failed to send email to ${email}:`, emailError);
-            console.error(`❌ Error details:`, emailError.message);
-            console.error(`❌ Error stack:`, emailError.stack);
-          }
-        }
-      } else {
-        console.log('⚠️ Gmail credentials not configured - skipping tradesman emails');
-      }
-    } catch (emailError) {
-      console.error('❌ Tradesman email error:', emailError);
-      console.error('❌ Error details:', emailError.message);
-      console.error('❌ Error stack:', emailError.stack);
-    }
+    // TODO: Fix Nodemailer import and re-enable email functionality
+    customerEmailSent = false;
+    tradesmanEmailSent = false;
 
     // Return success response with detailed status
     const response = {
       success: true,
-      message: 'Lead submitted successfully! Check your email for confirmation.',
+      message: 'Lead submitted successfully! Google Sheets updated. Email functionality temporarily disabled.',
       data: leadData,
       timestamp: new Date().toISOString(),
       status: {
@@ -245,7 +118,7 @@ export default async function handler(req, res) {
         sheetsUpdated,
         customerEmailSent,
         tradesmanEmailSent,
-        note: sheetsUpdated && customerEmailSent ? 'Full functionality working!' : 'Some features need environment variables'
+        note: 'Google Sheets working! Email needs Nodemailer fix'
       }
     };
 

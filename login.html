@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeadBot - Tradesman Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .google-btn {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: 1rem;
+            transition: background 0.3s;
+        }
+
+        .google-btn:hover {
+            background: #3367d6;
+        }
+
+        .google-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .divider {
+            margin: 1.5rem 0;
+            display: flex;
+            align-items: center;
+            color: #666;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #ddd;
+        }
+
+        .divider span {
+            padding: 0 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4285f4;
+        }
+
+        .register-btn {
+            background: #34a853;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 1rem;
+            transition: background 0.3s;
+        }
+
+        .register-btn:hover {
+            background: #2d8f47;
+        }
+
+        .back-btn {
+            background: #666;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: background 0.3s;
+        }
+
+        .back-btn:hover {
+            background: #555;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .error {
+            color: #d32f2f;
+            background: #ffebee;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .success {
+            color: #2e7d32;
+            background: #e8f5e8;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .user-info {
+            background: #f5f5f5;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .logout-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+
+        .logout-btn:hover {
+            background: #d32f2f;
+        }
+
+        /* Google Sign-In Button Styling */
+        #g_id_onload {
+            margin-bottom: 1rem;
+        }
+
+        .g_id_signin {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">🔧 LeadBot</div>
+        <p class="subtitle">Tradesman Portal</p>
+
+        <!-- Login Section -->
+        <div id="loginSection">
+            <div id="g_id_onload"
+                 data-client_id="715560457951-4ti03g5176854alkdku3slr1sufbue0l.apps.googleusercontent.com"
+                 data-callback="handleCredentialResponse"
+                 data-auto_prompt="false">
+            </div>
+            <div class="g_id_signin"
+                 data-type="standard"
+                 data-size="large"
+                 data-theme="outline"
+                 data-text="sign_in_with"
+                 data-shape="rectangular"
+                 data-logo_alignment="left">
+            </div>
+
+            <div class="divider">
+                <span>or</span>
+            </div>
+
+            <button class="register-btn" onclick="showRegistration()">
+                Register as Tradesman
+            </button>
+        </div>
+
+        <!-- Registration Section -->
+        <div id="registrationSection" class="hidden">
+            <h3>Register as Tradesman</h3>
+            <form id="registrationForm">
+                <div class="form-group">
+                    <label for="tradeType">Trade Type</label>
+                    <select id="tradeType" required>
+                        <option value="">Select your trade</option>
+                        <option value="builder">Builder</option>
+                        <option value="electrician">Electrician</option>
+                        <option value="plumber">Plumber</option>
+                        <option value="carpenter">Carpenter</option>
+                        <option value="painter">Painter</option>
+                        <option value="roofer">Roofer</option>
+                        <option value="landscaper">Landscaper</option>
+                        <option value="heating">Heating Engineer</option>
+                        <option value="decorator">Decorator</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="businessName">Business Name</label>
+                    <input type="text" id="businessName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="location">Service Area</label>
+                    <input type="text" id="location" placeholder="e.g., London, Manchester" required>
+                </div>
+
+                <button type="submit" class="register-btn">Complete Registration</button>
+            </form>
+            <button class="back-btn" onclick="showLogin()">Back to Login</button>
+        </div>
+
+        <!-- User Dashboard -->
+        <div id="userDashboard" class="hidden">
+            <div class="user-info">
+                <h3>Welcome, <span id="userName"></span>!</h3>
+                <p>Trade: <span id="userTrade"></span></p>
+                <p>Business: <span id="userBusiness"></span></p>
+                <p>Status: <span id="userStatus"></span></p>
+            </div>
+            <button class="logout-btn" onclick="signOut()">Sign Out</button>
+        </div>
+
+        <div id="message"></div>
+    </div>
+
+    <!-- Google Sign-In API -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        let currentUser = null;
+
+        // Handle Google Sign-In response
+        async function handleCredentialResponse(response) {
+            try {
+                const result = await fetch('/api/auth/google', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        credential: response.credential
+                    })
+                });
+
+                const data = await result.json();
+                
+                if (data.success) {
+                    currentUser = data.user;
+                    showUserDashboard();
+                    showMessage('Successfully signed in!', 'success');
+                } else if (data.needsRegistration) {
+                    showMessage('Please complete your registration first', 'error');
+                    showRegistration();
+                } else {
+                    showMessage(data.error || 'Sign-in failed', 'error');
+                }
+            } catch (error) {
+                showMessage('Sign-in error: ' + error.message, 'error');
+            }
+        }
+
+        // Show registration form
+        function showRegistration() {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('registrationSection').classList.remove('hidden');
+            document.getElementById('userDashboard').classList.add('hidden');
+        }
+
+        // Show login form
+        function showLogin() {
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('registrationSection').classList.add('hidden');
+            document.getElementById('userDashboard').classList.add('hidden');
+        }
+
+        // Show user dashboard
+        function showUserDashboard() {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('registrationSection').classList.add('hidden');
+            document.getElementById('userDashboard').classList.remove('hidden');
+            
+            if (currentUser) {
+                document.getElementById('userName').textContent = currentUser.name;
+                document.getElementById('userTrade').textContent = currentUser.tradeType || 'Not set';
+                document.getElementById('userBusiness').textContent = currentUser.businessName || 'Not set';
+                document.getElementById('userStatus').textContent = currentUser.status || 'Pending';
+            }
+        }
+
+        // Handle registration form submission
+        document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                tradeType: document.getElementById('tradeType').value,
+                businessName: document.getElementById('businessName').value,
+                phone: document.getElementById('phone').value,
+                location: document.getElementById('location').value
+            };
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('Registration successful! Please sign in with Google.', 'success');
+                    setTimeout(() => showLogin(), 2000);
+                } else {
+                    showMessage(data.error || 'Registration failed', 'error');
+                }
+            } catch (error) {
+                showMessage('Registration error: ' + error.message, 'error');
+            }
+        });
+
+        // Sign out
+        async function signOut() {
+            try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                currentUser = null;
+                showLogin();
+                showMessage('Signed out successfully', 'success');
+            } catch (error) {
+                showMessage('Sign out error: ' + error.message, 'error');
+            }
+        }
+
+        // Show message
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = type;
+            messageDiv.classList.remove('hidden');
+            
+            setTimeout(() => {
+                messageDiv.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            // Check if user is already logged in
+            checkAuthStatus();
+        });
+
+        // Check authentication status
+        async function checkAuthStatus() {
+            try {
+                const response = await fetch('/api/auth/status');
+                const data = await response.json();
+                
+                if (data.authenticated) {
+                    currentUser = data.user;
+                    showUserDashboard();
+                }
+            } catch (error) {
+                console.log('Not authenticated');
+            }
+        }
+    </script>
+</body>
+</html> 

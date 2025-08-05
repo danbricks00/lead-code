@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>About Us - LeadBot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; background-color: #f8f9fa; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        
+        /* Header & Navigation */
+        header { background: linear-gradient(135deg, #2c3e50, #3498db); color: white; padding: 0; position: fixed; width: 100%; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .navbar { padding: 1rem 0; }
+        .nav-container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 0 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        .nav-logo h2 { margin: 0; font-size: 1.8rem; }
+        .nav-menu { 
+            display: flex; 
+            list-style: none; 
+            margin: 0; 
+            padding: 0; 
+            gap: 2rem; 
+        }
+        .nav-link { 
+            color: white; 
+            text-decoration: none; 
+            font-weight: 500; 
+            transition: opacity 0.3s; 
+        }
+        .nav-link:hover { opacity: 0.8; }
+        .hamburger { display: none; flex-direction: column; cursor: pointer; }
+        .bar { width: 25px; height: 3px; background: white; margin: 3px 0; transition: 0.3s; }
+        
+        @media (max-width: 768px) {
+            .hamburger { display: flex; }
+            .nav-menu { 
+                position: fixed; 
+                left: -100%; 
+                top: 70px; 
+                flex-direction: column; 
+                background: linear-gradient(135deg, #2c3e50, #3498db); 
+                width: 100%; 
+                text-align: center; 
+                transition: 0.3s; 
+                padding: 2rem 0; 
+            }
+            .nav-menu.active { left: 0; }
+            .nav-item { margin: 1rem 0; }
+        }
+        
+        main { margin-top: 80px; padding: 2rem 0; }
+        
+        /* About Page Styles */
+        .about-hero { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            padding: 4rem 2rem; 
+            text-align: center; 
+            border-radius: 15px; 
+            margin-bottom: 3rem; 
+        }
+        .about-hero h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+        .about-hero p { font-size: 1.2rem; opacity: 0.9; }
+        
+        .about-section { 
+            background: white; 
+            padding: 3rem 2rem; 
+            border-radius: 15px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+            margin-bottom: 2rem; 
+        }
+        .about-section h2 { color: #2c3e50; margin-bottom: 1.5rem; font-size: 2rem; }
+        .about-section p { color: #666; line-height: 1.8; margin-bottom: 1rem; }
+        
+        .mission-vision { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 2rem; 
+            margin: 3rem 0; 
+        }
+        .mission-card, .vision-card { 
+            background: white; 
+            padding: 2rem; 
+            border-radius: 15px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+            text-align: center; 
+        }
+        .mission-card h3, .vision-card h3 { color: #2c3e50; margin-bottom: 1rem; }
+        .mission-icon, .vision-icon { font-size: 3rem; margin-bottom: 1rem; }
+        
+        .values-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 2rem; 
+            margin: 3rem 0; 
+        }
+        .value-card { 
+            background: white; 
+            padding: 2rem; 
+            border-radius: 15px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+            text-align: center; 
+        }
+        .value-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+        .value-card h4 { color: #2c3e50; margin-bottom: 1rem; }
+        
+        .team-section { 
+            background: #f8f9fa; 
+            padding: 3rem 2rem; 
+            border-radius: 15px; 
+            margin: 3rem 0; 
+        }
+        .team-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+            gap: 2rem; 
+            margin-top: 2rem; 
+        }
+        .team-member { 
+            background: white; 
+            padding: 2rem; 
+            border-radius: 15px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+            text-align: center; 
+        }
+        .member-avatar { 
+            width: 100px; 
+            height: 100px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, #3498db, #2980b9); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 2.5rem; 
+            color: white; 
+            margin: 0 auto 1rem; 
+        }
+        .member-name { color: #2c3e50; font-weight: bold; margin-bottom: 0.5rem; }
+        .member-role { color: #3498db; margin-bottom: 1rem; }
+        
+        .cta-section { 
+            text-align: center; 
+            padding: 3rem 2rem; 
+            background: white; 
+            border-radius: 15px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+        }
+        .cta-button { 
+            background: #3498db; 
+            color: white; 
+            border: none; 
+            padding: 1rem 2rem; 
+            border-radius: 25px; 
+            font-size: 1.1rem; 
+            cursor: pointer; 
+            transition: all 0.3s; 
+            text-decoration: none; 
+            display: inline-block; 
+        }
+        .cta-button:hover { background: #2980b9; transform: translateY(-2px); }
+        
+        @media (max-width: 768px) {
+            .about-hero h1 { font-size: 2rem; }
+            .about-hero p { font-size: 1rem; }
+            .mission-vision { grid-template-columns: 1fr; }
+            .values-grid { grid-template-columns: 1fr; }
+            .team-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <h2>LeadBot</h2>
+                </div>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="/" class="nav-link">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/about.html" class="nav-link">About Us</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/contact.html" class="nav-link">Contact</a>
+                    </li>
+                </ul>
+                <div class="hamburger">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        <!-- Hero Section -->
+        <section class="about-hero">
+            <h1>About LeadBot</h1>
+            <p>Connecting customers with qualified tradesmen through intelligent lead generation</p>
+        </section>
+
+        <!-- Company Story -->
+        <section class="about-section">
+            <h2>Our Story</h2>
+            <p>LeadBot was founded with a simple mission: to bridge the gap between customers seeking quality tradesmen and skilled professionals looking for work. We recognized that finding reliable tradesmen for home improvement projects was often a frustrating and time-consuming process.</p>
+            <p>Our platform uses intelligent chatbot technology to gather detailed project requirements and match customers with qualified tradesmen in their area. We've helped thousands of homeowners find the perfect professionals for their projects, from small repairs to major renovations.</p>
+        </section>
+
+        <!-- Mission & Vision -->
+        <div class="mission-vision">
+            <div class="mission-card">
+                <div class="mission-icon">🎯</div>
+                <h3>Our Mission</h3>
+                <p>To simplify the process of finding qualified tradesmen by providing a seamless, intelligent platform that connects customers with trusted professionals.</p>
+            </div>
+            <div class="vision-card">
+                <div class="vision-icon">🔮</div>
+                <h3>Our Vision</h3>
+                <p>To become the leading platform for tradesman discovery, making quality home improvement services accessible to everyone.</p>
+            </div>
+        </div>
+
+        <!-- Values -->
+        <section class="about-section">
+            <h2>Our Values</h2>
+            <div class="values-grid">
+                <div class="value-card">
+                    <div class="value-icon">🤝</div>
+                    <h4>Trust</h4>
+                    <p>We only work with verified, qualified tradesmen to ensure quality service.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">⚡</div>
+                    <h4>Efficiency</h4>
+                    <p>Our intelligent system matches customers with tradesmen quickly and accurately.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">💎</div>
+                    <h4>Quality</h4>
+                    <p>We maintain high standards for all tradesmen on our platform.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">🎯</div>
+                    <h4>Customer Focus</h4>
+                    <p>Your satisfaction is our top priority in everything we do.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Team -->
+        <section class="team-section">
+            <h2>Our Team</h2>
+            <div class="team-grid">
+                <div class="team-member">
+                    <div class="member-avatar">👨‍💼</div>
+                    <div class="member-name">David Johnson</div>
+                    <div class="member-role">CEO & Founder</div>
+                    <p>15+ years in home improvement industry</p>
+                </div>
+                <div class="team-member">
+                    <div class="member-avatar">👩‍💻</div>
+                    <div class="member-name">Sarah Chen</div>
+                    <div class="member-role">CTO</div>
+                    <p>Expert in AI and chatbot technology</p>
+                </div>
+                <div class="team-member">
+                    <div class="member-avatar">👨‍🔧</div>
+                    <div class="member-name">Mike Thompson</div>
+                    <div class="member-role">Head of Operations</div>
+                    <p>Former master tradesman with 20+ years experience</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta-section">
+            <h2>Ready to Get Started?</h2>
+            <p>Join thousands of satisfied customers who have found their perfect tradesman through LeadBot.</p>
+            <a href="/" class="cta-button">Start Your Project</a>
+        </section>
+    </main>
+
+    <script>
+        // Mobile menu functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburger = document.querySelector('.hamburger');
+            const navMenu = document.querySelector('.nav-menu');
+            
+            hamburger.addEventListener('click', () => {
+                hamburger.classList.toggle('active');
+                navMenu.classList.toggle('active');
+            });
+            
+            // Close menu when clicking on a link
+            document.querySelectorAll('.nav-link').forEach(n => n.addEventListener('click', () => {
+                hamburger.classList.remove('active');
+                navMenu.classList.remove('active');
+            }));
+        });
+    </script>
+</body>
+</html>

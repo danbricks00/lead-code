@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lead Chatbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; background-color: #f8f9fa; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        header { background: linear-gradient(135deg, #2c3e50, #3498db); color: white; padding: 0; position: fixed; width: 100%; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        
+        /* Navigation Styles */
+        .navbar { padding: 1rem 0; }
+        .nav-container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 0 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        .nav-logo h2 { margin: 0; font-size: 1.8rem; }
+        .nav-menu { 
+            display: flex; 
+            list-style: none; 
+            margin: 0; 
+            padding: 0; 
+            gap: 2rem; 
+        }
+        .nav-link { 
+            color: white; 
+            text-decoration: none; 
+            font-weight: 500; 
+            transition: opacity 0.3s; 
+        }
+        .nav-link:hover { opacity: 0.8; }
+        .hamburger { display: none; flex-direction: column; cursor: pointer; }
+        .bar { width: 25px; height: 3px; background: white; margin: 3px 0; transition: 0.3s; }
+        
+        @media (max-width: 768px) {
+            .hamburger { display: flex; }
+            .nav-menu { 
+                position: fixed; 
+                left: -100%; 
+                top: 70px; 
+                flex-direction: column; 
+                background: linear-gradient(135deg, #2c3e50, #3498db); 
+                width: 100%; 
+                text-align: center; 
+                transition: 0.3s; 
+                padding: 2rem 0; 
+            }
+            .nav-menu.active { left: 0; }
+            .nav-item { margin: 1rem 0; }
+        }
+        main { margin-top: 80px; padding: 2rem 0; }
+        .chatbot-container { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
+        .chat-toggle { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #3498db, #2980b9); border: none; color: white; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.3s; }
+        .chat-toggle:hover { transform: scale(1.1); }
+        .chat-window { position: absolute; bottom: 70px; right: 0; width: 350px; height: 500px; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: none; flex-direction: column; overflow: hidden; }
+        .chat-header { background: linear-gradient(135deg, #2c3e50, #3498db); color: white; padding: 1rem; text-align: center; font-weight: bold; }
+        .chat-messages { flex: 1; padding: 1rem; overflow-y: auto; background: #f8f9fa; display: flex; flex-direction: column; }
+        .message { margin-bottom: 1rem; padding: 0.8rem; border-radius: 10px; max-width: 80%; }
+        .bot-message { background: #e3f2fd; align-self: flex-start; }
+        .user-message { background: #3498db; color: white; align-self: flex-end; margin-left: auto; }
+        .chat-input-container { padding: 1rem; border-top: 1px solid #eee; display: flex; gap: 0.5rem; }
+        .chat-input { flex: 1; padding: 0.8rem; border: 1px solid #ddd; border-radius: 25px; outline: none; }
+        .send-button { background: #3498db; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; }
+        .quick-options { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+        .quick-option { background: #3498db; color: white; border: none; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; font-size: 0.9rem; }
+        .quick-option:hover { background: #2980b9; }
+        @media (max-width: 768px) {
+            .chat-window { width: 300px; height: 400px; }
+        }
+        @media (max-width: 480px) {
+            .chat-window { width: calc(100vw - 40px); right: 20px; left: 20px; }
+        }
+        .typing-indicator { display: flex; align-items: center; gap: 0.3rem; padding: 0.8rem; }
+        .typing-dot { width: 8px; height: 8px; border-radius: 50%; background: #3498db; animation: typing 1.4s infinite ease-in-out; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-10px); } }
+        
+        /* Hero Section */
+        .hero { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            padding: 4rem 2rem; 
+            text-align: center; 
+            border-radius: 15px; 
+            margin-bottom: 3rem; 
+        }
+        .hero-content h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+        .hero-content p { font-size: 1.2rem; margin-bottom: 2rem; opacity: 0.9; }
+        .cta-button { 
+            background: #3498db; 
+            color: white; 
+            border: none; 
+            padding: 1rem 2rem; 
+            border-radius: 25px; 
+            font-size: 1.1rem; 
+            cursor: pointer; 
+            transition: all 0.3s; 
+        }
+        .cta-button:hover { background: #2980b9; transform: translateY(-2px); }
+        
+        /* Services Section */
+        .services { padding: 3rem 0; }
+        .services h2 { text-align: center; font-size: 2rem; margin-bottom: 2rem; color: #2c3e50; }
+        .services-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 2rem; 
+        }
+        .service-card { 
+            background: white; 
+            padding: 2rem; 
+            border-radius: 15px; 
+            text-align: center; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+            transition: transform 0.3s; 
+        }
+        .service-card:hover { transform: translateY(-5px); }
+        .service-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .service-card h3 { color: #2c3e50; margin-bottom: 1rem; }
+        .service-card p { color: #666; line-height: 1.6; }
+        
+        /* How It Works Section */
+        .how-it-works { 
+            background: #f8f9fa; 
+            padding: 3rem 2rem; 
+            border-radius: 15px; 
+            margin: 3rem 0; 
+        }
+        .how-it-works h2 { text-align: center; font-size: 2rem; margin-bottom: 2rem; color: #2c3e50; }
+        .steps-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 2rem; 
+        }
+        .step { 
+            text-align: center; 
+            padding: 1rem; 
+        }
+        .step-number { 
+            width: 50px; 
+            height: 50px; 
+            background: #3498db; 
+            color: white; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 1.5rem; 
+            font-weight: bold; 
+            margin: 0 auto 1rem; 
+        }
+        .step h3 { color: #2c3e50; margin-bottom: 1rem; }
+        .step p { color: #666; }
+        
+        /* Contact Section */
+        .contact-section { 
+            text-align: center; 
+            padding: 3rem 2rem; 
+            background: white; 
+            border-radius: 15px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+        }
+        .contact-section h2 { font-size: 2rem; margin-bottom: 1rem; color: #2c3e50; }
+        .contact-section p { font-size: 1.1rem; margin-bottom: 2rem; color: #666; }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero-content h1 { font-size: 2rem; }
+            .hero-content p { font-size: 1rem; }
+            .services-grid { grid-template-columns: 1fr; }
+            .steps-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <h2>LeadBot</h2>
+                </div>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="/" class="nav-link">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/about.html" class="nav-link">About Us</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/contact.html" class="nav-link">Contact</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/login" class="nav-link" style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 5px;">Tradesman Login</a>
+                    </li>
+                </ul>
+                <div class="hamburger">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Find Qualified Tradesmen</h1>
+                <p>Connect with trusted professionals for all your building, electrical, and plumbing needs. Get quotes from qualified tradesmen in your area.</p>
+                <button class="cta-button" onclick="openChat()">Start Your Project</button>
+            </div>
+        </section>
+
+        <!-- Services Section -->
+        <section class="services">
+            <h2>Our Services</h2>
+            <div class="services-grid">
+                <div class="service-card">
+                    <div class="service-icon">🏗️</div>
+                    <h3>Building & Construction</h3>
+                    <p>From small repairs to major renovations, find qualified builders and construction professionals.</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">⚡</div>
+                    <h3>Electrical Services</h3>
+                    <p>Licensed electricians for installations, repairs, and electrical safety inspections.</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">🔧</div>
+                    <h3>Plumbing</h3>
+                    <p>Expert plumbers for repairs, installations, and emergency plumbing services.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section class="how-it-works">
+            <h2>How It Works</h2>
+            <div class="steps-grid">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Describe Your Project</h3>
+                    <p>Tell us what you need done and provide project details.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Get Matched</h3>
+                    <p>We'll connect you with qualified tradesmen in your area.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Receive Quotes</h3>
+                    <p>Get competitive quotes and choose the best professional for your project.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section class="contact-section">
+            <h2>Ready to Start?</h2>
+            <p>Click the chat button below to begin your project journey!</p>
+            <button class="cta-button" onclick="openChat()">Chat Now</button>
+        </section>
+    </main>
+
+    <!-- Chatbot -->
+    <div class="chatbot-container">
+        <button class="chat-toggle" onclick="toggleChat()" title="Chat with us">💬</button>
+        <div class="chat-window" id="chatWindow">
+            <div class="chat-header">Lead Chatbot</div>
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
+                <button class="send-button" onclick="sendMessage()">&#9658;</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chatState = {
+            step: 'service_selection',
+            selectedService: '',
+            projectDetails: '',
+            projectSize: '',
+            specificDetails: '',
+            location: '',
+            budget: '',
+            timeline: '',
+            customerName: '',
+            customerEmail: '',
+            customerPhone: ''
+        };
+
+        function toggleChat() {
+            const chatWindow = document.getElementById('chatWindow');
+            if (chatWindow.style.display === 'flex') {
+                chatWindow.style.display = 'none';
+            } else {
+                chatWindow.style.display = 'flex';
+                if (document.getElementById('chatMessages').children.length === 0) {
+                    startChat();
+                }
+            }
+        }
+
+        function openChat() {
+            document.getElementById('chatWindow').style.display = 'flex';
+            if (document.getElementById('chatMessages').children.length === 0) {
+                startChat();
+            }
+        }
+        window.openChat = openChat; // Make openChat globally accessible
+
+        function startChat() {
+            addMessage("Hi! 👋 What type of service do you need?", false);
+            addQuickOptions([
+                { text: 'Building/Construction', action: () => selectService('builder') },
+                { text: 'Electrical', action: () => selectService('electrician') },
+                { text: 'Plumbing', action: () => selectService('plumber') },
+                { text: 'Other', action: () => selectService('other') }
+            ]);
+        }
+
+        function addMessage(message, isUser = false) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            messageDiv.textContent = message;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function addTypingIndicator() {
+            const messagesContainer = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        function addQuickOptions(options) {
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = 'quick-options';
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.className = 'quick-option';
+                button.textContent = option.text;
+                button.onclick = option.action;
+                optionsDiv.appendChild(button);
+            });
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.appendChild(optionsDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function selectService(service) {
+            chatState.selectedService = service;
+            chatState.step = 'project_details';
+            const serviceNames = {
+                'builder': 'Building/Construction',
+                'electrician': 'Electrical',
+                'plumber': 'Plumbing',
+                'other': 'Other services'
+            };
+            addMessage(`${serviceNames[service]}`, true);
+            setTimeout(() => {
+                addTypingIndicator();
+                setTimeout(() => {
+                    removeTypingIndicator();
+                    addMessage(`Great! I can help you find a qualified ${service === 'other' ? 'tradesman' : serviceNames[service].toLowerCase()} professional. Can you describe your project in detail? What specific work needs to be done?`);
+                }, 1200);
+            }, 400);
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+            addMessage(message, true);
+            input.value = '';
+            processUserMessage(message);
+        }
+
+        function processUserMessage(message) {
+            addTypingIndicator();
+            setTimeout(() => {
+                removeTypingIndicator();
+                switch (chatState.step) {
+                    case 'project_details':
+                        chatState.projectDetails = message;
+                        askProjectSize();
+                        break;
+                    case 'project_size':
+                        chatState.projectSize = message;
+                        askSpecificDetails();
+                        break;
+                    case 'specific_details':
+                        chatState.specificDetails = message;
+                        chatState.step = 'location';
+                        addMessage("Perfect! Now, what's your location or postcode? This helps me find tradesmen in your area.");
+                        break;
+                    case 'location':
+                        chatState.location = message;
+                        chatState.step = 'budget';
+                        addMessage("Thanks! What's your approximate budget for this project?");
+                        addQuickOptions([
+                            { text: 'Under £500', action: () => setBudget('Under £500') },
+                            { text: '£500-£2000', action: () => setBudget('£500-£2000') },
+                            { text: '£2000-£5000', action: () => setBudget('£2000-£5000') },
+                            { text: 'Over £5000', action: () => setBudget('Over £5000') }
+                        ]);
+                        break;
+                    case 'timeline':
+                        chatState.timeline = message;
+                        chatState.step = 'customer_name';
+                        addMessage("Great! Now I need your contact details to send your requirements to qualified tradesmen. What's your name?");
+                        break;
+                    case 'customer_name':
+                        chatState.customerName = message;
+                        chatState.step = 'customer_email';
+                        addMessage("Nice to meet you, " + message + "! What's your email address?");
+                        break;
+                    case 'customer_email':
+                        chatState.customerEmail = message;
+                        chatState.step = 'customer_phone';
+                        addMessage("Perfect! And finally, what's your phone number? This allows tradesmen to contact you directly.");
+                        break;
+                    case 'customer_phone':
+                        chatState.customerPhone = message;
+                        generateLead();
+                        break;
+                    default:
+                        addMessage("I'm not sure I understand. Could you please clarify?");
+                }
+            }, 1000);
+        }
+
+        function setBudget(budget) {
+            chatState.budget = budget;
+            chatState.step = 'timeline';
+            addMessage(budget, true);
+            setTimeout(() => {
+                addTypingIndicator();
+                setTimeout(() => {
+                    removeTypingIndicator();
+                    addMessage("Great! When would you like this project to be completed?");
+                    addQuickOptions([
+                        { text: 'ASAP', action: () => setTimeline('ASAP') },
+                        { text: 'Within 1 week', action: () => setTimeline('Within 1 week') },
+                        { text: 'Within 1 month', action: () => setTimeline('Within 1 month') },
+                        { text: 'Flexible', action: () => setTimeline('Flexible') }
+                    ]);
+                }, 1000);
+            }, 400);
+        }
+
+        function askProjectSize() {
+            chatState.step = 'project_size';
+            const serviceQuestions = {
+                'builder': "What's the approximate size of your project? (e.g., 50 sq meters, 3 bedrooms, 2 bathrooms, etc.)",
+                'electrician': "What's the scope of electrical work? (e.g., full house rewire, 3 bedrooms, kitchen installation, etc.)",
+                'plumber': "What's the scope of plumbing work? (e.g., 2 bathrooms, kitchen, underfloor heating for 30 sq meters, etc.)",
+                'other': "What's the approximate size or scope of your project?"
+            };
+            
+            const question = serviceQuestions[chatState.selectedService] || serviceQuestions.other;
+            addMessage(question);
+        }
+
+        function askSpecificDetails() {
+            chatState.step = 'specific_details';
+            const serviceSpecificQuestions = {
+                'builder': "Any specific requirements? (e.g., materials preference, style, existing structure details, planning permission needed, etc.)",
+                'electrician': "Any specific requirements? (e.g., smart home features, specific brands, existing wiring condition, fuse board upgrade needed, etc.)",
+                'plumber': "Any specific requirements? (e.g., boiler replacement, specific heating system, water pressure issues, existing pipework condition, etc.)",
+                'other': "Any specific requirements or additional details about your project?"
+            };
+            
+            const question = serviceSpecificQuestions[chatState.selectedService] || serviceSpecificQuestions.other;
+            addMessage(question);
+        }
+
+        function setTimeline(timeline) {
+            chatState.timeline = timeline;
+            chatState.step = 'customer_name';
+            addMessage(timeline, true);
+            setTimeout(() => {
+                addTypingIndicator();
+                setTimeout(() => {
+                    removeTypingIndicator();
+                    addMessage("Perfect! Now I need your contact details to send your requirements to qualified tradesmen. What's your name?");
+                }, 1000);
+            }, 400);
+        }
+
+        function generateLead() {
+            const leadData = {
+                customerName: chatState.customerName,
+                customerEmail: chatState.customerEmail,
+                customerPhone: chatState.customerPhone,
+                selectedService: chatState.selectedService,
+                projectDetails: chatState.projectDetails,
+                projectSize: chatState.projectSize,
+                specificDetails: chatState.specificDetails,
+                location: chatState.location,
+                budget: chatState.budget,
+                timeline: chatState.timeline
+            };
+
+            console.log('Lead generated:', leadData);
+
+            fetch('/api/send-to-sheets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(leadData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+
+            chatState = {
+                step: 'service_selection',
+                selectedService: '',
+                projectDetails: '',
+                projectSize: '',
+                specificDetails: '',
+                location: '',
+                budget: '',
+                timeline: '',
+                customerName: '',
+                customerEmail: '',
+                customerPhone: ''
+            };
+
+            addMessage("Thank you! Your information has been submitted. A qualified tradesman will contact you shortly to discuss your project.");
+
+            setTimeout(() => {
+                addMessage("Is there anything else I can help you with today?");
+                addQuickOptions([
+                    { text: 'New Project', action: () => location.reload() },
+                    { text: 'No, Thanks', action: () => addMessage("Great! Have a wonderful day!") }
+                ]);
+            }, 1500);
+        }
+
+        // Mobile menu functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburger = document.querySelector('.hamburger');
+            const navMenu = document.querySelector('.nav-menu');
+            
+            hamburger.addEventListener('click', () => {
+                hamburger.classList.toggle('active');
+                navMenu.classList.toggle('active');
+            });
+            
+            // Close menu when clicking on a link
+            document.querySelectorAll('.nav-link').forEach(n => n.addEventListener('click', () => {
+                hamburger.classList.remove('active');
+                navMenu.classList.remove('active');
+            }));
+            
+            // Auto-open chat on mobile for better UX
+            if (window.innerWidth <= 768) {
+                setTimeout(() => {
+                    openChat();
+                }, 1200);
+            }
+        });
+    </script>
+</body>
+</html>

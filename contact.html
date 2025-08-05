@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Contact Us - LeadBot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; background-color: #f8f9fa; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        
+        /* Header & Navigation */
+        header { background: linear-gradient(135deg, #2c3e50, #3498db); color: white; padding: 0; position: fixed; width: 100%; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .navbar { padding: 1rem 0; }
+        .nav-container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 0 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        .nav-logo h2 { margin: 0; font-size: 1.8rem; }
+        .nav-menu { 
+            display: flex; 
+            list-style: none; 
+            margin: 0; 
+            padding: 0; 
+            gap: 2rem; 
+        }
+        .nav-link { 
+            color: white; 
+            text-decoration: none; 
+            font-weight: 500; 
+            transition: opacity 0.3s; 
+        }
+        .nav-link:hover { opacity: 0.8; }
+        .hamburger { display: none; flex-direction: column; cursor: pointer; }
+        .bar { width: 25px; height: 3px; background: white; margin: 3px 0; transition: 0.3s; }
+        
+        @media (max-width: 768px) {
+            .hamburger { display: flex; }
+            .nav-menu { 
+                position: fixed; 
+                left: -100%; 
+                top: 70px; 
+                flex-direction: column; 
+                background: linear-gradient(135deg, #2c3e50, #3498db); 
+                width: 100%; 
+                text-align: center; 
+                transition: 0.3s; 
+                padding: 2rem 0; 
+            }
+            .nav-menu.active { left: 0; }
+            .nav-item { margin: 1rem 0; }
+        }
+        
+        main { margin-top: 80px; padding: 2rem 0; }
+        
+        /* Contact Page Styles */
+        .contact-hero { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            padding: 4rem 2rem; 
+            text-align: center; 
+            border-radius: 15px; 
+            margin-bottom: 3rem; 
+        }
+        .contact-hero h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+        .contact-hero p { font-size: 1.2rem; opacity: 0.9; }
+        
+        .contact-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 3rem; 
+            margin-bottom: 3rem; 
+        }
+        
+        .contact-form { 
+            background: white; 
+            padding: 2rem; 
+            border-radius: 15px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+        }
+        .contact-form h2 { color: #2c3e50; margin-bottom: 1.5rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { 
+            display: block; 
+            margin-bottom: 0.5rem; 
+            color: #2c3e50; 
+            font-weight: 500; 
+        }
+        .form-group input, 
+        .form-group textarea, 
+        .form-group select { 
+            width: 100%; 
+            padding: 0.8rem; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            font-size: 1rem; 
+            transition: border-color 0.3s; 
+        }
+        .form-group input:focus, 
+        .form-group textarea:focus, 
+        .form-group select:focus { 
+            outline: none; 
+            border-color: #3498db; 
+        }
+        .form-group textarea { 
+            height: 120px; 
+            resize: vertical; 
+        }
+        .submit-btn { 
+            background: #3498db; 
+            color: white; 
+            border: none; 
+            padding: 1rem 2rem; 
+            border-radius: 25px; 
+            font-size: 1.1rem; 
+            cursor: pointer; 
+            transition: all 0.3s; 
+            width: 100%; 
+        }
+        .submit-btn:hover { background: #2980b9; transform: translateY(-2px); }
+        
+        .contact-info { 
+            background: white; 
+            padding: 2rem; 
+            border-radius: 15px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+        }
+        .contact-info h2 { color: #2c3e50; margin-bottom: 1.5rem; }
+        .info-item { 
+            display: flex; 
+            align-items: center; 
+            margin-bottom: 1.5rem; 
+            padding: 1rem; 
+            background: #f8f9fa; 
+            border-radius: 10px; 
+        }
+        .info-icon { 
+            font-size: 1.5rem; 
+            margin-right: 1rem; 
+            color: #3498db; 
+        }
+        .info-content h4 { color: #2c3e50; margin-bottom: 0.5rem; }
+        .info-content p { color: #666; margin: 0; }
+        
+        .office-locations { 
+            background: white; 
+            padding: 3rem 2rem; 
+            border-radius: 15px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+            margin-bottom: 2rem; 
+        }
+        .office-locations h2 { color: #2c3e50; margin-bottom: 2rem; text-align: center; }
+        .locations-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 2rem; 
+        }
+        .location-card { 
+            background: #f8f9fa; 
+            padding: 2rem; 
+            border-radius: 15px; 
+            text-align: center; 
+        }
+        .location-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+        .location-card h3 { color: #2c3e50; margin-bottom: 1rem; }
+        .location-card p { color: #666; margin-bottom: 0.5rem; }
+        
+        .faq-section { 
+            background: white; 
+            padding: 3rem 2rem; 
+            border-radius: 15px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+        }
+        .faq-section h2 { color: #2c3e50; margin-bottom: 2rem; text-align: center; }
+        .faq-item { 
+            margin-bottom: 1.5rem; 
+            padding: 1.5rem; 
+            background: #f8f9fa; 
+            border-radius: 10px; 
+        }
+        .faq-question { 
+            color: #2c3e50; 
+            font-weight: bold; 
+            margin-bottom: 0.5rem; 
+            cursor: pointer; 
+        }
+        .faq-answer { color: #666; }
+        
+        .success-message { 
+            background: #d4edda; 
+            color: #155724; 
+            padding: 1rem; 
+            border-radius: 8px; 
+            margin-bottom: 1rem; 
+            display: none; 
+        }
+        
+        @media (max-width: 768px) {
+            .contact-hero h1 { font-size: 2rem; }
+            .contact-hero p { font-size: 1rem; }
+            .contact-grid { grid-template-columns: 1fr; }
+            .locations-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <h2>LeadBot</h2>
+                </div>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="/" class="nav-link">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/about.html" class="nav-link">About Us</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/contact.html" class="nav-link">Contact</a>
+                    </li>
+                </ul>
+                <div class="hamburger">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        <!-- Hero Section -->
+        <section class="contact-hero">
+            <h1>Contact Us</h1>
+            <p>Get in touch with our team. We're here to help with any questions or support you need.</p>
+        </section>
+
+        <!-- Contact Form and Info -->
+        <div class="contact-grid">
+            <!-- Contact Form -->
+            <div class="contact-form">
+                <h2>Send us a Message</h2>
+                <div class="success-message" id="successMessage">
+                    Thank you! Your message has been sent successfully. We'll get back to you soon.
+                </div>
+                <form id="contactForm">
+                    <div class="form-group">
+                        <label for="name">Full Name *</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address *</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" name="phone">
+                    </div>
+                    <div class="form-group">
+                        <label for="subject">Subject *</label>
+                        <select id="subject" name="subject" required>
+                            <option value="">Select a subject</option>
+                            <option value="general">General Inquiry</option>
+                            <option value="support">Technical Support</option>
+                            <option value="partnership">Partnership</option>
+                            <option value="feedback">Feedback</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="message">Message *</label>
+                        <textarea id="message" name="message" required></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn">Send Message</button>
+                </form>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="contact-info">
+                <h2>Get in Touch</h2>
+                <div class="info-item">
+                    <div class="info-icon">📧</div>
+                    <div class="info-content">
+                        <h4>Email</h4>
+                        <p>info@leadbot.com</p>
+                        <p>support@leadbot.com</p>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon">📞</div>
+                    <div class="info-content">
+                        <h4>Phone</h4>
+                        <p>+44 (0) 20 1234 5678</p>
+                        <p>Mon-Fri: 9:00 AM - 6:00 PM</p>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon">📍</div>
+                    <div class="info-content">
+                        <h4>Head Office</h4>
+                        <p>123 LeadBot Street</p>
+                        <p>London, SW1A 1AA</p>
+                        <p>United Kingdom</p>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon">💬</div>
+                    <div class="info-content">
+                        <h4>Live Chat</h4>
+                        <p>Available 24/7</p>
+                        <p>Click the chat button below</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Office Locations -->
+        <section class="office-locations">
+            <h2>Our Offices</h2>
+            <div class="locations-grid">
+                <div class="location-card">
+                    <div class="location-icon">🏢</div>
+                    <h3>London</h3>
+                    <p>123 LeadBot Street</p>
+                    <p>London, SW1A 1AA</p>
+                    <p>United Kingdom</p>
+                </div>
+                <div class="location-card">
+                    <div class="location-icon">🏢</div>
+                    <h3>Manchester</h3>
+                    <p>456 Innovation Drive</p>
+                    <p>Manchester, M1 1AA</p>
+                    <p>United Kingdom</p>
+                </div>
+                <div class="location-card">
+                    <div class="location-icon">🏢</div>
+                    <h3>Birmingham</h3>
+                    <p>789 Tech Square</p>
+                    <p>Birmingham, B1 1AA</p>
+                    <p>United Kingdom</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section class="faq-section">
+            <h2>Frequently Asked Questions</h2>
+            <div class="faq-item">
+                <div class="faq-question">How does LeadBot work?</div>
+                <div class="faq-answer">LeadBot uses intelligent chatbot technology to gather your project requirements and match you with qualified tradesmen in your area. Simply start a conversation and we'll guide you through the process.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">Are the tradesmen verified?</div>
+                <div class="faq-answer">Yes, all tradesmen on our platform are thoroughly vetted and verified. We check their qualifications, insurance, and previous work to ensure quality service.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">What services do you cover?</div>
+                <div class="faq-answer">We cover all major trades including building/construction, electrical, plumbing, and many other services. If you need a specific trade, just ask!</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">How quickly will I get matched?</div>
+                <div class="faq-answer">Most customers receive their first quote within 24 hours. Our system works quickly to connect you with available tradesmen in your area.</div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Mobile menu functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburger = document.querySelector('.hamburger');
+            const navMenu = document.querySelector('.nav-menu');
+            
+            hamburger.addEventListener('click', () => {
+                hamburger.classList.toggle('active');
+                navMenu.classList.toggle('active');
+            });
+            
+            // Close menu when clicking on a link
+            document.querySelectorAll('.nav-link').forEach(n => n.addEventListener('click', () => {
+                hamburger.classList.remove('active');
+                navMenu.classList.remove('active');
+            }));
+            
+            // Contact form handling
+            const contactForm = document.getElementById('contactForm');
+            const successMessage = document.getElementById('successMessage');
+            
+            contactForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Get form data
+                const formData = new FormData(contactForm);
+                const data = Object.fromEntries(formData);
+                
+                // Show success message
+                successMessage.style.display = 'block';
+                contactForm.reset();
+                
+                // Hide success message after 5 seconds
+                setTimeout(() => {
+                    successMessage.style.display = 'none';
+                }, 5000);
+                
+                // In a real application, you would send this data to your server
+                console.log('Contact form submitted:', data);
+            });
+        });
+    </script>
+</body>
+</html>

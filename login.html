@@ -293,6 +293,8 @@
         // Handle Google Sign-In response
         async function handleCredentialResponse(response) {
             try {
+                console.log('Google sign-in response received');
+                
                 const result = await fetch('/api/google-auth', {
                     method: 'POST',
                     headers: {
@@ -304,6 +306,7 @@
                 });
 
                 const data = await result.json();
+                console.log('API response:', data);
                 
                 if (data.success) {
                     currentUser = data.user;
@@ -313,11 +316,14 @@
                     showMessage('Please complete your registration first', 'error');
                     // Store the email for registration
                     window.registrationEmail = data.email;
+                    window.registrationName = data.name;
+                    console.log('Storing registration data:', { email: data.email, name: data.name });
                     showRegistration();
                 } else {
                     showMessage(data.error || 'Sign-in failed', 'error');
                 }
             } catch (error) {
+                console.error('Sign-in error:', error);
                 showMessage('Sign-in error: ' + error.message, 'error');
             }
         }
@@ -362,6 +368,8 @@
                 location: document.getElementById('location').value
             };
 
+            console.log('Submitting registration with data:', formData);
+
             try {
                 const response = await fetch('/api/register', {
                     method: 'POST',
@@ -372,6 +380,7 @@
                 });
 
                 const data = await response.json();
+                console.log('Registration response:', data);
                 
                 if (data.success) {
                     showMessage('Registration successful! Please sign in with Google.', 'success');
@@ -380,6 +389,7 @@
                     showMessage(data.error || 'Registration failed', 'error');
                 }
             } catch (error) {
+                console.error('Registration error:', error);
                 showMessage('Registration error: ' + error.message, 'error');
             }
         });

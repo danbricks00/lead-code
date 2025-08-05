@@ -19,16 +19,28 @@ export default function handler(req, res) {
   try {
     const { credential } = req.body;
     
-    // For now, we'll extract email from the credential
-    // In production, you should verify the Google token properly
-    let email = 'test@example.com'; // Placeholder
+    // Extract email from the Google credential
+    let email = null;
+    let name = null;
     
-    // Try to decode the credential (this is a simplified version)
     try {
-      const payload = JSON.parse(atob(credential.split('.')[1]));
-      email = payload.email;
+      // Decode the JWT token (Google credential is a JWT)
+      const parts = credential.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        email = payload.email;
+        name = payload.name;
+        console.log('Decoded credential:', { email, name });
+      }
     } catch (e) {
-      console.log('Could not decode credential, using placeholder email');
+      console.error('Error decoding credential:', e);
+    }
+    
+    if (!email) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Could not extract email from Google credential' 
+      });
     }
     
     // Check if user is registered
@@ -45,7 +57,8 @@ export default function handler(req, res) {
         success: false, 
         needsRegistration: true,
         message: 'Please complete registration first',
-        email: email
+        email: email,
+        name: name
       });
     }
   } catch (error) {

@@ -31,7 +31,9 @@ export default function handler(req, res) {
       },
       allEnvVars: Object.keys(process.env).filter(key => 
         key.includes('GMAIL') || key.includes('GOOGLE')
-      )
+      ),
+      totalEnvVars: Object.keys(process.env).length,
+      sampleEnvVars: Object.keys(process.env).slice(0, 10) // Show first 10 env vars
     };
 
     console.log('🔍 Environment Check:', envCheck);
@@ -40,7 +42,8 @@ export default function handler(req, res) {
       success: true,
       message: 'Environment variables check',
       data: envCheck,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      note: 'If all variables show ❌ Missing, Vercel may need to redeploy'
     });
 
   } catch (error) {

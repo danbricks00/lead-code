@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 3px; white-space: pre-wrap; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>🔧 API Testing Tool</h1>
+    
+    <div class="test-section">
+        <h3>1. Test Environment Variables</h3>
+        <button onclick="testEnv()">Test Environment Variables</button>
+        <div id="env-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Test Basic API</h3>
+        <button onclick="testHello()">Test Hello API</button>
+        <div id="hello-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Test Lead Submission</h3>
+        <button onclick="testLead()">Test Lead API</button>
+        <div id="lead-result" class="result"></div>
+    </div>
+
+    <script>
+        const baseUrl = 'https://lead-code-git-main-dan-buis-projects-e44a173c.vercel.app';
+
+        async function testEnv() {
+            const resultDiv = document.getElementById('env-result');
+            resultDiv.textContent = 'Testing...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/test-env`);
+                const data = await response.json();
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testHello() {
+            const resultDiv = document.getElementById('hello-result');
+            resultDiv.textContent = 'Testing...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/hello`);
+                const data = await response.json();
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testLead() {
+            const resultDiv = document.getElementById('lead-result');
+            resultDiv.textContent = 'Testing...';
+            resultDiv.className = 'result';
+            
+            try {
+                const testData = {
+                    customerName: "Test Customer",
+                    customerEmail: "test@example.com",
+                    customerPhone: "1234567890",
+                    selectedService: "builder",
+                    projectDetails: "Test project",
+                    projectSize: "Medium",
+                    specificDetails: "Test details",
+                    location: "Test Location",
+                    budget: "£5000",
+                    timeline: "1 month"
+                };
+
+                const response = await fetch(`${baseUrl}/api/send-to-sheets`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                const data = await response.json();
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+    </script>
+</body>
+</html> 

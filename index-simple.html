@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LeadBot - Static Test</title>
+</head>
+<body>
+    <h1>✅ LeadBot is Working!</h1>
+    <p>If you can see this page, Vercel is serving static files correctly.</p>
+    <p>Current time: <span id="time"></span></p>
+    
+    <h2>Test Links:</h2>
+    <ul>
+        <li><a href="/working.html">Working Test</a></li>
+        <li><a href="/hello.html">Hello Page</a></li>
+        <li><a href="/test.txt">Text File</a></li>
+    </ul>
+
+    <script>
+        document.getElementById('time').textContent = new Date().toLocaleString();
+    </script>
+</body>
+</html> 

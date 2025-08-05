@@ -1,26 +1,24 @@
-// Simple in-memory database for registered users
-let registeredUsers = [];
+// Simple in-memory database for tradesmen
+let tradesmen = [];
 
-export function addUser(userData) {
-  const user = {
-    id: Date.now().toString(),
-    email: userData.email,
-    tradeType: userData.tradeType,
-    businessName: userData.businessName,
-    phone: userData.phone,
-    location: userData.location,
-    status: 'pending',
-    registeredAt: new Date().toISOString()
-  };
-  
-  registeredUsers.push(user);
-  return user;
+export function addTradesman(tradesman) {
+  tradesmen.push(tradesman);
+  return tradesman;
 }
 
-export function findUserByEmail(email) {
-  return registeredUsers.find(user => user.email === email);
+export function getTradesmanByEmail(email) {
+  return tradesmen.find(t => t.email === email);
 }
 
-export function getAllUsers() {
-  return registeredUsers;
+export function getAllTradesmen() {
+  return tradesmen;
+}
+
+export function updateTradesman(email, updates) {
+  const index = tradesmen.findIndex(t => t.email === email);
+  if (index !== -1) {
+    tradesmen[index] = { ...tradesmen[index], ...updates };
+    return tradesmen[index];
+  }
+  return null;
 } 

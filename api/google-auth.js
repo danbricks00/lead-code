@@ -1,5 +1,4 @@
-// Google authentication endpoint
-import { findUserByEmail } from './database.js';
+import { getTradesmanByEmail } from './database.js';
 
 export default function handler(req, res) {
   // Set CORS headers
@@ -18,51 +17,60 @@ export default function handler(req, res) {
 
   try {
     const { credential } = req.body;
-    
-    // Extract email from the Google credential
-    let email = null;
-    let name = null;
-    
+    console.log('🔐 Google auth request received');
+
+    if (!credential) {
+      return res.status(400).json({
+        success: false,
+        error: 'No credential provided'
+      });
+    }
+
+    // Decode the JWT token (simplified - in production you'd verify the signature)
     try {
-      // Decode the JWT token (Google credential is a JWT)
-      const parts = credential.split('.');
-      if (parts.length === 3) {
-        const payload = JSON.parse(atob(parts[1]));
-        email = payload.email;
-        name = payload.name;
-        console.log('Decoded credential:', { email, name });
+      const payload = JSON.parse(atob(credential.split('.')[1]));
+      console.log('📋 Decoded payload:', payload);
+
+      const email = payload.email;
+      const name = payload.name;
+
+      // Check if user is already registered
+      const existingTradesman = getTradesmanByEmail(email);
+      
+      if (existingTradesman) {
+        console.log('✅ User already registered:', existingTradesman);
+        return res.json({
+          success: true,
+          authenticated: true,
+          needsRegistration: false,
+          message: 'User authenticated successfully',
+          user: existingTradesman
+        });
+      } else {
+        console.log('⚠️ User not registered, needs registration');
+        return res.json({
+          success: false,
+          needsRegistration: true,
+          message: 'Please complete registration first',
+          email: email,
+          name: name
+        });
       }
-    } catch (e) {
-      console.error('Error decoding credential:', e);
-    }
-    
-    if (!email) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Could not extract email from Google credential' 
+
+    } catch (decodeError) {
+      console.error('❌ Error decoding credential:', decodeError);
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid credential format'
       });
     }
-    
-    // Check if user is registered
-    const user = findUserByEmail(email);
-    
-    if (user) {
-      res.json({ 
-        success: true, 
-        user: user,
-        message: 'Successfully signed in!'
-      });
-    } else {
-      res.json({ 
-        success: false, 
-        needsRegistration: true,
-        message: 'Please complete registration first',
-        email: email,
-        name: name
-      });
-    }
+
   } catch (error) {
-    console.error('Google auth error:', error);
-    res.status(500).json({ success: false, error: 'Authentication failed' });
+    console.error('❌ Google auth error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Authentication failed',
+      details: error.message
+    });
   }
 } 

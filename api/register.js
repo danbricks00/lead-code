@@ -1,5 +1,4 @@
-// Registration endpoint
-import { addUser, findUserByEmail } from './database.js';
+import { addTradesman, getTradesmanByEmail } from './database.js';
 
 export default function handler(req, res) {
   // Set CORS headers
@@ -17,29 +16,42 @@ export default function handler(req, res) {
   }
 
   try {
-    const { email, tradeType, businessName, phone, location } = req.body;
-    
-    // Check if user already exists
-    const existingUser = findUserByEmail(email);
-    if (existingUser) {
-      return res.json({ 
-        success: false, 
-        message: 'User already registered. Please sign in with Google.',
-        user: existingUser,
-        alreadyRegistered: true
+    const { email, name, tradeType } = req.body;
+    console.log('📝 Registration request:', { email, name, tradeType });
+
+    // Check if tradesman already exists
+    const existingTradesman = getTradesmanByEmail(email);
+    if (existingTradesman) {
+      return res.json({
+        success: false,
+        error: 'Tradesman already registered',
+        tradesman: existingTradesman
       });
     }
-    
-    // Add new user
-    const newUser = addUser({ email, tradeType, businessName, phone, location });
-    
-    res.json({ 
-      success: true, 
-      message: 'Registration successful! Please sign in with Google.',
-      user: newUser
+
+    // Add new tradesman
+    const newTradesman = {
+      email,
+      name,
+      tradeType,
+      registeredAt: new Date().toISOString()
+    };
+
+    addTradesman(newTradesman);
+    console.log('✅ Tradesman registered:', newTradesman);
+
+    res.json({
+      success: true,
+      message: 'Tradesman registered successfully',
+      tradesman: newTradesman
     });
+
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ success: false, error: 'Registration failed' });
+    console.error('❌ Registration error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to register tradesman',
+      details: error.message
+    });
   }
 } 

@@ -1,5 +1,4 @@
-// Debug API to check database contents
-import { getAllUsers } from './database.js';
+import { getAllTradesmen } from './database.js';
 
 export default function handler(req, res) {
   // Set CORS headers
@@ -17,14 +16,23 @@ export default function handler(req, res) {
   }
 
   try {
-    const users = getAllUsers();
-    res.json({ 
+    const tradesmen = getAllTradesmen();
+    console.log('🔍 Debug: All tradesmen:', tradesmen);
+
+    res.json({
       success: true,
-      userCount: users.length,
-      users: users
+      message: 'Debug information',
+      tradesmenCount: tradesmen.length,
+      tradesmen: tradesmen,
+      timestamp: new Date().toISOString()
     });
+
   } catch (error) {
-    console.error('Debug error:', error);
-    res.status(500).json({ success: false, error: 'Debug failed' });
+    console.error('❌ Debug error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get debug info',
+      details: error.message
+    });
   }
 } 

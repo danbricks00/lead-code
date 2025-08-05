@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Page - LeadBot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 LeadBot - Test Page</h1>
+        <p>This is a test page to verify the Vercel deployment is working.</p>
+        
+        <div class="status success">
+            <strong>✅ Basic Deployment:</strong> This page is loading, which means Vercel is working!
+        </div>
+
+        <h3>Test Links:</h3>
+        <button class="button" onclick="testAPI()">Test API</button>
+        <button class="button" onclick="testMainPage()">Test Main Page</button>
+        
+        <div id="apiResult" class="status" style="display: none;"></div>
+        
+        <h3>Available Pages:</h3>
+        <ul>
+            <li><a href="/index.html">Main Page (index.html)</a></li>
+            <li><a href="/frontend.html">Chatbot (frontend.html)</a></li>
+            <li><a href="/login.html">Login (login.html)</a></li>
+            <li><a href="/about.html">About (about.html)</a></li>
+            <li><a href="/contact.html">Contact (contact.html)</a></li>
+        </ul>
+
+        <h3>API Endpoints:</h3>
+        <ul>
+            <li><a href="/api/hello">/api/hello</a></li>
+            <li><a href="/api/test">/api/test</a></li>
+        </ul>
+    </div>
+
+    <script>
+        function testAPI() {
+            const resultDiv = document.getElementById('apiResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'status';
+            resultDiv.innerHTML = 'Testing API...';
+            
+            fetch('/api/hello')
+                .then(response => response.json())
+                .then(data => {
+                    resultDiv.className = 'status success';
+                    resultDiv.innerHTML = `<strong>✅ API Working!</strong> Response: ${JSON.stringify(data)}`;
+                })
+                .catch(error => {
+                    resultDiv.className = 'status error';
+                    resultDiv.innerHTML = `<strong>❌ API Error:</strong> ${error.message}`;
+                });
+        }
+
+        function testMainPage() {
+            window.open('/index.html', '_blank');
+        }
+    </script>
+</body>
+</html> 

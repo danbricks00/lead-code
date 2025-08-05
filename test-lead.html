@@ -44,7 +44,8 @@
     </div>
 
     <div class="test-section">
-        <h3>4. Test Lead API (POST Method)</h3>
+        <h3>4. Test Lead API with Real Email</h3>
+        <input type="email" id="lead-email" placeholder="Enter your real email for testing" value="danbricks18@gmail.com">
         <button onclick="testLeadSubmission()">Submit Test Lead</button>
         <div id="lead-result" class="result"></div>
     </div>
@@ -144,13 +145,14 @@
 
         async function testLeadSubmission() {
             const resultDiv = document.getElementById('lead-result');
+            const emailInput = document.getElementById('lead-email');
             resultDiv.textContent = 'Submitting test lead...';
             resultDiv.className = 'result';
             
             try {
                 const testData = {
                     customerName: "Test Customer",
-                    customerEmail: "test@example.com",
+                    customerEmail: emailInput.value || "danbricks18@gmail.com",
                     customerPhone: "1234567890",
                     selectedService: "builder",
                     projectDetails: "Test project for API testing",

@@ -311,6 +311,8 @@
                     showMessage('Successfully signed in!', 'success');
                 } else if (data.needsRegistration) {
                     showMessage('Please complete your registration first', 'error');
+                    // Store the email for registration
+                    window.registrationEmail = data.email;
                     showRegistration();
                 } else {
                     showMessage(data.error || 'Sign-in failed', 'error');
@@ -353,6 +355,7 @@
             e.preventDefault();
             
             const formData = {
+                email: window.registrationEmail || 'test@example.com',
                 tradeType: document.getElementById('tradeType').value,
                 businessName: document.getElementById('businessName').value,
                 phone: document.getElementById('phone').value,

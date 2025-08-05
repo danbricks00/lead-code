@@ -973,7 +973,7 @@
 
             console.log('Lead generated:', leadData);
 
-            fetch('/api/test-lead', {
+            fetch('/api/send-to-sheets', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(leadData)

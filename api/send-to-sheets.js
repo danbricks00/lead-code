@@ -1,5 +1,4 @@
 import { google } from 'googleapis';
-import * as nodemailer from 'nodemailer';
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -108,7 +107,8 @@ export default async function handler(req, res) {
         console.log('📧 From:', process.env.GMAIL_USER);
         console.log('📧 To:', leadData.customerEmail);
         
-        const transporter = nodemailer.createTransporter({
+        const nodemailer = await import('nodemailer');
+        const transporter = nodemailer.default.createTransporter({
           service: 'gmail',
           auth: {
             user: process.env.GMAIL_USER,
@@ -163,7 +163,8 @@ export default async function handler(req, res) {
       if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
         console.log('✅ Gmail credentials found, attempting to send tradesman email...');
         
-        const transporter = nodemailer.createTransporter({
+        const nodemailer = await import('nodemailer');
+        const transporter = nodemailer.default.createTransporter({
           service: 'gmail',
           auth: {
             user: process.env.GMAIL_USER,

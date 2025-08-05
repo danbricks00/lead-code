@@ -973,17 +973,28 @@
 
             console.log('Lead generated:', leadData);
 
-            fetch('/api/send-to-sheets', {
+            fetch('/api/test-lead', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(leadData)
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 console.log('Success:', data);
+                if (data.success) {
+                    addMessage("✅ Lead submitted successfully! Check your email for confirmation.");
+                } else {
+                    addMessage("❌ There was an issue submitting your lead. Please try again.");
+                }
             })
             .catch(error => {
                 console.error('Error:', error);
+                addMessage("❌ Sorry, there was an error submitting your lead. Please try again later.");
             });
 
             chatState = {

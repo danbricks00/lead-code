@@ -1,5 +1,5 @@
 import { google } from 'googleapis';
-import nodemailer from 'nodemailer';
+import * as nodemailer from 'nodemailer';
 
 export default async function handler(req, res) {
   // Set CORS headers

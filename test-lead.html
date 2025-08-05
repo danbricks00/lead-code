@@ -18,6 +18,12 @@
     <h1>🧪 Test Lead Submission</h1>
     
     <div class="test-section">
+        <h3>0. Test Basic API</h3>
+        <button onclick="testBasic()">Test Basic API</button>
+        <div id="basic-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
         <h3>1. Test Simple API (GET)</h3>
         <button onclick="testSimpleGet()">Test Simple GET</button>
         <div id="simple-get-result" class="result"></div>
@@ -37,6 +43,22 @@
 
     <script>
         const baseUrl = 'https://lead-code-git-main-dan-buis-projects-e44a173c.vercel.app';
+
+        async function testBasic() {
+            const resultDiv = document.getElementById('basic-result');
+            resultDiv.textContent = 'Testing basic API...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/test-basic`);
+                const data = await response.json();
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
 
         async function testSimpleGet() {
             const resultDiv = document.getElementById('simple-get-result');

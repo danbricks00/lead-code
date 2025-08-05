@@ -25,6 +25,11 @@ export default async function handler(req, res) {
     let tradesmanEmailSent = false;
 
     // 1. Try to add to Google Sheets (if credentials are available)
+    console.log('🔍 Checking Google Sheets credentials...');
+    console.log('GOOGLE_PROJECT_ID:', process.env.GOOGLE_PROJECT_ID ? '✅ Set' : '❌ Missing');
+    console.log('GOOGLE_PRIVATE_KEY:', process.env.GOOGLE_PRIVATE_KEY ? '✅ Set' : '❌ Missing');
+    console.log('GOOGLE_SPREADSHEET_ID:', process.env.GOOGLE_SPREADSHEET_ID ? '✅ Set' : '❌ Missing');
+    
     try {
       if (process.env.GOOGLE_PROJECT_ID && process.env.GOOGLE_PRIVATE_KEY) {
         const auth = new google.auth.GoogleAuth({
@@ -79,6 +84,10 @@ export default async function handler(req, res) {
     }
 
     // 2. Try to send email to customer (if Gmail credentials are available)
+    console.log('🔍 Checking Gmail credentials...');
+    console.log('GMAIL_USER:', process.env.GMAIL_USER ? '✅ Set' : '❌ Missing');
+    console.log('GMAIL_APP_PASSWORD:', process.env.GMAIL_APP_PASSWORD ? '✅ Set' : '❌ Missing');
+    
     try {
       if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
         const transporter = nodemailer.createTransporter({

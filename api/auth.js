@@ -1,6 +1,6 @@
 // Combined authentication API
 export default function handler(req, res) {
-  const { method, url } = req;
+  const { method, query } = req;
 
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -12,23 +12,19 @@ export default function handler(req, res) {
     return res.status(200).end();
   }
 
-  // Route based on URL path
-  if (url.includes('/auth/google')) {
-    return handleGoogleAuth(req, res);
-  } else if (url.includes('/auth/status')) {
+  // Route based on query parameters
+  if (query.status) {
     return handleAuthStatus(req, res);
-  } else if (url.includes('/auth/register')) {
+  } else if (query.register) {
     return handleRegister(req, res);
+  } else if (method === 'POST') {
+    return handleGoogleAuth(req, res);
   } else {
     return res.status(404).json({ error: 'Route not found' });
   }
 }
 
 function handleGoogleAuth(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
   try {
     const { credential } = req.body;
     
@@ -44,10 +40,6 @@ function handleGoogleAuth(req, res) {
 }
 
 function handleAuthStatus(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
   try {
     res.json({ authenticated: false });
   } catch (error) {
@@ -57,10 +49,6 @@ function handleAuthStatus(req, res) {
 }
 
 function handleRegister(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
   try {
     const { tradeType, businessName, phone, location } = req.body;
     

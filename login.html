@@ -293,7 +293,7 @@
         // Handle Google Sign-In response
         async function handleCredentialResponse(response) {
             try {
-                const result = await fetch('/api/auth', {
+                const result = await fetch('/api/google-auth', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -360,7 +360,7 @@
             };
 
             try {
-                const response = await fetch('/api/auth?register=true', {
+                const response = await fetch('/api/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -414,15 +414,11 @@
         // Check authentication status
         async function checkAuthStatus() {
             try {
-                const response = await fetch('/api/auth?status=true');
+                const response = await fetch('/api/test');
                 const data = await response.json();
-                
-                if (data.authenticated) {
-                    currentUser = data.user;
-                    showUserDashboard();
-                }
+                console.log('API test response:', data);
             } catch (error) {
-                console.log('Not authenticated');
+                console.log('API test failed:', error);
             }
         }
     </script>

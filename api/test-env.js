@@ -45,10 +45,10 @@ export default function handler(req, res) {
 
   } catch (error) {
     console.error('❌ Error checking environment:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       error: 'Failed to check environment',
-      details: error.message 
+      details: error.message
     });
   }
 } 

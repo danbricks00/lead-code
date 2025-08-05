@@ -2,16 +2,47 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Lead Chatbot</title>
+    <title>LeadBot - Connect with Qualified Tradesmen</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; background-color: #f8f9fa; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-        header { background: linear-gradient(135deg, #2c3e50, #3498db); color: white; padding: 0; position: fixed; width: 100%; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
         
-        /* Navigation Styles */
-        .navbar { padding: 1rem 0; }
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            line-height: 1.6; 
+            color: #1a1a1a; 
+            background-color: #ffffff; 
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 0 20px; 
+        }
+        
+        /* Header & Navigation */
+        header { 
+            background: rgba(255, 255, 255, 0.95); 
+            backdrop-filter: blur(10px);
+            color: #1a1a1a; 
+            padding: 0; 
+            position: fixed; 
+            width: 100%; 
+            top: 0; 
+            z-index: 1000; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .navbar { 
+            padding: 1rem 0; 
+        }
+        
         .nav-container { 
             max-width: 1200px; 
             margin: 0 auto; 
@@ -20,23 +51,75 @@
             justify-content: space-between; 
             align-items: center; 
         }
-        .nav-logo h2 { margin: 0; font-size: 1.8rem; }
+        
+        .nav-logo { 
+            display: flex; 
+            align-items: center; 
+            gap: 0.5rem; 
+        }
+        
+        .nav-logo h2 { 
+            margin: 0; 
+            font-size: 1.8rem; 
+            font-weight: 700; 
+            color: #1a1a1a; 
+        }
+        
+        .nav-logo .logo-icon {
+            font-size: 2rem;
+            color: #667eea;
+        }
+        
         .nav-menu { 
             display: flex; 
             list-style: none; 
             margin: 0; 
             padding: 0; 
             gap: 2rem; 
+            align-items: center;
         }
+        
         .nav-link { 
-            color: white; 
+            color: #1a1a1a; 
             text-decoration: none; 
             font-weight: 500; 
-            transition: opacity 0.3s; 
+            transition: all 0.3s; 
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
         }
-        .nav-link:hover { opacity: 0.8; }
-        .hamburger { display: none; flex-direction: column; cursor: pointer; }
-        .bar { width: 25px; height: 3px; background: white; margin: 3px 0; transition: 0.3s; }
+        
+        .nav-link:hover { 
+            background: #f8f9fa; 
+            color: #667eea; 
+        }
+        
+        .nav-link.login-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .nav-link.login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .hamburger { 
+            display: none; 
+            flex-direction: column; 
+            cursor: pointer; 
+        }
+        
+        .bar { 
+            width: 25px; 
+            height: 3px; 
+            background: #1a1a1a; 
+            margin: 3px 0; 
+            transition: 0.3s; 
+        }
         
         @media (max-width: 768px) {
             .hamburger { display: flex; }
@@ -45,137 +128,435 @@
                 left: -100%; 
                 top: 70px; 
                 flex-direction: column; 
-                background: linear-gradient(135deg, #2c3e50, #3498db); 
+                background: rgba(255, 255, 255, 0.98); 
+                backdrop-filter: blur(10px);
                 width: 100%; 
                 text-align: center; 
                 transition: 0.3s; 
                 padding: 2rem 0; 
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             }
             .nav-menu.active { left: 0; }
             .nav-item { margin: 1rem 0; }
         }
-        main { margin-top: 80px; padding: 2rem 0; }
-        .chatbot-container { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
-        .chat-toggle { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #3498db, #2980b9); border: none; color: white; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.3s; }
-        .chat-toggle:hover { transform: scale(1.1); }
-        .chat-window { position: absolute; bottom: 70px; right: 0; width: 350px; height: 500px; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: none; flex-direction: column; overflow: hidden; }
-        .chat-header { background: linear-gradient(135deg, #2c3e50, #3498db); color: white; padding: 1rem; text-align: center; font-weight: bold; }
-        .chat-messages { flex: 1; padding: 1rem; overflow-y: auto; background: #f8f9fa; display: flex; flex-direction: column; }
-        .message { margin-bottom: 1rem; padding: 0.8rem; border-radius: 10px; max-width: 80%; }
-        .bot-message { background: #e3f2fd; align-self: flex-start; }
-        .user-message { background: #3498db; color: white; align-self: flex-end; margin-left: auto; }
-        .chat-input-container { padding: 1rem; border-top: 1px solid #eee; display: flex; gap: 0.5rem; }
-        .chat-input { flex: 1; padding: 0.8rem; border: 1px solid #ddd; border-radius: 25px; outline: none; }
-        .send-button { background: #3498db; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; }
-        .quick-options { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
-        .quick-option { background: #3498db; color: white; border: none; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; font-size: 0.9rem; }
-        .quick-option:hover { background: #2980b9; }
-        @media (max-width: 768px) {
-            .chat-window { width: 300px; height: 400px; }
+        
+        main { 
+            margin-top: 80px; 
+            padding: 2rem 0; 
         }
-        @media (max-width: 480px) {
-            .chat-window { width: calc(100vw - 40px); right: 20px; left: 20px; }
-        }
-        .typing-indicator { display: flex; align-items: center; gap: 0.3rem; padding: 0.8rem; }
-        .typing-dot { width: 8px; height: 8px; border-radius: 50%; background: #3498db; animation: typing 1.4s infinite ease-in-out; }
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes typing { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-10px); } }
         
         /* Hero Section */
         .hero { 
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
             color: white; 
-            padding: 4rem 2rem; 
+            padding: 6rem 2rem; 
             text-align: center; 
-            border-radius: 15px; 
-            margin-bottom: 3rem; 
+            border-radius: 20px; 
+            margin-bottom: 4rem; 
+            position: relative;
+            overflow: hidden;
         }
-        .hero-content h1 { font-size: 2.5rem; margin-bottom: 1rem; }
-        .hero-content p { font-size: 1.2rem; margin-bottom: 2rem; opacity: 0.9; }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            pointer-events: none;
+        }
+        
+        .hero-content { 
+            position: relative; 
+            z-index: 1; 
+        }
+        
+        .hero-content h1 { 
+            font-size: 3.5rem; 
+            font-weight: 700;
+            margin-bottom: 1.5rem; 
+            line-height: 1.2;
+        }
+        
+        .hero-content p { 
+            font-size: 1.3rem; 
+            margin-bottom: 2.5rem; 
+            opacity: 0.95; 
+            font-weight: 400;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
         .cta-button { 
-            background: #3498db; 
-            color: white; 
+            background: rgba(255, 255, 255, 0.95); 
+            color: #667eea; 
             border: none; 
-            padding: 1rem 2rem; 
-            border-radius: 25px; 
+            padding: 1.2rem 2.5rem; 
+            border-radius: 50px; 
             font-size: 1.1rem; 
+            font-weight: 600;
             cursor: pointer; 
             transition: all 0.3s; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
-        .cta-button:hover { background: #2980b9; transform: translateY(-2px); }
+        
+        .cta-button:hover { 
+            background: white; 
+            transform: translateY(-3px); 
+            box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+        }
         
         /* Services Section */
-        .services { padding: 3rem 0; }
-        .services h2 { text-align: center; font-size: 2rem; margin-bottom: 2rem; color: #2c3e50; }
+        .services { 
+            padding: 4rem 0; 
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .section-header h2 { 
+            font-size: 2.5rem; 
+            font-weight: 700;
+            margin-bottom: 1rem; 
+            color: #1a1a1a; 
+        }
+        
+        .section-header p {
+            font-size: 1.1rem;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
         .services-grid { 
             display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
             gap: 2rem; 
         }
+        
         .service-card { 
             background: white; 
-            padding: 2rem; 
-            border-radius: 15px; 
+            padding: 2.5rem; 
+            border-radius: 20px; 
             text-align: center; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
-            transition: transform 0.3s; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+            transition: all 0.3s; 
+            border: 1px solid #f0f0f0;
+            position: relative;
+            overflow: hidden;
         }
-        .service-card:hover { transform: translateY(-5px); }
-        .service-icon { font-size: 3rem; margin-bottom: 1rem; }
-        .service-card h3 { color: #2c3e50; margin-bottom: 1rem; }
-        .service-card p { color: #666; line-height: 1.6; }
+        
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .service-card:hover { 
+            transform: translateY(-8px); 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+        }
+        
+        .service-icon { 
+            font-size: 3.5rem; 
+            margin-bottom: 1.5rem; 
+            display: block;
+        }
+        
+        .service-card h3 { 
+            color: #1a1a1a; 
+            margin-bottom: 1rem; 
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .service-card p { 
+            color: #666; 
+            line-height: 1.7; 
+            font-size: 1rem;
+        }
         
         /* How It Works Section */
         .how-it-works { 
-            background: #f8f9fa; 
-            padding: 3rem 2rem; 
-            border-radius: 15px; 
-            margin: 3rem 0; 
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); 
+            padding: 4rem 2rem; 
+            border-radius: 20px; 
+            margin: 4rem 0; 
         }
-        .how-it-works h2 { text-align: center; font-size: 2rem; margin-bottom: 2rem; color: #2c3e50; }
+        
         .steps-grid { 
             display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
             gap: 2rem; 
         }
+        
         .step { 
             text-align: center; 
-            padding: 1rem; 
+            padding: 2rem; 
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
         }
+        
         .step-number { 
-            width: 50px; 
-            height: 50px; 
-            background: #3498db; 
+            width: 60px; 
+            height: 60px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
             color: white; 
             border-radius: 50%; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
             font-size: 1.5rem; 
-            font-weight: bold; 
-            margin: 0 auto 1rem; 
+            font-weight: 700; 
+            margin: 0 auto 1.5rem; 
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
         }
-        .step h3 { color: #2c3e50; margin-bottom: 1rem; }
-        .step p { color: #666; }
+        
+        .step h3 { 
+            color: #1a1a1a; 
+            margin-bottom: 1rem; 
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .step p { 
+            color: #666; 
+            line-height: 1.6;
+        }
         
         /* Contact Section */
         .contact-section { 
             text-align: center; 
-            padding: 3rem 2rem; 
+            padding: 4rem 2rem; 
             background: white; 
-            border-radius: 15px; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+            border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+            border: 1px solid #f0f0f0;
         }
-        .contact-section h2 { font-size: 2rem; margin-bottom: 1rem; color: #2c3e50; }
-        .contact-section p { font-size: 1.1rem; margin-bottom: 2rem; color: #666; }
         
-        /* Responsive Design */
+        .contact-section h2 { 
+            font-size: 2.5rem; 
+            margin-bottom: 1rem; 
+            color: #1a1a1a; 
+            font-weight: 700;
+        }
+        
+        .contact-section p { 
+            font-size: 1.2rem; 
+            margin-bottom: 2rem; 
+            color: #666; 
+        }
+        
+        /* Chatbot Styles */
+        .chatbot-container { 
+            position: fixed; 
+            bottom: 20px; 
+            right: 20px; 
+            z-index: 1000; 
+        }
+        
+        .chat-toggle { 
+            width: 60px; 
+            height: 60px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, #667eea, #764ba2); 
+            border: none; 
+            color: white; 
+            font-size: 1.5rem; 
+            cursor: pointer; 
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); 
+            transition: all 0.3s; 
+        }
+        
+        .chat-toggle:hover { 
+            transform: scale(1.1); 
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.5);
+        }
+        
+        .chat-window { 
+            position: absolute; 
+            bottom: 70px; 
+            right: 0; 
+            width: 380px; 
+            height: 550px; 
+            background: white; 
+            border-radius: 20px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15); 
+            display: none; 
+            flex-direction: column; 
+            overflow: hidden; 
+            border: 1px solid #f0f0f0;
+        }
+        
+        .chat-header { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            padding: 1.2rem; 
+            text-align: center; 
+            font-weight: 600; 
+            font-size: 1.1rem;
+        }
+        
+        .chat-messages { 
+            flex: 1; 
+            padding: 1.2rem; 
+            overflow-y: auto; 
+            background: #fafafa; 
+            display: flex; 
+            flex-direction: column; 
+        }
+        
+        .message { 
+            margin-bottom: 1rem; 
+            padding: 1rem; 
+            border-radius: 15px; 
+            max-width: 85%; 
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .bot-message { 
+            background: white; 
+            align-self: flex-start; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #f0f0f0;
+        }
+        
+        .user-message { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            align-self: flex-end; 
+            margin-left: auto; 
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .chat-input-container { 
+            padding: 1.2rem; 
+            border-top: 1px solid #f0f0f0; 
+            display: flex; 
+            gap: 0.8rem; 
+            background: white;
+        }
+        
+        .chat-input { 
+            flex: 1; 
+            padding: 1rem; 
+            border: 2px solid #f0f0f0; 
+            border-radius: 25px; 
+            outline: none; 
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+        
+        .chat-input:focus {
+            border-color: #667eea;
+        }
+        
+        .send-button { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            border: none; 
+            border-radius: 50%; 
+            width: 45px; 
+            height: 45px; 
+            cursor: pointer; 
+            font-size: 1.1rem;
+            transition: all 0.3s;
+        }
+        
+        .send-button:hover {
+            transform: scale(1.1);
+        }
+        
+        .quick-options { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 0.5rem; 
+            margin-top: 0.8rem; 
+        }
+        
+        .quick-option { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            border: none; 
+            padding: 0.6rem 1.2rem; 
+            border-radius: 20px; 
+            cursor: pointer; 
+            font-size: 0.9rem; 
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .quick-option:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .typing-indicator { 
+            display: flex; 
+            align-items: center; 
+            gap: 0.3rem; 
+            padding: 1rem; 
+        }
+        
+        .typing-dot { 
+            width: 8px; 
+            height: 8px; 
+            border-radius: 50%; 
+            background: #667eea; 
+            animation: typing 1.4s infinite ease-in-out; 
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing { 
+            0%, 60%, 100% { transform: translateY(0); } 
+            30% { transform: translateY(-10px); } 
+        }
+        
         @media (max-width: 768px) {
-            .hero-content h1 { font-size: 2rem; }
-            .hero-content p { font-size: 1rem; }
+            .hero-content h1 { font-size: 2.5rem; }
+            .hero-content p { font-size: 1.1rem; }
             .services-grid { grid-template-columns: 1fr; }
             .steps-grid { grid-template-columns: 1fr; }
+            .chat-window { width: 320px; height: 450px; }
+        }
+        
+        @media (max-width: 480px) {
+            .chat-window { width: calc(100vw - 40px); right: 20px; left: 20px; }
+            .hero { padding: 4rem 1rem; }
+            .hero-content h1 { font-size: 2rem; }
+        }
+        
+        /* Status Message */
+        .status-message {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            margin: 2rem 0;
+            text-align: center;
+            font-weight: 500;
+            border: 1px solid #c3e6cb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .status-message .check-icon {
+            font-size: 1.2rem;
         }
     </style>
 </head>
@@ -184,6 +565,7 @@
         <nav class="navbar">
             <div class="nav-container">
                 <div class="nav-logo">
+                    <span class="logo-icon">🔧</span>
                     <h2>LeadBot</h2>
                 </div>
                 <ul class="nav-menu">
@@ -197,7 +579,7 @@
                         <a href="/contact.html" class="nav-link">Contact</a>
                     </li>
                     <li class="nav-item">
-                        <a href="/login" class="nav-link" style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 5px;">Tradesman Login</a>
+                        <a href="/login.html" class="nav-link login-btn">Tradesman Login</a>
                     </li>
                 </ul>
                 <div class="hamburger">
@@ -209,77 +591,97 @@
         </nav>
     </header>
 
-    <main class="container">
-        <!-- Hero Section -->
-        <section class="hero">
-            <div class="hero-content">
-                <h1>Find Qualified Tradesmen</h1>
-                <p>Connect with trusted professionals for all your building, electrical, and plumbing needs. Get quotes from qualified tradesmen in your area.</p>
+    <main>
+        <div class="container">
+            <!-- Hero Section -->
+            <section class="hero">
+                <div class="hero-content">
+                    <h1>Connect with Qualified Tradesmen Instantly</h1>
+                    <p>Our intelligent chatbot matches you with the perfect tradesman for your project. Get quotes, schedule work, and complete your projects with confidence.</p>
+                    <button class="cta-button" onclick="openChat()">Get Started Now</button>
+                </div>
+            </section>
+
+            <!-- Status Message -->
+            <div class="status-message">
+                <span class="check-icon">✅</span>
+                <span>Status: API is working! Our system is ready to help you find the perfect tradesman.</span>
+            </div>
+
+            <!-- Services Section -->
+            <section class="services">
+                <div class="section-header">
+                    <h2>Why Choose LeadBot?</h2>
+                    <p>We've revolutionized how customers connect with tradesmen, making the process faster, easier, and more reliable than ever before.</p>
+                </div>
+                <div class="services-grid">
+                    <div class="service-card">
+                        <span class="service-icon">🤖</span>
+                        <h3>Smart Chatbot</h3>
+                        <p>Our intelligent chatbot collects project details and matches you with the right tradesmen based on your specific needs and location.</p>
+                    </div>
+                    <div class="service-card">
+                        <span class="service-icon">⚡</span>
+                        <h3>Instant Notifications</h3>
+                        <p>Get immediate email notifications when new leads are generated, ensuring you never miss a potential customer.</p>
+                    </div>
+                    <div class="service-card">
+                        <span class="service-icon">📊</span>
+                        <h3>Google Sheets Integration</h3>
+                        <p>All lead data is automatically organized in Google Sheets, making it easy to track and manage your business opportunities.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- How It Works Section -->
+            <section class="how-it-works">
+                <div class="section-header">
+                    <h2>How It Works</h2>
+                    <p>Getting started with LeadBot is simple and straightforward. Here's how our system works for you.</p>
+                </div>
+                <div class="steps-grid">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h3>Start a Conversation</h3>
+                        <p>Click the chat button and tell us about your project. Our chatbot will ask the right questions to understand your needs.</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h3>Get Matched</h3>
+                        <p>We'll match you with qualified tradesmen in your area who specialize in your type of project.</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h3>Connect & Complete</h3>
+                        <p>Receive quotes and contact information from tradesmen, then choose the best fit for your project.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contact Section -->
+            <section class="contact-section">
+                <h2>Ready to Get Started?</h2>
+                <p>Join thousands of satisfied customers who have found their perfect tradesman through LeadBot.</p>
                 <button class="cta-button" onclick="openChat()">Start Your Project</button>
-            </div>
-        </section>
-
-        <!-- Services Section -->
-        <section class="services">
-            <h2>Our Services</h2>
-            <div class="services-grid">
-                <div class="service-card">
-                    <div class="service-icon">🏗️</div>
-                    <h3>Building & Construction</h3>
-                    <p>From small repairs to major renovations, find qualified builders and construction professionals.</p>
-                </div>
-                <div class="service-card">
-                    <div class="service-icon">⚡</div>
-                    <h3>Electrical Services</h3>
-                    <p>Licensed electricians for installations, repairs, and electrical safety inspections.</p>
-                </div>
-                <div class="service-card">
-                    <div class="service-icon">🔧</div>
-                    <h3>Plumbing</h3>
-                    <p>Expert plumbers for repairs, installations, and emergency plumbing services.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- How It Works Section -->
-        <section class="how-it-works">
-            <h2>How It Works</h2>
-            <div class="steps-grid">
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <h3>Describe Your Project</h3>
-                    <p>Tell us what you need done and provide project details.</p>
-                </div>
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <h3>Get Matched</h3>
-                    <p>We'll connect you with qualified tradesmen in your area.</p>
-                </div>
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <h3>Receive Quotes</h3>
-                    <p>Get competitive quotes and choose the best professional for your project.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Contact Section -->
-        <section class="contact-section">
-            <h2>Ready to Start?</h2>
-            <p>Click the chat button below to begin your project journey!</p>
-            <button class="cta-button" onclick="openChat()">Chat Now</button>
-        </section>
+            </section>
+        </div>
     </main>
 
-    <!-- Chatbot -->
+    <!-- Chatbot Container -->
     <div class="chatbot-container">
-        <button class="chat-toggle" onclick="toggleChat()" title="Chat with us">💬</button>
+        <button class="chat-toggle" onclick="toggleChat()">💬</button>
         <div class="chat-window" id="chatWindow">
-            <div class="chat-header">Lead Chatbot</div>
-            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-header">
+                LeadBot Assistant
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="message bot-message">
+                    👋 Hi! I'm LeadBot, your personal assistant for finding qualified tradesmen. What type of project do you need help with today?
+                </div>
+            </div>
             <div class="chat-input-container">
                 <input type="text" class="chat-input" id="chatInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
-                <button class="send-button" onclick="sendMessage()">&#9658;</button>
+                <button class="send-button" onclick="sendMessage()">➤</button>
             </div>
         </div>
     </div>

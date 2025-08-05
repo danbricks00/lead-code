@@ -4,14 +4,45 @@
     <meta charset="UTF-8">
     <title>Contact Us - LeadBot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; background-color: #f8f9fa; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            line-height: 1.6; 
+            color: #1a1a1a; 
+            background-color: #ffffff; 
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 0 20px; 
+        }
         
         /* Header & Navigation */
-        header { background: linear-gradient(135deg, #2c3e50, #3498db); color: white; padding: 0; position: fixed; width: 100%; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .navbar { padding: 1rem 0; }
+        header { 
+            background: rgba(255, 255, 255, 0.95); 
+            backdrop-filter: blur(10px);
+            color: #1a1a1a; 
+            padding: 0; 
+            position: fixed; 
+            width: 100%; 
+            top: 0; 
+            z-index: 1000; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .navbar { 
+            padding: 1rem 0; 
+        }
+        
         .nav-container { 
             max-width: 1200px; 
             margin: 0 auto; 
@@ -20,23 +51,80 @@
             justify-content: space-between; 
             align-items: center; 
         }
-        .nav-logo h2 { margin: 0; font-size: 1.8rem; }
+        
+        .nav-logo { 
+            display: flex; 
+            align-items: center; 
+            gap: 0.5rem; 
+        }
+        
+        .nav-logo h2 { 
+            margin: 0; 
+            font-size: 1.8rem; 
+            font-weight: 700; 
+            color: #1a1a1a; 
+        }
+        
+        .nav-logo .logo-icon {
+            font-size: 2rem;
+            color: #667eea;
+        }
+        
         .nav-menu { 
             display: flex; 
             list-style: none; 
             margin: 0; 
             padding: 0; 
             gap: 2rem; 
+            align-items: center;
         }
+        
         .nav-link { 
-            color: white; 
+            color: #1a1a1a; 
             text-decoration: none; 
             font-weight: 500; 
-            transition: opacity 0.3s; 
+            transition: all 0.3s; 
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
         }
-        .nav-link:hover { opacity: 0.8; }
-        .hamburger { display: none; flex-direction: column; cursor: pointer; }
-        .bar { width: 25px; height: 3px; background: white; margin: 3px 0; transition: 0.3s; }
+        
+        .nav-link:hover { 
+            background: #f8f9fa; 
+            color: #667eea; 
+        }
+        
+        .nav-link.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .nav-link.login-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .nav-link.login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .hamburger { 
+            display: none; 
+            flex-direction: column; 
+            cursor: pointer; 
+        }
+        
+        .bar { 
+            width: 25px; 
+            height: 3px; 
+            background: #1a1a1a; 
+            margin: 3px 0; 
+            transition: 0.3s; 
+        }
         
         @media (max-width: 768px) {
             .hamburger { display: flex; }
@@ -45,165 +133,254 @@
                 left: -100%; 
                 top: 70px; 
                 flex-direction: column; 
-                background: linear-gradient(135deg, #2c3e50, #3498db); 
+                background: rgba(255, 255, 255, 0.98); 
+                backdrop-filter: blur(10px);
                 width: 100%; 
                 text-align: center; 
                 transition: 0.3s; 
                 padding: 2rem 0; 
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             }
             .nav-menu.active { left: 0; }
             .nav-item { margin: 1rem 0; }
         }
         
-        main { margin-top: 80px; padding: 2rem 0; }
+        main { 
+            margin-top: 80px; 
+            padding: 2rem 0; 
+        }
         
-        /* Contact Page Styles */
-        .contact-hero { 
+        /* Hero Section */
+        .hero { 
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
             color: white; 
-            padding: 4rem 2rem; 
+            padding: 6rem 2rem; 
             text-align: center; 
-            border-radius: 15px; 
-            margin-bottom: 3rem; 
-        }
-        .contact-hero h1 { font-size: 2.5rem; margin-bottom: 1rem; }
-        .contact-hero p { font-size: 1.2rem; opacity: 0.9; }
-        
-        .contact-grid { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 3rem; 
-            margin-bottom: 3rem; 
+            border-radius: 20px; 
+            margin-bottom: 4rem; 
+            position: relative;
+            overflow: hidden;
         }
         
-        .contact-form { 
-            background: white; 
-            padding: 2rem; 
-            border-radius: 15px; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            pointer-events: none;
         }
-        .contact-form h2 { color: #2c3e50; margin-bottom: 1.5rem; }
-        .form-group { margin-bottom: 1.5rem; }
-        .form-group label { 
-            display: block; 
-            margin-bottom: 0.5rem; 
-            color: #2c3e50; 
-            font-weight: 500; 
-        }
-        .form-group input, 
-        .form-group textarea, 
-        .form-group select { 
-            width: 100%; 
-            padding: 0.8rem; 
-            border: 1px solid #ddd; 
-            border-radius: 8px; 
-            font-size: 1rem; 
-            transition: border-color 0.3s; 
-        }
-        .form-group input:focus, 
-        .form-group textarea:focus, 
-        .form-group select:focus { 
-            outline: none; 
-            border-color: #3498db; 
-        }
-        .form-group textarea { 
-            height: 120px; 
-            resize: vertical; 
-        }
-        .submit-btn { 
-            background: #3498db; 
-            color: white; 
-            border: none; 
-            padding: 1rem 2rem; 
-            border-radius: 25px; 
-            font-size: 1.1rem; 
-            cursor: pointer; 
-            transition: all 0.3s; 
-            width: 100%; 
-        }
-        .submit-btn:hover { background: #2980b9; transform: translateY(-2px); }
         
-        .contact-info { 
-            background: white; 
-            padding: 2rem; 
-            border-radius: 15px; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+        .hero-content { 
+            position: relative; 
+            z-index: 1; 
         }
-        .contact-info h2 { color: #2c3e50; margin-bottom: 1.5rem; }
-        .info-item { 
-            display: flex; 
-            align-items: center; 
+        
+        .hero-content h1 { 
+            font-size: 3.5rem; 
+            font-weight: 700;
             margin-bottom: 1.5rem; 
-            padding: 1rem; 
-            background: #f8f9fa; 
-            border-radius: 10px; 
+            line-height: 1.2;
         }
-        .info-icon { 
-            font-size: 1.5rem; 
-            margin-right: 1rem; 
-            color: #3498db; 
-        }
-        .info-content h4 { color: #2c3e50; margin-bottom: 0.5rem; }
-        .info-content p { color: #666; margin: 0; }
         
-        .office-locations { 
-            background: white; 
-            padding: 3rem 2rem; 
-            border-radius: 15px; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
-            margin-bottom: 2rem; 
+        .hero-content p { 
+            font-size: 1.3rem; 
+            margin-bottom: 2.5rem; 
+            opacity: 0.95; 
+            font-weight: 400;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
-        .office-locations h2 { color: #2c3e50; margin-bottom: 2rem; text-align: center; }
-        .locations-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
-            gap: 2rem; 
-        }
-        .location-card { 
-            background: #f8f9fa; 
-            padding: 2rem; 
-            border-radius: 15px; 
-            text-align: center; 
-        }
-        .location-icon { font-size: 2.5rem; margin-bottom: 1rem; }
-        .location-card h3 { color: #2c3e50; margin-bottom: 1rem; }
-        .location-card p { color: #666; margin-bottom: 0.5rem; }
         
-        .faq-section { 
-            background: white; 
-            padding: 3rem 2rem; 
-            border-radius: 15px; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+        /* Contact Form */
+        .contact-section {
+            margin: 4rem 0;
         }
-        .faq-section h2 { color: #2c3e50; margin-bottom: 2rem; text-align: center; }
-        .faq-item { 
-            margin-bottom: 1.5rem; 
-            padding: 1.5rem; 
-            background: #f8f9fa; 
-            border-radius: 10px; 
-        }
-        .faq-question { 
-            color: #2c3e50; 
-            font-weight: bold; 
-            margin-bottom: 0.5rem; 
-            cursor: pointer; 
-        }
-        .faq-answer { color: #666; }
         
-        .success-message { 
-            background: #d4edda; 
-            color: #155724; 
-            padding: 1rem; 
-            border-radius: 8px; 
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: start;
+        }
+        
+        .contact-info {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border: 1px solid #f0f0f0;
+        }
+        
+        .contact-info h3 {
+            color: #1a1a1a;
+            margin-bottom: 2rem;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .contact-icon {
+            font-size: 1.5rem;
+            color: #667eea;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+        
+        .contact-details h4 {
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .contact-details p {
+            color: #666;
+            margin: 0;
+        }
+        
+        .contact-form {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border: 1px solid #f0f0f0;
+        }
+        
+        .contact-form h3 {
+            color: #1a1a1a;
+            margin-bottom: 2rem;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #1a1a1a;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #f0f0f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* FAQ Section */
+        .faq-section {
+            margin: 4rem 0;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .section-header h2 { 
+            font-size: 2.5rem; 
+            font-weight: 700;
             margin-bottom: 1rem; 
-            display: none; 
+            color: #1a1a1a; 
+        }
+        
+        .section-header p {
+            font-size: 1.1rem;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .faq-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+        }
+        
+        .faq-item {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
+        }
+        
+        .faq-item h4 {
+            color: #1a1a1a;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .faq-item p {
+            color: #666;
+            line-height: 1.6;
         }
         
         @media (max-width: 768px) {
-            .contact-hero h1 { font-size: 2rem; }
-            .contact-hero p { font-size: 1rem; }
-            .contact-grid { grid-template-columns: 1fr; }
-            .locations-grid { grid-template-columns: 1fr; }
+            .hero-content h1 { font-size: 2.5rem; }
+            .hero-content p { font-size: 1.1rem; }
+            .contact-grid { grid-template-columns: 1fr; gap: 2rem; }
+            .faq-grid { grid-template-columns: 1fr; }
+            .contact-info, .contact-form { padding: 2rem; }
         }
     </style>
 </head>
@@ -212,6 +389,7 @@
         <nav class="navbar">
             <div class="nav-container">
                 <div class="nav-logo">
+                    <span class="logo-icon">🔧</span>
                     <h2>LeadBot</h2>
                 </div>
                 <ul class="nav-menu">
@@ -222,7 +400,10 @@
                         <a href="/about.html" class="nav-link">About Us</a>
                     </li>
                     <li class="nav-item">
-                        <a href="/contact.html" class="nav-link">Contact</a>
+                        <a href="/contact.html" class="nav-link active">Contact</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/login.html" class="nav-link login-btn">Tradesman Login</a>
                     </li>
                 </ul>
                 <div class="hamburger">
@@ -234,143 +415,144 @@
         </nav>
     </header>
 
-    <main class="container">
-        <!-- Hero Section -->
-        <section class="contact-hero">
-            <h1>Contact Us</h1>
-            <p>Get in touch with our team. We're here to help with any questions or support you need.</p>
-        </section>
+    <main>
+        <div class="container">
+            <!-- Hero Section -->
+            <section class="hero">
+                <div class="hero-content">
+                    <h1>Get in Touch</h1>
+                    <p>Have questions about our services? Need help with your account? We're here to help you succeed.</p>
+                </div>
+            </section>
 
-        <!-- Contact Form and Info -->
-        <div class="contact-grid">
-            <!-- Contact Form -->
-            <div class="contact-form">
-                <h2>Send us a Message</h2>
-                <div class="success-message" id="successMessage">
-                    Thank you! Your message has been sent successfully. We'll get back to you soon.
-                </div>
-                <form id="contactForm">
-                    <div class="form-group">
-                        <label for="name">Full Name *</label>
-                        <input type="text" id="name" name="name" required>
+            <!-- Contact Section -->
+            <section class="contact-section">
+                <div class="contact-grid">
+                    <!-- Contact Information -->
+                    <div class="contact-info">
+                        <h3>Contact Information</h3>
+                        <div class="contact-item">
+                            <div class="contact-icon">📧</div>
+                            <div class="contact-details">
+                                <h4>Email</h4>
+                                <p>support@leadbot.com</p>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <div class="contact-icon">📞</div>
+                            <div class="contact-details">
+                                <h4>Phone</h4>
+                                <p>+44 (0) 20 1234 5678</p>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <div class="contact-icon">📍</div>
+                            <div class="contact-details">
+                                <h4>Address</h4>
+                                <p>123 LeadBot Street<br>London, UK SW1A 1AA</p>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <div class="contact-icon">🕒</div>
+                            <div class="contact-details">
+                                <h4>Business Hours</h4>
+                                <p>Monday - Friday: 9:00 AM - 6:00 PM<br>Saturday: 10:00 AM - 4:00 PM</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="email">Email Address *</label>
-                        <input type="email" id="email" name="email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="phone">Phone Number</label>
-                        <input type="tel" id="phone" name="phone">
-                    </div>
-                    <div class="form-group">
-                        <label for="subject">Subject *</label>
-                        <select id="subject" name="subject" required>
-                            <option value="">Select a subject</option>
-                            <option value="general">General Inquiry</option>
-                            <option value="support">Technical Support</option>
-                            <option value="partnership">Partnership</option>
-                            <option value="feedback">Feedback</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="message">Message *</label>
-                        <textarea id="message" name="message" required></textarea>
-                    </div>
-                    <button type="submit" class="submit-btn">Send Message</button>
-                </form>
-            </div>
 
-            <!-- Contact Information -->
-            <div class="contact-info">
-                <h2>Get in Touch</h2>
-                <div class="info-item">
-                    <div class="info-icon">📧</div>
-                    <div class="info-content">
-                        <h4>Email</h4>
-                        <p>info@leadbot.com</p>
-                        <p>support@leadbot.com</p>
+                    <!-- Contact Form -->
+                    <div class="contact-form">
+                        <h3>Send us a Message</h3>
+                        <form id="contactForm">
+                            <div class="form-group">
+                                <label for="name">Full Name *</label>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email Address *</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Phone Number</label>
+                                <input type="tel" id="phone" name="phone">
+                            </div>
+                            <div class="form-group">
+                                <label for="subject">Subject *</label>
+                                <select id="subject" name="subject" required>
+                                    <option value="">Select a subject</option>
+                                    <option value="general">General Inquiry</option>
+                                    <option value="support">Technical Support</option>
+                                    <option value="billing">Billing Question</option>
+                                    <option value="partnership">Partnership Opportunity</option>
+                                    <option value="feedback">Feedback</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="message">Message *</label>
+                                <textarea id="message" name="message" placeholder="Tell us how we can help you..." required></textarea>
+                            </div>
+                            <button type="submit" class="submit-btn">Send Message</button>
+                        </form>
                     </div>
                 </div>
-                <div class="info-item">
-                    <div class="info-icon">📞</div>
-                    <div class="info-content">
-                        <h4>Phone</h4>
-                        <p>+44 (0) 20 1234 5678</p>
-                        <p>Mon-Fri: 9:00 AM - 6:00 PM</p>
+            </section>
+
+            <!-- FAQ Section -->
+            <section class="faq-section">
+                <div class="section-header">
+                    <h2>Frequently Asked Questions</h2>
+                    <p>Find answers to common questions about our services</p>
+                </div>
+                <div class="faq-grid">
+                    <div class="faq-item">
+                        <h4>How does LeadBot work?</h4>
+                        <p>LeadBot uses an intelligent chatbot to collect project details from customers and automatically matches them with qualified tradesmen in their area. Tradesmen receive instant notifications and can respond directly to potential customers.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h4>How much does it cost to use LeadBot?</h4>
+                        <p>LeadBot is free for customers. Tradesmen pay a small fee per qualified lead they receive, ensuring you only pay for genuine business opportunities.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h4>How do I register as a tradesman?</h4>
+                        <p>Simply click the "Tradesman Login" button and sign in with your Google account. Complete your registration by providing your trade details, business information, and service areas.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h4>What types of trades do you support?</h4>
+                        <p>We support all major trades including builders, electricians, plumbers, heating engineers, painters, roofers, landscapers, and many more. If you don't see your trade listed, contact us!</p>
+                    </div>
+                    <div class="faq-item">
+                        <h4>How quickly will I receive leads?</h4>
+                        <p>Leads are sent instantly when they match your criteria. Most tradesmen receive their first lead within 24 hours of registration, depending on demand in their area.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h4>Is my data secure?</h4>
+                        <p>Absolutely! We use industry-standard encryption and security measures to protect all customer and tradesman data. Your information is never shared with third parties without your consent.</p>
                     </div>
                 </div>
-                <div class="info-item">
-                    <div class="info-icon">📍</div>
-                    <div class="info-content">
-                        <h4>Head Office</h4>
-                        <p>123 LeadBot Street</p>
-                        <p>London, SW1A 1AA</p>
-                        <p>United Kingdom</p>
-                    </div>
-                </div>
-                <div class="info-item">
-                    <div class="info-icon">💬</div>
-                    <div class="info-content">
-                        <h4>Live Chat</h4>
-                        <p>Available 24/7</p>
-                        <p>Click the chat button below</p>
-                    </div>
-                </div>
-            </div>
+            </section>
         </div>
-
-        <!-- Office Locations -->
-        <section class="office-locations">
-            <h2>Our Offices</h2>
-            <div class="locations-grid">
-                <div class="location-card">
-                    <div class="location-icon">🏢</div>
-                    <h3>London</h3>
-                    <p>123 LeadBot Street</p>
-                    <p>London, SW1A 1AA</p>
-                    <p>United Kingdom</p>
-                </div>
-                <div class="location-card">
-                    <div class="location-icon">🏢</div>
-                    <h3>Manchester</h3>
-                    <p>456 Innovation Drive</p>
-                    <p>Manchester, M1 1AA</p>
-                    <p>United Kingdom</p>
-                </div>
-                <div class="location-card">
-                    <div class="location-icon">🏢</div>
-                    <h3>Birmingham</h3>
-                    <p>789 Tech Square</p>
-                    <p>Birmingham, B1 1AA</p>
-                    <p>United Kingdom</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- FAQ Section -->
-        <section class="faq-section">
-            <h2>Frequently Asked Questions</h2>
-            <div class="faq-item">
-                <div class="faq-question">How does LeadBot work?</div>
-                <div class="faq-answer">LeadBot uses intelligent chatbot technology to gather your project requirements and match you with qualified tradesmen in your area. Simply start a conversation and we'll guide you through the process.</div>
-            </div>
-            <div class="faq-item">
-                <div class="faq-question">Are the tradesmen verified?</div>
-                <div class="faq-answer">Yes, all tradesmen on our platform are thoroughly vetted and verified. We check their qualifications, insurance, and previous work to ensure quality service.</div>
-            </div>
-            <div class="faq-item">
-                <div class="faq-question">What services do you cover?</div>
-                <div class="faq-answer">We cover all major trades including building/construction, electrical, plumbing, and many other services. If you need a specific trade, just ask!</div>
-            </div>
-            <div class="faq-item">
-                <div class="faq-question">How quickly will I get matched?</div>
-                <div class="faq-answer">Most customers receive their first quote within 24 hours. Our system works quickly to connect you with available tradesmen in your area.</div>
-            </div>
-        </section>
     </main>
 
     <script>
+        // Contact form handling
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get form data
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            // Here you would typically send the data to your server
+            console.log('Contact form submitted:', data);
+            
+            // Show success message
+            alert('Thank you for your message! We\'ll get back to you within 24 hours.');
+            
+            // Reset form
+            this.reset();
+        });
+
         // Mobile menu functionality
         document.addEventListener('DOMContentLoaded', function() {
             const hamburger = document.querySelector('.hamburger');
@@ -386,30 +568,6 @@
                 hamburger.classList.remove('active');
                 navMenu.classList.remove('active');
             }));
-            
-            // Contact form handling
-            const contactForm = document.getElementById('contactForm');
-            const successMessage = document.getElementById('successMessage');
-            
-            contactForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Get form data
-                const formData = new FormData(contactForm);
-                const data = Object.fromEntries(formData);
-                
-                // Show success message
-                successMessage.style.display = 'block';
-                contactForm.reset();
-                
-                // Hide success message after 5 seconds
-                setTimeout(() => {
-                    successMessage.style.display = 'none';
-                }, 5000);
-                
-                // In a real application, you would send this data to your server
-                console.log('Contact form submitted:', data);
-            });
         });
     </script>
 </body>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Domain Check</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .info { background: #f0f0f0; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; padding: 15px; margin: 10px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Domain and OAuth Check</h1>
+    
+    <div class="info">
+        <h3>Current Domain Information:</h3>
+        <p><strong>Protocol:</strong> <span id="protocol"></span></p>
+        <p><strong>Hostname:</strong> <span id="hostname"></span></p>
+        <p><strong>Full URL:</strong> <span id="fullUrl"></span></p>
+        <p><strong>Origin:</strong> <span id="origin"></span></p>
+    </div>
+    
+    <div class="info">
+        <h3>Google OAuth Client ID:</h3>
+        <p><strong>Client ID:</strong> 715560457951-4ti03g5176854alkdku3slr1sufbue0l.apps.googleusercontent.com</p>
+    </div>
+    
+    <div class="info">
+        <h3>Instructions:</h3>
+        <p>1. Copy the <strong>Origin</strong> value above</p>
+        <p>2. Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console Credentials</a></p>
+        <p>3. Find your OAuth 2.0 Client ID</p>
+        <p>4. Add the Origin value to "Authorized JavaScript origins"</p>
+        <p>5. Save and wait a few minutes</p>
+    </div>
+    
+    <div class="error">
+        <h3>Common Issues:</h3>
+        <ul>
+            <li><strong>Missing https://</strong> - Make sure to include the protocol</li>
+            <li><strong>Trailing slash</strong> - Don't include trailing slashes</li>
+            <li><strong>Subdomain mismatch</strong> - Check if you're using www vs non-www</li>
+            <li><strong>Port numbers</strong> - Don't include port numbers (like :3000)</li>
+        </ul>
+    </div>
+
+    <script>
+        // Display current domain information
+        document.getElementById('protocol').textContent = window.location.protocol;
+        document.getElementById('hostname').textContent = window.location.hostname;
+        document.getElementById('fullUrl').textContent = window.location.href;
+        document.getElementById('origin').textContent = window.location.origin;
+        
+        console.log('Current origin:', window.location.origin);
+        console.log('Current hostname:', window.location.hostname);
+        console.log('Current protocol:', window.location.protocol);
+    </script>
+</body>
+</html> 

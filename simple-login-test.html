@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Google Sign-In Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; text-align: center; }
+        .container { max-width: 400px; margin: 0 auto; }
+        .result { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Google Sign-In Test</h1>
+        
+        <!-- Google Sign-In Button -->
+        <div id="g_id_onload"
+             data-client_id="715560457951-4ti03g5176854alkdku3slr1sufbue0l.apps.googleusercontent.com"
+             data-callback="handleCredentialResponse"
+             data-auto_prompt="false">
+        </div>
+        <div class="g_id_signin"
+             data-type="standard"
+             data-size="large"
+             data-theme="outline"
+             data-text="sign_in_with"
+             data-shape="rectangular"
+             data-logo_alignment="left">
+        </div>
+        
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- Google Sign-In API -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        function handleCredentialResponse(response) {
+            console.log('Google Sign-In Response:', response);
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <h3>Success!</h3>
+                <p>Google Sign-In is working.</p>
+                <p>Credential received: ${response.credential.substring(0, 50)}...</p>
+            `;
+        }
+        
+        // Check if Google Sign-In loaded
+        window.addEventListener('load', function() {
+            console.log('Page loaded, checking Google Sign-In...');
+            setTimeout(() => {
+                if (typeof google !== 'undefined' && google.accounts) {
+                    console.log('Google Sign-In API loaded successfully');
+                } else {
+                    console.log('Google Sign-In API not loaded');
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html> 

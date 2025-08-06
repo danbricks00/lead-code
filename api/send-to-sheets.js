@@ -33,11 +33,11 @@ export default async function handler(req, res) {
 
     // 1. Try to add to Google Sheets (if credentials are available)
     console.log('🔍 Checking Google Sheets credentials...');
-    
+
     try {
       if (process.env.GOOGLE_PROJECT_ID && process.env.GOOGLE_PRIVATE_KEY) {
         console.log('✅ Google Sheets credentials found, attempting to write...');
-        
+
         const auth = new google.auth.GoogleAuth({
           credentials: {
             type: "service_account",
@@ -57,7 +57,7 @@ export default async function handler(req, res) {
         const sheets = google.sheets({ version: 'v4', auth });
         const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
         const range = 'Sheet1!A:K';
-        
+
         const values = [[
           new Date().toISOString(),
           leadData.customerName,
@@ -98,19 +98,113 @@ export default async function handler(req, res) {
       console.error('❌ Error details:', sheetsError.message);
     }
 
-    // 2. Email functionality (temporarily disabled due to Nodemailer import issues)
-    console.log('🔍 Email functionality temporarily disabled - Nodemailer import issue');
-    console.log('📧 Would send customer email to:', leadData.customerEmail);
-    console.log('📧 Would send tradesman email to: danbricks18@gmail.com');
-    
-    // TODO: Fix Nodemailer import and re-enable email functionality
-    customerEmailSent = false;
-    tradesmanEmailSent = false;
+    // 2. Email functionality - Fixed Nodemailer import
+    console.log('🔍 Attempting to send emails...');
+
+    try {
+      if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+        console.log('✅ Gmail credentials found, attempting to send emails...');
+
+        // Try to import Nodemailer with different methods
+        let nodemailer;
+        try {
+          // Method 1: Try dynamic import
+          const module = await import('nodemailer');
+          nodemailer = module.default;
+          console.log('✅ Nodemailer imported successfully via dynamic import');
+        } catch (importError) {
+          console.log('❌ Dynamic import failed, trying alternative method...');
+          // Method 2: Try require (if available in this environment)
+          try {
+            nodemailer = require('nodemailer');
+            console.log('✅ Nodemailer imported successfully via require');
+          } catch (requireError) {
+            console.log('❌ All import methods failed:', requireError.message);
+            throw new Error('Cannot import Nodemailer');
+          }
+        }
+
+        if (nodemailer && typeof nodemailer.createTransporter === 'function') {
+          console.log('✅ createTransporter method available');
+
+          // Create transporter
+          const transporter = nodemailer.createTransporter({
+            service: 'gmail',
+            auth: {
+              user: process.env.GMAIL_USER,
+              pass: process.env.GMAIL_APP_PASSWORD
+            }
+          });
+
+          // Send customer email
+          console.log('📧 Sending customer email to:', leadData.customerEmail);
+          const customerMailOptions = {
+            from: process.env.GMAIL_USER,
+            to: leadData.customerEmail,
+            subject: 'Your Lead Request Confirmation',
+            html: `
+              <h2>Thank you for your lead request!</h2>
+              <p><strong>Service:</strong> ${leadData.selectedService}</p>
+              <p><strong>Project Details:</strong> ${leadData.projectDetails}</p>
+              <p><strong>Location:</strong> ${leadData.location}</p>
+              <p><strong>Budget:</strong> ${leadData.budget}</p>
+              <p><strong>Timeline:</strong> ${leadData.timeline}</p>
+              <p>We'll be in touch with you soon with a quote and next steps.</p>
+              <p>Best regards,<br>Your Trade Team</p>
+            `
+          };
+
+          await transporter.sendMail(customerMailOptions);
+          console.log('✅ Customer email sent successfully');
+          customerEmailSent = true;
+
+          // Send tradesman email
+          console.log('📧 Sending tradesman email to: danbricks18@gmail.com');
+          const tradesmanMailOptions = {
+            from: process.env.GMAIL_USER,
+            to: 'danbricks18@gmail.com',
+            subject: `New ${leadData.selectedService} Lead - ${leadData.customerName}`,
+            html: `
+              <h2>New Lead Received!</h2>
+              <p><strong>Customer:</strong> ${leadData.customerName}</p>
+              <p><strong>Email:</strong> ${leadData.customerEmail}</p>
+              <p><strong>Phone:</strong> ${leadData.customerPhone}</p>
+              <p><strong>Service:</strong> ${leadData.selectedService}</p>
+              <p><strong>Project Details:</strong> ${leadData.projectDetails}</p>
+              <p><strong>Project Size:</strong> ${leadData.projectSize}</p>
+              <p><strong>Specific Details:</strong> ${leadData.specificDetails}</p>
+              <p><strong>Location:</strong> ${leadData.location}</p>
+              <p><strong>Budget:</strong> ${leadData.budget}</p>
+              <p><strong>Timeline:</strong> ${leadData.timeline}</p>
+              <p>Please contact the customer as soon as possible.</p>
+            `
+          };
+
+          await transporter.sendMail(tradesmanMailOptions);
+          console.log('✅ Tradesman email sent successfully');
+          tradesmanEmailSent = true;
+
+        } else {
+          console.log('❌ createTransporter method not available');
+          throw new Error('Nodemailer createTransporter method not found');
+        }
+      } else {
+        console.log('⚠️ Gmail credentials not configured - skipping email sending');
+      }
+    } catch (emailError) {
+      console.error('❌ Email error:', emailError);
+      console.error('❌ Error details:', emailError.message);
+      console.error('❌ Error stack:', emailError.stack);
+    }
 
     // Return success response with detailed status
     const response = {
       success: true,
-      message: 'Lead submitted successfully! Google Sheets updated. Email functionality temporarily disabled.',
+      message: customerEmailSent && tradesmanEmailSent
+        ? 'Lead submitted successfully! Check your email for confirmation.'
+        : 'Lead submitted successfully! Google Sheets updated. Email status: ' +
+          (customerEmailSent ? 'Customer email sent' : 'Customer email failed') + ', ' +
+          (tradesmanEmailSent ? 'Tradesman email sent' : 'Tradesman email failed'),
       data: leadData,
       timestamp: new Date().toISOString(),
       status: {
@@ -118,7 +212,9 @@ export default async function handler(req, res) {
         sheetsUpdated,
         customerEmailSent,
         tradesmanEmailSent,
-        note: 'Google Sheets working! Email needs Nodemailer fix'
+        note: customerEmailSent && tradesmanEmailSent
+          ? 'All systems working!'
+          : 'Google Sheets working! Email may need configuration'
       }
     };
 
@@ -129,10 +225,10 @@ export default async function handler(req, res) {
     console.error('❌ Error processing lead:', error);
     console.error('❌ Error details:', error.message);
     console.error('❌ Error stack:', error.stack);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       error: 'Failed to process lead',
-      details: error.message 
+      details: error.message
     });
   }
 } 

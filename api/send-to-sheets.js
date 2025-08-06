@@ -100,11 +100,11 @@ export default async function handler(req, res) {
 
     // 2. Email functionality - Fixed Nodemailer import
     console.log('🔍 Attempting to send emails...');
-
+    
     try {
       if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
         console.log('✅ Gmail credentials found, attempting to send emails...');
-
+        
         // Try to import Nodemailer with different methods
         let nodemailer;
         try {
@@ -124,11 +124,17 @@ export default async function handler(req, res) {
           }
         }
 
-        if (nodemailer && typeof nodemailer.createTransporter === 'function') {
-          console.log('✅ createTransporter method available');
-
+        console.log('📧 Nodemailer type:', typeof nodemailer);
+        console.log('📧 Available methods:', Object.keys(nodemailer || {}));
+        
+        // Check for the correct method name
+        const createTransporterMethod = nodemailer.createTransporter || nodemailer.createTransport;
+        
+        if (createTransporterMethod && typeof createTransporterMethod === 'function') {
+          console.log('✅ createTransporter/createTransport method available');
+          
           // Create transporter
-          const transporter = nodemailer.createTransporter({
+          const transporter = createTransporterMethod({
             service: 'gmail',
             auth: {
               user: process.env.GMAIL_USER,
@@ -185,8 +191,9 @@ export default async function handler(req, res) {
           tradesmanEmailSent = true;
 
         } else {
-          console.log('❌ createTransporter method not available');
-          throw new Error('Nodemailer createTransporter method not found');
+          console.log('❌ createTransporter/createTransport method not available');
+          console.log('📧 Available methods:', Object.keys(nodemailer || {}));
+          throw new Error('Nodemailer createTransporter/createTransport method not found');
         }
       } else {
         console.log('⚠️ Gmail credentials not configured - skipping email sending');

@@ -23,7 +23,7 @@ function getAuth() {
 async function getTradesmenSheet() {
   const auth = getAuth();
   const sheets = google.sheets({ version: 'v4', auth });
-  const spreadsheetId = process.env.GOOGLE_SPEADSHEET_ID;
+  const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
   
   if (!spreadsheetId) {
     console.log('❌ No spreadsheet ID configured for tradesmen database');

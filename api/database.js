@@ -64,10 +64,10 @@ export async function addTradesman(tradesman) {
         }
       });
       
-      // Add headers
+      // Add headers - fix the range to include all 8 columns
       await sheets.spreadsheets.values.update({
         spreadsheetId: spreadsheetId,
-        range: 'Tradesmen!A1:F1',
+        range: 'Tradesmen!A1:H1',
         valueInputOption: 'RAW',
         requestBody: {
           values: [['Email', 'Name', 'TradeType', 'BusinessName', 'Phone', 'Location', 'Status', 'CreatedAt']]
@@ -115,7 +115,7 @@ export async function getTradesmanByEmail(email) {
     
     const { sheets, spreadsheetId } = sheetData;
     
-    // Read all tradesmen data
+    // Read all tradesmen data - use proper range format
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: spreadsheetId,
       range: 'Tradesmen!A:H'

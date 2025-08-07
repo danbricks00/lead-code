@@ -142,6 +142,13 @@ export default async function handler(req, res) {
             }
           });
 
+          // Validate email format before sending
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(leadData.customerEmail)) {
+            console.log('❌ Invalid customer email format:', leadData.customerEmail);
+            throw new Error(`Invalid email format: ${leadData.customerEmail}`);
+          }
+
           // Send customer email
           console.log('📧 Sending customer email to:', leadData.customerEmail);
           const customerMailOptions = {

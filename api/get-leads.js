@@ -40,7 +40,7 @@ export default async function handler(req, res) {
         auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
         client_x509_cert_url: process.env.GOOGLE_CLIENT_CER_URL
       },
-      scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly']
+      scopes: ['https://www.googleapis.com/auth/spreadsheets']
     });
 
     const sheets = google.sheets({ version: 'v4', auth });
@@ -69,9 +69,60 @@ export default async function handler(req, res) {
       });
     }
 
-    // Get headers (first row)
-    const headers = rows[0];
-    console.log('📋 Headers:', headers);
+    // Check if first row looks like headers or data
+    const firstRow = rows[0];
+    console.log('📋 First row:', firstRow);
+    
+    let headers, dataRows;
+    
+    // Check if first row contains headers (should contain words like 'timestamp', 'customer', 'service', etc.)
+    const hasHeaders = firstRow.some(cell => 
+      cell && typeof cell === 'string' && 
+      (cell.toLowerCase().includes('timestamp') || 
+       cell.toLowerCase().includes('customer') || 
+       cell.toLowerCase().includes('service') || 
+       cell.toLowerCase().includes('email') ||
+       cell.toLowerCase().includes('phone'))
+    );
+    
+    if (hasHeaders) {
+      // First row is headers
+      headers = firstRow;
+      dataRows = rows.slice(1);
+      console.log('✅ Using existing headers:', headers);
+    } else {
+      // First row is data, need to add headers
+      console.log('📝 No headers found, adding them...');
+      
+      // Define standard headers based on the data structure
+      const standardHeaders = [
+        'Timestamp',
+        'CustomerName', 
+        'CustomerEmail',
+        'CustomerPhone',
+        'SelectedService',
+        'ProjectDetails',
+        'ProjectSize',
+        'SpecificDetails',
+        'Location',
+        'Budget',
+        'Timeline'
+      ];
+      
+      // Insert headers at the beginning
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: spreadsheetId,
+        range: 'Sheet1!A1:K1',
+        valueInputOption: 'RAW',
+        requestBody: {
+          values: [standardHeaders]
+        }
+      });
+      
+      headers = standardHeaders;
+      dataRows = rows; // Include the original first row as data
+      console.log('✅ Added headers:', headers);
+    }
 
     // Find the index of the selectedService column
     const serviceIndex = headers.findIndex(h => 
@@ -80,19 +131,23 @@ export default async function handler(req, res) {
     );
 
     if (serviceIndex === -1) {
-      console.log('❌ Could not find service column');
+      console.log('❌ Could not find service column in headers:', headers);
       return res.status(500).json({
         success: false,
-        error: 'Service column not found in spreadsheet'
+        error: 'Service column not found in spreadsheet headers'
       });
     }
+
+    console.log(`🔍 Service column found at index ${serviceIndex}: ${headers[serviceIndex]}`);
 
     // Filter leads for this tradesman's service type
     const filteredLeads = [];
     
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
+    for (let i = 0; i < dataRows.length; i++) {
+      const row = dataRows[i];
       const service = row[serviceIndex]?.toLowerCase();
+      
+      console.log(`🔍 Row ${i + 1} service: "${service}" vs tradeType: "${tradeType.toLowerCase()}"`);
       
       // Check if this lead matches the tradesman's service type
       if (service && service.includes(tradeType.toLowerCase())) {
@@ -106,11 +161,12 @@ export default async function handler(req, res) {
         });
         
         // Add timestamp if not present
-        if (!lead.timestamp) {
+        if (!lead.timestamp && !lead.Timestamp) {
           lead.timestamp = new Date().toISOString();
         }
         
         filteredLeads.push(lead);
+        console.log(`✅ Added lead: ${lead.CustomerName || lead.customerName} - ${service}`);
       }
     }
 

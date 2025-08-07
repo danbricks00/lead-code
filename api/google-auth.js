@@ -1,6 +1,6 @@
 import { getTradesmanByEmail } from './database.js';
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -35,7 +35,7 @@ export default function handler(req, res) {
       const name = payload.name;
 
       // Check if user is already registered
-      const existingTradesman = getTradesmanByEmail(email);
+      const existingTradesman = await getTradesmanByEmail(email);
       
       if (existingTradesman) {
         console.log('✅ User already registered:', existingTradesman);

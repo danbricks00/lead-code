@@ -1,6 +1,6 @@
 import { addTradesman, getTradesmanByEmail } from './database.js';
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -16,41 +16,64 @@ export default function handler(req, res) {
   }
 
   try {
-    const { email, name, tradeType } = req.body;
-    console.log('📝 Registration request:', { email, name, tradeType });
+    const { email, tradeType, businessName, phone, location } = req.body;
+    console.log('📝 Registration request for:', email);
 
-    // Check if tradesman already exists
-    const existingTradesman = getTradesmanByEmail(email);
-    if (existingTradesman) {
-      return res.json({
+    if (!email || !tradeType || !businessName) {
+      return res.status(400).json({
         success: false,
-        error: 'Tradesman already registered',
-        tradesman: existingTradesman
+        error: 'Email, trade type, and business name are required'
       });
     }
 
-    // Add new tradesman
+    // Check if user is already registered
+    const existingTradesman = await getTradesmanByEmail(email);
+    
+    if (existingTradesman) {
+      console.log('⚠️ User already registered:', existingTradesman);
+      return res.json({
+        success: false,
+        alreadyRegistered: true,
+        error: 'User is already registered',
+        user: existingTradesman
+      });
+    }
+
+    // Create new tradesman
     const newTradesman = {
-      email,
-      name,
-      tradeType,
-      registeredAt: new Date().toISOString()
+      email: email,
+      name: email.split('@')[0], // Use email prefix as name if not provided
+      tradeType: tradeType,
+      businessName: businessName,
+      phone: phone || '',
+      location: location || '',
+      status: 'active',
+      createdAt: new Date().toISOString()
     };
 
-    addTradesman(newTradesman);
-    console.log('✅ Tradesman registered:', newTradesman);
-
-    res.json({
-      success: true,
-      message: 'Tradesman registered successfully',
-      tradesman: newTradesman
-    });
+    // Add to database
+    const addedTradesman = await addTradesman(newTradesman);
+    
+    if (addedTradesman) {
+      console.log('✅ Tradesman registered successfully:', addedTradesman);
+      return res.json({
+        success: true,
+        message: 'Registration successful',
+        user: addedTradesman
+      });
+    } else {
+      console.log('❌ Failed to add tradesman to database');
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to save registration'
+      });
+    }
 
   } catch (error) {
     console.error('❌ Registration error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to register tradesman',
+      error: 'Registration failed',
       details: error.message
     });
   }

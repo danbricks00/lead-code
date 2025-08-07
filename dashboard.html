@@ -13,23 +13,28 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f7fa;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             color: #333;
         }
 
         .navbar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
             padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
         .navbar-brand {
             font-size: 1.5rem;
             font-weight: bold;
+            color: #333;
         }
 
         .user-info {
@@ -41,16 +46,18 @@
         .user-avatar {
             width: 40px;
             height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             border-radius: 50%;
-            background: rgba(255,255,255,0.2);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
+            font-size: 1.2rem;
         }
 
         .logout-btn {
-            background: rgba(255,255,255,0.2);
+            background: #dc3545;
             color: white;
             border: none;
             padding: 8px 16px;
@@ -60,7 +67,7 @@
         }
 
         .logout-btn:hover {
-            background: rgba(255,255,255,0.3);
+            background: #c82333;
         }
 
         .container {
@@ -71,9 +78,9 @@
 
         .dashboard-header {
             background: white;
-            padding: 2rem;
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 2rem;
             margin-bottom: 2rem;
         }
 
@@ -177,10 +184,11 @@
         }
 
         .status-badge {
-            padding: 4px 12px;
-            border-radius: 20px;
+            padding: 4px 8px;
+            border-radius: 12px;
             font-size: 0.8rem;
             font-weight: 500;
+            text-transform: uppercase;
         }
 
         .status-new {
@@ -188,14 +196,69 @@
             color: #1976d2;
         }
 
-        .status-contacted {
+        .status-received {
             background: #fff3e0;
             color: #f57c00;
         }
 
-        .status-completed {
+        .status-contacted {
             background: #e8f5e8;
             color: #388e3c;
+        }
+
+        .status-completed {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .status-rejected {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+        }
+
+        .btn-received {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-contacted {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-completed {
+            background: #2e7d32;
+            color: white;
+        }
+
+        .btn-rejected {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-contact {
+            background: #2196f3;
+            color: white;
+        }
+
+        .action-btn:hover {
+            opacity: 0.8;
+            transform: translateY(-1px);
         }
 
         .empty-state {
@@ -236,6 +299,12 @@
             display: none;
         }
 
+        .lead-details {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 1rem;
@@ -259,6 +328,10 @@
             .leads-table td {
                 padding: 0.75rem 1rem;
             }
+
+            .action-buttons {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -279,7 +352,7 @@
             <div class="welcome-section">
                 <div class="welcome-text">
                     <h1>Welcome back, <span id="welcomeName">Tradesman</span>!</h1>
-                    <p>Here are your latest leads and opportunities</p>
+                    <p>Manage your leads and track their progress</p>
                 </div>
                 <div class="trade-info">
                     <strong>Trade:</strong> <span id="userTrade">Loading...</span>
@@ -308,7 +381,7 @@
 
         <div class="leads-section">
             <div class="section-header">
-                <h2 class="section-title">Your Leads</h2>
+                <h2 class="section-title">Lead Management</h2>
                 <button class="refresh-btn" onclick="loadLeads()">🔄 Refresh</button>
             </div>
             
@@ -407,7 +480,7 @@
             }
         }
 
-        // Display leads in table
+        // Display leads in table with management options
         function displayLeads(leads) {
             const leadsContent = document.getElementById('leadsContent');
             
@@ -427,11 +500,10 @@
                     <thead>
                         <tr>
                             <th>Date</th>
-                            <th>Customer</th>
-                            <th>Service</th>
+                            <th>Customer Details</th>
+                            <th>Service Request</th>
                             <th>Location</th>
-                            <th>Budget</th>
-                            <th>Timeline</th>
+                            <th>Budget & Timeline</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -442,24 +514,51 @@
                                 <td>${formatDate(lead.timestamp)}</td>
                                 <td>
                                     <strong>${lead.customerName}</strong><br>
-                                    <small>${lead.customerEmail}</small><br>
-                                    <small>${lead.customerPhone}</small>
+                                    <div class="lead-details">
+                                        📧 ${lead.customerEmail}<br>
+                                        📞 ${lead.customerPhone}
+                                    </div>
                                 </td>
                                 <td>
                                     <strong>${lead.selectedService}</strong><br>
-                                    <small>${lead.projectDetails}</small>
+                                    <div class="lead-details">
+                                        ${lead.projectDetails}<br>
+                                        Size: ${lead.projectSize} | ${lead.specificDetails}
+                                    </div>
                                 </td>
                                 <td>${lead.location}</td>
-                                <td>${lead.budget}</td>
-                                <td>${lead.timeline}</td>
                                 <td>
-                                    <span class="status-badge status-new">New</span>
+                                    <strong>${lead.budget}</strong><br>
+                                    <div class="lead-details">${lead.timeline}</div>
                                 </td>
                                 <td>
-                                    <button onclick="contactCustomer('${lead.customerEmail}', '${lead.customerName}')" 
-                                            style="background: #4285f4; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
-                                        Contact
-                                    </button>
+                                    <span class="status-badge status-${getStatusClass(lead.status || 'new')}">
+                                        ${lead.status || 'New'}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button onclick="updateLeadStatus('${lead.timestamp}', 'received')" 
+                                                class="action-btn btn-received">
+                                            Received
+                                        </button>
+                                        <button onclick="updateLeadStatus('${lead.timestamp}', 'contacted')" 
+                                                class="action-btn btn-contacted">
+                                            Contacted
+                                        </button>
+                                        <button onclick="updateLeadStatus('${lead.timestamp}', 'completed')" 
+                                                class="action-btn btn-completed">
+                                            Completed
+                                        </button>
+                                        <button onclick="updateLeadStatus('${lead.timestamp}', 'rejected')" 
+                                                class="action-btn btn-rejected">
+                                            Rejected
+                                        </button>
+                                        <button onclick="contactCustomer('${lead.customerEmail}', '${lead.customerName}')" 
+                                                class="action-btn btn-contact">
+                                            Contact
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         `).join('')}
@@ -470,14 +569,63 @@
             leadsContent.innerHTML = tableHTML;
         }
 
+        // Get CSS class for status
+        function getStatusClass(status) {
+            const statusMap = {
+                'new': 'new',
+                'received': 'received',
+                'contacted': 'contacted',
+                'completed': 'completed',
+                'rejected': 'rejected'
+            };
+            return statusMap[status.toLowerCase()] || 'new';
+        }
+
+        // Update lead status
+        async function updateLeadStatus(leadId, newStatus) {
+            try {
+                const response = await fetch('/api/update-lead-status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        leadId: leadId,
+                        newStatus: newStatus,
+                        tradesmanEmail: currentUser.email
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(`Lead status updated to ${newStatus}`, 'success');
+                    // Reload leads to show updated status
+                    setTimeout(() => {
+                        loadLeads();
+                    }, 1000);
+                } else {
+                    showMessage(`Failed to update status: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error updating lead status:', error);
+                showMessage('Error updating lead status', 'error');
+            }
+        }
+
         // Update statistics
         function updateStats(leads) {
             if (!leads) return;
             
-            document.getElementById('totalLeads').textContent = leads.length;
-            document.getElementById('newLeads').textContent = leads.filter(l => !l.status || l.status === 'new').length;
-            document.getElementById('contactedLeads').textContent = leads.filter(l => l.status === 'contacted').length;
-            document.getElementById('completedLeads').textContent = leads.filter(l => l.status === 'completed').length;
+            const total = leads.length;
+            const newCount = leads.filter(l => !l.status || l.status.toLowerCase() === 'new').length;
+            const contactedCount = leads.filter(l => l.status && l.status.toLowerCase() === 'contacted').length;
+            const completedCount = leads.filter(l => l.status && l.status.toLowerCase() === 'completed').length;
+            
+            document.getElementById('totalLeads').textContent = total;
+            document.getElementById('newLeads').textContent = newCount;
+            document.getElementById('contactedLeads').textContent = contactedCount;
+            document.getElementById('completedLeads').textContent = completedCount;
         }
 
         // Format date
@@ -494,7 +642,8 @@
 
         // Contact customer (placeholder)
         function contactCustomer(email, name) {
-            alert(`Contact functionality coming soon!\n\nCustomer: ${name}\nEmail: ${email}`);
+            const message = `Contact ${name} at ${email}\n\nYou can:\n• Send them an email\n• Call them directly\n• Use your preferred contact method`;
+            alert(message);
         }
 
         // Sign out

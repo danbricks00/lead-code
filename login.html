@@ -307,8 +307,12 @@
                 if (data.success) {
                     console.log('✅ Login successful! User data:', JSON.stringify(data.user, null, 2));
                     currentUser = data.user;
-                    showUserDashboard();
-                    showMessage('Welcome back! You are now logged in.', 'success');
+                    
+                    // Store user data in localStorage for persistence
+                    localStorage.setItem('leadbot_user', JSON.stringify(data.user));
+                    
+                    // Redirect to dashboard instead of showing simple dashboard
+                    window.location.href = '/dashboard.html';
                 } else if (data.needsRegistration) {
                     console.log('⚠️ User needs registration. Email:', data.email, 'Name:', data.name);
                     showMessage('Welcome! Please complete your registration to continue.', 'success');
@@ -384,17 +388,12 @@
                 if (data.success) {
                     console.log('✅ Registration successful! User data:', JSON.stringify(data.user, null, 2));
                     currentUser = data.user;
-                    showUserDashboard();
-                    showMessage('Registration successful! You are now logged in.', 'success');
                     
-                    // Check database contents after registration
-                    try {
-                        const debugResponse = await fetch('/api/debug');
-                        const debugData = await debugResponse.json();
-                        console.log('📊 Database after registration:', JSON.stringify(debugData, null, 2));
-                    } catch (e) {
-                        console.log('❌ Could not check database:', e);
-                    }
+                    // Store user data in localStorage for persistence
+                    localStorage.setItem('leadbot_user', JSON.stringify(data.user));
+                    
+                    // Redirect to dashboard instead of showing simple dashboard
+                    window.location.href = '/dashboard.html';
                 } else {
                     console.log('❌ Registration failed:', data.error);
                     if (data.alreadyRegistered) {
@@ -413,7 +412,7 @@
         // Sign out
         async function signOut() {
             try {
-                await fetch('/api/auth/logout', { method: 'POST' });
+                localStorage.removeItem('leadbot_user');
                 currentUser = null;
                 showLogin();
                 showMessage('Signed out successfully', 'success');

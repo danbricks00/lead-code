@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeadBot - Tradesman Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .dashboard-header {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+
+        .welcome-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .welcome-text h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-text p {
+            color: #666;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .leads-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .refresh-btn {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .refresh-btn:hover {
+            background: #3367d6;
+        }
+
+        .leads-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .leads-table th,
+        .leads-table td {
+            padding: 1rem 2rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .leads-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .leads-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-new {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status-contacted {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .status-completed {
+            background: #e8f5e8;
+            color: #388e3c;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #666;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #d32f2f;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .welcome-section {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .leads-table {
+                font-size: 0.9rem;
+            }
+            
+            .leads-table th,
+            .leads-table td {
+                padding: 0.75rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">🔧 LeadBot Dashboard</div>
+        <div class="user-info">
+            <div class="user-avatar" id="userAvatar">U</div>
+            <span id="userName">User</span>
+            <button class="logout-btn" onclick="signOut()">Sign Out</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div id="message"></div>
+        
+        <div class="dashboard-header">
+            <div class="welcome-section">
+                <div class="welcome-text">
+                    <h1>Welcome back, <span id="welcomeName">Tradesman</span>!</h1>
+                    <p>Here are your latest leads and opportunities</p>
+                </div>
+                <div class="trade-info">
+                    <strong>Trade:</strong> <span id="userTrade">Loading...</span>
+                </div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalLeads">0</div>
+                    <div class="stat-label">Total Leads</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="newLeads">0</div>
+                    <div class="stat-label">New Leads</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="contactedLeads">0</div>
+                    <div class="stat-label">Contacted</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="completedLeads">0</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="leads-section">
+            <div class="section-header">
+                <h2 class="section-title">Your Leads</h2>
+                <button class="refresh-btn" onclick="loadLeads()">🔄 Refresh</button>
+            </div>
+            
+            <div id="leadsContent">
+                <div class="loading">Loading leads...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+
+        // Check authentication on page load
+        window.addEventListener('load', function() {
+            checkAuthStatus();
+        });
+
+        // Check if user is authenticated
+        async function checkAuthStatus() {
+            try {
+                // Get user from localStorage (set during login)
+                const userData = localStorage.getItem('leadbot_user');
+                if (!userData) {
+                    showMessage('Please log in to access the dashboard', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/login.html';
+                    }, 2000);
+                    return;
+                }
+
+                currentUser = JSON.parse(userData);
+                updateDashboard();
+                loadLeads();
+            } catch (error) {
+                console.error('Auth check error:', error);
+                showMessage('Authentication error', 'error');
+                setTimeout(() => {
+                    window.location.href = '/login.html';
+                }, 2000);
+            }
+        }
+
+        // Update dashboard with user info
+        function updateDashboard() {
+            if (!currentUser) return;
+
+            document.getElementById('welcomeName').textContent = currentUser.name || 'Tradesman';
+            document.getElementById('userName').textContent = currentUser.name || 'User';
+            document.getElementById('userTrade').textContent = currentUser.tradeType || 'Not specified';
+            
+            // Set avatar initial
+            const avatar = document.getElementById('userAvatar');
+            if (currentUser.name) {
+                avatar.textContent = currentUser.name.charAt(0).toUpperCase();
+            }
+        }
+
+        // Load leads from Google Sheets
+        async function loadLeads() {
+            const leadsContent = document.getElementById('leadsContent');
+            leadsContent.innerHTML = '<div class="loading">Loading leads...</div>';
+
+            try {
+                const response = await fetch('/api/get-leads', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: currentUser.email,
+                        tradeType: currentUser.tradeType
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayLeads(data.leads);
+                    updateStats(data.leads);
+                } else {
+                    leadsContent.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📊</div>
+                            <h3>No leads found</h3>
+                            <p>Leads matching your trade will appear here</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading leads:', error);
+                leadsContent.innerHTML = `
+                    <div class="error">
+                        Error loading leads. Please try again.
+                    </div>
+                `;
+            }
+        }
+
+        // Display leads in table
+        function displayLeads(leads) {
+            const leadsContent = document.getElementById('leadsContent');
+            
+            if (!leads || leads.length === 0) {
+                leadsContent.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <h3>No leads yet</h3>
+                        <p>When customers request your services, leads will appear here</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const tableHTML = `
+                <table class="leads-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Customer</th>
+                            <th>Service</th>
+                            <th>Location</th>
+                            <th>Budget</th>
+                            <th>Timeline</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${leads.map(lead => `
+                            <tr>
+                                <td>${formatDate(lead.timestamp)}</td>
+                                <td>
+                                    <strong>${lead.customerName}</strong><br>
+                                    <small>${lead.customerEmail}</small><br>
+                                    <small>${lead.customerPhone}</small>
+                                </td>
+                                <td>
+                                    <strong>${lead.selectedService}</strong><br>
+                                    <small>${lead.projectDetails}</small>
+                                </td>
+                                <td>${lead.location}</td>
+                                <td>${lead.budget}</td>
+                                <td>${lead.timeline}</td>
+                                <td>
+                                    <span class="status-badge status-new">New</span>
+                                </td>
+                                <td>
+                                    <button onclick="contactCustomer('${lead.customerEmail}', '${lead.customerName}')" 
+                                            style="background: #4285f4; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
+                                        Contact
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            leadsContent.innerHTML = tableHTML;
+        }
+
+        // Update statistics
+        function updateStats(leads) {
+            if (!leads) return;
+            
+            document.getElementById('totalLeads').textContent = leads.length;
+            document.getElementById('newLeads').textContent = leads.filter(l => !l.status || l.status === 'new').length;
+            document.getElementById('contactedLeads').textContent = leads.filter(l => l.status === 'contacted').length;
+            document.getElementById('completedLeads').textContent = leads.filter(l => l.status === 'completed').length;
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Contact customer (placeholder)
+        function contactCustomer(email, name) {
+            alert(`Contact functionality coming soon!\n\nCustomer: ${name}\nEmail: ${email}`);
+        }
+
+        // Sign out
+        async function signOut() {
+            try {
+                localStorage.removeItem('leadbot_user');
+                window.location.href = '/login.html';
+            } catch (error) {
+                console.error('Sign out error:', error);
+                window.location.href = '/login.html';
+            }
+        }
+
+        // Show message
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = type;
+            messageDiv.classList.remove('hidden');
+            
+            setTimeout(() => {
+                messageDiv.classList.add('hidden');
+            }, 5000);
+        }
+    </script>
+</body>
+</html> 

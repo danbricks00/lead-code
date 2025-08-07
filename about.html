@@ -315,6 +315,9 @@
                     <li class="nav-item">
                         <a href="/login.html" class="nav-link login-btn">Tradesman Login</a>
                     </li>
+                    <li class="nav-item" id="dashboardNavItem" style="display: none;">
+                        <a href="/dashboard.html" class="nav-link dashboard-btn">Dashboard</a>
+                    </li>
                 </ul>
                 <div class="hamburger">
                     <span class="bar"></span>
@@ -408,6 +411,20 @@
     </main>
 
     <script>
+        // Check login status and update navigation
+        function checkLoginStatus() {
+            const userData = localStorage.getItem('leadbot_user');
+            const dashboardNavItem = document.getElementById('dashboardNavItem');
+            
+            if (userData) {
+                // User is logged in, show dashboard link
+                dashboardNavItem.style.display = 'block';
+            } else {
+                // User is not logged in, hide dashboard link
+                dashboardNavItem.style.display = 'none';
+            }
+        }
+
         // Mobile menu functionality
         document.addEventListener('DOMContentLoaded', function() {
             const hamburger = document.querySelector('.hamburger');
@@ -423,6 +440,9 @@
                 hamburger.classList.remove('active');
                 navMenu.classList.remove('active');
             }));
+            
+            // Check login status on page load
+            checkLoginStatus();
         });
     </script>
 </body>

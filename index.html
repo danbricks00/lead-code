@@ -529,6 +529,38 @@
                 display: none;
             }
         }
+
+        /* Mobile quick links (fallback when hamburger is unavailable) */
+        .mobile-quick-links {
+            display: none;
+            margin-top: 0.25rem;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .mobile-quick-links .quick-link {
+            background: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+            padding: 0.6rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-decoration: none;
+            backdrop-filter: blur(8px);
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .mobile-quick-links .quick-link:active,
+        .mobile-quick-links .quick-link:hover {
+            background: rgba(255,255,255,0.25);
+            transform: translateY(-1px);
+        }
+        @media (max-width: 768px) {
+            .mobile-quick-links { display: flex; }
+        }
+        @media (max-width: 480px) {
+            .mobile-quick-links .quick-link { padding: 0.65rem 1rem; font-size: 0.95rem; }
+        }
         
         /* Services Section */
         .services { 
@@ -1037,6 +1069,11 @@
                     <div class="hero-buttons">
                         <button class="cta-button" onclick="openChat()">Get Started Now</button>
                         <a href="/login.html" class="mobile-login-btn">Tradesman Login</a>
+                        <div class="mobile-quick-links" aria-label="Quick links">
+                            <a class="quick-link" href="/about.html">About Us</a>
+                            <a class="quick-link" href="/contact.html">Contact</a>
+                            <a class="quick-link" href="/">Home</a>
+                        </div>
                     </div>
                 </div>
             </section>

@@ -304,6 +304,68 @@
             color: #666;
             margin-top: 0.25rem;
         }
+        
+        /* Mobile card layout for leads */
+        .leads-cards {
+            display: none;
+        }
+        
+        .lead-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
+        }
+        
+        .lead-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .lead-date {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .lead-status-mobile {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        
+        .lead-info-section {
+            margin-bottom: 1rem;
+        }
+        
+        .lead-info-section h4 {
+            font-size: 0.9rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .lead-info-content {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.4;
+        }
+        
+        .lead-actions-mobile {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #f0f0f0;
+        }
 
         @media (max-width: 768px) {
             .container {
@@ -321,16 +383,111 @@
             }
             
             .leads-table {
-                font-size: 0.9rem;
+                display: none;
             }
             
-            .leads-table th,
-            .leads-table td {
-                padding: 0.75rem 1rem;
+            .leads-cards {
+                display: block;
             }
 
             .action-buttons {
                 flex-direction: column;
+                gap: 0.25rem;
+            }
+            
+            .action-btn {
+                font-size: 0.7rem;
+                padding: 3px 6px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 0.5rem;
+            }
+            
+            .leads-table {
+                font-size: 0.8rem;
+            }
+            
+            .leads-table th,
+            .leads-table td {
+                padding: 0.5rem 0.75rem;
+                min-width: 100px;
+            }
+            
+            .leads-table td:nth-child(2) {
+                min-width: 180px;
+            }
+            
+            .leads-table td:nth-child(3) {
+                min-width: 200px;
+            }
+            
+            .action-buttons {
+                gap: 0.2rem;
+            }
+            
+            .action-btn {
+                font-size: 0.65rem;
+                padding: 2px 4px;
+            }
+            
+            .navbar {
+                padding: 0.75rem 1rem;
+            }
+            
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+            
+            .user-info {
+                gap: 0.5rem;
+            }
+            
+            .user-avatar {
+                width: 35px;
+                height: 35px;
+                font-size: 1rem;
+            }
+            
+            .lead-card {
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            .lead-info-section {
+                margin-bottom: 0.75rem;
+            }
+            
+            .lead-info-section h4 {
+                font-size: 0.85rem;
+            }
+            
+            .lead-info-content {
+                font-size: 0.85rem;
+            }
+            
+            .lead-actions-mobile {
+                gap: 0.4rem;
+            }
+            
+            .lead-actions-mobile .action-btn {
+                font-size: 0.7rem;
+                padding: 4px 8px;
+            }
+            
+            .dashboard-header {
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .stats-grid {
+                gap: 1rem;
+            }
+            
+            .stat-card {
+                padding: 1rem;
             }
         }
     </style>
@@ -570,7 +727,76 @@
                 </table>
             `;
             
-            leadsContent.innerHTML = tableHTML;
+            const cardsHTML = `
+                <div class="leads-cards">
+                    ${leads.map(lead => `
+                        <div class="lead-card">
+                            <div class="lead-card-header">
+                                <div class="lead-date">${formatDate(lead.timestamp)}</div>
+                                <span class="lead-status-mobile status-${getStatusClass(lead.status || 'new')}">
+                                    ${lead.status || 'New'}
+                                </span>
+                            </div>
+                            
+                            <div class="lead-info-section">
+                                <h4>👤 Customer Details</h4>
+                                <div class="lead-info-content">
+                                    <strong>${lead.customerName}</strong><br>
+                                    📧 ${lead.customerEmail}<br>
+                                    📞 ${lead.customerPhone}
+                                </div>
+                            </div>
+                            
+                            <div class="lead-info-section">
+                                <h4>🔧 Service Request</h4>
+                                <div class="lead-info-content">
+                                    <strong>${lead.selectedService}</strong><br>
+                                    ${lead.projectDetails}<br>
+                                    Size: ${lead.projectSize} | ${lead.specificDetails}
+                                </div>
+                            </div>
+                            
+                            <div class="lead-info-section">
+                                <h4>📍 Location</h4>
+                                <div class="lead-info-content">${lead.location}</div>
+                            </div>
+                            
+                            <div class="lead-info-section">
+                                <h4>💰 Budget & Timeline</h4>
+                                <div class="lead-info-content">
+                                    <strong>${lead.budget}</strong><br>
+                                    ${lead.timeline}
+                                </div>
+                            </div>
+                            
+                            <div class="lead-actions-mobile">
+                                <button onclick="updateLeadStatus('${lead.timestamp}', 'received')" 
+                                        class="action-btn btn-received">
+                                    Received
+                                </button>
+                                <button onclick="updateLeadStatus('${lead.timestamp}', 'contacted')" 
+                                        class="action-btn btn-contacted">
+                                    Contacted
+                                </button>
+                                <button onclick="updateLeadStatus('${lead.timestamp}', 'completed')" 
+                                        class="action-btn btn-completed">
+                                    Completed
+                                </button>
+                                <button onclick="updateLeadStatus('${lead.timestamp}', 'rejected')" 
+                                        class="action-btn btn-rejected">
+                                    Rejected
+                                </button>
+                                <button onclick="contactCustomer('${lead.customerEmail}', '${lead.customerName}')" 
+                                        class="action-btn btn-contact">
+                                    Contact
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            leadsContent.innerHTML = tableHTML + cardsHTML;
         }
 
         // Get CSS class for status

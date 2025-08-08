@@ -98,6 +98,33 @@
             color: white;
         }
         
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+        
+        .bar {
+            width: 25px;
+            height: 3px;
+            background-color: #1a1a1a;
+            margin: 3px 0;
+            transition: 0.3s;
+        }
+        
+        .hamburger.active .bar:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .hamburger.active .bar:nth-child(1) {
+            transform: translateY(8px) rotate(45deg);
+        }
+        
+        .hamburger.active .bar:nth-child(3) {
+            transform: translateY(-8px) rotate(-45deg);
+        }
+        
         .nav-link.login-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -193,6 +220,9 @@
             max-width: 600px;
             margin-left: auto;
             margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.6;
         }
         
         .cta-button { 
@@ -368,6 +398,7 @@
             bottom: 20px; 
             right: 20px; 
             z-index: 1000; 
+            max-width: calc(100vw - 40px);
         }
         
         .chat-toggle { 
@@ -535,13 +566,54 @@
             .hero-content p { font-size: 1.1rem; }
             .services-grid { grid-template-columns: 1fr; }
             .steps-grid { grid-template-columns: 1fr; }
-            .chat-window { width: 320px; height: 450px; }
+            .chat-window { 
+                width: calc(100vw - 40px); 
+                right: 20px; 
+                left: 20px; 
+                height: 450px; 
+            }
+            .chatbot-container {
+                right: 20px;
+                left: 20px;
+            }
+            .nav-menu {
+                display: none;
+            }
+            .hamburger {
+                display: block;
+            }
         }
         
         @media (max-width: 480px) {
-            .chat-window { width: calc(100vw - 40px); right: 20px; left: 20px; }
-            .hero { padding: 4rem 1rem; }
+            .chat-window { 
+                width: calc(100vw - 20px); 
+                right: 10px; 
+                left: 10px; 
+                height: 400px;
+            }
+            .chatbot-container {
+                right: 10px;
+                left: 10px;
+            }
+            .hero { 
+                padding: 4rem 1rem 6rem 1rem; 
+                margin-bottom: 80px;
+            }
             .hero-content h1 { font-size: 2rem; }
+            .hero-content p { font-size: 1rem; }
+            .container {
+                padding: 0 1rem;
+            }
+            .services {
+                padding: 2rem 0;
+            }
+            .service-card {
+                padding: 1.5rem;
+            }
+            .how-it-works {
+                margin: 2rem 0;
+                padding: 2rem 1rem;
+            }
         }
         
         /* Status Message */
@@ -558,6 +630,8 @@
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
+            position: relative;
+            z-index: 1;
         }
         
         .status-message .check-icon {

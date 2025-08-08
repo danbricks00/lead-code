@@ -103,6 +103,9 @@
             flex-direction: column;
             cursor: pointer;
             padding: 0.5rem;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
         
         .bar {
@@ -111,6 +114,7 @@
             background-color: #1a1a1a;
             margin: 3px 0;
             transition: 0.3s;
+            border-radius: 2px;
         }
         
         .hamburger.active .bar:nth-child(2) {
@@ -137,18 +141,6 @@
         .nav-link.login-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-        
-        .hamburger { 
-            display: none; 
-            flex-direction: column; 
-            cursor: pointer; 
-            padding: 8px;
-            border-radius: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
         }
         
         .bar { 
@@ -381,6 +373,29 @@
             }
         }
         
+        /* Mobile login button styles */
+        @media (max-width: 768px) {
+            .hero-buttons {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .mobile-login-btn {
+                padding: 1.2rem 2.5rem;
+                font-size: 1.1rem;
+                min-width: 200px;
+                text-align: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .mobile-login-btn {
+                padding: 1rem 2rem;
+                font-size: 1rem;
+                min-width: 180px;
+            }
+        }
+        
         main { 
             margin-top: 80px; 
             padding: 2rem 0; 
@@ -451,6 +466,40 @@
             background: white; 
             transform: translateY(-3px); 
             box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+        }
+        
+        .hero-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: center;
+            margin-top: 2rem;
+        }
+        
+        .mobile-login-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+        
+        .mobile-login-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        /* Hide mobile login button on desktop */
+        @media (min-width: 769px) {
+            .mobile-login-btn {
+                display: none;
+            }
         }
         
         /* Services Section */
@@ -957,7 +1006,10 @@
                 <div class="hero-content">
                     <h1>Connect with Qualified Tradesmen Instantly</h1>
                     <p>Our intelligent chatbot matches you with the perfect tradesman for your project. Get quotes, schedule work, and complete your projects with confidence.</p>
-                    <button class="cta-button" onclick="openChat()">Get Started Now</button>
+                    <div class="hero-buttons">
+                        <button class="cta-button" onclick="openChat()">Get Started Now</button>
+                        <a href="/login.html" class="mobile-login-btn">Tradesman Login</a>
+                    </div>
                 </div>
             </section>
 
@@ -1383,10 +1435,16 @@
             
             console.log('Hamburger element:', hamburger);
             console.log('Nav menu element:', navMenu);
+            console.log('Window width:', window.innerWidth);
+            console.log('User agent:', navigator.userAgent);
             
             if (hamburger && navMenu) {
                 // Function to toggle menu
-                function toggleMenu() {
+                function toggleMenu(e) {
+                    if (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
                     console.log('Toggle menu called!');
                     hamburger.classList.toggle('active');
                     navMenu.classList.toggle('active');
@@ -1396,16 +1454,21 @@
                 
                 // Add multiple event listeners for better mobile compatibility
                 hamburger.addEventListener('click', toggleMenu);
-                hamburger.addEventListener('touchstart', function(e) {
+                
+                // Touch events for tablets and mobile
+                hamburger.addEventListener('touchstart', toggleMenu, { passive: false });
+                hamburger.addEventListener('touchend', function(e) {
                     e.preventDefault();
-                    toggleMenu();
+                }, { passive: false });
+                
+                // Pointer events for better touch support
+                hamburger.addEventListener('pointerdown', toggleMenu);
+                hamburger.addEventListener('pointerup', function(e) {
+                    e.preventDefault();
                 });
                 
-                // Also add pointer events for better touch support
-                hamburger.addEventListener('pointerdown', function(e) {
-                    e.preventDefault();
-                    toggleMenu();
-                });
+                // Mouse events as fallback
+                hamburger.addEventListener('mousedown', toggleMenu);
                 
                 // Close menu when clicking on a link
                 document.querySelectorAll('.nav-link').forEach(n => n.addEventListener('click', () => {
@@ -1420,6 +1483,23 @@
                         navMenu.classList.remove('active');
                     }
                 });
+                
+                // Close menu on escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        hamburger.classList.remove('active');
+                        navMenu.classList.remove('active');
+                    }
+                });
+                
+                // Test if hamburger is visible
+                setTimeout(() => {
+                    const computedStyle = window.getComputedStyle(hamburger);
+                    console.log('Hamburger display:', computedStyle.display);
+                    console.log('Hamburger visibility:', computedStyle.visibility);
+                    console.log('Hamburger opacity:', computedStyle.opacity);
+                }, 1000);
+                
             } else {
                 console.error('Hamburger or nav menu not found!');
             }

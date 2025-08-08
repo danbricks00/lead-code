@@ -1,3 +1,14 @@
+## Email Branding
+
+You can customize the visible From/Reply-To without changing your Gmail account:
+
+Set env vars (Vercel → Settings → Environment Variables):
+
+- `MAIL_FROM`: e.g. `TradeBot <no-reply@leadbot.app>` (falls back to `TradeBot <GMAIL_USER>`) 
+- `MAIL_REPLY_TO`: e.g. `support@leadbot.app` (falls back to `GMAIL_USER`)
+
+The server will use these values in outgoing emails from `api/send-to-sheets.js`.
+
 # LeadBot - Lead Generation System
 
 This is a lead generation chatbot system that connects customers with qualified tradesmen.

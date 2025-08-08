@@ -181,8 +181,12 @@ export default async function handler(req, res) {
 
           // Send customer email
           console.log('📧 Sending customer email to:', leadData.customerEmail);
+          const fromDisplay = process.env.MAIL_FROM || `TradeBot <${process.env.GMAIL_USER}>`;
+          const replyTo = process.env.MAIL_REPLY_TO || process.env.GMAIL_USER;
+
           const customerMailOptions = {
-            from: process.env.GMAIL_USER,
+            from: fromDisplay,
+            replyTo,
             to: leadData.customerEmail,
             subject: 'Your Lead Request Confirmation',
             html: `
@@ -208,7 +212,8 @@ export default async function handler(req, res) {
             for (const tradesman of tradesmenFound) {
               try {
                 const tradesmanMailOptions = {
-                  from: process.env.GMAIL_USER,
+                  from: fromDisplay,
+                  replyTo,
                   to: tradesman.email,
                   subject: `New ${leadData.selectedService} Lead - ${leadData.customerName}`,
                   html: `
@@ -239,7 +244,8 @@ export default async function handler(req, res) {
             // Fallback: Send to admin email if no tradesmen found
             console.log('📧 No tradesmen found for this service, sending to admin email');
             const adminMailOptions = {
-              from: process.env.GMAIL_USER,
+              from: fromDisplay,
+              replyTo,
               to: 'danbricks18@gmail.com',
               subject: `New ${leadData.selectedService} Lead - NO TRADESMEN REGISTERED`,
               html: `

@@ -120,12 +120,10 @@ export async function getTradesmanByEmail(email) {
       spreadsheetId: spreadsheetId,
       range: 'Tradesmen!A:H'
     });
-    
     const rows = response.data.values;
     if (!rows || rows.length <= 1) {
       return null; // No data or only headers
     }
-    
     // Find tradesman by email (first column)
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
@@ -164,12 +162,10 @@ export async function getAllTradesmen() {
       spreadsheetId: spreadsheetId,
       range: 'Tradesmen!A:H'
     });
-    
     const rows = response.data.values;
     if (!rows || rows.length <= 1) {
       return [];
     }
-    
     return rows.slice(1).map(row => ({
       email: row[0],
       name: row[1],
@@ -201,12 +197,10 @@ export async function updateTradesman(email, updates) {
       spreadsheetId: spreadsheetId,
       range: 'Tradesmen!A:A'
     });
-    
     const rows = response.data.values;
     if (!rows) {
       return null;
     }
-    
     const rowIndex = rows.findIndex(row => row[0] === email);
     if (rowIndex === -1) {
       return null;

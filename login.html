@@ -148,6 +148,20 @@
             background: #555;
         }
 
+        /* Back to Home links */
+        .home-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: none;
+            margin-bottom: 1rem;
+        }
+        .home-link:hover { text-decoration: underline; }
+        .home-link-inline { color: #667eea; font-weight: 600; text-decoration: none; }
+        .home-link-inline:hover { text-decoration: underline; }
+
         .hidden {
             display: none;
         }
@@ -202,6 +216,7 @@
 </head>
 <body>
     <div class="login-container">
+        <a href="/" class="home-link" aria-label="Back to Home">⬅ Back to Home</a>
         <div class="logo">🔧 LeadBot</div>
         <p class="subtitle">Tradesman Portal</p>
 
@@ -278,7 +293,10 @@
             <button class="logout-btn" onclick="signOut()">Sign Out</button>
         </div>
 
-        <div id="message"></div>
+        <div id="message" style="margin-top:1rem;"></div>
+        <p style="margin-top:1rem; color:#666;">
+            Not ready to sign in? <a class="home-link-inline" href="/">Return to Home</a>
+        </p>
     </div>
 
     <!-- Google Sign-In API -->

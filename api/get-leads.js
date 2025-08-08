@@ -180,6 +180,9 @@ export default async function handler(req, res) {
               lead.timeline = row[index];
             } else if (headerLower.includes('timestamp')) {
               lead.timestamp = row[index];
+            } else if (headerLower.includes('status')) {
+              lead.status = row[index];
+              console.log(`📋 Found status for lead: "${row[index]}"`);
             }
             // Also keep original header for backward compatibility
             lead[header] = row[index];

@@ -641,11 +641,25 @@
         function updateStats(leads) {
             if (!leads) return;
             
+            console.log('📊 Calculating statistics for leads:', leads.map(l => ({
+                customerName: l.customerName,
+                status: l.status,
+                timestamp: l.timestamp
+            })));
+            
             const total = leads.length;
             const newCount = leads.filter(l => !l.status || l.status.toLowerCase() === 'new').length;
             const contactedCount = leads.filter(l => l.status && l.status.toLowerCase() === 'contacted').length;
             const completedCount = leads.filter(l => l.status && l.status.toLowerCase() === 'completed').length;
             const rejectedCount = leads.filter(l => l.status && l.status.toLowerCase() === 'rejected').length;
+            
+            console.log('📊 Statistics:', {
+                total,
+                newCount,
+                contactedCount,
+                completedCount,
+                rejectedCount
+            });
             
             document.getElementById('totalLeads').textContent = total;
             document.getElementById('newLeads').textContent = newCount;

@@ -115,6 +115,8 @@ export default async function handler(req, res) {
 
     // Update the status
     const statusCell = `Sheet1!${String.fromCharCode(65 + statusColumnIndex)}${leadRowIndex + 1}`;
+    console.log(`📝 Updating status in cell ${statusCell} to "${newStatus}"`);
+    
     await sheets.spreadsheets.values.update({
       spreadsheetId: spreadsheetId,
       range: statusCell,
@@ -123,6 +125,8 @@ export default async function handler(req, res) {
         values: [[newStatus]]
       }
     });
+    
+    console.log(`✅ Status updated successfully in ${statusCell}`);
 
     // Add a note about who updated it and when
     const noteColumnIndex = headers.findIndex(h => h.toLowerCase().includes('notes')) !== -1 

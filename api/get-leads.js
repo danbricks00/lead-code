@@ -153,9 +153,35 @@ export default async function handler(req, res) {
       if (service && service.includes(tradeType.toLowerCase())) {
         const lead = {};
         
-        // Map all columns to lead object
+        // Map all columns to lead object with normalized property names
         headers.forEach((header, index) => {
           if (row[index]) {
+            // Map to lowercase property names for dashboard compatibility
+            const headerLower = header.toLowerCase();
+            if (headerLower.includes('customer') && headerLower.includes('name')) {
+              lead.customerName = row[index];
+            } else if (headerLower.includes('customer') && headerLower.includes('email')) {
+              lead.customerEmail = row[index];
+            } else if (headerLower.includes('customer') && headerLower.includes('phone')) {
+              lead.customerPhone = row[index];
+            } else if (headerLower.includes('selected') && headerLower.includes('service')) {
+              lead.selectedService = row[index];
+            } else if (headerLower.includes('project') && headerLower.includes('details')) {
+              lead.projectDetails = row[index];
+            } else if (headerLower.includes('project') && headerLower.includes('size')) {
+              lead.projectSize = row[index];
+            } else if (headerLower.includes('specific') && headerLower.includes('details')) {
+              lead.specificDetails = row[index];
+            } else if (headerLower.includes('location')) {
+              lead.location = row[index];
+            } else if (headerLower.includes('budget')) {
+              lead.budget = row[index];
+            } else if (headerLower.includes('timeline')) {
+              lead.timeline = row[index];
+            } else if (headerLower.includes('timestamp')) {
+              lead.timestamp = row[index];
+            }
+            // Also keep original header for backward compatibility
             lead[header] = row[index];
           }
         });
@@ -167,6 +193,14 @@ export default async function handler(req, res) {
         
         filteredLeads.push(lead);
         console.log(`✅ Added lead: ${lead.CustomerName || lead.customerName} - ${service}`);
+        console.log('📋 Lead data structure:', {
+          customerName: lead.customerName,
+          customerEmail: lead.customerEmail,
+          location: lead.location,
+          budget: lead.budget,
+          selectedService: lead.selectedService,
+          projectDetails: lead.projectDetails
+        });
       }
     }
 

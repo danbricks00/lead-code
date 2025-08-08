@@ -376,6 +376,10 @@
                     <div class="stat-number" id="completedLeads">0</div>
                     <div class="stat-label">Completed</div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="rejectedLeads">0</div>
+                    <div class="stat-label">Rejected</div>
+                </div>
             </div>
         </div>
 
@@ -584,6 +588,12 @@
         // Update lead status
         async function updateLeadStatus(leadId, newStatus) {
             try {
+                // Show loading state
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Updating...';
+                button.disabled = true;
+                
                 const response = await fetch('/api/update-lead-status', {
                     method: 'POST',
                     headers: {
@@ -599,17 +609,31 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    showMessage(`Lead status updated to ${newStatus}`, 'success');
-                    // Reload leads to show updated status
+                    showMessage(`✅ Lead status updated to ${newStatus}`, 'success');
+                    
+                    // Update the status badge immediately for better UX
+                    const statusBadge = button.closest('tr').querySelector('.status-badge');
+                    if (statusBadge) {
+                        statusBadge.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+                        statusBadge.className = `status-badge status-${getStatusClass(newStatus)}`;
+                    }
+                    
+                    // Reload leads to update statistics
                     setTimeout(() => {
                         loadLeads();
-                    }, 1000);
+                    }, 500);
                 } else {
-                    showMessage(`Failed to update status: ${data.error}`, 'error');
+                    showMessage(`❌ Failed to update status: ${data.error}`, 'error');
+                    // Reset button
+                    button.textContent = originalText;
+                    button.disabled = false;
                 }
             } catch (error) {
                 console.error('Error updating lead status:', error);
-                showMessage('Error updating lead status', 'error');
+                showMessage('❌ Error updating lead status', 'error');
+                // Reset button
+                button.textContent = originalText;
+                button.disabled = false;
             }
         }
 
@@ -621,11 +645,13 @@
             const newCount = leads.filter(l => !l.status || l.status.toLowerCase() === 'new').length;
             const contactedCount = leads.filter(l => l.status && l.status.toLowerCase() === 'contacted').length;
             const completedCount = leads.filter(l => l.status && l.status.toLowerCase() === 'completed').length;
+            const rejectedCount = leads.filter(l => l.status && l.status.toLowerCase() === 'rejected').length;
             
             document.getElementById('totalLeads').textContent = total;
             document.getElementById('newLeads').textContent = newCount;
             document.getElementById('contactedLeads').textContent = contactedCount;
             document.getElementById('completedLeads').textContent = completedCount;
+            document.getElementById('rejectedLeads').textContent = rejectedCount;
         }
 
         // Format date

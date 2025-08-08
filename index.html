@@ -146,6 +146,9 @@
             padding: 8px;
             border-radius: 4px;
             background: rgba(255, 255, 255, 0.1);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
         
         .bar { 
@@ -154,6 +157,7 @@
             background: #1a1a1a; 
             margin: 3px 0; 
             transition: 0.3s; 
+            border-radius: 2px;
         }
         
         /* Mobile Navigation - Universal Mobile Styles */
@@ -164,10 +168,15 @@
                 z-index: 1001;
                 margin-left: auto;
                 margin-right: 10px;
-                padding: 8px;
-                background: rgba(255, 255, 255, 0.2);
-                border-radius: 6px;
-                border: 1px solid rgba(0, 0, 0, 0.1);
+                padding: 12px;
+                background: rgba(255, 255, 255, 0.3);
+                border-radius: 8px;
+                border: 2px solid rgba(0, 0, 0, 0.1);
+                min-width: 44px;
+                min-height: 44px;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             }
             .nav-menu { 
                 position: fixed; 
@@ -1372,16 +1381,48 @@
             const hamburger = document.querySelector('.hamburger');
             const navMenu = document.querySelector('.nav-menu');
             
-            hamburger.addEventListener('click', () => {
-                hamburger.classList.toggle('active');
-                navMenu.classList.toggle('active');
-            });
+            console.log('Hamburger element:', hamburger);
+            console.log('Nav menu element:', navMenu);
             
-            // Close menu when clicking on a link
-            document.querySelectorAll('.nav-link').forEach(n => n.addEventListener('click', () => {
-                hamburger.classList.remove('active');
-                navMenu.classList.remove('active');
-            }));
+            if (hamburger && navMenu) {
+                // Function to toggle menu
+                function toggleMenu() {
+                    console.log('Toggle menu called!');
+                    hamburger.classList.toggle('active');
+                    navMenu.classList.toggle('active');
+                    console.log('Hamburger active:', hamburger.classList.contains('active'));
+                    console.log('Nav menu active:', navMenu.classList.contains('active'));
+                }
+                
+                // Add multiple event listeners for better mobile compatibility
+                hamburger.addEventListener('click', toggleMenu);
+                hamburger.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    toggleMenu();
+                });
+                
+                // Also add pointer events for better touch support
+                hamburger.addEventListener('pointerdown', function(e) {
+                    e.preventDefault();
+                    toggleMenu();
+                });
+                
+                // Close menu when clicking on a link
+                document.querySelectorAll('.nav-link').forEach(n => n.addEventListener('click', () => {
+                    hamburger.classList.remove('active');
+                    navMenu.classList.remove('active');
+                }));
+                
+                // Close menu when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!hamburger.contains(e.target) && !navMenu.contains(e.target)) {
+                        hamburger.classList.remove('active');
+                        navMenu.classList.remove('active');
+                    }
+                });
+            } else {
+                console.error('Hamburger or nav menu not found!');
+            }
             
             // Auto-open chat on mobile for better UX
             if (window.innerWidth <= 768) {

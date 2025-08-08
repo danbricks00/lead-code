@@ -105,12 +105,20 @@ export default async function handler(req, res) {
     try {
       const allTradesmen = await getAllTradesmen();
       console.log('📋 All registered tradesmen:', allTradesmen.length);
+      console.log('📋 All tradesmen details:', allTradesmen.map(t => ({
+        email: t.email,
+        name: t.name,
+        tradeType: t.tradeType,
+        status: t.status
+      })));
       
       // Filter tradesmen by service type and active status
-      tradesmenFound = allTradesmen.filter(tradesman => 
-        tradesman.tradeType === leadData.selectedService && 
-        tradesman.status === 'active'
-      );
+      tradesmenFound = allTradesmen.filter(tradesman => {
+        const matchesService = tradesman.tradeType === leadData.selectedService;
+        const isActive = tradesman.status === 'active';
+        console.log(`🔍 Checking tradesman ${tradesman.name}: service=${tradesman.tradeType} (matches: ${matchesService}), status=${tradesman.status} (active: ${isActive})`);
+        return matchesService && isActive;
+      });
       
       console.log(`📋 Found ${tradesmenFound.length} tradesmen for ${leadData.selectedService}:`, 
         tradesmenFound.map(t => `${t.name} (${t.email})`));

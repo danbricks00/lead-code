@@ -367,7 +367,8 @@
             border-top: 1px solid #f0f0f0;
         }
 
-        @media (max-width: 768px) {
+        /* Treat tablet portrait like mobile for leads readability */
+        @media (max-width: 1024px) {
             .container {
                 padding: 1rem;
             }

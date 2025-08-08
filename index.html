@@ -111,6 +111,8 @@
             user-select: none;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
+            background: transparent;
+            border: 0;
         }
         
         .bar {
@@ -121,6 +123,8 @@
             transition: 0.3s;
             border-radius: 2px;
         }
+        /* Ensure taps on bars trigger the hamburger parent */
+        .hamburger .bar { pointer-events: none; }
         
         .hamburger.active .bar:nth-child(2) {
             opacity: 0;
@@ -162,7 +166,7 @@
             .hamburger { 
                 display: flex !important; 
                 position: relative;
-                z-index: 1001;
+                z-index: 3001;
                 margin-left: auto;
                 margin-right: 10px;
                 padding: 12px;
@@ -193,8 +197,9 @@
                 overflow-y: auto;
                 -webkit-overflow-scrolling: touch;
                 overscroll-behavior: contain;
+                pointer-events: none;
             }
-            .nav-menu.active { left: 0; }
+            .nav-menu.active { left: 0; pointer-events: auto; }
             .nav-item { 
                 margin: 1rem 0; 
                 padding: 0.5rem 0;
@@ -1490,6 +1495,8 @@
 
                 // Single primary handler to avoid double-toggles on touch
                 hamburger.addEventListener('click', toggleMenu, { passive: false });
+                // iOS Safari sometimes sends touchend without click when passive scrolling
+                hamburger.addEventListener('touchend', (e) => { e.preventDefault(); toggleMenu(e); }, { passive: false });
 
                 // Close when clicking a link
                 document.querySelectorAll('.nav-link').forEach(link => {
@@ -1505,6 +1512,8 @@
                 document.addEventListener('keydown', (e) => {
                     if (e.key === 'Escape') closeMenu();
                 });
+                // Prevent body from scrolling while touching inside menu on iOS
+                navMenu.addEventListener('touchmove', (e) => { e.stopPropagation(); }, { passive: false });
             }
 
             // Auto-open chat on mobile for better UX

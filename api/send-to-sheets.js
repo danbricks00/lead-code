@@ -1,4 +1,5 @@
 import { google } from 'googleapis';
+import { getAllTradesmen } from './database.js';
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -22,6 +23,7 @@ export default async function handler(req, res) {
     let sheetsUpdated = false;
     let customerEmailSent = false;
     let tradesmanEmailSent = false;
+    let tradesmenFound = [];
 
     // Debug: Log all environment variables
     console.log('🔍 ALL ENVIRONMENT VARIABLES:');
@@ -98,7 +100,27 @@ export default async function handler(req, res) {
       console.error('❌ Error details:', sheetsError.message);
     }
 
-    // 2. Email functionality - Fixed Nodemailer import
+    // 2. Find registered tradesmen for this service type
+    console.log('🔍 Finding tradesmen for service:', leadData.selectedService);
+    try {
+      const allTradesmen = await getAllTradesmen();
+      console.log('📋 All registered tradesmen:', allTradesmen.length);
+      
+      // Filter tradesmen by service type and active status
+      tradesmenFound = allTradesmen.filter(tradesman => 
+        tradesman.tradeType === leadData.selectedService && 
+        tradesman.status === 'active'
+      );
+      
+      console.log(`📋 Found ${tradesmenFound.length} tradesmen for ${leadData.selectedService}:`, 
+        tradesmenFound.map(t => `${t.name} (${t.email})`));
+      
+    } catch (tradesmenError) {
+      console.error('❌ Error finding tradesmen:', tradesmenError);
+      console.log('⚠️ Will use fallback email for tradesman notification');
+    }
+
+    // 3. Email functionality - Fixed Nodemailer import
     console.log('🔍 Attempting to send emails...');
     
     try {
@@ -171,31 +193,73 @@ export default async function handler(req, res) {
           console.log('✅ Customer email sent successfully');
           customerEmailSent = true;
 
-          // Send tradesman email
-          console.log('📧 Sending tradesman email to: danbricks18@gmail.com');
-          const tradesmanMailOptions = {
-            from: process.env.GMAIL_USER,
-            to: 'danbricks18@gmail.com',
-            subject: `New ${leadData.selectedService} Lead - ${leadData.customerName}`,
-            html: `
-              <h2>New Lead Received!</h2>
-              <p><strong>Customer:</strong> ${leadData.customerName}</p>
-              <p><strong>Email:</strong> ${leadData.customerEmail}</p>
-              <p><strong>Phone:</strong> ${leadData.customerPhone}</p>
-              <p><strong>Service:</strong> ${leadData.selectedService}</p>
-              <p><strong>Project Details:</strong> ${leadData.projectDetails}</p>
-              <p><strong>Project Size:</strong> ${leadData.projectSize}</p>
-              <p><strong>Specific Details:</strong> ${leadData.specificDetails}</p>
-              <p><strong>Location:</strong> ${leadData.location}</p>
-              <p><strong>Budget:</strong> ${leadData.budget}</p>
-              <p><strong>Timeline:</strong> ${leadData.timeline}</p>
-              <p>Please contact the customer as soon as possible.</p>
-            `
-          };
+          // Send tradesman emails - Dynamic distribution
+          if (tradesmenFound.length > 0) {
+            console.log(`📧 Sending tradesman emails to ${tradesmenFound.length} tradesmen`);
+            
+            for (const tradesman of tradesmenFound) {
+              try {
+                const tradesmanMailOptions = {
+                  from: process.env.GMAIL_USER,
+                  to: tradesman.email,
+                  subject: `New ${leadData.selectedService} Lead - ${leadData.customerName}`,
+                  html: `
+                    <h2>New Lead Received!</h2>
+                    <p><strong>Customer:</strong> ${leadData.customerName}</p>
+                    <p><strong>Email:</strong> ${leadData.customerEmail}</p>
+                    <p><strong>Phone:</strong> ${leadData.customerPhone}</p>
+                    <p><strong>Service:</strong> ${leadData.selectedService}</p>
+                    <p><strong>Project Details:</strong> ${leadData.projectDetails}</p>
+                    <p><strong>Project Size:</strong> ${leadData.projectSize}</p>
+                    <p><strong>Specific Details:</strong> ${leadData.specificDetails}</p>
+                    <p><strong>Location:</strong> ${leadData.location}</p>
+                    <p><strong>Budget:</strong> ${leadData.budget}</p>
+                    <p><strong>Timeline:</strong> ${leadData.timeline}</p>
+                    <p>Please contact the customer as soon as possible.</p>
+                    <p>You can view and manage this lead in your dashboard.</p>
+                  `
+                };
 
-          await transporter.sendMail(tradesmanMailOptions);
-          console.log('✅ Tradesman email sent successfully');
-          tradesmanEmailSent = true;
+                await transporter.sendMail(tradesmanMailOptions);
+                console.log(`✅ Tradesman email sent to: ${tradesman.email}`);
+              } catch (tradesmanEmailError) {
+                console.error(`❌ Failed to send email to ${tradesman.email}:`, tradesmanEmailError.message);
+              }
+            }
+            tradesmanEmailSent = true;
+          } else {
+            // Fallback: Send to admin email if no tradesmen found
+            console.log('📧 No tradesmen found for this service, sending to admin email');
+            const adminMailOptions = {
+              from: process.env.GMAIL_USER,
+              to: 'danbricks18@gmail.com',
+              subject: `New ${leadData.selectedService} Lead - NO TRADESMEN REGISTERED`,
+              html: `
+                <h2>New Lead Received - No Tradesmen Available!</h2>
+                <p><strong>Service Type:</strong> ${leadData.selectedService}</p>
+                <p><strong>Customer:</strong> ${leadData.customerName}</p>
+                <p><strong>Email:</strong> ${leadData.customerEmail}</p>
+                <p><strong>Phone:</strong> ${leadData.customerPhone}</p>
+                <p><strong>Project Details:</strong> ${leadData.projectDetails}</p>
+                <p><strong>Project Size:</strong> ${leadData.projectSize}</p>
+                <p><strong>Specific Details:</strong> ${leadData.specificDetails}</p>
+                <p><strong>Location:</strong> ${leadData.location}</p>
+                <p><strong>Budget:</strong> ${leadData.budget}</p>
+                <p><strong>Timeline:</strong> ${leadData.timeline}</p>
+                <p><strong>⚠️ ACTION REQUIRED:</strong> No tradesmen are registered for this service type.</p>
+                <p>Please either:</p>
+                <ul>
+                  <li>Register a tradesman for ${leadData.selectedService} service</li>
+                  <li>Contact the customer directly</li>
+                  <li>Forward this lead to an appropriate tradesman</li>
+                </ul>
+              `
+            };
+
+            await transporter.sendMail(adminMailOptions);
+            console.log('✅ Admin notification email sent');
+            tradesmanEmailSent = true;
+          }
 
         } else {
           console.log('❌ createTransporter/createTransport method not available');
@@ -226,6 +290,7 @@ export default async function handler(req, res) {
         sheetsUpdated,
         customerEmailSent,
         tradesmanEmailSent,
+        tradesmenFound: tradesmenFound.length,
         note: customerEmailSent && tradesmanEmailSent
           ? 'All systems working!'
           : 'Google Sheets working! Email may need configuration'

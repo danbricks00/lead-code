@@ -156,6 +156,7 @@
             transition: 0.3s; 
         }
         
+        /* Mobile Navigation - Universal Mobile Styles */
         @media (max-width: 768px) {
             .hamburger { 
                 display: flex !important; 
@@ -163,6 +164,10 @@
                 z-index: 1001;
                 margin-left: auto;
                 margin-right: 10px;
+                padding: 8px;
+                background: rgba(255, 255, 255, 0.2);
+                border-radius: 6px;
+                border: 1px solid rgba(0, 0, 0, 0.1);
             }
             .nav-menu { 
                 position: fixed; 
@@ -177,37 +182,193 @@
                 padding: 2rem 0; 
                 box-shadow: 0 4px 20px rgba(0,0,0,0.1);
                 z-index: 1000;
+                height: calc(100vh - 70px);
+                overflow-y: auto;
             }
             .nav-menu.active { left: 0; }
-            .nav-item { margin: 1rem 0; }
+            .nav-item { 
+                margin: 1rem 0; 
+                padding: 0.5rem 0;
+            }
+            .nav-link {
+                padding: 1rem 2rem;
+                font-size: 1.1rem;
+                display: block;
+                width: 100%;
+            }
+            .nav-link.login-btn {
+                margin: 1rem auto;
+                max-width: 200px;
+            }
         }
         
-        /* Additional mobile-specific styles for smaller screens */
+        /* Small Mobile Devices (iPhone SE, older iPhones, small Android) */
         @media (max-width: 480px) {
             .hamburger { 
                 display: flex !important; 
                 margin-left: auto;
                 margin-right: 5px;
-                background: rgba(255, 255, 255, 0.2);
-                border: 1px solid rgba(0, 0, 0, 0.1);
+                padding: 10px;
+                background: rgba(255, 255, 255, 0.3);
+                border-radius: 8px;
             }
             .nav-container {
                 padding: 0 15px;
             }
+            .nav-menu {
+                top: 60px;
+                height: calc(100vh - 60px);
+            }
+            .nav-link {
+                padding: 1.2rem 1rem;
+                font-size: 1rem;
+            }
         }
         
-        /* iPhone 16 Plus specific styles (430px width) */
+        /* iPhone 16 Plus and similar modern phones (430px width) */
         @media (max-width: 430px) {
             .hamburger { 
                 display: flex !important; 
                 margin-left: auto;
                 margin-right: 0;
-                padding: 10px;
-                background: rgba(255, 255, 255, 0.3);
-                border-radius: 6px;
+                padding: 12px;
+                background: rgba(255, 255, 255, 0.4);
+                border-radius: 8px;
             }
             .nav-container {
                 padding: 0 10px;
+            }
+        }
+        
+        /* Very small screens (iPhone SE, small Android) */
+        @media (max-width: 375px) {
+            .hamburger { 
+                padding: 10px;
+                margin-right: 5px;
+            }
+            .nav-container {
+                padding: 0 8px;
+            }
+            .nav-logo h2 {
+                font-size: 1.5rem;
+            }
+            .nav-logo .logo-icon {
+                font-size: 1.5rem;
+            }
+        }
+        
+        /* Extra small screens (iPhone SE 1st gen, very small Android) */
+        @media (max-width: 320px) {
+            .hamburger { 
+                padding: 8px;
+                margin-right: 3px;
+            }
+            .nav-container {
+                padding: 0 5px;
+            }
+            .nav-logo h2 {
+                font-size: 1.3rem;
+            }
+            .nav-logo .logo-icon {
+                font-size: 1.3rem;
+            }
+        }
+        
+        /* Tablet Portrait Mode */
+        @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+            .hamburger { 
+                display: flex !important; 
+                margin-left: auto;
+                margin-right: 15px;
+                padding: 12px;
+                background: rgba(255, 255, 255, 0.2);
+                border-radius: 8px;
+            }
+            .nav-container {
+                padding: 0 20px;
+            }
+            .nav-menu {
+                top: 80px;
+                height: calc(100vh - 80px);
+            }
+            .nav-link {
+                padding: 1.5rem 2rem;
+                font-size: 1.2rem;
+            }
+        }
+        
+        /* Tablet Landscape Mode */
+        @media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+            .hamburger { 
+                display: flex !important; 
+                margin-left: auto;
+                margin-right: 20px;
+                padding: 15px;
+                background: rgba(255, 255, 255, 0.2);
+                border-radius: 10px;
+            }
+            .nav-container {
+                padding: 0 25px;
+            }
+            .nav-menu {
+                top: 90px;
+                height: calc(100vh - 90px);
+            }
+            .nav-link {
+                padding: 1.8rem 2.5rem;
+                font-size: 1.3rem;
+            }
+        }
+        
+        /* Large Tablets (iPad Pro, etc.) */
+        @media (min-width: 1024px) and (max-width: 1366px) {
+            .hamburger { 
+                display: flex !important; 
+                margin-left: auto;
+                margin-right: 25px;
+                padding: 18px;
+                background: rgba(255, 255, 255, 0.2);
+                border-radius: 12px;
+            }
+            .nav-container {
+                padding: 0 30px;
+            }
+            .nav-menu {
+                top: 100px;
+                height: calc(100vh - 100px);
+            }
+            .nav-link {
+                padding: 2rem 3rem;
+                font-size: 1.4rem;
+            }
+        }
+        
+        /* Android-specific optimizations for common aspect ratios */
+        @media (max-width: 768px) and (min-aspect-ratio: 16/9) {
+            .hamburger {
+                padding: 10px;
+                margin-right: 8px;
+            }
+        }
+        
+        @media (max-width: 768px) and (min-aspect-ratio: 18/9) {
+            .hamburger {
+                padding: 12px;
+                margin-right: 10px;
+            }
+        }
+        
+        @media (max-width: 768px) and (min-aspect-ratio: 19/9) {
+            .hamburger {
+                padding: 12px;
+                margin-right: 12px;
+            }
+        }
+        
+        @media (max-width: 768px) and (min-aspect-ratio: 21/9) {
+            .hamburger {
+                padding: 14px;
+                margin-right: 15px;
             }
         }
         
@@ -623,6 +784,7 @@
             }
         }
         
+        /* Enhanced mobile responsiveness for different aspect ratios */
         @media (max-width: 480px) {
             .chat-window { 
                 width: calc(100vw - 20px); 
@@ -652,6 +814,76 @@
             .how-it-works {
                 margin: 2rem 0;
                 padding: 2rem 1rem;
+            }
+        }
+        
+        /* Very small screens */
+        @media (max-width: 375px) {
+            .hero-content h1 { font-size: 1.8rem; }
+            .hero-content p { font-size: 0.9rem; }
+            .chat-window { 
+                width: calc(100vw - 16px); 
+                right: 8px; 
+                left: 8px; 
+                height: 380px;
+            }
+            .chatbot-container {
+                right: 8px;
+                left: 8px;
+            }
+            .container {
+                padding: 0 0.8rem;
+            }
+        }
+        
+        /* Extra small screens */
+        @media (max-width: 320px) {
+            .hero-content h1 { font-size: 1.6rem; }
+            .hero-content p { font-size: 0.85rem; }
+            .chat-window { 
+                width: calc(100vw - 12px); 
+                right: 6px; 
+                left: 6px; 
+                height: 350px;
+            }
+            .chatbot-container {
+                right: 6px;
+                left: 6px;
+            }
+            .container {
+                padding: 0 0.6rem;
+            }
+        }
+        
+        /* Tablet optimizations */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .hero-content h1 { font-size: 3rem; }
+            .hero-content p { font-size: 1.2rem; }
+            .chat-window { 
+                width: calc(100vw - 60px); 
+                right: 30px; 
+                left: 30px; 
+                height: 500px; 
+            }
+            .chatbot-container {
+                right: 30px;
+                left: 30px;
+            }
+        }
+        
+        /* Large tablet optimizations */
+        @media (min-width: 1024px) and (max-width: 1366px) {
+            .hero-content h1 { font-size: 3.2rem; }
+            .hero-content p { font-size: 1.3rem; }
+            .chat-window { 
+                width: calc(100vw - 80px); 
+                right: 40px; 
+                left: 40px; 
+                height: 550px; 
+            }
+            .chatbot-container {
+                right: 40px;
+                left: 40px;
             }
         }
         

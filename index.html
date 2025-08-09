@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>LeadBot - Connect with Qualified Tradesmen</title>
+        <title>Kiwi Underfloor Heating - Get Your Quote</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -1034,7 +1034,7 @@
             <div class="nav-container">
                 <div class="nav-logo">
                     <span class="logo-icon">🔧</span>
-                    <h2>LeadBot</h2>
+                    <h2>Kiwi Underfloor Heating</h2>
                 </div>
                 <ul class="nav-menu">
                     <li class="nav-item">
@@ -1087,7 +1087,7 @@
             <!-- Services Section -->
             <section class="services">
                 <div class="section-header">
-                    <h2>Why Choose LeadBot?</h2>
+                <h2>Why Choose Kiwi Underfloor Heating?</h2>
                     <p>We've revolutionized how customers connect with tradesmen, making the process faster, easier, and more reliable than ever before.</p>
                 </div>
                 <div class="services-grid">
@@ -1137,7 +1137,7 @@
             <!-- Contact Section -->
             <section class="contact-section">
                 <h2>Ready to Get Started?</h2>
-                <p>Join thousands of satisfied customers who have found their perfect tradesman through LeadBot.</p>
+                <p>Join thousands of satisfied customers who have installed warm, efficient floors with Kiwi Underfloor Heating.</p>
                 <button class="cta-button" onclick="openChat()">Start Your Project</button>
             </section>
         </div>
@@ -1148,22 +1148,10 @@
         <button class="chat-toggle" onclick="toggleChat()">💬</button>
         <div class="chat-window" id="chatWindow">
             <div class="chat-header">
-                LeadBot Assistant
+                Kiwi Underfloor Heating Assistant
             </div>
             <div class="chat-messages" id="chatMessages">
-                <div class="message bot-message">
-                    👋 Hi! I'm LeadBot, your personal assistant for finding qualified tradesmen. What type of service do you need?
-                </div>
-                <div class="quick-options">
-                    <button class="quick-option" onclick="selectService('builder')">🏗️ Building/Construction</button>
-                    <button class="quick-option" onclick="selectService('electrician')">⚡ Electrical</button>
-                    <button class="quick-option" onclick="selectService('plumber')">🔧 Plumbing</button>
-                    <button class="quick-option" onclick="selectService('painter')">🎨 Painting/Decorating</button>
-                    <button class="quick-option" onclick="selectService('roofer')">🏠 Roofing</button>
-                    <button class="quick-option" onclick="selectService('landscaper')">🌿 Landscaping</button>
-                    <button class="quick-option" onclick="selectService('heating')">🔥 Heating Engineer</button>
-                    <button class="quick-option" onclick="selectService('other')">📋 Other Services</button>
-                </div>
+                <div class="message bot-message">👋 Welcome to Kiwi Underfloor Heating! We'll ask a couple of quick questions to prepare your underfloor heating quote.</div>
             </div>
             <div class="chat-input-container">
                 <input type="text" class="chat-input" id="chatInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
@@ -1174,8 +1162,8 @@
 
     <script>
         let chatState = {
-            step: 'service_selection',
-            selectedService: '',
+            step: 'welcome',
+            selectedService: 'underfloor_heating',
             projectDetails: '',
             projectSize: '',
             specificDetails: '',
@@ -1184,7 +1172,9 @@
             timeline: '',
             customerName: '',
             customerEmail: '',
-            customerPhone: ''
+            customerPhone: '',
+            areasCount: '',
+            areaSizes: ''
         };
 
         function toggleChat() {
@@ -1193,11 +1183,10 @@
                 chatWindow.style.display = 'none';
             } else {
                 chatWindow.style.display = 'flex';
-                // Always show service options when opening chat
+                // Start simplified UFH flow when opening chat
                 const messagesContainer = document.getElementById('chatMessages');
                 if (messagesContainer.children.length <= 1) {
-                    // Clear any existing options and show service selection
-                    messagesContainer.innerHTML = '<div class="message bot-message">👋 Hi! I\'m LeadBot, your personal assistant for finding qualified tradesmen. What type of service do you need?</div>';
+                    messagesContainer.innerHTML = '<div class="message bot-message">👋 Welcome to Kiwi Underfloor Heating! We\'ll ask a couple of quick questions to prepare your underfloor heating quote.</div>';
                     startChat();
                 }
             }
@@ -1205,28 +1194,19 @@
 
         function openChat() {
             document.getElementById('chatWindow').style.display = 'flex';
-            // Always show service options when opening chat
+            // Start simplified UFH flow when opening chat
             const messagesContainer = document.getElementById('chatMessages');
             if (messagesContainer.children.length <= 1) {
-                // Clear any existing options and show service selection
-                messagesContainer.innerHTML = '<div class="message bot-message">👋 Hi! I\'m LeadBot, your personal assistant for finding qualified tradesmen. What type of service do you need?</div>';
+                messagesContainer.innerHTML = '<div class="message bot-message">👋 Welcome to Kiwi Underfloor Heating! We\'ll ask a couple of quick questions to prepare your underfloor heating quote.</div>';
                 startChat();
             }
         }
         window.openChat = openChat; // Make openChat globally accessible
 
         function startChat() {
-            // Don't add the initial message since it's already in the HTML
-            addQuickOptions([
-                { text: '🏗️ Building/Construction', action: () => selectService('builder') },
-                { text: '⚡ Electrical', action: () => selectService('electrician') },
-                { text: '🔧 Plumbing', action: () => selectService('plumber') },
-                { text: '🎨 Painting/Decorating', action: () => selectService('painter') },
-                { text: '🏠 Roofing', action: () => selectService('roofer') },
-                { text: '🌿 Landscaping', action: () => selectService('landscaper') },
-                { text: '🔥 Heating Engineer', action: () => selectService('heating') },
-                { text: '📋 Other Services', action: () => selectService('other') }
-            ]);
+            // Simplified UFH decision tree
+            chatState.step = 'areas_count';
+            addMessage('How many areas are you planning to install underfloor heating in?');
         }
 
         function addMessage(message, isUser = false) {
@@ -1271,26 +1251,17 @@
         }
 
         function selectService(service) {
-            chatState.selectedService = service;
-            chatState.step = 'project_details';
-            const serviceNames = {
-                'builder': 'Building/Construction',
-                'electrician': 'Electrical',
-                'plumber': 'Plumbing',
-                'painter': 'Painting/Decorating',
-                'roofer': 'Roofing',
-                'landscaper': 'Landscaping',
-                'heating': 'Heating Engineer',
-                'other': 'Other services'
-            };
-            addMessage(`${serviceNames[service]}`, true);
+            // In simplified mode, always use underfloor heating
+            chatState.selectedService = 'underfloor_heating';
+            chatState.step = 'areas_count';
+            addMessage('Underfloor Heating', true);
             setTimeout(() => {
                 addTypingIndicator();
                 setTimeout(() => {
                     removeTypingIndicator();
-                    addMessage(`Great! I can help you find a qualified ${service === 'other' ? 'tradesman' : serviceNames[service].toLowerCase()} professional. Can you describe your project in detail? What specific work needs to be done?`);
-                }, 1200);
-            }, 400);
+                    addMessage('How many areas are you planning to install underfloor heating in?');
+                }, 800);
+            }, 300);
         }
 
         function handleKeyPress(event) {
@@ -1313,47 +1284,32 @@
             setTimeout(() => {
                 removeTypingIndicator();
                 switch (chatState.step) {
-                    case 'project_details':
-                        chatState.projectDetails = message;
-                        askProjectSize();
+                    case 'welcome':
+                        chatState.step = 'areas_count';
+                        addMessage('How many areas are you planning to install underfloor heating in?');
                         break;
-                    case 'project_size':
-                        chatState.projectSize = message;
-                        askSpecificDetails();
+                    case 'areas_count':
+                        chatState.areasCount = message;
+                        chatState.step = 'area_sizes';
+                        addMessage('How big is each area? You can list like: kitchen 12m², living room 25m².');
                         break;
-                    case 'specific_details':
-                        chatState.specificDetails = message;
-                        chatState.step = 'location';
-                        addMessage("Perfect! Now, what's your location or postcode? This helps me find tradesmen in your area.");
-                        break;
-                    case 'location':
-                        chatState.location = message;
-                        chatState.step = 'budget';
-                        addMessage("Thanks! What's your approximate budget for this project?");
-                        addQuickOptions([
-                            { text: 'Under £500', action: () => setBudget('Under £500') },
-                            { text: '£500-£2000', action: () => setBudget('£500-£2000') },
-                            { text: '£2000-£5000', action: () => setBudget('£2000-£5000') },
-                            { text: 'Over £5000', action: () => setBudget('Over £5000') }
-                        ]);
-                        break;
-                    case 'timeline':
-                        chatState.timeline = message;
-                        chatState.step = 'customer_name';
-                        addMessage("Great! Now I need your contact details to send your requirements to qualified tradesmen. What's your name?");
-                        break;
-                    case 'customer_name':
-                        chatState.customerName = message;
-                        chatState.step = 'customer_email';
-                        addMessage("Nice to meet you, " + message + "! What's your email address?");
-                        break;
-                    case 'customer_email':
-                        chatState.customerEmail = message;
+                    case 'area_sizes':
+                        chatState.areaSizes = message;
                         chatState.step = 'customer_phone';
-                        addMessage("Perfect! And finally, what's your phone number? This allows tradesmen to contact you directly.");
+                        addMessage("What's your phone number so a tradesman can contact you about the job?");
                         break;
                     case 'customer_phone':
                         chatState.customerPhone = message;
+                        chatState.step = 'location';
+                        addMessage("What's the address of the job?");
+                        break;
+                    case 'location':
+                        chatState.location = message;
+                        chatState.step = 'customer_email';
+                        addMessage("Finally, what's your email address so we can send your quote?");
+                        break;
+                    case 'customer_email':
+                        chatState.customerEmail = message;
                         generateLead();
                         break;
                     default:
@@ -1433,13 +1389,13 @@
                 customerName: chatState.customerName,
                 customerEmail: chatState.customerEmail,
                 customerPhone: chatState.customerPhone,
-                selectedService: chatState.selectedService,
-                projectDetails: chatState.projectDetails,
-                projectSize: chatState.projectSize,
-                specificDetails: chatState.specificDetails,
+                selectedService: 'underfloor_heating',
+                projectDetails: `Areas: ${chatState.areasCount || ''}; Sizes: ${chatState.areaSizes || ''}`,
+                projectSize: chatState.areaSizes || '',
+                specificDetails: '',
                 location: chatState.location,
-                budget: chatState.budget,
-                timeline: chatState.timeline
+                budget: '',
+                timeline: ''
             };
 
             console.log('Lead generated:', leadData);

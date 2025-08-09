@@ -181,7 +181,7 @@ export default async function handler(req, res) {
 
           // Send customer email
           console.log('📧 Sending customer email to:', leadData.customerEmail);
-          const fromDisplay = process.env.MAIL_FROM || `TradeBot <${process.env.GMAIL_USER}>`;
+          const fromDisplay = process.env.MAIL_FROM || `Kiwi Underfloor Heating <${process.env.GMAIL_USER}>`;
           const replyTo = process.env.MAIL_REPLY_TO || process.env.GMAIL_USER;
 
           const customerMailOptions = {

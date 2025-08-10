@@ -230,7 +230,7 @@ export default async function handler(req, res) {
                 // Get the current deployment URL dynamically
                 const currentUrl = req.headers.host ? 
                   `https://${req.headers.host}` : 
-                  'https://lead-code-5re8cn9r7-dan-buis-projects-e44a173c.vercel.app';
+                  'https://lead-code-8fti49bzh-dan-buis-projects-e44a173c.vercel.app';
                 const quoteUrl = `${currentUrl}/api/quote-submission?quoteId=${quote?.QuoteID || 'QUOTE-ID'}`;
               
               const tradesmanMailOptions = {

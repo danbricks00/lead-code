@@ -50,6 +50,7 @@ function generateCommitMessage(changedFiles) {
   
   // Analyze changes to create a meaningful description
   let description = 'General updates';
+  let changeType = 'update';
   
   if (changedFiles.length > 0) {
     const apiChanges = changedFiles.filter(f => f.startsWith('api/'));
@@ -57,11 +58,34 @@ function generateCommitMessage(changedFiles) {
     const htmlChanges = changedFiles.filter(f => f.endsWith('.html'));
     
     if (apiChanges.length > 0) {
-      description = `API updates: ${apiChanges.map(f => f.replace('api/', '')).join(', ')}`;
+      const apiNames = apiChanges.map(f => f.replace('api/', '').replace('.js', ''));
+      if (apiNames.includes('send-to-sheets')) {
+        description = `Fix email sending and quote generation`;
+        changeType = 'fix';
+      } else if (apiNames.includes('quote-submission')) {
+        description = `Fix quote submission form and pricing calculation`;
+        changeType = 'fix';
+      } else if (apiNames.includes('quote-database')) {
+        description = `Update quote database structure`;
+        changeType = 'update';
+      } else {
+        description = `API updates: ${apiNames.join(', ')}`;
+        changeType = 'update';
+      }
     } else if (configChanges.length > 0) {
-      description = `Configuration updates: ${configChanges.join(', ')}`;
+      if (configChanges.includes('deploy-and-commit.js')) {
+        description = `Improve deployment script and commit messages`;
+        changeType = 'improve';
+      } else if (configChanges.includes('package.json')) {
+        description = `Update dependencies and scripts`;
+        changeType = 'update';
+      } else {
+        description = `Configuration updates: ${configChanges.join(', ')}`;
+        changeType = 'update';
+      }
     } else if (htmlChanges.length > 0) {
       description = `Frontend updates: ${htmlChanges.join(', ')}`;
+      changeType = 'update';
     }
   }
   
@@ -69,7 +93,9 @@ function generateCommitMessage(changedFiles) {
     ? `\n\n📁 Changed files:\n${changedFiles.slice(0, 8).map(f => `  • ${f}`).join('\n')}${changedFiles.length > 8 ? `\n  ... and ${changedFiles.length - 8} more files` : ''}`
     : '';
   
-  return `🚀 Deploy: ${timestamp}\n\n${description}${fileSummary}`;
+  const changeEmoji = changeType === 'fix' ? '🔧' : changeType === 'improve' ? '⚡' : '📝';
+  
+  return `${changeEmoji} ${description} - ${timestamp}${fileSummary}`;
 }
 
 // Main deployment process

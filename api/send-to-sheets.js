@@ -18,7 +18,50 @@ export default async function handler(req, res) {
   }
 
   try {
-    const leadData = req.body;
+    const { action, ...data } = req.body;
+
+    // Handle different actions
+    if (action === 'log-interrupted-session') {
+      return await handleInterruptedSession(data, res);
+    } else {
+      // Default action: submit lead
+      return await handleLeadSubmission(data, res);
+    }
+  } catch (error) {
+    console.error('❌ Error in send-to-sheets:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      details: error.message
+    });
+  }
+}
+
+async function handleInterruptedSession(sessionData, res) {
+  try {
+    const result = await logInterruptedSession(sessionData);
+    
+    if (result.success) {
+      res.status(200).json({
+        success: true,
+        message: 'Interrupted session logged successfully'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: result.error || 'Failed to log interrupted session'
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error handling interrupted session:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+}
+
+async function handleLeadSubmission(leadData, res) {
     console.log('✅ Lead received:', leadData);
 
     let sheetsUpdated = false;
@@ -373,5 +416,44 @@ export default async function handler(req, res) {
       error: 'Failed to process lead',
       details: error.message
     });
+  }
+}
+
+export async function logInterruptedSession(sessionData) {
+  try {
+    const auth = getAuth();
+    const sheets = google.sheets({ version: 'v4', auth });
+    
+    const rowData = [
+      new Date().toISOString(),
+      'INTERRUPTED',
+      sessionData.customerEmail || 'Unknown',
+      sessionData.customerName || 'Unknown',
+      sessionData.selectedService || 'Unknown',
+      sessionData.projectDetails || 'Session interrupted',
+      sessionData.projectSize || '',
+      sessionData.location || '',
+      sessionData.budget || '',
+      sessionData.timeline || '',
+      sessionData.customerPhone || '',
+      sessionData.specificDetails || '',
+      'Chat session was closed by user',
+      'interrupted'
+    ];
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
+      range: 'Leads!A:A',
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [rowData]
+      }
+    });
+
+    console.log('✅ Interrupted session logged to sheet');
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Error logging interrupted session:', error);
+    return { success: false, error: error.message };
   }
 } 

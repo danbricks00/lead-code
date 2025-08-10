@@ -1415,6 +1415,31 @@
                 console.log('Success:', data);
                 if (data.success) {
                     addMessage("✅ Lead submitted successfully! Check your email for confirmation.");
+                    
+                    // Reset chat state
+                    chatState = {
+                        step: 'service_selection',
+                        selectedService: '',
+                        projectDetails: '',
+                        projectSize: '',
+                        specificDetails: '',
+                        location: '',
+                        budget: '',
+                        timeline: '',
+                        customerName: '',
+                        customerEmail: '',
+                        customerPhone: ''
+                    };
+
+                    // Show follow-up options after success message
+                    setTimeout(() => {
+                        addMessage("Is there anything else I can help you with today?");
+                        addQuickOptions([
+                            { text: 'Another Project', action: () => location.reload() },
+                            { text: 'No, Thanks', action: () => addMessage("Great! Have a wonderful day!") },
+                            { text: 'Close Chat', action: () => closeChatSession() }
+                        ]);
+                    }, 2000);
                 } else {
                     addMessage("❌ There was an issue submitting your lead. Please try again.");
                 }
@@ -1423,10 +1448,38 @@
                 console.error('Error:', error);
                 addMessage("❌ Sorry, there was an error submitting your lead. Please try again later.");
             });
+        }
 
+        function closeChatSession() {
+            // Log the interrupted session to Google Sheets
+            fetch('/api/send-to-sheets', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'log-interrupted-session',
+                    ...chatState
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Interrupted session logged:', data);
+            })
+            .catch(error => {
+                console.error('Error logging interrupted session:', error);
+            });
+
+            // Close the chat window
+            const chatWindow = document.getElementById('chatWindow');
+            chatWindow.style.display = 'none';
+            
+            // Reset chat state to initial welcome message
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.innerHTML = '<div class="message bot-message">👋 Welcome to Kiwi Underfloor Heating! We\'ll ask a couple of quick questions to prepare your underfloor heating quote.</div>';
             chatState = {
-                step: 'service_selection',
-                selectedService: '',
+                step: 'welcome',
+                selectedService: 'underfloor_heating',
                 projectDetails: '',
                 projectSize: '',
                 specificDetails: '',
@@ -1435,18 +1488,10 @@
                 timeline: '',
                 customerName: '',
                 customerEmail: '',
-                customerPhone: ''
+                customerPhone: '',
+                areasCount: '',
+                areaSizes: ''
             };
-
-            addMessage("Thank you! Your information has been submitted. A qualified tradesman will contact you shortly to discuss your project.");
-
-            setTimeout(() => {
-                addMessage("Is there anything else I can help you with today?");
-                addQuickOptions([
-                    { text: 'New Project', action: () => location.reload() },
-                    { text: 'No, Thanks', action: () => addMessage("Great! Have a wonderful day!") }
-                ]);
-            }, 1500);
         }
 
         // Mobile menu functionality

@@ -558,21 +558,48 @@
         }
 
         // Contact form handling
-        document.getElementById('contactForm').addEventListener('submit', function(e) {
+        document.getElementById('contactForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             // Get form data
             const formData = new FormData(this);
             const data = Object.fromEntries(formData);
             
-            // Here you would typically send the data to your server
-            console.log('Contact form submitted:', data);
+            // Show loading state
+            const submitBtn = this.querySelector('.submit-btn');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Sending...';
+            submitBtn.disabled = true;
             
-            // Show success message
-            alert('Thank you for your message! We\'ll get back to you within 24 hours.');
-            
-            // Reset form
-            this.reset();
+            try {
+                // Send data to API
+                const response = await fetch('/api/contact-form', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Show success message
+                    alert(result.message || 'Thank you for your message! We\'ll get back to you within 24 hours.');
+                    // Reset form
+                    this.reset();
+                } else {
+                    // Show error message
+                    alert(result.error || 'Failed to send message. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error sending contact form:', error);
+                alert('Failed to send message. Please try again or contact us directly.');
+            } finally {
+                // Reset button state
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
         });
 
         // Mobile menu functionality

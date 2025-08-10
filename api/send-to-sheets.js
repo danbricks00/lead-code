@@ -27,6 +27,7 @@ export default async function handler(req, res) {
     let quoteGenerated = false;
     let quote = null; // Initialize quote variable
     let tradesmenFound = [];
+    let emailErrorDetails = null;
 
     // Debug: Log all environment variables
     console.log('🔍 ALL ENVIRONMENT VARIABLES:');
@@ -119,22 +120,24 @@ export default async function handler(req, res) {
       console.error('❌ Error generating quote:', quoteError.message);
     }
 
-    // 4. Send emails
+    // 4. Send emails with detailed error handling
     console.log('🔍 Attempting to send emails...');
     try {
       // Import nodemailer using dynamic import with better error handling
       let nodemailer;
       let transporter;
       
+      console.log('📧 Step 1: Importing Nodemailer...');
       try {
         // Try multiple import methods
         const nodemailerModule = await import('nodemailer');
         nodemailer = nodemailerModule.default || nodemailerModule;
-        console.log('✅ Nodemailer loaded successfully');
+        console.log('✅ Nodemailer imported successfully');
         console.log('📧 Nodemailer type:', typeof nodemailer);
         console.log('📧 Available methods:', Object.keys(nodemailer || {}));
         
         // Try to find the createTransporter method
+        console.log('📧 Step 2: Finding createTransporter method...');
         const createMethod = nodemailer.createTransporter || 
                            nodemailer.createTransport || 
                            nodemailer.default?.createTransporter ||
@@ -142,6 +145,8 @@ export default async function handler(req, res) {
         
         if (createMethod && typeof createMethod === 'function') {
           console.log('✅ Found createTransporter method');
+          
+          console.log('📧 Step 3: Creating transporter...');
           transporter = createMethod({
             service: 'gmail',
             auth: {
@@ -150,12 +155,14 @@ export default async function handler(req, res) {
             }
           });
           console.log('✅ Transporter created successfully');
+          
         } else {
           throw new Error('createTransporter method not found in nodemailer');
         }
         
       } catch (importError) {
         console.log('❌ Nodemailer import/creation failed:', importError.message);
+        emailErrorDetails = `Nodemailer initialization failed: ${importError.message}`;
         throw new Error('Failed to initialize Nodemailer: ' + importError.message);
       }
 
@@ -166,11 +173,12 @@ export default async function handler(req, res) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(leadData.customerEmail)) {
           console.log('❌ Invalid customer email format:', leadData.customerEmail);
+          emailErrorDetails = `Invalid email format: ${leadData.customerEmail}`;
           throw new Error(`Invalid email format: ${leadData.customerEmail}`);
         }
 
         // Send customer confirmation email
-        console.log('📧 Sending customer confirmation email to:', leadData.customerEmail);
+        console.log('📧 Step 4: Sending customer confirmation email...');
         const fromDisplay = process.env.MAIL_FROM || `Kiwi Underfloor Heating <${process.env.GMAIL_USER}>`;
         const replyTo = process.env.MAIL_REPLY_TO || process.env.GMAIL_USER;
 
@@ -204,13 +212,18 @@ export default async function handler(req, res) {
           `
         };
 
-        await transporter.sendMail(customerMailOptions);
-        console.log('✅ Customer confirmation email sent successfully');
-        customerEmailSent = true;
+        try {
+          const customerResult = await transporter.sendMail(customerMailOptions);
+          console.log('✅ Customer confirmation email sent successfully:', customerResult.messageId);
+          customerEmailSent = true;
+        } catch (customerEmailError) {
+          console.error('❌ Customer email failed:', customerEmailError.message);
+          emailErrorDetails = `Customer email failed: ${customerEmailError.message}`;
+        }
 
         // Send tradesman emails with quote information
         if (tradesmenFound.length > 0) {
-          console.log(`📧 Sending tradesman emails with quote to ${tradesmenFound.length} tradesmen`);
+          console.log(`📧 Step 5: Sending tradesman emails to ${tradesmenFound.length} tradesmen...`);
           
           for (const tradesman of tradesmenFound) {
             try {
@@ -262,8 +275,8 @@ export default async function handler(req, res) {
                 `
               };
 
-              await transporter.sendMail(tradesmanMailOptions);
-              console.log(`✅ Tradesman email with quote sent to: ${tradesman.email}`);
+              const tradesmanResult = await transporter.sendMail(tradesmanMailOptions);
+              console.log(`✅ Tradesman email sent to: ${tradesman.email}`, tradesmanResult.messageId);
             } catch (tradesmanEmailError) {
               console.error(`❌ Failed to send email to ${tradesman.email}:`, tradesmanEmailError.message);
             }
@@ -299,18 +312,24 @@ export default async function handler(req, res) {
             `
           };
 
-          await transporter.sendMail(adminMailOptions);
-          console.log('✅ Admin notification email sent');
-          tradesmanEmailSent = true;
+          try {
+            const adminResult = await transporter.sendMail(adminMailOptions);
+            console.log('✅ Admin notification email sent:', adminResult.messageId);
+            tradesmanEmailSent = true;
+          } catch (adminEmailError) {
+            console.error('❌ Admin email failed:', adminEmailError.message);
+          }
         }
 
       } else {
         console.log('⚠️ Gmail credentials not configured or transporter not available - skipping email sending');
+        emailErrorDetails = 'Gmail credentials not configured or transporter not available';
       }
     } catch (emailError) {
       console.error('❌ Email error:', emailError);
       console.error('❌ Error details:', emailError.message);
       console.error('❌ Error stack:', emailError.stack);
+      emailErrorDetails = emailError.message;
     }
 
     // Return success response with detailed status
@@ -331,6 +350,7 @@ export default async function handler(req, res) {
         tradesmanEmailSent,
         quoteGenerated,
         tradesmenFound: tradesmenFound.length,
+        emailErrorDetails,
         note: customerEmailSent && tradesmanEmailSent
           ? 'All systems working! Quote workflow initiated.'
           : 'Google Sheets working! Email may need configuration'

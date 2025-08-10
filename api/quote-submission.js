@@ -207,7 +207,12 @@ function generateQuoteForm(quote) {
             errors.push('Name is required');
           }
           
-          if (!data.tradesmanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.tradesmanEmail)) {
+          if (!data.tradesmanEmail || !/^[^@]+@[^@]+\.[^@]+$/.test(data.tradesmanEmail.trim())) {
+            console.log('❌ Email validation failed:', {
+              email: data.tradesmanEmail,
+              trimmed: data.tradesmanEmail.trim(),
+              testResult: /^[^@]+@[^@]+\.[^@]+$/.test(data.tradesmanEmail.trim())
+            });
             errors.push('Valid email is required');
           }
           
@@ -312,12 +317,16 @@ async function handleQuoteSubmission(req, res) {
       });
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(tradesmanEmail)) {
+    // Validate email format - very permissive
+    const trimmedEmail = tradesmanEmail.trim();
+    console.log('📧 Email validation:', { original: tradesmanEmail, trimmed: trimmedEmail });
+    
+    // Very permissive email regex - just check for @ and domain
+    const emailRegex = /^[^@]+@[^@]+\.[^@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
       return res.status(400).json({
         success: false,
-        error: 'Please enter a valid email address'
+        error: `Please enter a valid email address. Received: "${trimmedEmail}"`
       });
     }
 

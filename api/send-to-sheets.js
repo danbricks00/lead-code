@@ -269,12 +269,13 @@ async function handleLeadSubmission(leadData, res) {
         if (tradesmenFound.length > 0) {
           console.log(`📧 Step 5: Sending tradesman emails to ${tradesmenFound.length} tradesmen...`);
           
+          // Get the current deployment URL dynamically
+          const currentUrl = process.env.VERCEL_URL ? 
+            `https://${process.env.VERCEL_URL}` : 
+            'https://lead-code-ox5xwuliq-dan-buis-projects-e44a173c.vercel.app';
+          
           for (const tradesman of tradesmenFound) {
             try {
-                // Get the current deployment URL dynamically
-                const currentUrl = req.headers.host ? 
-                  `https://${req.headers.host}` : 
-                  'https://lead-code-8fti49bzh-dan-buis-projects-e44a173c.vercel.app';
                 const quoteUrl = `${currentUrl}/api/quote-submission?quoteId=${quote?.quoteId || 'QUOTE-ID'}`;
               
               const tradesmanMailOptions = {

@@ -196,8 +196,42 @@ function generateQuoteForm(quote) {
         document.getElementById('quoteForm').addEventListener('submit', async function(e) {
           e.preventDefault();
           
+          // Get form data
           const formData = new FormData(this);
           const data = Object.fromEntries(formData);
+          
+          // Client-side validation
+          const errors = [];
+          
+          if (!data.tradesmanName || data.tradesmanName.trim() === '') {
+            errors.push('Name is required');
+          }
+          
+          if (!data.tradesmanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.tradesmanEmail)) {
+            errors.push('Valid email is required');
+          }
+          
+          if (!data.tradesmanPhone || data.tradesmanPhone.trim() === '') {
+            errors.push('Phone number is required');
+          }
+          
+          const squareMeters = parseFloat(data.squareMeters);
+          if (isNaN(squareMeters) || squareMeters <= 0) {
+            errors.push('Square meters must be a valid positive number');
+          }
+          
+          const laborHours = parseFloat(data.laborHours);
+          if (isNaN(laborHours) || laborHours <= 0) {
+            errors.push('Labor hours must be a valid positive number');
+          }
+          
+          if (errors.length > 0) {
+            document.getElementById('message').innerHTML = '<div class="error">Please fix the following errors:<br>' + errors.join('<br>') + '</div>';
+            return;
+          }
+          
+          // Show loading message
+          document.getElementById('message').innerHTML = '<div class="success">Submitting quote...</div>';
           
           try {
             const response = await fetch('/api/quote-submission', {
@@ -211,13 +245,14 @@ function generateQuoteForm(quote) {
             const result = await response.json();
             
             if (result.success) {
-              document.getElementById('message').innerHTML = '<div class="success">Quote submitted successfully! The customer will be notified.</div>';
+              document.getElementById('message').innerHTML = '<div class="success">✅ Quote submitted successfully! The customer will be notified.</div>';
               document.getElementById('quoteForm').style.display = 'none';
             } else {
-              document.getElementById('message').innerHTML = '<div class="error">Error: ' + (result.error || 'Failed to submit quote') + '</div>';
+              document.getElementById('message').innerHTML = '<div class="error">❌ Error: ' + (result.error || 'Failed to submit quote') + '</div>';
             }
           } catch (error) {
-            document.getElementById('message').innerHTML = '<div class="error">Error: ' + error.message + '</div>';
+            console.error('Submission error:', error);
+            document.getElementById('message').innerHTML = '<div class="error">❌ Network error: ' + error.message + '</div>';
           }
         });
 
@@ -241,20 +276,76 @@ async function handleQuoteSubmission(req, res) {
       additionalNotes
     } = req.body;
 
+    console.log('📝 Received quote submission data:', req.body);
+
     // Validate required fields
     if (!originalQuoteId || !tradesmanName || !tradesmanEmail || !tradesmanPhone || !squareMeters || !laborHours) {
       return res.status(400).json({
         success: false,
-        error: 'All required fields must be provided'
+        error: 'All required fields must be provided',
+        missing: {
+          quoteId: !originalQuoteId,
+          tradesmanName: !tradesmanName,
+          tradesmanEmail: !tradesmanEmail,
+          tradesmanPhone: !tradesmanPhone,
+          squareMeters: !squareMeters,
+          laborHours: !laborHours
+        }
+      });
+    }
+
+    // Convert and validate numeric fields
+    const squareMetersNum = parseFloat(squareMeters);
+    const laborHoursNum = parseFloat(laborHours);
+
+    if (isNaN(squareMetersNum) || squareMetersNum <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Square meters must be a valid positive number'
+      });
+    }
+
+    if (isNaN(laborHoursNum) || laborHoursNum <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Labor hours must be a valid positive number'
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(tradesmanEmail)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please enter a valid email address'
+      });
+    }
+
+    // Validate phone format (basic validation)
+    const phoneRegex = /^[\+]?[0-9\s\-\(\)]{7,}$/;
+    if (!phoneRegex.test(tradesmanPhone)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please enter a valid phone number'
       });
     }
 
     // Calculate quote
-    const materialsCost = squareMeters * 30;
-    const labourCost = laborHours * 50;
+    const materialsCost = squareMetersNum * 30;
+    const labourCost = laborHoursNum * 50;
     const subtotal = materialsCost + labourCost;
     const gst = subtotal * 0.15;
     const total = subtotal + gst;
+
+    console.log('💰 Quote calculation:', {
+      squareMeters: squareMetersNum,
+      laborHours: laborHoursNum,
+      materialsCost,
+      labourCost,
+      subtotal,
+      gst,
+      total
+    });
 
     // Get original quote (this might be a mock quote for testing)
     let originalQuote;
@@ -297,17 +388,19 @@ async function handleQuoteSubmission(req, res) {
       AssignedTradesman: tradesmanName,
       TradesmanEmail: tradesmanEmail,
       TradesmanPhone: tradesmanPhone,
-      SquareMeters: squareMeters,
-      LaborHours: laborHours,
+      SquareMeters: squareMetersNum,
+      LaborHours: laborHoursNum,
       MaterialsCost: materialsCost,
       LaborCost: labourCost,
       Subtotal: subtotal,
       GST: gst,
       TotalAmount: total,
-      AdditionalNotes: additionalNotes,
+      AdditionalNotes: additionalNotes || '',
       Status: 'quote_submitted',
       QuoteSubmittedDate: new Date().toISOString()
     };
+
+    console.log('💾 Saving quote data:', quoteData);
 
     // Save to Google Sheets
     await saveQuoteToSheets(quoteData);

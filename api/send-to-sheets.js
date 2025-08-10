@@ -227,7 +227,7 @@ export default async function handler(req, res) {
           
           for (const tradesman of tradesmenFound) {
             try {
-              const quoteUrl = `https://lead-code-5re8cn9r7-dan-buis-projects-e44a173c.vercel.app/api/quote-emails?type=tradesman&quoteId=${quote?.QuoteID || 'QUOTE-ID'}`;
+                              const quoteUrl = `https://lead-code-5re8cn9r7-dan-buis-projects-e44a173c.vercel.app/api/quote-submission?quoteId=${quote?.QuoteID || 'QUOTE-ID'}`;
               
               const tradesmanMailOptions = {
                 from: fromDisplay,

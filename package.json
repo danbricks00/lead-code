@@ -13,7 +13,8 @@
     "deploy:vercel-only": "node deploy-and-commit.js vercel-only",
     "deploy:both": "node deploy-and-commit.js both",
     "deploy:simple": "npx vercel --prod",
-    "commit": "git add . && git commit -m \"Update: $(date)\" && git push"
+    "commit": "git add . && git commit -m \"Update: $(date)\" && git push",
+    "auto-save": "node auto-save.js"
   },
   "dependencies": {
     "dotenv": "^17.2.1",

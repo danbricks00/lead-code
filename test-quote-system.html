@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quote System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .success {
+            background: #27ae60;
+        }
+        .success:hover {
+            background: #229954;
+        }
+        .warning {
+            background: #f39c12;
+        }
+        .warning:hover {
+            background: #e67e22;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            border-left: 4px solid #3498db;
+        }
+        .error {
+            border-left-color: #e74c3c;
+            background: #fdf2f2;
+        }
+        .success-result {
+            border-left-color: #27ae60;
+            background: #f0f9f0;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .quote-details {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+        .status-pending { background: #f39c12; }
+        .status-accepted { background: #27ae60; }
+        .status-declined { background: #e74c3c; }
+        .status-email-sent { background: #3498db; }
+    </style>
+</head>
+<body>
+    <h1>Quote System Test Dashboard</h1>
+
+    <!-- Quote Generation -->
+    <div class="container">
+        <h2>1. Generate Quote</h2>
+        <form id="quoteForm">
+            <div class="grid">
+                <div class="form-group">
+                    <label for="customerName">Customer Name:</label>
+                    <input type="text" id="customerName" value="John Smith" required>
+                </div>
+                <div class="form-group">
+                    <label for="customerEmail">Customer Email:</label>
+                    <input type="email" id="customerEmail" value="john@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="serviceType">Service Type:</label>
+                    <select id="serviceType" required>
+                        <option value="Underfloor Heating">Underfloor Heating</option>
+                        <option value="Plumbing">Plumbing</option>
+                        <option value="Electrical">Electrical</option>
+                        <option value="Carpentry">Carpentry</option>
+                        <option value="Painting">Painting</option>
+                        <option value="Roofing">Roofing</option>
+                        <option value="Landscaping">Landscaping</option>
+                        <option value="Cleaning">Cleaning</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="projectSize">Project Size:</label>
+                    <select id="projectSize" required>
+                        <option value="small">Small</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="large">Large</option>
+                        <option value="extra-large">Extra Large</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="location">Location:</label>
+                    <input type="text" id="location" value="Auckland" required>
+                </div>
+                <div class="form-group">
+                    <label for="urgency">Urgency:</label>
+                    <select id="urgency" required>
+                        <option value="standard" selected>Standard</option>
+                        <option value="rush">Rush</option>
+                        <option value="urgent">Urgent</option>
+                        <option value="emergency">Emergency</option>
+                    </select>
+                </div>
+                <div class="form-group full-width">
+                    <label for="projectDetails">Project Details:</label>
+                    <textarea id="projectDetails" rows="3" placeholder="Describe the project requirements...">Install underfloor heating system in living room and kitchen</textarea>
+                </div>
+            </div>
+            <button type="submit" class="success">Generate Quote</button>
+        </form>
+        <div id="quoteResult" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- Pricing Calculator -->
+    <div class="container">
+        <h2>2. Pricing Calculator</h2>
+        <form id="pricingForm">
+            <div class="grid">
+                <div class="form-group">
+                    <label for="pricingServiceType">Service Type:</label>
+                    <select id="pricingServiceType" required>
+                        <option value="Underfloor Heating">Underfloor Heating</option>
+                        <option value="Plumbing">Plumbing</option>
+                        <option value="Electrical">Electrical</option>
+                        <option value="Carpentry">Carpentry</option>
+                        <option value="Painting">Painting</option>
+                        <option value="Roofing">Roofing</option>
+                        <option value="Landscaping">Landscaping</option>
+                        <option value="Cleaning">Cleaning</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="pricingProjectSize">Project Size:</label>
+                    <select id="pricingProjectSize" required>
+                        <option value="small">Small</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="large">Large</option>
+                        <option value="extra-large">Extra Large</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="pricingLocation">Location:</label>
+                    <input type="text" id="pricingLocation" value="Auckland" required>
+                </div>
+                <div class="form-group">
+                    <label for="pricingUrgency">Urgency:</label>
+                    <select id="pricingUrgency" required>
+                        <option value="standard" selected>Standard</option>
+                        <option value="rush">Rush</option>
+                        <option value="urgent">Urgent</option>
+                        <option value="emergency">Emergency</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="warning">Calculate Price</button>
+        </form>
+        <div id="pricingResult" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- Email Testing -->
+    <div class="container">
+        <h2>3. Email Testing</h2>
+        <div class="grid">
+            <div>
+                <h3>Send Customer Quote Email</h3>
+                <form id="customerEmailForm">
+                    <div class="form-group">
+                        <label for="customerQuoteId">Quote ID:</label>
+                        <input type="text" id="customerQuoteId" placeholder="Enter quote ID from step 1">
+                    </div>
+                    <div class="form-group">
+                        <label for="customerCustomMessage">Custom Message (optional):</label>
+                        <textarea id="customerCustomMessage" rows="3" placeholder="Add a custom message to the email..."></textarea>
+                    </div>
+                    <button type="submit" class="success">Send Customer Email</button>
+                </form>
+            </div>
+            <div>
+                <h3>Send Tradesman Quote Email</h3>
+                <form id="tradesmanEmailForm">
+                    <div class="form-group">
+                        <label for="tradesmanQuoteId">Quote ID:</label>
+                        <input type="text" id="tradesmanQuoteId" placeholder="Enter quote ID from step 1">
+                    </div>
+                    <div class="form-group">
+                        <label for="tradesmanEmail">Tradesman Email:</label>
+                        <input type="email" id="tradesmanEmail" value="tradesman@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="tradesmanCustomMessage">Custom Message (optional):</label>
+                        <textarea id="tradesmanCustomMessage" rows="3" placeholder="Add a custom message to the email..."></textarea>
+                    </div>
+                    <button type="submit" class="success">Send Tradesman Email</button>
+                </form>
+            </div>
+        </div>
+        <div id="emailResult" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- Quote Management -->
+    <div class="container">
+        <h2>4. Quote Management</h2>
+        <div class="grid">
+            <div>
+                <h3>Get Quote Details</h3>
+                <form id="getQuoteForm">
+                    <div class="form-group">
+                        <label for="getQuoteId">Quote ID:</label>
+                        <input type="text" id="getQuoteId" placeholder="Enter quote ID">
+                    </div>
+                    <button type="submit">Get Quote</button>
+                </form>
+            </div>
+            <div>
+                <h3>List Quotes</h3>
+                <form id="listQuotesForm">
+                    <div class="form-group">
+                        <label for="quoteFilter">Filter:</label>
+                        <select id="quoteFilter">
+                            <option value="">All Quotes</option>
+                            <option value="customer">By Customer Email</option>
+                            <option value="tradesman">By Tradesman Email</option>
+                            <option value="status">By Status</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quoteFilterValue">Filter Value:</label>
+                        <input type="text" id="quoteFilterValue" placeholder="Enter filter value">
+                    </div>
+                    <button type="submit">List Quotes</button>
+                </form>
+            </div>
+        </div>
+        <div id="managementResult" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- Response Testing -->
+    <div class="container">
+        <h2>5. Response Testing</h2>
+        <p>Test quote acceptance/decline responses. Use the URLs below to simulate email responses:</p>
+        <div class="grid">
+            <div>
+                <h3>Customer Responses</h3>
+                <div class="quote-details">
+                    <p><strong>Accept Quote:</strong></p>
+                    <code id="customerAcceptUrl">Enter quote ID first</code>
+                    <br><br>
+                    <p><strong>Decline Quote:</strong></p>
+                    <code id="customerDeclineUrl">Enter quote ID first</code>
+                </div>
+            </div>
+            <div>
+                <h3>Tradesman Responses</h3>
+                <div class="quote-details">
+                    <p><strong>Accept Quote:</strong></p>
+                    <code id="tradesmanAcceptUrl">Enter quote ID first</code>
+                    <br><br>
+                    <p><strong>Decline Quote:</strong></p>
+                    <code id="tradesmanDeclineUrl">Enter quote ID first</code>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="responseQuoteId">Quote ID for Response URLs:</label>
+            <input type="text" id="responseQuoteId" placeholder="Enter quote ID to generate response URLs">
+            <button onclick="updateResponseUrls()" class="warning">Update URLs</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        // Quote Generation
+        document.getElementById('quoteForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                customerName: document.getElementById('customerName').value,
+                customerEmail: document.getElementById('customerEmail').value,
+                serviceType: document.getElementById('serviceType').value,
+                projectSize: document.getElementById('projectSize').value,
+                location: document.getElementById('location').value,
+                urgency: document.getElementById('urgency').value,
+                projectDetails: document.getElementById('projectDetails').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/quotes?action=generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                
+                const resultDiv = document.getElementById('quoteResult');
+                resultDiv.style.display = 'block';
+                resultDiv.className = result.success ? 'result success-result' : 'result error';
+                resultDiv.innerHTML = `
+                    <h3>${result.success ? '✅ Quote Generated Successfully' : '❌ Quote Generation Failed'}</h3>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+                
+                if (result.success && result.quote) {
+                    document.getElementById('responseQuoteId').value = result.quote.quoteId;
+                    updateResponseUrls();
+                }
+            } catch (error) {
+                showError('quoteResult', error);
+            }
+        });
+
+        // Pricing Calculator
+        document.getElementById('pricingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                serviceType: document.getElementById('pricingServiceType').value,
+                projectSize: document.getElementById('pricingProjectSize').value,
+                location: document.getElementById('pricingLocation').value,
+                urgency: document.getElementById('pricingUrgency').value,
+                projectDetails: 'Test project for pricing calculation'
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/quote-pricing`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                
+                const resultDiv = document.getElementById('pricingResult');
+                resultDiv.style.display = 'block';
+                resultDiv.className = result.success ? 'result success-result' : 'result error';
+                resultDiv.innerHTML = `
+                    <h3>${result.success ? '💰 Price Calculated' : '❌ Price Calculation Failed'}</h3>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+            } catch (error) {
+                showError('pricingResult', error);
+            }
+        });
+
+        // Customer Email
+        document.getElementById('customerEmailForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                quoteId: document.getElementById('customerQuoteId').value,
+                customMessage: document.getElementById('customerCustomMessage').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/quote-emails?type=customer`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                
+                const resultDiv = document.getElementById('emailResult');
+                resultDiv.style.display = 'block';
+                resultDiv.className = result.success ? 'result success-result' : 'result error';
+                resultDiv.innerHTML = `
+                    <h3>${result.success ? '📧 Customer Email Sent' : '❌ Email Failed'}</h3>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+            } catch (error) {
+                showError('emailResult', error);
+            }
+        });
+
+        // Tradesman Email
+        document.getElementById('tradesmanEmailForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                quoteId: document.getElementById('tradesmanQuoteId').value,
+                tradesmanEmail: document.getElementById('tradesmanEmail').value,
+                customMessage: document.getElementById('tradesmanCustomMessage').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/quote-emails?type=tradesman`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                
+                const resultDiv = document.getElementById('emailResult');
+                resultDiv.style.display = 'block';
+                resultDiv.className = result.success ? 'result success-result' : 'result error';
+                resultDiv.innerHTML = `
+                    <h3>${result.success ? '📧 Tradesman Email Sent' : '❌ Email Failed'}</h3>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+            } catch (error) {
+                showError('emailResult', error);
+            }
+        });
+
+        // Get Quote
+        document.getElementById('getQuoteForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const quoteId = document.getElementById('getQuoteId').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/quotes?quoteId=${quoteId}`);
+                const result = await response.json();
+                
+                const resultDiv = document.getElementById('managementResult');
+                resultDiv.style.display = 'block';
+                resultDiv.className = result.success ? 'result success-result' : 'result error';
+                resultDiv.innerHTML = `
+                    <h3>${result.success ? '📋 Quote Details' : '❌ Quote Not Found'}</h3>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+            } catch (error) {
+                showError('managementResult', error);
+            }
+        });
+
+        // List Quotes
+        document.getElementById('listQuotesForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const filter = document.getElementById('quoteFilter').value;
+            const filterValue = document.getElementById('quoteFilterValue').value;
+
+            try {
+                let url = `${API_BASE}/api/quotes`;
+                if (filter && filterValue) {
+                    url = `${API_BASE}/api/quotes?${filter}=${encodeURIComponent(filterValue)}`;
+                }
+
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                const resultDiv = document.getElementById('managementResult');
+                resultDiv.style.display = 'block';
+                resultDiv.className = result.success ? 'result success-result' : 'result error';
+                resultDiv.innerHTML = `
+                    <h3>${result.success ? '📋 Quotes List' : '❌ Failed to List Quotes'}</h3>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+            } catch (error) {
+                showError('managementResult', error);
+            }
+        });
+
+        function updateResponseUrls() {
+            const quoteId = document.getElementById('responseQuoteId').value;
+            if (quoteId) {
+                document.getElementById('customerAcceptUrl').textContent = 
+                    `${API_BASE}/api/quote-responses?action=accept&quoteId=${quoteId}`;
+                document.getElementById('customerDeclineUrl').textContent = 
+                    `${API_BASE}/api/quote-responses?action=decline&quoteId=${quoteId}`;
+                document.getElementById('tradesmanAcceptUrl').textContent = 
+                    `${API_BASE}/api/quote-responses?action=accept&quoteId=${quoteId}&tradesmanEmail=tradesman@example.com`;
+                document.getElementById('tradesmanDeclineUrl').textContent = 
+                    `${API_BASE}/api/quote-responses?action=decline&quoteId=${quoteId}&tradesmanEmail=tradesman@example.com`;
+            }
+        }
+
+        function showError(elementId, error) {
+            const resultDiv = document.getElementById(elementId);
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result error';
+            resultDiv.innerHTML = `
+                <h3>❌ Error</h3>
+                <p>${error.message}</p>
+            `;
+        }
+
+        // Initialize response URLs
+        updateResponseUrls();
+    </script>
+</body>
+</html> 

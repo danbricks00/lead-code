@@ -62,6 +62,7 @@ async function handleInterruptedSession(sessionData, res) {
 }
 
 async function handleLeadSubmission(leadData, res) {
+  try {
     console.log('✅ Lead received:', leadData);
 
     let sheetsUpdated = false;

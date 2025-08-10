@@ -9,6 +9,9 @@
     "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "deploy": "node deploy-and-commit.js",
+    "deploy:git-only": "node deploy-and-commit.js git-only",
+    "deploy:vercel-only": "node deploy-and-commit.js vercel-only",
+    "deploy:both": "node deploy-and-commit.js both",
     "deploy:simple": "npx vercel --prod",
     "commit": "git add . && git commit -m \"Update: $(date)\" && git push"
   },

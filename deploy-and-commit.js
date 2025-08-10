@@ -98,10 +98,38 @@ function generateCommitMessage(changedFiles) {
   return `${changeEmoji} ${description} - ${timestamp}${fileSummary}`;
 }
 
+// Function to check if Vercel auto-deployment is enabled
+function checkVercelAutoDeploy() {
+  try {
+    // Check if there's a .vercel/project.json file
+    const vercelConfigPath = path.join(process.cwd(), '.vercel', 'project.json');
+    if (fs.existsSync(vercelConfigPath)) {
+      console.log('⚠️ Vercel project detected - auto-deployment may be enabled');
+      console.log('💡 To avoid double deployments, you can:');
+      console.log('   1. Use --git-only to only push to GitHub (let Vercel auto-deploy)');
+      console.log('   2. Use --vercel-only to only deploy to Vercel (skip GitHub push)');
+      console.log('   3. Use --both to do both (may cause double deployment)');
+      return true;
+    }
+  } catch (error) {
+    // Ignore errors
+  }
+  return false;
+}
+
 // Main deployment process
 async function deployWithVersionControl() {
   try {
     const timestamp = getTimestamp();
+    
+    // Check command line arguments for deployment strategy
+    const args = process.argv.slice(2);
+    const strategy = args[0] || 'auto';
+    
+    console.log(`🎯 Deployment strategy: ${strategy}`);
+    
+    // Check for Vercel auto-deployment
+    const hasVercelAutoDeploy = checkVercelAutoDeploy();
     
     // 1. Check if we're in a Git repository
     try {
@@ -139,22 +167,41 @@ async function deployWithVersionControl() {
       console.log('⚠️ No changes to commit or commit failed');
     }
 
-    // 6. Push to GitHub
-    try {
-      runCommand(`git push origin ${currentBranch}`, 'Pushing to GitHub');
-      console.log('✅ Changes pushed to GitHub successfully');
-    } catch (error) {
-      console.log('⚠️ Push failed. This might be normal for the first push or if remote is not configured.');
-      console.log('   You can manually push later with: git push origin main');
-    }
+    let deploymentUrl = 'Not deployed';
 
-    // 7. Deploy to Vercel (only once)
-    console.log('🚀 Deploying to Vercel...');
-    const vercelResult = runCommand('npx vercel --prod', 'Deploying to Vercel');
-    
-    // Extract the deployment URL from the output
-    const urlMatch = vercelResult.match(/Production: (https:\/\/[^\s]+)/);
-    const deploymentUrl = urlMatch ? urlMatch[1] : 'Deployment URL not found';
+    // 6. Execute deployment strategy
+    if (strategy === 'git-only' || (strategy === 'auto' && hasVercelAutoDeploy)) {
+      // Only push to GitHub, let Vercel auto-deploy
+      console.log('🚀 Strategy: Push to GitHub only (Vercel will auto-deploy)');
+      try {
+        runCommand(`git push origin ${currentBranch}`, 'Pushing to GitHub');
+        console.log('✅ Changes pushed to GitHub successfully');
+        console.log('🔄 Vercel will automatically deploy from GitHub');
+      } catch (error) {
+        console.log('⚠️ Push failed. This might be normal for the first push or if remote is not configured.');
+        console.log('   You can manually push later with: git push origin main');
+      }
+    } else if (strategy === 'vercel-only') {
+      // Only deploy to Vercel, skip GitHub push
+      console.log('🚀 Strategy: Deploy to Vercel only (skip GitHub push)');
+      const vercelResult = runCommand('npx vercel --prod', 'Deploying to Vercel');
+      const urlMatch = vercelResult.match(/Production: (https:\/\/[^\s]+)/);
+      deploymentUrl = urlMatch ? urlMatch[1] : 'Deployment URL not found';
+    } else {
+      // Do both (may cause double deployment)
+      console.log('🚀 Strategy: Push to GitHub and deploy to Vercel');
+      try {
+        runCommand(`git push origin ${currentBranch}`, 'Pushing to GitHub');
+        console.log('✅ Changes pushed to GitHub successfully');
+      } catch (error) {
+        console.log('⚠️ Push failed. This might be normal for the first push or if remote is not configured.');
+        console.log('   You can manually push later with: git push origin main');
+      }
+      
+      const vercelResult = runCommand('npx vercel --prod', 'Deploying to Vercel');
+      const urlMatch = vercelResult.match(/Production: (https:\/\/[^\s]+)/);
+      deploymentUrl = urlMatch ? urlMatch[1] : 'Deployment URL not found';
+    }
 
     console.log('🎉 Deployment with version control completed successfully!');
     console.log(`📝 Commit: ${commitMessage.split('\n')[0]}`);

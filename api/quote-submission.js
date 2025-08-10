@@ -200,14 +200,38 @@ function generateQuoteForm(quote) {
           const formData = new FormData(this);
           const data = Object.fromEntries(formData);
           
+          // Ensure all form fields are properly captured (handle auto-fill)
+          const formFields = {
+            quoteId: document.getElementById('quoteId').value,
+            tradesmanName: document.getElementById('tradesmanName').value,
+            tradesmanEmail: document.getElementById('tradesmanEmail').value,
+            tradesmanPhone: document.getElementById('tradesmanPhone').value,
+            squareMeters: document.getElementById('squareMeters').value,
+            laborHours: document.getElementById('laborHours').value,
+            additionalNotes: document.getElementById('additionalNotes').value
+          };
+          
+          // Use form field values if FormData is missing them
+          Object.keys(formFields).forEach(key => {
+            if (!data[key] && formFields[key]) {
+              data[key] = formFields[key];
+            }
+          });
+          
           // Client-side validation
           const errors = [];
+          
+          // Log form data for debugging
+          console.log('📋 Form data received:', data);
+          console.log('📋 Form field values:', formFields);
           
           if (!data.tradesmanName || data.tradesmanName.trim() === '') {
             errors.push('Name is required');
           }
           
-          if (!data.tradesmanEmail || !/^[^@]+@[^@]+\.[^@]+$/.test(data.tradesmanEmail.trim())) {
+          if (!data.tradesmanEmail || data.tradesmanEmail.trim() === '') {
+            errors.push('Email is required');
+          } else if (!/^[^@]+@[^@]+\.[^@]+$/.test(data.tradesmanEmail.trim())) {
             console.log('❌ Email validation failed:', {
               email: data.tradesmanEmail,
               trimmed: data.tradesmanEmail.trim(),
@@ -220,15 +244,25 @@ function generateQuoteForm(quote) {
             errors.push('Phone number is required');
           }
           
-          const squareMeters = parseFloat(data.squareMeters);
-          if (isNaN(squareMeters) || squareMeters <= 0) {
-            errors.push('Square meters must be a valid positive number');
+          if (!data.squareMeters || data.squareMeters.toString().trim() === '') {
+            errors.push('Square meters is required');
+          } else {
+            const squareMeters = parseFloat(data.squareMeters);
+            if (isNaN(squareMeters) || squareMeters <= 0) {
+              errors.push('Square meters must be a valid positive number');
+            }
           }
           
-          const laborHours = parseFloat(data.laborHours);
-          if (isNaN(laborHours) || laborHours <= 0) {
-            errors.push('Labor hours must be a valid positive number');
+          if (!data.laborHours || data.laborHours.toString().trim() === '') {
+            errors.push('Labor hours is required');
+          } else {
+            const laborHours = parseFloat(data.laborHours);
+            if (isNaN(laborHours) || laborHours <= 0) {
+              errors.push('Labor hours must be a valid positive number');
+            }
           }
+          
+          console.log('🔍 Client validation errors:', errors);
           
           if (errors.length > 0) {
             document.getElementById('message').innerHTML = '<div class="error">Please fix the following errors:<br>' + errors.join('<br>') + '</div>';
@@ -283,19 +317,59 @@ async function handleQuoteSubmission(req, res) {
 
     console.log('📝 Received quote submission data:', req.body);
 
-    // Validate required fields
-    if (!originalQuoteId || !tradesmanName || !tradesmanEmail || !tradesmanPhone || !squareMeters || !laborHours) {
+    // Validate required fields with better handling for auto-filled data
+    const validationErrors = [];
+    const missingFields = {};
+
+    // Check each field individually with detailed logging
+    if (!originalQuoteId || originalQuoteId.trim() === '') {
+      validationErrors.push('Quote ID is missing');
+      missingFields.quoteId = true;
+    }
+
+    if (!tradesmanName || tradesmanName.trim() === '') {
+      validationErrors.push('Tradesman name is missing');
+      missingFields.tradesmanName = true;
+    }
+
+    if (!tradesmanEmail || tradesmanEmail.trim() === '') {
+      validationErrors.push('Tradesman email is missing');
+      missingFields.tradesmanEmail = true;
+    }
+
+    if (!tradesmanPhone || tradesmanPhone.trim() === '') {
+      validationErrors.push('Tradesman phone is missing');
+      missingFields.tradesmanPhone = true;
+    }
+
+    if (!squareMeters || squareMeters.toString().trim() === '') {
+      validationErrors.push('Square meters is missing');
+      missingFields.squareMeters = true;
+    }
+
+    if (!laborHours || laborHours.toString().trim() === '') {
+      validationErrors.push('Labor hours is missing');
+      missingFields.laborHours = true;
+    }
+
+    // Log detailed validation info
+    console.log('🔍 Validation details:', {
+      originalQuoteId: { value: originalQuoteId, type: typeof originalQuoteId, length: originalQuoteId?.length },
+      tradesmanName: { value: tradesmanName, type: typeof tradesmanName, length: tradesmanName?.length },
+      tradesmanEmail: { value: tradesmanEmail, type: typeof tradesmanEmail, length: tradesmanEmail?.length },
+      tradesmanPhone: { value: tradesmanPhone, type: typeof tradesmanPhone, length: tradesmanPhone?.length },
+      squareMeters: { value: squareMeters, type: typeof squareMeters },
+      laborHours: { value: laborHours, type: typeof laborHours },
+      validationErrors,
+      missingFields
+    });
+
+    if (validationErrors.length > 0) {
       return res.status(400).json({
         success: false,
         error: 'All required fields must be provided',
-        missing: {
-          quoteId: !originalQuoteId,
-          tradesmanName: !tradesmanName,
-          tradesmanEmail: !tradesmanEmail,
-          tradesmanPhone: !tradesmanPhone,
-          squareMeters: !squareMeters,
-          laborHours: !laborHours
-        }
+        details: validationErrors,
+        missing: missingFields
       });
     }
 

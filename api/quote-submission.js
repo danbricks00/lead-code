@@ -232,7 +232,7 @@ function generateQuoteForm(quote) {
 async function handleQuoteSubmission(req, res) {
   try {
     const {
-      quoteId,
+      quoteId: originalQuoteId,
       tradesmanName,
       tradesmanEmail,
       tradesmanPhone,
@@ -242,7 +242,7 @@ async function handleQuoteSubmission(req, res) {
     } = req.body;
 
     // Validate required fields
-    if (!quoteId || !tradesmanName || !tradesmanEmail || !tradesmanPhone || !squareMeters || !laborHours) {
+    if (!originalQuoteId || !tradesmanName || !tradesmanEmail || !tradesmanPhone || !squareMeters || !laborHours) {
       return res.status(400).json({
         success: false,
         error: 'All required fields must be provided'
@@ -251,30 +251,56 @@ async function handleQuoteSubmission(req, res) {
 
     // Calculate quote
     const materialsCost = squareMeters * 30;
-    const laborCost = laborHours * 50;
-    const subtotal = materialsCost + laborCost;
+    const labourCost = laborHours * 50;
+    const subtotal = materialsCost + labourCost;
     const gst = subtotal * 0.15;
     const total = subtotal + gst;
 
-    // Get original quote
-    const originalQuote = await getQuoteById(quoteId);
-    if (!originalQuote) {
-      return res.status(404).json({
-        success: false,
-        error: 'Quote not found'
-      });
+    // Get original quote (this might be a mock quote for testing)
+    let originalQuote;
+    if (originalQuoteId === 'QUOTE-ID' || originalQuoteId === 'test') {
+      // Create mock quote data for testing
+      originalQuote = {
+        quoteId: originalQuoteId,
+        customerEmail: 'test@example.com',
+        customerName: 'Test Customer',
+        serviceType: 'Underfloor Heating Installation',
+        projectDetails: 'Sample project for testing quote submission',
+        location: 'Auckland',
+        budget: '$5000 - $10000',
+        timeline: '2-4 weeks'
+      };
+    } else {
+      originalQuote = await getQuoteById(originalQuoteId);
+      if (!originalQuote) {
+        return res.status(404).json({
+          success: false,
+          error: 'Quote not found'
+        });
+      }
     }
 
-    // Update quote with tradesman details and pricing
+    // Generate a new quote ID for the actual quote
+    const newQuoteId = `Q${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Create quote data with new ID
     const quoteData = {
-      ...originalQuote,
+      QuoteID: newQuoteId,
+      LeadID: originalQuoteId,
+      CustomerEmail: originalQuote.customerEmail,
+      CustomerName: originalQuote.customerName,
+      ServiceType: originalQuote.serviceType,
+      ProjectDetails: originalQuote.projectDetails,
+      Location: originalQuote.location,
+      Budget: originalQuote.budget,
+      Timeline: originalQuote.timeline,
       AssignedTradesman: tradesmanName,
       TradesmanEmail: tradesmanEmail,
       TradesmanPhone: tradesmanPhone,
       SquareMeters: squareMeters,
       LaborHours: laborHours,
       MaterialsCost: materialsCost,
-      LaborCost: laborCost,
+      LaborCost: labourCost,
       Subtotal: subtotal,
       GST: gst,
       TotalAmount: total,
@@ -283,16 +309,14 @@ async function handleQuoteSubmission(req, res) {
       QuoteSubmittedDate: new Date().toISOString()
     };
 
-    await updateQuoteStatus(quoteId, 'quote_submitted', JSON.stringify(quoteData));
-
     // Save to Google Sheets
     await saveQuoteToSheets(quoteData);
 
     // Send email to customer with quote details
-    await sendCustomerQuoteEmail(quoteData);
+    await sendCustomerQuoteEmail(quoteData, req);
 
     console.log('✅ Quote submitted successfully:', {
-      quoteId,
+      newQuoteId,
       tradesmanName,
       total: total.toFixed(2)
     });
@@ -301,11 +325,11 @@ async function handleQuoteSubmission(req, res) {
       success: true,
       message: 'Quote submitted successfully',
       quote: {
-        quoteId,
+        quoteId: newQuoteId,
         tradesmanName,
         total: total.toFixed(2),
         materialsCost: materialsCost.toFixed(2),
-        laborCost: laborCost.toFixed(2),
+        laborCost: labourCost.toFixed(2),
         gst: gst.toFixed(2)
       }
     });
@@ -375,7 +399,7 @@ async function saveQuoteToSheets(quoteData) {
   }
 }
 
-async function sendCustomerQuoteEmail(quoteData) {
+async function sendCustomerQuoteEmail(quoteData, req) {
   try {
     if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
       console.log('⚠️ Gmail credentials not configured - skipping email');
@@ -392,6 +416,11 @@ async function sendCustomerQuoteEmail(quoteData) {
         pass: process.env.GMAIL_APP_PASSWORD
       }
     });
+
+    // Get the current deployment URL dynamically
+    const currentUrl = req.headers.host ? 
+      `https://${req.headers.host}` : 
+      'https://lead-code-aoupwojcg-dan-buis-projects-e44a173c.vercel.app';
 
     const emailContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -423,11 +452,11 @@ async function sendCustomerQuoteEmail(quoteData) {
         ` : ''}
 
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${process.env.BASE_URL || 'https://your-domain.vercel.app'}/api/quote-responses?action=accept&quoteId=${quoteData.QuoteID}" 
+          <a href="${currentUrl}/api/quote-responses?action=accept&quoteId=${quoteData.QuoteID}" 
              style="background: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin-right: 10px;">
             Accept Quote
           </a>
-          <a href="${process.env.BASE_URL || 'https://your-domain.vercel.app'}/api/quote-responses?action=decline&quoteId=${quoteData.QuoteID}" 
+          <a href="${currentUrl}/api/quote-responses?action=decline&quoteId=${quoteData.QuoteID}" 
              style="background: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
             Decline Quote
           </a>

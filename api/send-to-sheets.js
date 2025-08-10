@@ -114,7 +114,7 @@ export default async function handler(req, res) {
       };
 
       quote = await addQuote(quoteData);
-      console.log('✅ Quote generated:', quote.QuoteID);
+      console.log('✅ Quote generated:', quote.quoteId);
       quoteGenerated = true;
     } catch (quoteError) {
       console.error('❌ Error generating quote:', quoteError.message);
@@ -231,7 +231,7 @@ export default async function handler(req, res) {
                 const currentUrl = req.headers.host ? 
                   `https://${req.headers.host}` : 
                   'https://lead-code-8fti49bzh-dan-buis-projects-e44a173c.vercel.app';
-                const quoteUrl = `${currentUrl}/api/quote-submission?quoteId=${quote?.QuoteID || 'QUOTE-ID'}`;
+                const quoteUrl = `${currentUrl}/api/quote-submission?quoteId=${quote?.quoteId || 'QUOTE-ID'}`;
               
               const tradesmanMailOptions = {
                 from: fromDisplay,
@@ -274,7 +274,7 @@ export default async function handler(req, res) {
                       <a href="${quoteUrl}" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">Submit Quote</a>
                     </div>
                     
-                    <p style="color: #6c757d; font-size: 14px;">Quote ID: ${quote?.QuoteID || 'QUOTE-ID'}</p>
+                    <p style="color: #6c757d; font-size: 14px;">Quote ID: ${quote?.quoteId || 'QUOTE-ID'}</p>
                   </div>
                 `
               };
@@ -345,7 +345,7 @@ export default async function handler(req, res) {
           (customerEmailSent ? 'Customer email sent' : 'Customer email failed') + ', ' +
           (tradesmanEmailSent ? 'Tradesman email sent' : 'Tradesman email failed'),
       data: leadData,
-      quoteId: quote?.QuoteID,
+      quoteId: quote?.quoteId,
       timestamp: new Date().toISOString(),
       status: {
         logged: true,

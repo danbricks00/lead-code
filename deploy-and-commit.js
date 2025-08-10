@@ -21,7 +21,16 @@ function runCommand(command, description) {
 
 // Function to get current timestamp
 function getTimestamp() {
-  return new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const now = new Date();
+  return now.toLocaleString('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).replace(/[/:]/g, '-').replace(/,/g, '');
 }
 
 // Function to get list of changed files
@@ -33,6 +42,34 @@ function getChangedFiles() {
     console.log('⚠️ Could not get changed files:', error.message);
     return [];
   }
+}
+
+// Function to generate meaningful commit message
+function generateCommitMessage(changedFiles) {
+  const timestamp = getTimestamp();
+  
+  // Analyze changes to create a meaningful description
+  let description = 'General updates';
+  
+  if (changedFiles.length > 0) {
+    const apiChanges = changedFiles.filter(f => f.startsWith('api/'));
+    const configChanges = changedFiles.filter(f => f.includes('.json') || f.includes('.js') && !f.startsWith('api/'));
+    const htmlChanges = changedFiles.filter(f => f.endsWith('.html'));
+    
+    if (apiChanges.length > 0) {
+      description = `API updates: ${apiChanges.map(f => f.replace('api/', '')).join(', ')}`;
+    } else if (configChanges.length > 0) {
+      description = `Configuration updates: ${configChanges.join(', ')}`;
+    } else if (htmlChanges.length > 0) {
+      description = `Frontend updates: ${htmlChanges.join(', ')}`;
+    }
+  }
+  
+  const fileSummary = changedFiles.length > 0 
+    ? `\n\n📁 Changed files:\n${changedFiles.slice(0, 8).map(f => `  • ${f}`).join('\n')}${changedFiles.length > 8 ? `\n  ... and ${changedFiles.length - 8} more files` : ''}`
+    : '';
+  
+  return `🚀 Deploy: ${timestamp}\n\n${description}${fileSummary}`;
 }
 
 // Main deployment process
@@ -65,23 +102,18 @@ async function deployWithVersionControl() {
     // 3. Stage all changes
     runCommand('git add .', 'Staging all changes');
 
-    // 4. Get list of changed files for commit message
+    // 4. Get list of changed files and generate commit message
     const changedFiles = getChangedFiles();
-    const fileSummary = changedFiles.length > 0 
-      ? `\n\nChanged files:\n${changedFiles.slice(0, 10).map(f => `- ${f}`).join('\n')}${changedFiles.length > 10 ? `\n... and ${changedFiles.length - 10} more files` : ''}`
-      : '';
+    const commitMessage = generateCommitMessage(changedFiles);
 
-    // 5. Create commit message
-    const commitMessage = `Deploy: ${timestamp}${fileSummary}`;
-
-    // 6. Commit changes
+    // 5. Commit changes
     try {
       runCommand(`git commit -m "${commitMessage}"`, 'Committing changes');
     } catch (error) {
       console.log('⚠️ No changes to commit or commit failed');
     }
 
-    // 7. Push to GitHub
+    // 6. Push to GitHub
     try {
       runCommand(`git push origin ${currentBranch}`, 'Pushing to GitHub');
       console.log('✅ Changes pushed to GitHub successfully');
@@ -90,7 +122,7 @@ async function deployWithVersionControl() {
       console.log('   You can manually push later with: git push origin main');
     }
 
-    // 8. Deploy to Vercel (only once)
+    // 7. Deploy to Vercel (only once)
     console.log('🚀 Deploying to Vercel...');
     const vercelResult = runCommand('npx vercel --prod', 'Deploying to Vercel');
     
@@ -99,7 +131,7 @@ async function deployWithVersionControl() {
     const deploymentUrl = urlMatch ? urlMatch[1] : 'Deployment URL not found';
 
     console.log('🎉 Deployment with version control completed successfully!');
-    console.log(`📝 Commit: ${commitMessage}`);
+    console.log(`📝 Commit: ${commitMessage.split('\n')[0]}`);
     console.log(`🌿 Branch: ${currentBranch}`);
     console.log(`🔗 Deployment URL: ${deploymentUrl}`);
     console.log('🔗 Check your GitHub repository for the latest changes');

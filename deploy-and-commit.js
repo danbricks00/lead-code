@@ -90,13 +90,18 @@ async function deployWithVersionControl() {
       console.log('   You can manually push later with: git push origin main');
     }
 
-    // 8. Deploy to Vercel
+    // 8. Deploy to Vercel (only once)
     console.log('🚀 Deploying to Vercel...');
-    runCommand('npx vercel --prod', 'Deploying to Vercel');
+    const vercelResult = runCommand('npx vercel --prod', 'Deploying to Vercel');
+    
+    // Extract the deployment URL from the output
+    const urlMatch = vercelResult.match(/Production: (https:\/\/[^\s]+)/);
+    const deploymentUrl = urlMatch ? urlMatch[1] : 'Deployment URL not found';
 
     console.log('🎉 Deployment with version control completed successfully!');
     console.log(`📝 Commit: ${commitMessage}`);
     console.log(`🌿 Branch: ${currentBranch}`);
+    console.log(`🔗 Deployment URL: ${deploymentUrl}`);
     console.log('🔗 Check your GitHub repository for the latest changes');
 
   } catch (error) {

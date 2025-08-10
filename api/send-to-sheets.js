@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 import { getAllTradesmen } from './database.js';
+import { addQuote } from './quote-database.js';
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -23,6 +24,7 @@ export default async function handler(req, res) {
     let sheetsUpdated = false;
     let customerEmailSent = false;
     let tradesmanEmailSent = false;
+    let quoteGenerated = false;
     let tradesmenFound = [];
 
     // Debug: Log all environment variables
@@ -35,130 +37,104 @@ export default async function handler(req, res) {
 
     // 1. Try to add to Google Sheets (if credentials are available)
     console.log('🔍 Checking Google Sheets credentials...');
-
-    try {
-      if (process.env.GOOGLE_PROJECT_ID && process.env.GOOGLE_PRIVATE_KEY) {
-        console.log('✅ Google Sheets credentials found, attempting to write...');
-
+    
+    if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {
+      try {
+        console.log('✅ Google Sheets credentials found - attempting to save lead data');
+        
         const auth = new google.auth.GoogleAuth({
           credentials: {
-            type: "service_account",
-            project_id: process.env.GOOGLE_PROJECT_ID,
-            private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-            private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
             client_email: process.env.GOOGLE_CLIENT_EMAIL,
-            client_id: process.env.GOOGLE_CLIENT_ID,
-            auth_uri: "https://accounts.google.com/o/oauth2/auth",
-            token_uri: "https://oauth2.googleapis.com/token",
-            auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-            client_x509_cert_url: process.env.GOOGLE_CLIENT_CERT_URL
+            private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
           },
-          scopes: ['https://www.googleapis.com/auth/spreadsheets']
+          scopes: ['https://www.googleapis.com/auth/spreadsheets'],
         });
 
         const sheets = google.sheets({ version: 'v4', auth });
-        const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
-        const range = 'Sheet1!A:K';
-
-        const values = [[
-          new Date().toISOString(),
-          leadData.customerName,
-          leadData.customerEmail,
-          leadData.customerPhone,
-          leadData.selectedService,
-          leadData.projectDetails,
-          leadData.projectSize,
-          leadData.specificDetails,
-          leadData.location,
-          leadData.budget,
-          leadData.timeline
-        ]];
-
-        console.log('📊 Attempting to write to spreadsheet:', spreadsheetId);
-        console.log('📊 Data to write:', values);
+        
+        const values = [
+          [
+            new Date().toISOString(),
+            leadData.customerName,
+            leadData.customerEmail,
+            leadData.customerPhone,
+            leadData.selectedService,
+            leadData.projectDetails,
+            leadData.budget,
+            leadData.timeline,
+            leadData.projectSize,
+            leadData.specificDetails,
+            leadData.location
+          ]
+        ];
 
         await sheets.spreadsheets.values.append({
-          spreadsheetId,
-          range,
-          valueInputOption: 'USER_ENTERED',
+          spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+          range: 'Sheet1!A:K',
+          valueInputOption: 'RAW',
           insertDataOption: 'INSERT_ROWS',
           resource: { values }
         });
 
-        console.log('✅ Data added to Google Sheets successfully');
+        console.log('✅ Lead data saved to Google Sheets');
         sheetsUpdated = true;
-      } else {
-        console.log('⚠️ Google Sheets credentials not configured - skipping sheets update');
-        console.log('Missing:', {
-          projectId: !process.env.GOOGLE_PROJECT_ID,
-          privateKey: !process.env.GOOGLE_PRIVATE_KEY,
-          spreadsheetId: !process.env.GOOGLE_SPREADSHEET_ID
-        });
+      } catch (sheetsError) {
+        console.error('❌ Google Sheets error:', sheetsError.message);
       }
-    } catch (sheetsError) {
-      console.error('❌ Google Sheets error:', sheetsError);
-      console.error('❌ Error details:', sheetsError.message);
+    } else {
+      console.log('⚠️ Google Sheets credentials not configured - skipping sheets update');
     }
 
-    // 2. Find registered tradesmen for this service type
-    console.log('🔍 Finding tradesmen for service:', leadData.selectedService);
+    // 2. Get tradesmen for the service
+    console.log('🔍 Getting tradesmen for service:', leadData.selectedService);
     try {
-      const allTradesmen = await getAllTradesmen();
-      console.log('📋 All registered tradesmen:', allTradesmen.length);
-      console.log('📋 All tradesmen details:', allTradesmen.map(t => ({
-        email: t.email,
-        name: t.name,
-        tradeType: t.tradeType,
-        status: t.status
-      })));
-      
-      // Filter tradesmen by service type and active status
-      tradesmenFound = allTradesmen.filter(tradesman => {
-        const matchesService = tradesman.tradeType === leadData.selectedService;
-        const isActive = tradesman.status === 'active';
-        console.log(`🔍 Checking tradesman ${tradesman.name}: service=${tradesman.tradeType} (matches: ${matchesService}), status=${tradesman.status} (active: ${isActive})`);
-        return matchesService && isActive;
-      });
-      
-      console.log(`📋 Found ${tradesmenFound.length} tradesmen for ${leadData.selectedService}:`, 
-        tradesmenFound.map(t => `${t.name} (${t.email})`));
-      
+      tradesmenFound = await getAllTradesmen(leadData.selectedService);
+      console.log(`✅ Found ${tradesmenFound.length} tradesmen for ${leadData.selectedService}`);
     } catch (tradesmenError) {
-      console.error('❌ Error finding tradesmen:', tradesmenError);
-      console.log('⚠️ Will use fallback email for tradesman notification');
+      console.error('❌ Error getting tradesmen:', tradesmenError.message);
     }
 
-    // 3. Email functionality - Fixed Nodemailer import
-    console.log('🔍 Attempting to send emails...');
-    
+    // 3. Generate quote for the lead
+    console.log('🔍 Generating quote for lead');
     try {
-      if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
-        console.log('✅ Gmail credentials found, attempting to send emails...');
-        
-        // Try to import Nodemailer with different methods
-        let nodemailer;
-        try {
-          // Method 1: Try dynamic import
-          const module = await import('nodemailer');
-          nodemailer = module.default;
-          console.log('✅ Nodemailer imported successfully via dynamic import');
-        } catch (importError) {
-          console.log('❌ Dynamic import failed, trying alternative method...');
-          // Method 2: Try require (if available in this environment)
-          try {
-            nodemailer = require('nodemailer');
-            console.log('✅ Nodemailer imported successfully via require');
-          } catch (requireError) {
-            console.log('❌ All import methods failed:', requireError.message);
-            throw new Error('Cannot import Nodemailer');
-          }
-        }
+      const quoteData = {
+        leadID: `LEAD-${Date.now()}`,
+        customerEmail: leadData.customerEmail,
+        customerName: leadData.customerName,
+        serviceType: leadData.selectedService,
+        projectDetails: leadData.projectDetails,
+        projectSize: leadData.projectSize,
+        location: leadData.location,
+        budget: leadData.budget,
+        timeline: leadData.timeline,
+        specificDetails: leadData.specificDetails,
+        customerPhone: leadData.customerPhone
+      };
 
-        console.log('📧 Nodemailer type:', typeof nodemailer);
-        console.log('📧 Available methods:', Object.keys(nodemailer || {}));
+      const quote = await addQuote(quoteData);
+      console.log('✅ Quote generated:', quote.QuoteID);
+      quoteGenerated = true;
+    } catch (quoteError) {
+      console.error('❌ Error generating quote:', quoteError.message);
+    }
+
+    // 4. Send emails
+    console.log('🔍 Attempting to send emails...');
+    try {
+      // Check if nodemailer is available
+      let nodemailer;
+      try {
+        nodemailer = await import('nodemailer');
+      } catch (importError) {
+        console.log('❌ Nodemailer not available:', importError.message);
+        throw new Error('Nodemailer not available');
+      }
+
+      if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+        console.log('✅ Gmail credentials found - attempting to send emails');
         
-        // Check for the correct method name
-        const createTransporterMethod = nodemailer.createTransporter || nodemailer.createTransport;
+        // Get createTransporter method
+        const createTransporterMethod = nodemailer.createTransporter || nodemailer.default?.createTransporter;
         
         if (createTransporterMethod && typeof createTransporterMethod === 'function') {
           console.log('✅ createTransporter/createTransport method available');
@@ -179,8 +155,8 @@ export default async function handler(req, res) {
             throw new Error(`Invalid email format: ${leadData.customerEmail}`);
           }
 
-          // Send customer email
-          console.log('📧 Sending customer email to:', leadData.customerEmail);
+          // Send customer confirmation email
+          console.log('📧 Sending customer confirmation email to:', leadData.customerEmail);
           const fromDisplay = process.env.MAIL_FROM || `Kiwi Underfloor Heating <${process.env.GMAIL_USER}>`;
           const replyTo = process.env.MAIL_REPLY_TO || process.env.GMAIL_USER;
 
@@ -188,53 +164,92 @@ export default async function handler(req, res) {
             from: fromDisplay,
             replyTo,
             to: leadData.customerEmail,
-            subject: 'Your Lead Request Confirmation',
+            subject: 'Your Project Request Confirmation - Quote Coming Soon',
             html: `
-              <h2>Thank you for your lead request!</h2>
-              <p><strong>Service:</strong> ${leadData.selectedService}</p>
-              <p><strong>Project Details:</strong> ${leadData.projectDetails}</p>
-              <p><strong>Location:</strong> ${leadData.location}</p>
-              <p><strong>Budget:</strong> ${leadData.budget}</p>
-              <p><strong>Timeline:</strong> ${leadData.timeline}</p>
-              <p>We'll be in touch with you soon with a quote and next steps.</p>
-              <p>Best regards,<br>Your Trade Team</p>
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #2c3e50;">Thank you for your project request!</h2>
+                <p>Dear ${leadData.customerName},</p>
+                <p>We have received your request for <strong>${leadData.selectedService}</strong> services and are working on your quote.</p>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <h3 style="color: #34495e; margin-top: 0;">Project Details:</h3>
+                  <p><strong>Service:</strong> ${leadData.selectedService}</p>
+                  <p><strong>Project:</strong> ${leadData.projectDetails}</p>
+                  <p><strong>Location:</strong> ${leadData.location}</p>
+                  <p><strong>Size/Scope:</strong> ${leadData.projectSize}</p>
+                  <p><strong>Budget:</strong> ${leadData.budget}</p>
+                  <p><strong>Timeline:</strong> ${leadData.timeline}</p>
+                  ${leadData.specificDetails ? `<p><strong>Specific Requirements:</strong> ${leadData.specificDetails}</p>` : ''}
+                </div>
+                
+                <p>Our qualified tradesmen are reviewing your project and will send you a detailed quote within 24 hours.</p>
+                <p>You'll receive an email with the quote and tradesman details for your approval.</p>
+                
+                <p style="margin-top: 30px;">Best regards,<br><strong>Your Trade Team</strong></p>
+              </div>
             `
           };
 
           await transporter.sendMail(customerMailOptions);
-          console.log('✅ Customer email sent successfully');
+          console.log('✅ Customer confirmation email sent successfully');
           customerEmailSent = true;
 
-          // Send tradesman emails - Dynamic distribution
+          // Send tradesman emails with quote information
           if (tradesmenFound.length > 0) {
-            console.log(`📧 Sending tradesman emails to ${tradesmenFound.length} tradesmen`);
+            console.log(`📧 Sending tradesman emails with quote to ${tradesmenFound.length} tradesmen`);
             
             for (const tradesman of tradesmenFound) {
               try {
+                const quoteUrl = `https://lead-code-e8pgu6alm-dan-buis-projects-e44a173c.vercel.app/api/quote-emails?type=tradesman&quoteId=${quote?.QuoteID || 'QUOTE-ID'}`;
+                
                 const tradesmanMailOptions = {
                   from: fromDisplay,
                   replyTo,
                   to: tradesman.email,
-                  subject: `New ${leadData.selectedService} Lead - ${leadData.customerName}`,
+                  subject: `New ${leadData.selectedService} Lead with Quote Request - ${leadData.customerName}`,
                   html: `
-                    <h2>New Lead Received!</h2>
-                    <p><strong>Customer:</strong> ${leadData.customerName}</p>
-                    <p><strong>Email:</strong> ${leadData.customerEmail}</p>
-                    <p><strong>Phone:</strong> ${leadData.customerPhone}</p>
-                    <p><strong>Service:</strong> ${leadData.selectedService}</p>
-                    <p><strong>Project Details:</strong> ${leadData.projectDetails}</p>
-                    <p><strong>Project Size:</strong> ${leadData.projectSize}</p>
-                    <p><strong>Specific Details:</strong> ${leadData.specificDetails}</p>
-                    <p><strong>Location:</strong> ${leadData.location}</p>
-                    <p><strong>Budget:</strong> ${leadData.budget}</p>
-                    <p><strong>Timeline:</strong> ${leadData.timeline}</p>
-                    <p>Please contact the customer as soon as possible.</p>
-                    <p>You can view and manage this lead in your dashboard.</p>
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                      <h2 style="color: #e74c3c;">New Lead with Quote Request!</h2>
+                      
+                      <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                        <p style="margin: 0;"><strong>⚠️ ACTION REQUIRED:</strong> Please review and provide a quote for this project.</p>
+                      </div>
+                      
+                      <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="color: #34495e; margin-top: 0;">Customer Information:</h3>
+                        <p><strong>Name:</strong> ${leadData.customerName}</p>
+                        <p><strong>Email:</strong> ${leadData.customerEmail}</p>
+                        <p><strong>Phone:</strong> ${leadData.customerPhone}</p>
+                        <p><strong>Location:</strong> ${leadData.location}</p>
+                        
+                        <h3 style="color: #34495e;">Project Details:</h3>
+                        <p><strong>Service:</strong> ${leadData.selectedService}</p>
+                        <p><strong>Project:</strong> ${leadData.projectDetails}</p>
+                        <p><strong>Size/Scope:</strong> ${leadData.projectSize}</p>
+                        <p><strong>Budget:</strong> ${leadData.budget}</p>
+                        <p><strong>Timeline:</strong> ${leadData.timeline}</p>
+                        ${leadData.specificDetails ? `<p><strong>Specific Requirements:</strong> ${leadData.specificDetails}</p>` : ''}
+                      </div>
+                      
+                      <div style="background: #d4edda; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="color: #155724; margin-top: 0;">Next Steps:</h3>
+                        <p>1. Review the project details above</p>
+                        <p>2. Calculate your quote based on the requirements</p>
+                        <p>3. Click the link below to submit your quote</p>
+                        <p>4. The customer will receive your quote for approval</p>
+                      </div>
+                      
+                      <div style="text-align: center; margin: 30px 0;">
+                        <a href="${quoteUrl}" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">Submit Quote</a>
+                      </div>
+                      
+                      <p style="color: #6c757d; font-size: 14px;">Quote ID: ${quote?.QuoteID || 'QUOTE-ID'}</p>
+                    </div>
                   `
                 };
 
                 await transporter.sendMail(tradesmanMailOptions);
-                console.log(`✅ Tradesman email sent to: ${tradesman.email}`);
+                console.log(`✅ Tradesman email with quote sent to: ${tradesman.email}`);
               } catch (tradesmanEmailError) {
                 console.error(`❌ Failed to send email to ${tradesman.email}:`, tradesmanEmailError.message);
               }
@@ -293,20 +308,22 @@ export default async function handler(req, res) {
     const response = {
       success: true,
       message: customerEmailSent && tradesmanEmailSent
-        ? 'Lead submitted successfully! Check your email for confirmation.'
+        ? 'Lead submitted successfully! Check your email for confirmation. Quote will be sent within 24 hours.'
         : 'Lead submitted successfully! Google Sheets updated. Email status: ' +
           (customerEmailSent ? 'Customer email sent' : 'Customer email failed') + ', ' +
           (tradesmanEmailSent ? 'Tradesman email sent' : 'Tradesman email failed'),
       data: leadData,
+      quoteId: quote?.QuoteID,
       timestamp: new Date().toISOString(),
       status: {
         logged: true,
         sheetsUpdated,
         customerEmailSent,
         tradesmanEmailSent,
+        quoteGenerated,
         tradesmenFound: tradesmenFound.length,
         note: customerEmailSent && tradesmanEmailSent
-          ? 'All systems working!'
+          ? 'All systems working! Quote workflow initiated.'
           : 'Google Sheets working! Email may need configuration'
       }
     };

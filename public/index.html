@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Quote System Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 3px; white-space: pre-wrap; }
+        input, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Quote System API Test</h1>
+    
+    <div class="test-section">
+        <h3>1. Test Quote Generation</h3>
+        <input type="email" id="customerEmail" placeholder="Customer Email" value="test@example.com">
+        <input type="text" id="customerName" placeholder="Customer Name" value="Test Customer">
+        <select id="serviceType">
+            <option value="plumbing">Plumbing</option>
+            <option value="electrical">Electrical</option>
+            <option value="carpentry">Carpentry</option>
+            <option value="cleaning">Cleaning</option>
+        </select>
+        <textarea id="projectDetails" placeholder="Project Details" rows="3">Fix leaky faucet</textarea>
+        <button onclick="testQuoteGeneration()">Generate Quote</button>
+        <div id="quoteResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Test Pricing Calculation</h3>
+        <select id="pricingServiceType">
+            <option value="plumbing">Plumbing</option>
+            <option value="electrical">Electrical</option>
+            <option value="carpentry">Carpentry</option>
+            <option value="cleaning">Cleaning</option>
+        </select>
+        <select id="projectSize">
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+        </select>
+        <input type="text" id="location" placeholder="Location" value="London">
+        <button onclick="testPricing()">Calculate Price</button>
+        <div id="pricingResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Test API Status</h3>
+        <button onclick="testAPIStatus()">Check All APIs</button>
+        <div id="statusResult" class="result"></div>
+    </div>
+
+    <script>
+        const BASE_URL = 'https://dan-buis-projects-e44a173c.vercel.app';
+
+        async function testQuoteGeneration() {
+            const resultDiv = document.getElementById('quoteResult');
+            resultDiv.textContent = 'Testing...';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/quotes?action=generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        serviceType: document.getElementById('serviceType').value,
+                        projectDetails: document.getElementById('projectDetails').value,
+                        customerEmail: document.getElementById('customerEmail').value,
+                        customerName: document.getElementById('customerName').value
+                    })
+                });
+                
+                const data = await response.json();
+                resultDiv.textContent = `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        async function testPricing() {
+            const resultDiv = document.getElementById('pricingResult');
+            resultDiv.textContent = 'Testing...';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/quote-pricing`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        serviceType: document.getElementById('pricingServiceType').value,
+                        projectSize: document.getElementById('projectSize').value,
+                        location: document.getElementById('location').value
+                    })
+                });
+                
+                const data = await response.json();
+                resultDiv.textContent = `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        async function testAPIStatus() {
+            const resultDiv = document.getElementById('statusResult');
+            resultDiv.textContent = 'Checking APIs...';
+            
+            const apis = [
+                '/api/quotes',
+                '/api/quote-pricing',
+                '/api/quote-emails',
+                '/api/quote-responses'
+            ];
+            
+            let results = '';
+            
+            for (const api of apis) {
+                try {
+                    const response = await fetch(`${BASE_URL}${api}`);
+                    results += `${api}: ${response.status} ${response.statusText}\n`;
+                } catch (error) {
+                    results += `${api}: Error - ${error.message}\n`;
+                }
+            }
+            
+            resultDiv.textContent = results;
+        }
+    </script>
+</body>
+</html> 

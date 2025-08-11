@@ -216,28 +216,23 @@ async function handleQuoteGeneration(req, res) {
             
             body {
                 font-family: Arial, sans-serif;
-                line-height: 1.6;
-                color: #333;
-                background: #f5f5f5;
-                padding: 20px;
+                line-height: 1.4;
+                color: #000;
+                background: white;
+                padding: 40px;
             }
             
             .quote-container {
                 max-width: 800px;
                 margin: 0 auto;
                 background: white;
-                padding: 40px;
-                border-radius: 10px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             }
             
             .header {
                 display: flex;
                 justify-content: space-between;
                 align-items: flex-start;
-                margin-bottom: 40px;
-                border-bottom: 2px solid #eee;
-                padding-bottom: 20px;
+                margin-bottom: 30px;
             }
             
             .logo-section {
@@ -245,35 +240,33 @@ async function handleQuoteGeneration(req, res) {
             }
             
             .logo {
-                font-size: 2.5rem;
+                font-size: 2.2rem;
                 font-weight: bold;
-                color: #2c3e50;
-                margin-bottom: 10px;
+                color: #000;
+                margin-bottom: 5px;
             }
             
-            .logo-subtitle {
-                font-size: 1.2rem;
-                color: #7f8c8d;
-                font-weight: 300;
+            .quote-info {
+                text-align: right;
             }
             
             .quote-title {
-                font-size: 3rem;
+                font-size: 2.5rem;
                 font-weight: bold;
-                color: #2c3e50;
-                margin-bottom: 10px;
+                color: #000;
+                margin-bottom: 5px;
             }
             
             .customer-name {
-                font-size: 1.5rem;
-                color: #34495e;
+                font-size: 1.3rem;
+                color: #000;
                 font-weight: 600;
             }
             
             .info-section {
                 display: flex;
                 justify-content: space-between;
-                margin-bottom: 40px;
+                margin-bottom: 30px;
             }
             
             .quote-details, .company-details {
@@ -281,32 +274,32 @@ async function handleQuoteGeneration(req, res) {
             }
             
             .info-item {
-                margin-bottom: 8px;
+                margin-bottom: 6px;
                 font-size: 0.9rem;
             }
             
             .info-label {
                 font-weight: bold;
-                color: #7f8c8d;
+                color: #000;
             }
             
             .items-table {
                 width: 100%;
                 border-collapse: collapse;
-                margin-bottom: 30px;
+                margin-bottom: 20px;
             }
             
             .items-table th {
                 background: #f8f9fa;
-                padding: 15px 10px;
+                padding: 12px 10px;
                 text-align: left;
                 border-bottom: 2px solid #dee2e6;
                 font-weight: 600;
-                color: #495057;
+                color: #000;
             }
             
             .items-table td {
-                padding: 15px 10px;
+                padding: 12px 10px;
                 border-bottom: 1px solid #dee2e6;
             }
             
@@ -425,7 +418,6 @@ async function handleQuoteGeneration(req, res) {
              <div class="header">
                  <div class="logo-section">
                      <div class="logo">${quote.companyName}</div>
-                     <div class="logo-subtitle">Professional Underfloor Heating Solutions</div>
                  </div>
                  <div class="quote-info">
                      <div class="quote-title">QUOTE</div>
@@ -453,16 +445,16 @@ async function handleQuoteGeneration(req, res) {
                 </div>
                 <div class="company-details">
                     <div class="info-item">
-                        <span class="info-label">Company Name:</span> ${quote.companyName}
+                        <span class="info-label">${quote.companyName}</span>
                     </div>
                     <div class="info-item">
-                        <span class="info-label">Address:</span> ${quote.companyAddress}
+                        <span class="info-label">${quote.companyAddress}</span>
                     </div>
                     <div class="info-item">
-                        <span class="info-label">Phone:</span> ${quote.tradesmanPhone || '+64 9 123 4567'}
+                        <span class="info-label">${quote.tradesmanPhone || '+64 9 123 4567'}</span>
                     </div>
                     <div class="info-item">
-                        <span class="info-label">Email:</span> ${quote.tradesmanEmail || 'info@kiwiunderfloor.com'}
+                        <span class="info-label">${quote.tradesmanEmail || 'info@kiwiunderfloor.com'}</span>
                     </div>
                 </div>
             </div>
@@ -580,19 +572,20 @@ async function handleQuoteGeneration(req, res) {
  }
 
  async function sendQuoteEmail(quoteData, req) {
-   try {
-     if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-       console.log('⚠️ Gmail credentials not configured - skipping email');
-       return;
-     }
+  try {
+    // Use fallback credentials like the contact form
+    const gmailUser = process.env.GMAIL_USER || 'danbricks18@gmail.com';
+    const gmailPass = process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom';
 
-     const transporter = nodemailer.createTransport({
-       service: 'gmail',
-       auth: {
-         user: process.env.GMAIL_USER,
-         pass: process.env.GMAIL_APP_PASSWORD
-       }
-     });
+    console.log('📧 Using Gmail credentials for quote email:', { user: gmailUser, pass: gmailPass ? '***' : 'missing' });
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: gmailUser,
+        pass: gmailPass
+      }
+    });
 
      const currentUrl = req.headers.host ? 
        `https://${req.headers.host}` : 
@@ -637,7 +630,7 @@ async function handleQuoteGeneration(req, res) {
      }
 
      const mailOptions = {
-       from: process.env.MAIL_FROM || `${quoteData.companyName} <${process.env.GMAIL_USER}>`,
+       from: process.env.MAIL_FROM || `${quoteData.companyName} <${gmailUser}>`,
        to: quoteData.customerEmail,
        subject: `Quote ${quoteData.quoteNumber} - ${quoteData.serviceType}`,
        html: emailContent,
@@ -654,16 +647,17 @@ async function handleQuoteGeneration(req, res) {
 
 async function sendAdminQuoteEmail(quoteData, req) {
   try {
-    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-      console.log('⚠️ Gmail credentials not configured - skipping admin email');
-      return;
-    }
+    // Use fallback credentials like the contact form
+    const gmailUser = process.env.GMAIL_USER || 'danbricks18@gmail.com';
+    const gmailPass = process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom';
+
+    console.log('📧 Using Gmail credentials for admin quote email:', { user: gmailUser, pass: gmailPass ? '***' : 'missing' });
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD
+        user: gmailUser,
+        pass: gmailPass
       }
     });
 
@@ -732,9 +726,9 @@ async function sendAdminQuoteEmail(quoteData, req) {
       </div>
     `;
 
-    const adminEmail = process.env.ADMIN_EMAIL || process.env.GMAIL_USER;
+    const adminEmail = process.env.ADMIN_EMAIL || gmailUser;
     const mailOptions = {
-      from: process.env.MAIL_FROM || `Trade Quotes <${process.env.GMAIL_USER}>`,
+      from: process.env.MAIL_FROM || `Trade Quotes <${gmailUser}>`,
       to: adminEmail,
       subject: `📊 New Quote Generated - ${quoteData.quoteNumber} - $${quoteData.total}`,
       html: emailContent

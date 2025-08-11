@@ -49,7 +49,7 @@ function removeTradesman(service, email) {
     }
 }
 
-module.exports = {
+export {
     tradesmenConfig,
     getTradesmenEmails,
     addTradesman,

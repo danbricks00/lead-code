@@ -1,14 +1,19 @@
 // Simple Express server example
-const express = require('express');
-const { google } = require('googleapis');
-const nodemailer = require('nodemailer');
-const config = require('./config.js');
-const { getTradesmenEmails } = require('./tradesmen-config.js');
-const oauthConfig = require('./oauth-config.js');
-const tradesmenDB = require('./tradesmen-db.js');
-const fs = require('fs');
-const path = require('path');
-const session = require('express-session');
+import express from 'express';
+import { google } from 'googleapis';
+import nodemailer from 'nodemailer';
+import config from './config.js';
+import { getTradesmenEmails } from './tradesmen-config.js';
+import oauthConfig from './oauth-config.js';
+import tradesmenDB from './tradesmen-db.js';
+import fs from 'fs';
+import path from 'path';
+import session from 'express-session';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 app.use(express.json());
@@ -175,7 +180,104 @@ async function sendEmail(to, subject, body) {
     }
 }
 
+// Function to send quote email to customer
+async function sendQuoteEmail(quoteData, req) {
+    try {
+        console.log('📧 Sending quote email to customer:', quoteData.customerEmail);
+        
+        const currentUrl = req.headers.host ? 
+            `http://${req.headers.host}` : 
+            'http://localhost:3000';
 
+        const emailContent = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <p>Hi ${quoteData.customerName},</p>
+                
+                <p>Thank you for your enquiry.</p>
+                
+                <p>Here's quote ${quoteData.quoteNumber} for NZD ${quoteData.total}.</p>
+                
+                <p>You can view your quote online:</p>
+                <p><a href="${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}" style="color: #6f42c1;">${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}</a></p>
+                
+                <p>From your online quote you can accept, decline, comment or print.</p>
+                
+                <p>If you have any questions, please let us know.</p>
+                
+                <p>Thanks,<br>${quoteData.companyName}</p>
+            </div>
+        `;
+
+        const success = await sendEmail(quoteData.customerEmail, `Quote ${quoteData.quoteNumber} - ${quoteData.serviceType}`, emailContent);
+        
+        if (success) {
+            console.log('✅ Quote email sent to customer successfully');
+        } else {
+            console.log('❌ Failed to send quote email to customer');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error sending quote email:', error.message);
+    }
+}
+
+// Function to send admin quote email
+async function sendAdminQuoteEmail(quoteData, req) {
+    try {
+        console.log('📧 Sending admin copy of quote');
+        
+        const currentUrl = req.headers.host ? 
+            `http://${req.headers.host}` : 
+            'http://localhost:3000';
+
+        const commissionRate = 0.10; // 10% commission
+        const potentialCommission = parseFloat(quoteData.total) * commissionRate;
+
+        const emailContent = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #2c3e50;">📊 New Quote Generated - Admin Copy</h2>
+                <p>Hello Admin,</p>
+                <p>A new quote has been generated and sent to the customer. Here are the details for tracking and commission purposes:</p>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="color: #34495e; margin-top: 0;">Quote Details</h3>
+                    <p><strong>Quote ID:</strong> ${quoteData.quoteId}</p>
+                    <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+                    <p><strong>Customer:</strong> ${quoteData.customerName}</p>
+                    <p><strong>Customer Email:</strong> ${quoteData.customerEmail}</p>
+                    <p><strong>Service Type:</strong> ${quoteData.serviceType}</p>
+                </div>
+
+                <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="color: #155724; margin-top: 0;">Financial Details</h3>
+                    <p><strong>Total Quote Amount:</strong> $${quoteData.total}</p>
+                    <p><strong>Potential Commission (10%):</strong> $${potentialCommission.toFixed(2)}</p>
+                </div>
+
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}" 
+                       style="background: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                        View Full Quote
+                    </a>
+                </div>
+
+                <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Underfloor Heating System</strong></p>
+            </div>
+        `;
+
+        const adminEmail = 'danbricks18@gmail.com'; // Your admin email
+        const success = await sendEmail(adminEmail, `📊 New Quote Generated - ${quoteData.quoteNumber} - $${quoteData.total}`, emailContent);
+        
+        if (success) {
+            console.log('✅ Admin quote email sent successfully');
+        } else {
+            console.log('❌ Failed to send admin quote email');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error sending admin email:', error.message);
+    }
+}
 
 // Authentication endpoints
 app.post('/api/auth/google', async (req, res) => {
@@ -307,6 +409,223 @@ app.post('/api/admin/suspend/:googleId', (req, res) => {
     const { googleId } = req.params;
     const result = tradesmenDB.suspendTradesman(googleId);
     res.json(result);
+});
+
+// Quote generation endpoint
+app.post('/api/generate-quote', async (req, res) => {
+    try {
+        const {
+            quoteId,
+            customerName,
+            customerEmail,
+            customerPhone,
+            customerAddress,
+            serviceType,
+            projectDetails,
+            tradesmanName,
+            tradesmanEmail,
+            tradesmanPhone,
+            companyName = 'Kiwi Underfloor Heating',
+            companyAddress = 'Auckland, New Zealand',
+            gstNumber = '120-681-729',
+            items = []
+        } = req.body;
+
+        console.log('📝 Generating quote:', { quoteId, customerName, serviceType });
+
+        // Validate required fields
+        if (!quoteId || !customerName || !customerEmail || !serviceType) {
+            return res.status(400).json({
+                success: false,
+                error: 'Quote ID, customer name, email, and service type are required'
+            });
+        }
+
+        // Generate quote number
+        const quoteNumber = `QU-${Date.now().toString().slice(-4)}`;
+        
+        // Set expiry date (30 days from now)
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 30);
+
+        // Calculate totals
+        let subtotal = 0;
+        const processedItems = items.map(item => {
+            const amount = parseFloat(item.quantity || 1) * parseFloat(item.unitPrice || 0);
+            subtotal += amount;
+            return {
+                ...item,
+                amount: amount.toFixed(2)
+            };
+        });
+
+        const gst = subtotal * 0.15;
+        const total = subtotal + gst;
+
+        // Create quote data
+        const quoteData = {
+            quoteId,
+            quoteNumber,
+            customerName,
+            customerEmail,
+            customerPhone,
+            customerAddress,
+            serviceType,
+            projectDetails,
+            tradesmanName,
+            tradesmanEmail,
+            tradesmanPhone,
+            companyName,
+            companyAddress,
+            gstNumber,
+            items: processedItems,
+            subtotal: subtotal.toFixed(2),
+            gst: gst.toFixed(2),
+            total: total.toFixed(2),
+            date: new Date().toISOString().split('T')[0],
+            expiryDate: expiryDate.toISOString().split('T')[0],
+            status: 'quote_sent'
+        };
+
+        // Send email to customer with quote
+        await sendQuoteEmail(quoteData, req);
+
+        // Send admin copy for tracking and commission purposes
+        await sendAdminQuoteEmail(quoteData, req);
+
+        console.log('✅ Quote generated successfully:', { quoteNumber, total });
+
+        res.json({
+            success: true,
+            message: 'Quote generated and sent successfully',
+            quote: {
+                quoteId,
+                quoteNumber,
+                total: total.toFixed(2),
+                customerName,
+                customerEmail
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Quote generation error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to generate quote',
+            details: error.message
+        });
+    }
+});
+
+// Quote view endpoint
+app.get('/api/generate-quote', async (req, res) => {
+    try {
+        const { quoteId } = req.query;
+        
+        if (!quoteId) {
+            return res.status(400).json({ error: 'Quote ID is required' });
+        }
+
+        console.log('🔍 Looking up quote:', quoteId);
+
+        // For now, return a simple quote view since we don't have the full database setup
+        const quoteHtml = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Quote ${quoteId} - Kiwi Underfloor Heating</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; }
+                .actions { text-align: center; margin-bottom: 40px; padding: 20px; background: #f8f9fa; }
+                .action-btn { display: inline-block; padding: 15px 30px; margin: 0 10px; text-decoration: none; border-radius: 8px; font-weight: 600; }
+                .accept-btn { background: #27ae60; color: white; }
+                .decline-btn { background: #e74c3c; color: white; }
+                .quote-container { max-width: 800px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+            </style>
+        </head>
+        <body>
+            <div class="quote-container">
+                <div class="actions">
+                    <a href="/api/quote-responses?action=accept&quoteId=${quoteId}" class="action-btn accept-btn">
+                        ✅ Accept Quote
+                    </a>
+                    <a href="/api/quote-responses?action=decline&quoteId=${quoteId}" class="action-btn decline-btn">
+                        ❌ Decline Quote
+                    </a>
+                </div>
+                
+                <h1>Quote ${quoteId}</h1>
+                <p>This is a test quote view. The accept/reject buttons are at the top of the page.</p>
+                <p>Quote ID: ${quoteId}</p>
+                <p>Status: Quote Sent</p>
+            </div>
+        </body>
+        </html>
+        `;
+
+        res.setHeader('Content-Type', 'text/html');
+        return res.status(200).send(quoteHtml);
+    } catch (error) {
+        console.error('❌ Error handling quote view:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Quote responses endpoint
+app.get('/api/quote-responses', async (req, res) => {
+    try {
+        const { action, quoteId } = req.query;
+        
+        if (!action || !quoteId) {
+            return res.status(400).json({ error: 'Action and quote ID are required' });
+        }
+
+        console.log('📝 Processing quote response:', { action, quoteId });
+
+        const isAccepted = action === 'accept';
+        const title = isAccepted ? 'Quote Accepted!' : 'Quote Response Received';
+        const message = isAccepted
+            ? `Thank you for accepting quote ${quoteId}! A tradesman will contact you soon to arrange the work.`
+            : `Thank you for your response to quote ${quoteId}. If you have any questions, please contact us.`;
+
+        const responseHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>${title}</title>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f4f4f4; }
+                .container { max-width: 600px; margin: 50px auto; padding: 40px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
+                .icon { font-size: 64px; margin-bottom: 20px; }
+                .success { color: #27ae60; }
+                .info { color: #3498db; }
+                .title { font-size: 28px; font-weight: bold; margin-bottom: 20px; color: #2c3e50; }
+                .message { font-size: 16px; margin-bottom: 30px; color: #555; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="icon ${isAccepted ? 'success' : 'info'}">
+                    ${isAccepted ? '✅' : '📋'}
+                </div>
+                <div class="title">${title}</div>
+                <div class="message">${message}</div>
+            </div>
+        </body>
+        </html>
+        `;
+
+        res.setHeader('Content-Type', 'text/html');
+        return res.status(200).send(responseHtml);
+
+    } catch (error) {
+        console.error('❌ Quote response error:', error);
+        res.status(500).json({ error: 'Failed to process quote response' });
+    }
 });
 
 // API endpoint to send lead data to Google Sheets

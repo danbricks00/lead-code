@@ -517,6 +517,7 @@ async function handleQuoteGeneration(req, res) {
    try {
      console.log('🔄 Starting PDF generation...');
      
+     // For Vercel, we'll use a simpler approach that's more compatible
      const browser = await puppeteer.launch({
        headless: true,
        args: [
@@ -526,7 +527,11 @@ async function handleQuoteGeneration(req, res) {
          '--disable-gpu',
          '--no-first-run',
          '--no-zygote',
-         '--single-process'
+         '--single-process',
+         '--disable-extensions',
+         '--disable-plugins',
+         '--disable-images',
+         '--disable-javascript'
        ]
      });
      
@@ -538,12 +543,12 @@ async function handleQuoteGeneration(req, res) {
      
      console.log('📄 Setting page content...');
      await page.setContent(quoteHtml, { 
-       waitUntil: 'networkidle0',
+       waitUntil: 'domcontentloaded',
        timeout: 30000 
      });
      
      // Wait a bit for any dynamic content to render
-     await page.waitForTimeout(2000);
+     await page.waitForTimeout(1000);
      
      console.log('📊 Generating PDF...');
      // Generate PDF
@@ -567,6 +572,9 @@ async function handleQuoteGeneration(req, res) {
    } catch (error) {
      console.error('❌ Error generating PDF:', error.message);
      console.error('❌ Error stack:', error.stack);
+     
+     // Fallback: return null if PDF generation fails
+     console.log('⚠️ PDF generation failed, continuing without PDF attachment');
      return null;
    }
  }
@@ -588,7 +596,7 @@ async function handleQuoteGeneration(req, res) {
 
      const currentUrl = req.headers.host ? 
        `https://${req.headers.host}` : 
-       'https://lead-code-aoupwojcg-dan-buis-projects-e44a173c.vercel.app';
+       'https://lead-code-kpkgaky5l-leadcode-b19d9acc.vercel.app';
 
      // Generate PDF
      const pdfBuffer = await generatePDF(quoteData, req);
@@ -597,15 +605,15 @@ async function handleQuoteGeneration(req, res) {
 
      const emailContent = `
        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-         <p>Hi,</p>
+         <p>Hi ${quoteData.customerName},</p>
          
          <p>Thank you for your enquiry.</p>
          
          <p>Here's quote ${quoteData.quoteNumber} for NZD ${quoteData.total}.</p>
          
-         <p>Please find your quote attached as a PDF document.</p>
+         ${pdfBuffer ? '<p>Please find your quote attached as a PDF document.</p>' : ''}
          
-         <p>You can also view your quote online:</p>
+         <p>You can view your quote online:</p>
          <p><a href="${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}" style="color: #6f42c1;">${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}</a></p>
          
          <p>From your online quote you can accept, decline, comment or print.</p>
@@ -613,8 +621,6 @@ async function handleQuoteGeneration(req, res) {
          <p>If you have any questions, please let us know.</p>
          
          <p>Thanks,<br>${quoteData.companyName}</p>
-         
-         <p style="margin-top: 30px; font-size: 12px; color: #666;">Terms</p>
        </div>
      `;
 
@@ -639,7 +645,7 @@ async function handleQuoteGeneration(req, res) {
      };
 
      await transporter.sendMail(mailOptions);
-     console.log('✅ Quote email with PDF sent successfully');
+     console.log('✅ Quote email sent successfully');
 
    } catch (error) {
      console.error('❌ Error sending quote email:', error.message);
@@ -663,7 +669,7 @@ async function sendAdminQuoteEmail(quoteData, req) {
 
     const currentUrl = req.headers.host ? 
       `https://${req.headers.host}` : 
-      'https://lead-code-aoupwojcg-dan-buis-projects-e44a173c.vercel.app';
+      'https://lead-code-kpkgaky5l-leadcode-b19d9acc.vercel.app';
 
     // Calculate potential commission (example: 10% of total)
     const commissionRate = 0.10; // 10% commission

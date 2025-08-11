@@ -9,4 +9,4 @@ const oauthConfig = {
     ]
 };
 
-module.exports = oauthConfig; 
+export default oauthConfig; 

@@ -1,6 +1,16 @@
 import nodemailer from 'nodemailer';
 
 export default async function handler(req, res) {
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -21,12 +31,23 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Invalid email format' });
         }
 
+        // Check if Gmail credentials are configured
+        const gmailUser = process.env.GMAIL_USER || 'danbricks18@gmail.com';
+        const gmailPass = process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom';
+
+        if (!gmailUser || !gmailPass) {
+            console.error('❌ Gmail credentials not configured');
+            return res.status(500).json({ 
+                error: 'Email service not configured. Please contact support.' 
+            });
+        }
+
         // Create email transporter
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: process.env.GMAIL_USER,
-                pass: process.env.GMAIL_APP_PASSWORD
+                user: gmailUser,
+                pass: gmailPass
             }
         });
 
@@ -47,14 +68,9 @@ export default async function handler(req, res) {
         `;
 
         // Send email to admin
-        const adminEmail = process.env.GMAIL_USER;
-        if (!adminEmail) {
-            console.error('❌ GMAIL_USER environment variable not set');
-            return res.status(500).json({ error: 'Email configuration error' });
-        }
-
+        const adminEmail = gmailUser;
         const mailOptions = {
-            from: process.env.MAIL_FROM || `Kiwi Underfloor Heating <${process.env.GMAIL_USER}>`,
+            from: process.env.MAIL_FROM || `Kiwi Underfloor Heating <${gmailUser}>`,
             to: adminEmail,
             replyTo: email, // Set reply-to as the customer's email
             subject: emailSubject,
@@ -67,7 +83,7 @@ export default async function handler(req, res) {
 
         // Send confirmation email to customer
         const customerConfirmation = {
-            from: process.env.MAIL_FROM || `Kiwi Underfloor Heating <${process.env.GMAIL_USER}>`,
+            from: process.env.MAIL_FROM || `Kiwi Underfloor Heating <${gmailUser}>`,
             to: email,
             subject: 'Thank you for contacting Kiwi Underfloor Heating',
             html: `

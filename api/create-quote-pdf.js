@@ -36,11 +36,26 @@ export default async function handler(req, res) {
 
       // Get the template ID from environment variable
       const templateId = process.env.GOOGLE_DOCS_TEMPLATE_ID;
+      console.log('🔍 Checking template ID:', templateId ? 'Set' : 'NOT SET');
+      
       if (!templateId) {
-        throw new Error('GOOGLE_DOCS_TEMPLATE_ID environment variable not set');
+        console.error('❌ GOOGLE_DOCS_TEMPLATE_ID environment variable not set');
+        throw new Error('GOOGLE_DOCS_TEMPLATE_ID environment variable not set. Please add it to Vercel environment variables.');
       }
 
       console.log('📋 Using template ID:', templateId);
+
+      // Test template access first
+      try {
+        const templateTest = await drive.files.get({
+          fileId: templateId,
+          fields: 'id,name'
+        });
+        console.log('✅ Template access confirmed:', templateTest.data.name);
+      } catch (templateError) {
+        console.error('❌ Template access failed:', templateError.message);
+        throw new Error(`Cannot access template: ${templateError.message}. Please check template ID and permissions.`);
+      }
 
       // Copy the template to create a new document
       const copyResponse = await drive.files.copy({

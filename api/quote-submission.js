@@ -87,7 +87,7 @@ export default async function handler(req, res) {
             <label for="quoteNumber">Quote Number:</label>
             <input type="text" id="quoteNumber" name="quoteNumber" value="QU${Date.now()}" required>
           </div>
-          
+
           <div class="form-group">
             <label for="totalAmount">Total Quote Amount ($):</label>
             <input type="number" id="totalAmount" name="totalAmount" step="0.01" required>

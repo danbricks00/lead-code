@@ -1,3 +1,4 @@
+// Xero OAuth Callback API - Updated for deployment
 export default async function handler(req, res) {
   console.log('🔄 Xero OAuth Callback called:', req.method, req.url);
   

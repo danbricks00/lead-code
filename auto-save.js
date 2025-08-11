@@ -16,7 +16,7 @@ try {
     
     if (status.trim() === '') {
         console.log('✅ No changes to commit');
-        return;
+        process.exit(0);
     }
     
     // Analyze changes to create meaningful commit message

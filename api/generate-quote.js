@@ -1,5 +1,6 @@
 import { getQuoteById, updateQuoteStatus } from './quote-database.js';
 import nodemailer from 'nodemailer';
+import puppeteer from 'puppeteer';
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -44,8 +45,8 @@ async function handleQuoteView(req, res) {
       return res.status(404).json({ error: 'Quote not found' });
     }
 
-    // Generate the quote HTML
-    const quoteHtml = generateQuoteHTML(quote);
+         // Generate the quote HTML (with action buttons for web view)
+     const quoteHtml = generateQuoteHTML(quote, true);
     
     // Return the quote as HTML
     res.setHeader('Content-Type', 'text/html');
@@ -167,10 +168,21 @@ async function handleQuoteGeneration(req, res) {
   }
 }
 
-function generateQuoteHTML(quote) {
-  const currentUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
-  
-  return `
+ function generateQuoteHTML(quote, includeActions = true) {
+   const currentUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+   
+   const actionsSection = includeActions ? `
+     <div class="actions">
+       <a href="${currentUrl}/api/quote-responses?action=accept&quoteId=${quote.quoteId}" class="action-btn accept-btn">
+         ✅ Accept Quote
+       </a>
+       <a href="${currentUrl}/api/quote-responses?action=decline&quoteId=${quote.quoteId}" class="action-btn decline-btn">
+         ❌ Decline Quote
+       </a>
+     </div>
+   ` : '';
+   
+   return `
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -315,12 +327,12 @@ function generateQuoteHTML(quote) {
                 margin-top: 10px;
             }
             
-            .actions {
-                text-align: center;
-                margin-top: 40px;
-                padding-top: 30px;
-                border-top: 2px solid #eee;
-            }
+                         .actions {
+                 text-align: center;
+                 margin-bottom: 40px;
+                 padding-bottom: 30px;
+                 border-bottom: 2px solid #eee;
+             }
             
             .action-btn {
                 display: inline-block;
@@ -388,18 +400,20 @@ function generateQuoteHTML(quote) {
             }
         </style>
     </head>
-    <body>
-        <div class="quote-container">
-            <div class="header">
-                <div class="logo-section">
-                    <div class="logo">${quote.companyName}</div>
-                    <div class="logo-subtitle">Professional Underfloor Heating Solutions</div>
-                </div>
-                <div class="quote-info">
-                    <div class="quote-title">QUOTE</div>
-                    <div class="customer-name">${quote.customerName}</div>
-                </div>
-            </div>
+         <body>
+         <div class="quote-container">
+             ${actionsSection}
+             
+             <div class="header">
+                 <div class="logo-section">
+                     <div class="logo">${quote.companyName}</div>
+                     <div class="logo-subtitle">Professional Underfloor Heating Solutions</div>
+                 </div>
+                 <div class="quote-info">
+                     <div class="quote-title">QUOTE</div>
+                     <div class="customer-name">${quote.customerName}</div>
+                 </div>
+             </div>
             
             <div class="info-section">
                 <div class="quote-details">
@@ -469,18 +483,9 @@ function generateQuoteHTML(quote) {
                     <span>TOTAL NZD:</span>
                     <span>$${quote.total}</span>
                 </div>
-            </div>
-            
-            <div class="actions">
-                <a href="${currentUrl}/api/quote-responses?action=accept&quoteId=${quote.quoteId}" class="action-btn accept-btn">
-                    ✅ Accept Quote
-                </a>
-                <a href="${currentUrl}/api/quote-responses?action=decline&quoteId=${quote.quoteId}" class="action-btn decline-btn">
-                    ❌ Decline Quote
-                </a>
-            </div>
-            
-            <div class="footer">
+                         </div>
+             
+             <div class="footer">
                 <p>This quote is valid until ${formatDate(quote.expiryDate)}</p>
                 <p>For any questions, please contact us at ${quote.tradesmanEmail || 'info@kiwiunderfloor.com'}</p>
             </div>
@@ -490,60 +495,105 @@ function generateQuoteHTML(quote) {
   `;
 }
 
-async function sendQuoteEmail(quoteData, req) {
-  try {
-    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-      console.log('⚠️ Gmail credentials not configured - skipping email');
-      return;
-    }
+ async function generatePDF(quoteData, req) {
+   try {
+     const browser = await puppeteer.launch({
+       headless: true,
+       args: ['--no-sandbox', '--disable-setuid-sandbox']
+     });
+     
+     const page = await browser.newPage();
+     
+     // Generate the quote HTML (without action buttons for PDF)
+     const quoteHtml = generateQuoteHTML(quoteData, false);
+     
+     await page.setContent(quoteHtml, { waitUntil: 'networkidle0' });
+     
+     // Generate PDF
+     const pdfBuffer = await page.pdf({
+       format: 'A4',
+       printBackground: true,
+       margin: {
+         top: '20mm',
+         right: '20mm',
+         bottom: '20mm',
+         left: '20mm'
+       }
+     });
+     
+     await browser.close();
+     
+     return pdfBuffer;
+   } catch (error) {
+     console.error('❌ Error generating PDF:', error.message);
+     return null;
+   }
+ }
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD
-      }
-    });
+ async function sendQuoteEmail(quoteData, req) {
+   try {
+     if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+       console.log('⚠️ Gmail credentials not configured - skipping email');
+       return;
+     }
 
-    const currentUrl = req.headers.host ? 
-      `https://${req.headers.host}` : 
-      'https://lead-code-aoupwojcg-dan-buis-projects-e44a173c.vercel.app';
+     const transporter = nodemailer.createTransport({
+       service: 'gmail',
+       auth: {
+         user: process.env.GMAIL_USER,
+         pass: process.env.GMAIL_APP_PASSWORD
+       }
+     });
 
-    const emailContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <p>Hi,</p>
-        
-        <p>Thank you for your enquiry.</p>
-        
-        <p>Here's quote ${quoteData.quoteNumber} for NZD ${quoteData.total}.</p>
-        
-        <p>View your quote online:</p>
-        <p><a href="${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}" style="color: #6f42c1;">${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}</a></p>
-        
-        <p>From your online quote you can accept, decline, comment or print.</p>
-        
-        <p>If you have any questions, please let us know.</p>
-        
-        <p>Thanks,<br>${quoteData.companyName}</p>
-        
-        <p style="margin-top: 30px; font-size: 12px; color: #666;">Terms</p>
-      </div>
-    `;
+     const currentUrl = req.headers.host ? 
+       `https://${req.headers.host}` : 
+       'https://lead-code-aoupwojcg-dan-buis-projects-e44a173c.vercel.app';
 
-    const mailOptions = {
-      from: process.env.MAIL_FROM || `${quoteData.companyName} <${process.env.GMAIL_USER}>`,
-      to: quoteData.customerEmail,
-      subject: `Quote ${quoteData.quoteNumber} - ${quoteData.serviceType}`,
-      html: emailContent
-    };
+     // Generate PDF
+     const pdfBuffer = await generatePDF(quoteData, req);
 
-    await transporter.sendMail(mailOptions);
-    console.log('✅ Quote email sent successfully');
+     const emailContent = `
+       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+         <p>Hi,</p>
+         
+         <p>Thank you for your enquiry.</p>
+         
+         <p>Here's quote ${quoteData.quoteNumber} for NZD ${quoteData.total}.</p>
+         
+         <p>Please find your quote attached as a PDF document.</p>
+         
+         <p>You can also view your quote online:</p>
+         <p><a href="${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}" style="color: #6f42c1;">${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}</a></p>
+         
+         <p>From your online quote you can accept, decline, comment or print.</p>
+         
+         <p>If you have any questions, please let us know.</p>
+         
+         <p>Thanks,<br>${quoteData.companyName}</p>
+         
+         <p style="margin-top: 30px; font-size: 12px; color: #666;">Terms</p>
+       </div>
+     `;
 
-  } catch (error) {
-    console.error('❌ Error sending quote email:', error.message);
-  }
-}
+     const mailOptions = {
+       from: process.env.MAIL_FROM || `${quoteData.companyName} <${process.env.GMAIL_USER}>`,
+       to: quoteData.customerEmail,
+       subject: `Quote ${quoteData.quoteNumber} - ${quoteData.serviceType}`,
+       html: emailContent,
+       attachments: pdfBuffer ? [{
+         filename: `Quote-${quoteData.quoteNumber}.pdf`,
+         content: pdfBuffer,
+         contentType: 'application/pdf'
+       }] : []
+     };
+
+     await transporter.sendMail(mailOptions);
+     console.log('✅ Quote email with PDF sent successfully');
+
+   } catch (error) {
+     console.error('❌ Error sending quote email:', error.message);
+   }
+ }
 
 async function sendAdminQuoteEmail(quoteData, req) {
   try {

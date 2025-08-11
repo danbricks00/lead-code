@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Quote Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-section { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; margin: 10px; }
+        button:hover { background: #0056b3; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        .result { background: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Simple Quote System Test</h1>
+    <p>This page tests the quote system with the correct URL.</p>
+    
+    <div class="test-section">
+        <h2>Current URL</h2>
+        <p><strong>Page URL:</strong> <span id="currentUrl"></span></p>
+        <p><strong>Base URL:</strong> <span id="baseUrl"></span></p>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Quote APIs</h2>
+        <button onclick="testAPI('quote-submission')">Test /api/quote-submission (GET)</button>
+        <button onclick="testAPI('view-quote')">Test /api/view-quote (GET)</button>
+        <button onclick="testQuoteSubmission()">Test Quote Submission (POST)</button>
+        <div id="apiResult"></div>
+    </div>
+
+    <script>
+        // Get current URL and base URL
+        const currentUrl = window.location.href;
+        const baseUrl = currentUrl.replace('/test-quote-simple.html', '');
+        
+        document.getElementById('currentUrl').textContent = currentUrl;
+        document.getElementById('baseUrl').textContent = baseUrl;
+
+        async function testAPI(endpoint) {
+            const resultDiv = document.getElementById('apiResult');
+            const testUrl = `${baseUrl}/api/${endpoint}`;
+            
+            resultDiv.innerHTML = `<p class="info">Testing: ${testUrl}</p>`;
+            
+            try {
+                const response = await fetch(testUrl, {
+                    method: 'GET'
+                });
+                
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3 class="success">✅ API Response Received!</h3>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>URL:</strong> ${testUrl}</p>
+                        <p><strong>Response:</strong></p>
+                        <pre>${await response.text()}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3 class="error">❌ API Error</h3>
+                        <p><strong>URL:</strong> ${testUrl}</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Type:</strong> ${error.name}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testQuoteSubmission() {
+            const resultDiv = document.getElementById('apiResult');
+            const testUrl = `${baseUrl}/api/quote-submission`;
+            
+            resultDiv.innerHTML = `<p class="info">Testing quote submission...</p>`;
+            
+            const testData = {
+                quoteId: 'TEST-QUOTE-001',
+                tradesmanName: 'Test Tradesman',
+                tradesmanPhone: '1234567890',
+                tradesmanEmail: 'tradesman@test.com',
+                quoteNumber: 'QU001',
+                totalAmount: '5000',
+                itemBreakdown: 'Materials: $3000\nLabor: $1500\nInstallation: $500',
+                validUntil: '2024-09-11',
+                additionalNotes: 'Test quote',
+                customerEmail: 'danbricks18@gmail.com',
+                customerName: 'Test Customer',
+                serviceType: 'Underfloor Heating'
+            };
+            
+            try {
+                const response = await fetch(testUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="success">✅ Quote Submission Successful!</h3>
+                            <p><strong>Quote Number:</strong> ${result.quoteNumber}</p>
+                            <p><strong>Message:</strong> ${result.message}</p>
+                            <p><strong>Sheets Updated:</strong> ${result.status.sheetsUpdated ? 'Yes' : 'No'}</p>
+                            <p><strong>Customer Email Sent:</strong> ${result.status.customerEmailSent ? 'Yes' : 'No'}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="error">❌ Quote Submission Failed</h3>
+                            <p><strong>Error:</strong> ${result.error}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3 class="error">❌ Network Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
+

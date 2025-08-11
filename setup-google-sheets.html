@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Sheets Setup</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .setup-section { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; margin: 10px; }
+        button:hover { background: #0056b3; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        .result { background: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 10px; }
+        .env-vars { background: #e9ecef; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Google Sheets Setup</h1>
+    <p>This page helps you set up Google Sheets integration for the quote system.</p>
+    
+    <div class="setup-section">
+        <h2>📋 Environment Variables</h2>
+        <p>Add these to your Vercel environment variables:</p>
+        <div class="env-vars">
+GOOGLE_PROJECT_ID = tradelead<br>
+GOOGLE_PRIVATE_KEY_ID = bdec937c87b1b24b58bc9b2ff586a146533bd4d5<br>
+GOOGLE_PRIVATE_KEY = -----BEGIN PRIVATE KEY-----MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQD3F9JhCILbIKEZinAYdi2JiHPrsvH+Ln/OYBt+ftwHm50O2yn4P/I+6hVEmjgVRrA1VBtRhybKQlyOO96He5NyEgXfc2wsFY5mO4lr9g62kiYAxDfVk1sdTqS0VSBf8eXQKN8mxiZin/nAhRdnLhKTupmY6bxvPLDxd8U7YocE6NAq2nGLKlLfmoBwHnrBbe5a3AjGXL5DDwfBxLPJJr7BL2SBFg4BN0LViX7a+HAoJmpm7/EW5P1jke67cxdHOYjx4NXuvrSUFMbpbnCLrnP7jze8XEmsdQLsJ++k1Ds3SWThbpezRHS7m3jqKgT2YMjqTLA2tzQrhlQBePfRqqxHAgMBAAECggEACabkkOXENssPf+/ocQwsuzKZVJuo2ET4uRcH++j4r1Nkzy/Ac/ILhGmgaw2bIzmfqHWgm46r9TqiYuvzxVcOa2ZI1HGtyAsPhO7Ob2ktKfSLh3wisjUPWhW4WVL58MWCNJ9kGB+lYDTfjKWmRGGIWDzxwwdeVPoJ72S+T5OJsqdR05JcD9u33Vg5wFd+EchqGLA5JSA6vBSED+99ztcwdWBkz025nSMciA54LNo4ZDHXkc/AsGH958KNotR7670zTSzrx2Gr23XtYAODiVqm+/kM4cOXmevoW7tyM9tf+T3XTz6h6N0e3IFoyIpiwubTZ+Hjxx2GKE2HKJJisLHgAQKBgQD/jZpqy8MX/IoXTpfZsG7AMTcXfML0AqAt6lFJ+zlFfCFKnkqtAPale+mHNBqAix4Wrassxn6c048ZKEdjCSJRGvjlpZIxOfPpcKFSVhinaZPETdIMuxhmL1YIC8/12CWOLjGy8CqTMEeep1L+NBxl15v36IfRlO9I8dNUz3z3LwKBgQD3hm52hqAOx9rmrJn88FkxQJzCWkNna7U8mLIJ+KC+acUVHb2v6i4MO7mLUdPPxZvzW7yETO6MYypLb8I6nsdQZuI+QW3KCfMuek/2hcQqTsddjOSAZDX7+T1PqtvjT1vIl3GUAzK1YbNS3bkYoU70zVxamtrbmwV/QErpGbjWaQKBgAkk3vadTeDI14QX+tT+PChCWo9Lloo2odaiwL/d7mGvHF3YJiHkm+617Vg6JAyfbbcwBaT3gUZJR6CF0XAYvpKaXXeSIhYC1dhvgEY68GzlGTV392EfPLNDVFe7XHiWgFmDC6I0d8GGg7mIkS6pXK7ENT98oYd9RcadaItrVTRfAoGBAJK3bjZ3KdxY/hmI6WWSGWwmPkS9OALPRwf6Al4Cr1TuYNFZZZwmFNFPfXVlNUWMfhnLoHxTFXrFNMauIdSZVM8FjMkWAzukli5QdaFMPLBPLcD3yGGKBK2sWHkmb1vXKDJIAhyXoLD+jkpp/lLpGmHkb/+Mlnlg8+svcrekdXkxAoGBAIeSYGccdM26BJ77AVYLS/7RfmEQfFmkg/V7IGaExR6a3IrpTUXlkseZgAKEU9HtLenEP5tPKjf87zQpc11bB94wPja7JrVEUXLHq9rC9mpHAz47qxhQuewjLytRdIoETA0d8v7dKCmoAk9d6CzxS7PRoPFMzN8LMsAnINaKp1zk-----END PRIVATE KEY-----<br>
+GOOGLE_CLIENT_EMAIL = tradelead2@tradelead.iam.gserviceaccount.com<br>
+GOOGLE_CLIENT_ID = 109186456248314357540<br>
+GOOGLE_CLIENT_CERT_URL = https://www.googleapis.com/robot/v1/metadata/x509/tradelead2%40tradelead.iam.gserviceaccount.com<br>
+GOOGLE_SPREADSHEET_ID = 1T56hw5r7IiyI9o-A046vq9Y8xE-zGejUh84Qj314z40<br>
+GMAIL_USER = danbricks18@gmail.com<br>
+GMAIL_APP_PASSWORD = ptmcojqgthvjbqom
+        </div>
+    </div>
+
+    <div class="setup-section">
+        <h2>🔧 Setup Steps</h2>
+        <button onclick="setupQuotesSheet()">1. Setup Quotes Sheet</button>
+        <button onclick="testQuoteSubmission()">2. Test Quote Submission</button>
+        <button onclick="testViewQuote()">3. Test View Quote</button>
+        <div id="setupResult"></div>
+    </div>
+
+    <div class="setup-section">
+        <h2>📊 Current Status</h2>
+        <p><strong>Spreadsheet ID:</strong> 1T56hw5r7IiyI9o-A046vq9Y8xE-zGejUh84Qj314z40</p>
+        <p><strong>Leads Sheet:</strong> ✅ Created</p>
+        <p><strong>Quotes Sheet:</strong> <span id="quotesStatus">⏳ Not created yet</span></p>
+    </div>
+
+    <script>
+        const baseUrl = window.location.origin;
+
+        async function setupQuotesSheet() {
+            const resultDiv = document.getElementById('setupResult');
+            resultDiv.innerHTML = '<p class="info">Setting up Quotes sheet...</p>';
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/setup-quotes-sheet`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="success">✅ Quotes Sheet Setup Complete!</h3>
+                            <p>${result.message}</p>
+                            <p><strong>Headers:</strong> ${result.headers.join(', ')}</p>
+                        </div>
+                    `;
+                    document.getElementById('quotesStatus').innerHTML = '✅ Created';
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="error">❌ Setup Failed</h3>
+                            <p>${result.error}</p>
+                            <p><strong>Details:</strong> ${result.details}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3 class="error">❌ Network Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testQuoteSubmission() {
+            const resultDiv = document.getElementById('setupResult');
+            resultDiv.innerHTML = '<p class="info">Testing quote submission...</p>';
+            
+            const testData = {
+                quoteId: 'TEST-SETUP-001',
+                tradesmanName: 'Setup Test Tradesman',
+                tradesmanPhone: '1234567890',
+                tradesmanEmail: 'setup@test.com',
+                quoteNumber: 'SETUP001',
+                totalAmount: '5000',
+                itemBreakdown: 'Materials: $3000\nLabor: $1500\nInstallation: $500',
+                validUntil: '2024-09-11',
+                additionalNotes: 'Setup test quote',
+                customerEmail: 'danbricks18@gmail.com',
+                customerName: 'Setup Test Customer',
+                serviceType: 'Underfloor Heating'
+            };
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/quote-submission`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="success">✅ Quote Submission Test Successful!</h3>
+                            <p><strong>Quote Number:</strong> ${result.quoteNumber}</p>
+                            <p><strong>Sheets Updated:</strong> ${result.status.sheetsUpdated ? 'Yes' : 'No'}</p>
+                            <p><strong>Customer Email Sent:</strong> ${result.status.customerEmailSent ? 'Yes' : 'No'}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="error">❌ Quote Submission Test Failed</h3>
+                            <p><strong>Error:</strong> ${result.error}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3 class="error">❌ Network Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testViewQuote() {
+            const resultDiv = document.getElementById('setupResult');
+            resultDiv.innerHTML = '<p class="info">Testing view quote...</p>';
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/view-quote?quoteId=TEST-SETUP-001&quoteNumber=SETUP001`);
+                const result = await response.text();
+                
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3 class="success">✅ View Quote Test Successful!</h3>
+                        <p><strong>Response Length:</strong> ${result.length} characters</p>
+                        <p><strong>Preview:</strong></p>
+                        <pre style="max-height: 200px; overflow-y: auto;">${result.substring(0, 500)}...</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3 class="error">❌ View Quote Test Failed</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

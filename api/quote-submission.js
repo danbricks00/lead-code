@@ -125,7 +125,107 @@ export default async function handler(req, res) {
       const quoteData = req.body;
       console.log('✅ Quote received:', quoteData);
 
-      // 1. Save quote to Google Sheets
+      // 1. Send email to customer with quote (PRIORITY - like the working chatbot)
+      let customerEmailSent = false;
+      try {
+        const nodemailer = await import('nodemailer');
+        const transporter = nodemailer.default.createTransport({
+          service: 'gmail',
+          auth: {
+            user: 'danbricks18@gmail.com',
+            pass: 'ptmcojqgthvjbqom'
+          }
+        });
+
+        const currentUrl = process.env.VERCEL_URL ? 
+          `https://${process.env.VERCEL_URL}` : 
+          'https://lead-code-r8wsx5vhy-leadcode-b19d9acc.vercel.app';
+
+        const customerMailOptions = {
+          from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+          to: quoteData.customerEmail || 'danbricks18@gmail.com',
+          subject: `Quote ${quoteData.quoteNumber} - ${quoteData.serviceType || 'Your Project'}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #2c3e50;">Your Quote is Ready!</h2>
+              <p>Dear ${quoteData.customerName || 'there'},</p>
+              <p>We have prepared your quote for <strong>${quoteData.serviceType || 'your project'}</strong>.</p>
+              
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
+                <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+                <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
+                <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
+                <p><strong>Tradesman:</strong> ${quoteData.tradesmanName}</p>
+                <p><strong>Contact:</strong> ${quoteData.tradesmanPhone}</p>
+              </div>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${currentUrl}/api/view-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+                   style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                   View Full Quote
+                </a>
+              </div>
+              
+              <p>You can view the complete quote with itemized breakdown by clicking the link above.</p>
+              <p>Please review the quote and let us know if you have any questions.</p>
+              
+              <p style="margin-top: 30px;">Best regards,<br><strong>${quoteData.tradesmanName}</strong></p>
+            </div>
+          `
+        };
+
+        await transporter.sendMail(customerMailOptions);
+        console.log('✅ Customer quote email sent successfully');
+        customerEmailSent = true;
+      } catch (emailError) {
+        console.error('❌ Email error:', emailError.message);
+      }
+
+      // 2. Send notification to admin
+      try {
+        const nodemailer = await import('nodemailer');
+        const transporter = nodemailer.default.createTransport({
+          service: 'gmail',
+          auth: {
+            user: 'danbricks18@gmail.com',
+            pass: 'ptmcojqgthvjbqom'
+          }
+        });
+
+        const adminMailOptions = {
+          from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+          to: 'danbricks18@gmail.com',
+          subject: `Quote ${quoteData.quoteNumber} Submitted - ${quoteData.tradesmanName}`,
+          html: `
+            <h2>New Quote Submitted!</h2>
+            <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+            <p><strong>Tradesman:</strong> ${quoteData.tradesmanName}</p>
+            <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
+            <p><strong>Phone:</strong> ${quoteData.tradesmanPhone}</p>
+            <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
+            <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
+            <p><strong>Item Breakdown:</strong></p>
+            <pre>${quoteData.itemBreakdown}</pre>
+            ${quoteData.additionalNotes ? `<p><strong>Additional Notes:</strong> ${quoteData.additionalNotes}</p>` : ''}
+            
+            <h3>Next Steps:</h3>
+            <ol>
+              <li>Create quote document using Google Docs template</li>
+              <li>Make any necessary adjustments</li>
+              <li>Save as PDF</li>
+              <li>Send to customer</li>
+            </ol>
+          `
+        };
+
+        await transporter.sendMail(adminMailOptions);
+        console.log('✅ Admin notification email sent');
+      } catch (adminEmailError) {
+        console.error('❌ Admin email failed:', adminEmailError.message);
+      }
+
+      // 3. Save to Google Sheets (if configured)
       let sheetsUpdated = false;
       if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {
         try {
@@ -168,106 +268,6 @@ export default async function handler(req, res) {
         } catch (sheetsError) {
           console.error('❌ Google Sheets error:', sheetsError.message);
         }
-      }
-
-      // 2. Send email to customer with quote
-      let customerEmailSent = false;
-      try {
-        const nodemailer = await import('nodemailer');
-        const transporter = nodemailer.default.createTransport({
-          service: 'gmail',
-          auth: {
-            user: process.env.GMAIL_USER || 'danbricks18@gmail.com',
-            pass: process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom'
-          }
-        });
-
-        const currentUrl = process.env.VERCEL_URL ? 
-          `https://${process.env.VERCEL_URL}` : 
-          'https://lead-code-673tprb9r-leadcode-b19d9acc.vercel.app';
-
-        const customerMailOptions = {
-          from: `Kiwi Underfloor Heating <${process.env.GMAIL_USER || 'danbricks18@gmail.com'}>`,
-          to: quoteData.customerEmail || 'customer@example.com', // This should come from the original lead
-          subject: `Quote ${quoteData.quoteNumber} - ${quoteData.serviceType || 'Your Project'}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #2c3e50;">Your Quote is Ready!</h2>
-              <p>Dear ${quoteData.customerName || 'there'},</p>
-              <p>We have prepared your quote for <strong>${quoteData.serviceType || 'your project'}</strong>.</p>
-              
-              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
-                <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
-                <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
-                <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
-                <p><strong>Tradesman:</strong> ${quoteData.tradesmanName}</p>
-                <p><strong>Contact:</strong> ${quoteData.tradesmanPhone}</p>
-              </div>
-              
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${currentUrl}/api/view-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
-                   style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-                   View Full Quote
-                </a>
-              </div>
-              
-              <p>You can view the complete quote with itemized breakdown by clicking the link above.</p>
-              <p>Please review the quote and let us know if you have any questions.</p>
-              
-              <p style="margin-top: 30px;">Best regards,<br><strong>${quoteData.tradesmanName}</strong></p>
-            </div>
-          `
-        };
-
-        await transporter.sendMail(customerMailOptions);
-        console.log('✅ Customer quote email sent successfully');
-        customerEmailSent = true;
-      } catch (emailError) {
-        console.error('❌ Email error:', emailError.message);
-      }
-
-      // 3. Send notification to admin
-      try {
-        const nodemailer = await import('nodemailer');
-        const transporter = nodemailer.default.createTransport({
-          service: 'gmail',
-          auth: {
-            user: process.env.GMAIL_USER || 'danbricks18@gmail.com',
-            pass: process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom'
-          }
-        });
-
-        const adminMailOptions = {
-          from: `Kiwi Underfloor Heating <${process.env.GMAIL_USER || 'danbricks18@gmail.com'}>`,
-          to: 'danbricks18@gmail.com',
-          subject: `Quote ${quoteData.quoteNumber} Submitted - ${quoteData.tradesmanName}`,
-          html: `
-            <h2>New Quote Submitted!</h2>
-            <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
-            <p><strong>Tradesman:</strong> ${quoteData.tradesmanName}</p>
-            <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
-            <p><strong>Phone:</strong> ${quoteData.tradesmanPhone}</p>
-            <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
-            <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
-            <p><strong>Item Breakdown:</strong></p>
-            <pre>${quoteData.itemBreakdown}</pre>
-            ${quoteData.additionalNotes ? `<p><strong>Additional Notes:</strong> ${quoteData.additionalNotes}</p>` : ''}
-            
-            <h3>Next Steps:</h3>
-            <ol>
-              <li>Create quote document using Google Docs template</li>
-              <li>Make any necessary adjustments</li>
-              <li>Save as PDF</li>
-              <li>Send to customer</li>
-            </ol>
-          `
-        };
-
-        await transporter.sendMail(adminMailOptions);
-        console.log('✅ Admin notification email sent');
-      } catch (adminEmailError) {
-        console.error('❌ Admin email failed:', adminEmailError.message);
       }
 
       // Return success response

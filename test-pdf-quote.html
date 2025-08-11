@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test PDF Quote Generation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        .items-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .item-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .item-row input {
+            margin: 0;
+        }
+        .btn {
+            background: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #2980b9;
+        }
+        .btn-danger {
+            background: #e74c3c;
+        }
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        .btn-success {
+            background: #27ae60;
+        }
+        .btn-success:hover {
+            background: #229954;
+        }
+        .total-section {
+            background: #e8f5e8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: right;
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        .total-row.final {
+            font-size: 24px;
+            font-weight: bold;
+            color: #27ae60;
+            border-top: 2px solid #27ae60;
+            padding-top: 10px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test PDF Quote Generation</h1>
+        
+        <div id="status" class="status"></div>
+        
+        <form id="quoteForm">
+            <div class="form-group">
+                <label for="customerName">Customer Name *</label>
+                <input type="text" id="customerName" name="customerName" value="John Smith" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="customerEmail">Customer Email *</label>
+                <input type="email" id="customerEmail" name="customerEmail" value="john.smith@example.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="customerPhone">Customer Phone</label>
+                <input type="tel" id="customerPhone" name="customerPhone" value="+64 21 123 4567">
+            </div>
+            
+            <div class="form-group">
+                <label for="customerAddress">Customer Address</label>
+                <textarea id="customerAddress" name="customerAddress" rows="2">123 Main Street, Auckland, New Zealand</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="serviceType">Service Type *</label>
+                <select id="serviceType" name="serviceType" required>
+                    <option value="Underfloor Heating Installation">Underfloor Heating Installation</option>
+                    <option value="Underfloor Heating Repair">Underfloor Heating Repair</option>
+                    <option value="Underfloor Heating Maintenance">Underfloor Heating Maintenance</option>
+                    <option value="Thermostat Installation">Thermostat Installation</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="projectDetails">Project Details</label>
+                <textarea id="projectDetails" name="projectDetails" rows="3">Installation of electric underfloor heating system in living room and kitchen areas. Total area approximately 25 square meters.</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="tradesmanName">Tradesman Name</label>
+                <input type="text" id="tradesmanName" name="tradesmanName" value="Mike Johnson">
+            </div>
+            
+            <div class="form-group">
+                <label for="tradesmanEmail">Tradesman Email</label>
+                <input type="email" id="tradesmanEmail" name="tradesmanEmail" value="mike@kiwiunderfloor.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="tradesmanPhone">Tradesman Phone</label>
+                <input type="tel" id="tradesmanPhone" name="tradesmanPhone" value="+64 9 123 4567">
+            </div>
+            
+            <div class="items-section">
+                <h3>Quote Items</h3>
+                <div id="itemsContainer">
+                    <div class="item-row">
+                        <input type="text" placeholder="Description" value="Electric underfloor heating mat" class="item-description">
+                        <input type="number" placeholder="Qty" value="25" min="1" class="item-quantity">
+                        <input type="number" placeholder="Unit Price" value="45.00" min="0" step="0.01" class="item-unit-price">
+                        <input type="text" placeholder="Amount" readonly class="item-amount">
+                        <button type="button" class="btn btn-danger" onclick="removeItem(this)">Remove</button>
+                    </div>
+                    <div class="item-row">
+                        <input type="text" placeholder="Description" value="Digital thermostat" class="item-description">
+                        <input type="number" placeholder="Qty" value="2" min="1" class="item-quantity">
+                        <input type="number" placeholder="Unit Price" value="120.00" min="0" step="0.01" class="item-unit-price">
+                        <input type="text" placeholder="Amount" readonly class="item-amount">
+                        <button type="button" class="btn btn-danger" onclick="removeItem(this)">Remove</button>
+                    </div>
+                    <div class="item-row">
+                        <input type="text" placeholder="Description" value="Installation labor" class="item-description">
+                        <input type="number" placeholder="Qty" value="1" min="1" class="item-quantity">
+                        <input type="number" placeholder="Unit Price" value="800.00" min="0" step="0.01" class="item-unit-price">
+                        <input type="text" placeholder="Amount" readonly class="item-amount">
+                        <button type="button" class="btn btn-danger" onclick="removeItem(this)">Remove</button>
+                    </div>
+                </div>
+                <button type="button" class="btn" onclick="addItem()">+ Add Item</button>
+            </div>
+            
+            <div class="total-section">
+                <div class="total-row">
+                    <span>Subtotal:</span>
+                    <span id="subtotal">$0.00</span>
+                </div>
+                <div class="total-row">
+                    <span>GST (15%):</span>
+                    <span id="gst">$0.00</span>
+                </div>
+                <div class="total-row final">
+                    <span>Total:</span>
+                    <span id="total">$0.00</span>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <button type="submit" class="btn btn-success">📄 Generate Quote with PDF</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let itemCounter = 0;
+
+        function addItem() {
+            const container = document.getElementById('itemsContainer');
+            const newRow = document.createElement('div');
+            newRow.className = 'item-row';
+            newRow.innerHTML = `
+                <input type="text" placeholder="Description" class="item-description">
+                <input type="number" placeholder="Qty" value="1" min="1" class="item-quantity">
+                <input type="number" placeholder="Unit Price" value="0.00" min="0" step="0.01" class="item-unit-price">
+                <input type="text" placeholder="Amount" readonly class="item-amount">
+                <button type="button" class="btn btn-danger" onclick="removeItem(this)">Remove</button>
+            `;
+            container.appendChild(newRow);
+            updateTotals();
+        }
+
+        function removeItem(button) {
+            const container = document.getElementById('itemsContainer');
+            if (container.children.length > 1) {
+                button.parentElement.remove();
+                updateTotals();
+            }
+        }
+
+        function updateTotals() {
+            let subtotal = 0;
+            
+            document.querySelectorAll('.item-row').forEach(row => {
+                const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
+                const unitPrice = parseFloat(row.querySelector('.item-unit-price').value) || 0;
+                const amount = quantity * unitPrice;
+                
+                row.querySelector('.item-amount').value = amount.toFixed(2);
+                subtotal += amount;
+            });
+            
+            const gst = subtotal * 0.15;
+            const total = subtotal + gst;
+            
+            document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('gst').textContent = `$${gst.toFixed(2)}`;
+            document.getElementById('total').textContent = `$${total.toFixed(2)}`;
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        document.getElementById('quoteForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = '⏳ Generating...';
+            submitBtn.disabled = true;
+            
+            // Collect form data
+            const formData = new FormData(e.target);
+            const data = {
+                quoteId: `TEST-${Date.now()}`,
+                customerName: formData.get('customerName'),
+                customerEmail: formData.get('customerEmail'),
+                customerPhone: formData.get('customerPhone'),
+                customerAddress: formData.get('customerAddress'),
+                serviceType: formData.get('serviceType'),
+                projectDetails: formData.get('projectDetails'),
+                tradesmanName: formData.get('tradesmanName'),
+                tradesmanEmail: formData.get('tradesmanEmail'),
+                tradesmanPhone: formData.get('tradesmanPhone'),
+                items: []
+            };
+            
+            // Collect items
+            document.querySelectorAll('.item-row').forEach(row => {
+                const description = row.querySelector('.item-description').value;
+                const quantity = row.querySelector('.item-quantity').value;
+                const unitPrice = row.querySelector('.item-unit-price').value;
+                
+                if (description && quantity && unitPrice) {
+                    data.items.push({
+                        description,
+                        quantity: parseFloat(quantity),
+                        unitPrice: parseFloat(unitPrice)
+                    });
+                }
+            });
+            
+            try {
+                const response = await fetch('/api/generate-quote', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus(`✅ Quote generated successfully! Quote Number: ${result.quote.quoteNumber}`, 'success');
+                    console.log('Quote details:', result.quote);
+                } else {
+                    showStatus(`❌ Error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`❌ Network error: ${error.message}`, 'error');
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Update totals when inputs change
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('item-quantity') || e.target.classList.contains('item-unit-price')) {
+                updateTotals();
+            }
+        });
+
+        // Initialize totals
+        updateTotals();
+    </script>
+</body>
+</html> 

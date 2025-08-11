@@ -1,3 +1,4 @@
+// Test API for checking template ID environment variable
 export default async function handler(req, res) {
   console.log('🔍 Testing template ID environment variable...');
   

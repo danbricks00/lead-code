@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Template Setup Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .setup-section { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; margin: 10px; }
+        button:hover { background: #0056b3; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        .result { background: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 10px; }
+        .placeholder { background: #e3f2fd; padding: 10px; border-radius: 4px; margin: 5px 0; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Google Docs Template Setup Test</h1>
+    <p>This page helps you set up and test the Google Docs template integration.</p>
+    
+    <div class="setup-section">
+        <h2>📋 Step 1: Create Your Template</h2>
+        <p>Create a Google Docs document with these placeholders:</p>
+        
+        <div class="placeholder">{{QUOTE_NUMBER}}</div>
+        <div class="placeholder">{{DATE}}</div>
+        <div class="placeholder">{{VALID_UNTIL}}</div>
+        <div class="placeholder">{{CUSTOMER_NAME}}</div>
+        <div class="placeholder">{{CUSTOMER_EMAIL}}</div>
+        <div class="placeholder">{{CUSTOMER_PHONE}}</div>
+        <div class="placeholder">{{CUSTOMER_ADDRESS}}</div>
+        <div class="placeholder">{{SERVICE_TYPE}}</div>
+        <div class="placeholder">{{TRADESMAN_NAME}}</div>
+        <div class="placeholder">{{TRADESMAN_EMAIL}}</div>
+        <div class="placeholder">{{TRADESMAN_PHONE}}</div>
+        <div class="placeholder">{{ITEM_BREAKDOWN}}</div>
+        <div class="placeholder">{{TOTAL_AMOUNT}}</div>
+        <div class="placeholder">{{ADDITIONAL_NOTES}}</div>
+        
+        <p><strong>Example template structure:</strong></p>
+        <pre style="background: #f1f3f4; padding: 15px; border-radius: 4px;">
+QUOTE
+
+Quote Number: {{QUOTE_NUMBER}}
+Date: {{DATE}}
+Valid Until: {{VALID_UNTIL}}
+
+CUSTOMER DETAILS
+Name: {{CUSTOMER_NAME}}
+Email: {{CUSTOMER_EMAIL}}
+Phone: {{CUSTOMER_PHONE}}
+Address: {{CUSTOMER_ADDRESS}}
+Service: {{SERVICE_TYPE}}
+
+TRADESMAN DETAILS
+Company: {{TRADESMAN_NAME}}
+Email: {{TRADESMAN_EMAIL}}
+Phone: {{TRADESMAN_PHONE}}
+
+QUOTE BREAKDOWN
+{{ITEM_BREAKDOWN}}
+
+TOTAL AMOUNT: ${{TOTAL_AMOUNT}}
+
+ADDITIONAL NOTES
+{{ADDITIONAL_NOTES}}
+        </pre>
+    </div>
+
+    <div class="setup-section">
+        <h2>🔧 Step 2: Get Template ID</h2>
+        <p>After creating your template:</p>
+        <ol>
+            <li>Open your Google Docs template</li>
+            <li>Copy the ID from the URL: <code>https://docs.google.com/document/d/[TEMPLATE_ID]/edit</code></li>
+            <li>Add it to Vercel environment variables as <code>GOOGLE_DOCS_TEMPLATE_ID</code></li>
+        </ol>
+        
+        <div>
+            <label for="templateId">Template ID:</label>
+            <input type="text" id="templateId" placeholder="Enter your template ID here" style="width: 100%; padding: 8px; margin: 10px 0;">
+        </div>
+    </div>
+
+    <div class="setup-section">
+        <h2>🧪 Step 3: Test Template Integration</h2>
+        <button onclick="testTemplateConnection()">Test Template Connection</button>
+        <button onclick="testPDFGeneration()">Test PDF Generation</button>
+        <div id="testResult"></div>
+    </div>
+
+    <div class="setup-section">
+        <h2>📊 Current Status</h2>
+        <p><strong>Template ID:</strong> <span id="currentTemplateId">Not set</span></p>
+        <p><strong>Environment Variable:</strong> <span id="envStatus">Checking...</span></p>
+    </div>
+
+    <script>
+        const baseUrl = window.location.origin;
+
+        // Check if template ID is set
+        async function checkEnvironment() {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.innerHTML = '<p class="info">Checking environment...</p>';
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/create-quote-pdf`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ test: true })
+                });
+                
+                if (response.status === 500) {
+                    const error = await response.json();
+                    if (error.details && error.details.includes('GOOGLE_DOCS_TEMPLATE_ID')) {
+                        document.getElementById('envStatus').innerHTML = '<span class="error">❌ Not set</span>';
+                        resultDiv.innerHTML = `
+                            <div class="result">
+                                <h3 class="error">❌ Template ID Not Set</h3>
+                                <p>Please add <code>GOOGLE_DOCS_TEMPLATE_ID</code> to your Vercel environment variables.</p>
+                            </div>
+                        `;
+                    } else {
+                        document.getElementById('envStatus').innerHTML = '<span class="info">⚠️ Other error</span>';
+                        resultDiv.innerHTML = `
+                            <div class="result">
+                                <h3 class="error">❌ API Error</h3>
+                                <p><strong>Error:</strong> ${error.details}</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    document.getElementById('envStatus').innerHTML = '<span class="success">✅ Set</span>';
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="success">✅ Environment Ready</h3>
+                            <p>Template ID is configured correctly!</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('envStatus').innerHTML = '<span class="error">❌ Connection error</span>';
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3 class="error">❌ Connection Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testTemplateConnection() {
+            const templateId = document.getElementById('templateId').value;
+            const resultDiv = document.getElementById('testResult');
+            
+            if (!templateId) {
+                resultDiv.innerHTML = '<p class="error">Please enter a template ID first.</p>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p class="info">Testing template connection...</p>';
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/create-quote-pdf`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        test: true,
+                        templateId: templateId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="success">✅ Template Connected!</h3>
+                            <p>Template ID is valid and accessible.</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="error">❌ Template Error</h3>
+                            <p><strong>Error:</strong> ${result.error}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3 class="error">❌ Connection Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testPDFGeneration() {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.innerHTML = '<p class="info">Testing PDF generation...</p>';
+            
+            const testData = {
+                quoteId: 'TEST-TEMPLATE-001',
+                tradesmanName: 'Template Test Tradesman',
+                tradesmanPhone: '021123456',
+                tradesmanEmail: 'tradesman@test.com',
+                quoteNumber: 'TEMP' + Date.now(),
+                totalAmount: '5000',
+                itemBreakdown: 'Materials: $3000\nLabor: $1500\nInstallation: $500',
+                validUntil: '2024-09-11',
+                additionalNotes: 'Template test quote',
+                customerEmail: 'danbricks18@gmail.com',
+                customerName: 'Template Test Customer',
+                serviceType: 'Underfloor Heating',
+                location: 'Auckland',
+                customerPhone: '021987654'
+            };
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/create-quote-pdf`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="success">✅ PDF Generated Successfully!</h3>
+                            <p><strong>Document ID:</strong> ${result.data.documentId}</p>
+                            <p><strong>Quote Number:</strong> ${result.data.quoteNumber}</p>
+                            <p><strong>PDF Generated:</strong> ${result.status.pdfGenerated ? 'Yes' : 'No'}</p>
+                            <p><strong>Emails Sent:</strong> ${result.status.customerEmailSent ? 'Customer' : ''} ${result.status.tradesmanEmailSent ? 'Tradesman' : ''} ${result.status.adminEmailSent ? 'Admin' : ''}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="error">❌ PDF Generation Failed</h3>
+                            <p><strong>Error:</strong> ${result.error}</p>
+                            <p><strong>Details:</strong> ${result.details}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3 class="error">❌ Network Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Check environment on page load
+        window.onload = function() {
+            checkEnvironment();
+        };
+    </script>
+</body>
+</html>

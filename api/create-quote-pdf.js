@@ -34,129 +34,78 @@ export default async function handler(req, res) {
       const docs = google.docs({ version: 'v1', auth });
       const drive = google.drive({ version: 'v3', auth });
 
-      // Create a new Google Doc
-      const document = await docs.documents.create({
+      // Get the template ID from environment variable
+      const templateId = process.env.GOOGLE_DOCS_TEMPLATE_ID;
+      if (!templateId) {
+        throw new Error('GOOGLE_DOCS_TEMPLATE_ID environment variable not set');
+      }
+
+      console.log('📋 Using template ID:', templateId);
+
+      // Copy the template to create a new document
+      const copyResponse = await drive.files.copy({
+        fileId: templateId,
         requestBody: {
-          title: `Quote ${quoteData.quoteNumber} - ${quoteData.customerName}`,
+          name: `Quote ${quoteData.quoteNumber} - ${quoteData.customerName}`,
         },
       });
 
-      const documentId = document.data.documentId;
-      console.log('✅ Google Doc created:', documentId);
+      const documentId = copyResponse.data.id;
+      console.log('✅ Template copied, new document ID:', documentId);
 
-      // Format the quote content
-      const quoteContent = `
-        <h1 style="text-align: center; color: #2c3e50; margin-bottom: 30px;">QUOTE</h1>
-        
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 10px;">Quote Details</h2>
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Quote Number:</td>
-              <td style="padding: 8px; border: 1px solid #ddd;">${quoteData.quoteNumber}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Date:</td>
-              <td style="padding: 8px; border: 1px solid #ddd;">${new Date().toLocaleDateString()}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Valid Until:</td>
-              <td style="padding: 8px; border: 1px solid #ddd;">${quoteData.validUntil}</td>
-            </tr>
-          </table>
-        </div>
+      // Get the document content to find placeholders
+      const document = await docs.documents.get({ documentId });
+      const content = document.data.body.content;
 
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 10px;">Customer Information</h2>
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Name:</td>
-              <td style="padding: 8px; border: 1px solid #ddd;">${quoteData.customerName}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Email:</td>
-              <td style="padding: 8px; border: 1px solid #ddd;">${quoteData.customerEmail}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Phone:</td>
-              <td style="padding: 8px; border: 1px solid #ddd;">${quoteData.customerPhone}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Service:</td>
-              <td style="padding: 8px; border: 1px solid #ddd;">${quoteData.serviceType}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Location:</td>
-              <td style="padding: 8px; border: 1px solid #ddd;">${quoteData.location}</td>
-            </tr>
-          </table>
-        </div>
+      // Prepare replacement data
+      const replacements = {
+        '{{QUOTE_NUMBER}}': quoteData.quoteNumber || 'N/A',
+        '{{DATE}}': new Date().toLocaleDateString(),
+        '{{VALID_UNTIL}}': quoteData.validUntil || 'N/A',
+        '{{CUSTOMER_NAME}}': quoteData.customerName || 'N/A',
+        '{{CUSTOMER_EMAIL}}': quoteData.customerEmail || 'N/A',
+        '{{CUSTOMER_PHONE}}': quoteData.customerPhone || 'N/A',
+        '{{CUSTOMER_ADDRESS}}': quoteData.location || 'N/A',
+        '{{SERVICE_TYPE}}': quoteData.serviceType || 'N/A',
+        '{{TRADESMAN_NAME}}': quoteData.tradesmanName || 'N/A',
+        '{{TRADESMAN_EMAIL}}': quoteData.tradesmanEmail || 'N/A',
+        '{{TRADESMAN_PHONE}}': quoteData.tradesmanPhone || 'N/A',
+        '{{ITEM_BREAKDOWN}}': quoteData.itemBreakdown || 'N/A',
+        '{{TOTAL_AMOUNT}}': quoteData.totalAmount || 'N/A',
+        '{{ADDITIONAL_NOTES}}': quoteData.additionalNotes || 'N/A'
+      };
 
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 10px;">Tradesman Information</h2>
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Name/Company:</td>
-              <td style="padding: 8px; border: 1px solid #ddd;">${quoteData.tradesmanName}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Email:</td>
-              <td style="padding: 8px; border: 1px solid #ddd;">${quoteData.tradesmanEmail}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Phone:</td>
-              <td style="padding: 8px; border: 1px solid #ddd;">${quoteData.tradesmanPhone}</td>
-            </tr>
-          </table>
-        </div>
+      // Find and replace placeholders in the document
+      const requests = [];
+      
+      // Search for each placeholder and replace it
+      for (const [placeholder, value] of Object.entries(replacements)) {
+        try {
+          // Find the placeholder text in the document
+          const searchResponse = await docs.documents.batchUpdate({
+            documentId: documentId,
+            requestBody: {
+              requests: [
+                {
+                  replaceAllText: {
+                    containsText: {
+                      text: placeholder,
+                      matchCase: true
+                    },
+                    replaceText: value
+                  }
+                }
+              ]
+            }
+          });
+          
+          console.log(`✅ Replaced ${placeholder} with ${value}`);
+        } catch (error) {
+          console.log(`⚠️ Could not find placeholder ${placeholder}:`, error.message);
+        }
+      }
 
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 10px;">Quote Breakdown</h2>
-          <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
-            <pre style="margin: 0; white-space: pre-wrap; font-family: inherit;">${quoteData.itemBreakdown}</pre>
-          </div>
-        </div>
-
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 10px;">Total Amount</h2>
-          <div style="text-align: center; font-size: 24px; font-weight: bold; color: #2c3e50; padding: 20px; background: #ecf0f1; border-radius: 4px;">
-            $${quoteData.totalAmount}
-          </div>
-        </div>
-
-        ${quoteData.additionalNotes ? `
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 10px;">Additional Notes</h2>
-          <div style="background: #f8f9fa; padding: 15px; border-radius: 4px;">
-            <p style="margin: 0;">${quoteData.additionalNotes}</p>
-          </div>
-        </div>
-        ` : ''}
-
-        <div style="margin-top: 50px; text-align: center; color: #7f8c8d; font-size: 14px;">
-          <p>This quote is valid until ${quoteData.validUntil}</p>
-          <p>Generated by Kiwi Underfloor Heating</p>
-        </div>
-      `;
-
-      // Insert content into the document
-      await docs.documents.batchUpdate({
-        documentId: documentId,
-        requestBody: {
-          requests: [
-            {
-              insertText: {
-                location: {
-                  index: 1,
-                },
-                text: quoteContent,
-              },
-            },
-          ],
-        },
-      });
-
-      console.log('✅ Content inserted into Google Doc');
+      console.log('✅ Document populated with quote data');
 
       // Export as PDF
       const pdfResponse = await drive.files.export({

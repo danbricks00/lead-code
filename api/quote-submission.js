@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  if (req.method === 'GET') {
+    if (req.method === 'GET') {
     // Show quote submission form with pre-filled data from lead
     const { 
       quoteId, 
@@ -30,24 +30,24 @@ export default async function handler(req, res) {
     } = req.query;
     
     return res.status(200).send(`
-      <!DOCTYPE html>
+    <!DOCTYPE html>
       <html>
-      <head>
+    <head>
         <title>Submit Quote - ${leadId || quoteId}</title>
-        <style>
+      <style>
           body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-          .form-group { margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
           label { display: block; margin-bottom: 5px; font-weight: bold; }
           input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
           button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; }
-          button:hover { background: #0056b3; }
+        button:hover { background: #0056b3; }
           .quote-details { background: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
           .customer-info { background: #e3f2fd; padding: 15px; border-radius: 4px; margin-bottom: 20px; border-left: 4px solid #2196f3; }
           .readonly { background-color: #f5f5f5; }
-        </style>
-      </head>
-      <body>
-        <h1>Submit Quote</h1>
+      </style>
+    </head>
+    <body>
+          <h1>Submit Quote</h1>
         
         ${leadId ? `
         <div class="customer-info">
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
           <p>Please fill in your quote details below:</p>
         </div>
         `}
-        
+
         <form id="quoteForm">
           <div class="form-group">
             <label for="tradesmanName">Your Name/Company:</label>
@@ -77,12 +77,12 @@ export default async function handler(req, res) {
             <label for="tradesmanPhone">Your Phone:</label>
             <input type="tel" id="tradesmanPhone" name="tradesmanPhone" required>
           </div>
-          
+
           <div class="form-group">
             <label for="tradesmanEmail">Your Email:</label>
             <input type="email" id="tradesmanEmail" name="tradesmanEmail" required>
           </div>
-          
+
           <div class="form-group">
             <label for="quoteNumber">Quote Number:</label>
             <input type="text" id="quoteNumber" name="quoteNumber" value="QU${Date.now()}" required>
@@ -92,22 +92,22 @@ export default async function handler(req, res) {
             <label for="totalAmount">Total Quote Amount ($):</label>
             <input type="number" id="totalAmount" name="totalAmount" step="0.01" required>
           </div>
-          
+
           <div class="form-group">
             <label for="itemBreakdown">Item Breakdown:</label>
             <textarea id="itemBreakdown" name="itemBreakdown" rows="6" placeholder="List each item and its cost..."></textarea>
           </div>
-          
+
           <div class="form-group">
             <label for="validUntil">Quote Valid Until:</label>
             <input type="date" id="validUntil" name="validUntil" required>
           </div>
-          
+
           <div class="form-group">
             <label for="additionalNotes">Additional Notes:</label>
             <textarea id="additionalNotes" name="additionalNotes" rows="4"></textarea>
           </div>
-          
+
           <!-- Hidden fields for customer data -->
           <input type="hidden" id="customerName" name="customerName" value="${customerName || ''}">
           <input type="hidden" id="customerEmail" name="customerEmail" value="${customerEmail || ''}">
@@ -119,34 +119,34 @@ export default async function handler(req, res) {
           <input type="hidden" id="timeline" name="timeline" value="${timeline || ''}">
           <input type="hidden" id="location" name="location" value="${location || ''}">
           <input type="hidden" id="leadId" name="leadId" value="${leadId || ''}">
-          
+
           <button type="submit">Submit Quote</button>
         </form>
-        
-        <script>
+
+      <script>
           document.getElementById('quoteForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
+          e.preventDefault();
+          
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
             data.quoteId = '${leadId || quoteId}';
-            
-            try {
-              const response = await fetch('/api/quote-submission', {
-                method: 'POST',
+          
+          try {
+            const response = await fetch('/api/quote-submission', {
+              method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-              });
-              
-              const result = await response.json();
-              
-              if (result.success) {
+              body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
                 alert('Quote submitted successfully! The customer will be notified.');
                 window.close();
-              } else {
+            } else {
                 alert('Error: ' + result.error);
-              }
-            } catch (error) {
+            }
+          } catch (error) {
               alert('Error submitting quote: ' + error.message);
             }
           });
@@ -155,9 +155,9 @@ export default async function handler(req, res) {
           const today = new Date();
           const validUntil = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
           document.getElementById('validUntil').value = validUntil.toISOString().split('T')[0];
-        </script>
-      </body>
-      </html>
+      </script>
+    </body>
+    </html>
     `);
   }
 
@@ -270,19 +270,19 @@ export default async function handler(req, res) {
       let sheetsUpdated = false;
       if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {
         try {
-          const auth = new google.auth.GoogleAuth({
-            credentials: {
-              client_email: process.env.GOOGLE_CLIENT_EMAIL,
-              private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-            },
-            scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-          });
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
 
-          const sheets = google.sheets({ version: 'v4', auth });
-          
-          const values = [
-            [
-              new Date().toISOString(),
+    const sheets = google.sheets({ version: 'v4', auth });
+    
+    const values = [
+      [
+        new Date().toISOString(),
               quoteData.quoteId,
               quoteData.quoteNumber,
               quoteData.tradesmanName,
@@ -293,18 +293,18 @@ export default async function handler(req, res) {
               quoteData.validUntil,
               quoteData.additionalNotes,
               'submitted'
-            ]
-          ];
+      ]
+    ];
 
-          await sheets.spreadsheets.values.append({
-            spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
             range: 'Quotes!A:K',
-            valueInputOption: 'RAW',
-            insertDataOption: 'INSERT_ROWS',
-            resource: { values }
-          });
+      valueInputOption: 'RAW',
+      insertDataOption: 'INSERT_ROWS',
+      resource: { values }
+    });
 
-          console.log('✅ Quote saved to Google Sheets');
+    console.log('✅ Quote saved to Google Sheets');
           sheetsUpdated = true;
         } catch (sheetsError) {
           console.error('❌ Google Sheets error:', sheetsError.message);
@@ -356,7 +356,7 @@ export default async function handler(req, res) {
       console.log('📊 Quote Response:', response);
       res.json(response);
 
-    } catch (error) {
+  } catch (error) {
       console.error('❌ Error processing quote:', error);
       res.status(500).json({
         success: false,

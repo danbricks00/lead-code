@@ -1,111 +1,108 @@
 # Google Docs Quote Template Setup Guide
 
-## ✅ Your Google Docs Template is Ready!
+## 📋 Required Environment Variable
 
-**Document ID:** `1jmcEgI6o8XS1KAgOyoWrx2xtuzU9v7y5`
-**Template URL:** https://docs.google.com/document/d/1jmcEgI6o8XS1KAgOyoWrx2xtuzU9v7y5/edit
+You need to add this environment variable to your Vercel project:
 
-## Step 1: Update Your Template
+```
+GOOGLE_DOCS_TEMPLATE_ID = [Your Google Docs Template ID]
+```
 
-Your Google Docs template should include these placeholders:
+## 🔧 How to Get Your Template ID
 
-- `{{CUSTOMER_NAME}}` - Customer's full name
-- `{{CUSTOMER_ADDRESS}}` - Customer's address from lead data
-- `{{QUOTE_NUMBER}}` - Auto-generated quote number (e.g., QU1001, QU1002)
-- `{{SERVICE_TYPE}}` - Service type from lead (underfloor_heating, etc.)
-- `{{PROJECT_DETAILS}}` - Project details from lead
-- `{{TOTAL_AMOUNT}}` - Total quote amount from tradesman
-- `{{ITEM_BREAKDOWN}}` - Itemized breakdown from tradesman
-- `{{TRADESMAN_NAME}}` - Tradesman/company name
-- `{{TRADESMAN_PHONE}}` - Tradesman phone number
-- `{{TRADESMAN_EMAIL}}` - Tradesman email
+1. **Create a Google Docs template:**
+   - Go to [Google Docs](https://docs.google.com)
+   - Create a new document
+   - Design your quote template with placeholders
+   - Save it as "Quote Template"
+
+2. **Get the Template ID:**
+   - Open your template document
+   - Look at the URL: `https://docs.google.com/document/d/[TEMPLATE_ID]/edit`
+   - Copy the `[TEMPLATE_ID]` part (it's a long string of letters and numbers)
+
+3. **Add to Vercel:**
+   - Go to your Vercel project dashboard
+   - Go to Settings → Environment Variables
+   - Add: `GOOGLE_DOCS_TEMPLATE_ID` = your template ID
+
+## 📝 Required Placeholders
+
+Your Google Docs template must include these exact placeholders (case-sensitive):
+
+### Quote Details
+- `{{QUOTE_NUMBER}}` - The quote number
+- `{{DATE}}` - Current date
 - `{{VALID_UNTIL}}` - Quote validity date
-- `{{ADDITIONAL_NOTES}}` - Any additional notes from tradesman
 
-## Step 2: Add Environment Variable
+### Customer Information
+- `{{CUSTOMER_NAME}}` - Customer's full name
+- `{{CUSTOMER_EMAIL}}` - Customer's email address
+- `{{CUSTOMER_PHONE}}` - Customer's phone number
+- `{{CUSTOMER_ADDRESS}}` - Customer's location/address
+- `{{SERVICE_TYPE}}` - Type of service requested
 
-Add this to your Vercel environment variables:
-```
-GOOGLE_DOCS_TEMPLATE_ID=1jmcEgI6o8XS1KAgOyoWrx2xtuzU9v7y5
-```
+### Tradesman Information
+- `{{TRADESMAN_NAME}}` - Tradesman/company name
+- `{{TRADESMAN_EMAIL}}` - Tradesman's email
+- `{{TRADESMAN_PHONE}}` - Tradesman's phone number
 
-## Step 3: Quote Naming Convention
+### Quote Content
+- `{{ITEM_BREAKDOWN}}` - Detailed breakdown of items and costs
+- `{{TOTAL_AMOUNT}}` - Total quote amount
+- `{{ADDITIONAL_NOTES}}` - Any additional notes or terms
 
-✅ **Final quote name format:** `Quote {quote number}`
-- Example: `Quote QU1001`
-- Example: `Quote QU1002`
+## 📄 Example Template Structure
 
-## Step 4: Complete Workflow
-
-### When a Lead Comes In:
-1. **Customer completes chatbot** → Lead saved to Google Sheets
-2. **Customer gets confirmation email** ✅
-3. **Admin gets notification email** with all lead details ✅
-4. **Admin creates quote** using your Google Docs template
-5. **Admin fills in pricing** from tradesman submission
-6. **Admin saves as PDF** with name "Quote {quote number}"
-7. **Admin sends PDF quote** to customer
-
-### When Tradesman Submits Quote:
-1. **Tradesman fills out quote form** with pricing details
-2. **Quote saved to Google Sheets** with all details
-3. **Customer gets email** with quote summary and link to view full quote
-4. **✅ AUTOMATIC: Google Docs document created** with filename "Quote {quote number}"
-5. **Admin gets notification email** with link to the new Google Docs document
-6. **Admin reviews and customizes** the generated document
-7. **Admin saves as PDF** and sends to customer
-
-### ✅ NEW: Automatic Document Creation
-- **Every quote submission** automatically creates a new Google Docs document
-- **Document name:** "Quote {quote number}" (e.g., "Quote QU1001")
-- **Template copied** and filled with all quote data
-- **Admin notified** with direct link to the new document
-- **No manual work** required - everything is automated!
-
-## Step 5: Template Example
-
-Your template should look like this:
+Here's an example of how your template might look:
 
 ```
 QUOTE
 
 Quote Number: {{QUOTE_NUMBER}}
 Date: {{DATE}}
+Valid Until: {{VALID_UNTIL}}
 
-TO: {{CUSTOMER_NAME}}
-    {{CUSTOMER_ADDRESS}}
+CUSTOMER DETAILS
+Name: {{CUSTOMER_NAME}}
+Email: {{CUSTOMER_EMAIL}}
+Phone: {{CUSTOMER_PHONE}}
+Address: {{CUSTOMER_ADDRESS}}
+Service: {{SERVICE_TYPE}}
 
-SERVICE: {{SERVICE_TYPE}}
-PROJECT: {{PROJECT_DETAILS}}
+TRADESMAN DETAILS
+Company: {{TRADESMAN_NAME}}
+Email: {{TRADESMAN_EMAIL}}
+Phone: {{TRADESMAN_PHONE}}
 
-ITEM BREAKDOWN:
+QUOTE BREAKDOWN
 {{ITEM_BREAKDOWN}}
 
-TOTAL: ${{TOTAL_AMOUNT}}
+TOTAL AMOUNT: ${{TOTAL_AMOUNT}}
 
-Valid until: {{VALID_UNTIL}}
-
+ADDITIONAL NOTES
 {{ADDITIONAL_NOTES}}
-
-{{TRADESMAN_NAME}}
-{{TRADESMAN_PHONE}}
-{{TRADESMAN_EMAIL}}
 ```
 
-## Benefits of This Approach
+## ✅ Testing the Template
 
-✅ **Simple and reliable** - No complex PDF generation
-✅ **Professional templates** - Easy to customize in Google Docs
-✅ **Consistent naming** - "Quote {quote number}" format
-✅ **All pricing details** - Captured from tradesman submission
-✅ **Works offline** - No technical dependencies
-✅ **Easy to modify** - Update template anytime
-
-## Next Steps
-
-1. **Update your Google Docs template** with the placeholders above
+1. **Set up your template** with the placeholders above
 2. **Add the environment variable** to Vercel
-3. **Test the system** with a sample lead
-4. **Create your first quote** using the template
+3. **Test the workflow** using the test page
+4. **Check the generated PDF** to ensure all placeholders are replaced
 
-The system is now ready to capture all pricing information from tradesmen and create professional quotes with your preferred naming format! 
+## 🔍 Troubleshooting
+
+- **Placeholders not replaced:** Make sure the placeholder text matches exactly (case-sensitive)
+- **Template not found:** Verify the `GOOGLE_DOCS_TEMPLATE_ID` is correct
+- **PDF not generated:** Check that your service account has access to the template
+- **Data mismatch:** Ensure the quote form is passing the correct data to the PDF generation
+
+## 📧 What Happens Next
+
+When a quote is submitted:
+1. **Template is copied** to create a new document
+2. **Placeholders are replaced** with actual data
+3. **Document is exported** as PDF
+4. **PDF is emailed** to customer, tradesman, and admin
+5. **New document is saved** with the quote number as the filename 

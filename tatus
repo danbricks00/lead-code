@@ -1,0 +1,5 @@
+[33m37fefeb[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m quote api fixed
+[33m9ef52f3[m Add file: test-deployment.html
+[33m56eb82f[m Update multiple files:
+[33mb019c18[m email fix, working on quote
+[33mc55855a[m Add email debug tools to identify email sending issues

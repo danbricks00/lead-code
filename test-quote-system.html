@@ -1,140 +1,227 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Test Quote System</title>
+    <title>Quote System Test</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; }
         .test-section { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
         button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; margin: 10px; }
         button:hover { background: #0056b3; }
         .success { color: green; }
         .error { color: red; }
         .info { color: blue; }
+        .result { background: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 10px; }
+        input, textarea, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
     <h1>Quote System Test</h1>
+    <p>Test the complete quote system functionality.</p>
     
     <div class="test-section">
-        <h2>1. Test Chatbot Lead Submission</h2>
-        <p>This tests the simplified chatbot API that saves leads and sends emails.</p>
-        <button onclick="testLeadSubmission()">Test Lead Submission</button>
-        <div id="leadResult"></div>
-    </div>
-
-    <div class="test-section">
-        <h2>2. Test Quote Submission Form</h2>
-        <p>This opens the quote submission form for tradesmen.</p>
-        <button onclick="testQuoteForm()">Open Quote Form</button>
+        <h2>1. Test Quote Submission Form</h2>
+        <p>Test the quote submission form (GET request):</p>
+        <button onclick="testQuoteForm()">Open Quote Submission Form</button>
         <div id="quoteFormResult"></div>
     </div>
 
     <div class="test-section">
-        <h2>3. Test Quote Viewing</h2>
-        <p>This shows how customers will view quotes with accept/reject buttons.</p>
-        <button onclick="testQuoteView()">View Sample Quote</button>
-        <div id="quoteViewResult"></div>
+        <h2>2. Test Quote Submission API</h2>
+        <p>Test submitting a quote (POST request):</p>
+        <form id="quoteTestForm">
+            <div class="form-group">
+                <label for="quoteId">Quote ID:</label>
+                <input type="text" id="quoteId" value="TEST-QUOTE-001" required>
+            </div>
+            <div class="form-group">
+                <label for="tradesmanName">Tradesman Name:</label>
+                <input type="text" id="tradesmanName" value="Test Tradesman" required>
+            </div>
+            <div class="form-group">
+                <label for="tradesmanPhone">Phone:</label>
+                <input type="tel" id="tradesmanPhone" value="1234567890" required>
+            </div>
+            <div class="form-group">
+                <label for="tradesmanEmail">Email:</label>
+                <input type="email" id="tradesmanEmail" value="tradesman@test.com" required>
+            </div>
+            <div class="form-group">
+                <label for="quoteNumber">Quote Number:</label>
+                <input type="text" id="quoteNumber" value="QU001" required>
+            </div>
+            <div class="form-group">
+                <label for="totalAmount">Total Amount:</label>
+                <input type="number" id="totalAmount" value="5000" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label for="itemBreakdown">Item Breakdown:</label>
+                <textarea id="itemBreakdown" rows="4">Materials: $3000
+Labor: $1500
+Installation: $500</textarea>
+            </div>
+            <div class="form-group">
+                <label for="validUntil">Valid Until:</label>
+                <input type="date" id="validUntil" required>
+            </div>
+            <div class="form-group">
+                <label for="additionalNotes">Additional Notes:</label>
+                <textarea id="additionalNotes" rows="3">Test quote for system verification</textarea>
+            </div>
+            <button type="submit">Submit Test Quote</button>
+        </form>
+        <div id="quoteSubmissionResult"></div>
     </div>
 
     <div class="test-section">
-        <h2>4. Test Quote Response (Accept/Decline)</h2>
-        <p>This tests the accept/decline functionality.</p>
-        <button onclick="testAcceptQuote()">Test Accept Quote</button>
-        <button onclick="testDeclineQuote()">Test Decline Quote</button>
-        <div id="quoteResponseResult"></div>
+        <h2>3. Test View Quote</h2>
+        <p>Test viewing a quote:</p>
+        <button onclick="testViewQuote()">Test View Quote</button>
+        <div id="viewQuoteResult"></div>
     </div>
 
     <script>
-        const baseUrl = 'https://lead-code-6ww00vr0h-leadcode-b19d9acc.vercel.app';
+        const baseUrl = 'https://lead-code-jy7k870oy-leadcode-b19d9acc.vercel.app';
 
-        async function testLeadSubmission() {
-            const resultDiv = document.getElementById('leadResult');
-            resultDiv.innerHTML = '<p class="info">Testing lead submission...</p>';
+        // Set default valid until date (30 days from now)
+        const today = new Date();
+        const validUntil = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
+        document.getElementById('validUntil').value = validUntil.toISOString().split('T')[0];
 
+        async function testQuoteForm() {
+            const resultDiv = document.getElementById('quoteFormResult');
+            const quoteId = 'TEST-QUOTE-001';
+            
+            resultDiv.innerHTML = '<p class="info">Testing quote form...</p>';
+            
             try {
-                const response = await fetch(`${baseUrl}/api/send-to-sheets`, {
+                const response = await fetch(`${baseUrl}/api/quote-submission?quoteId=${quoteId}`, {
+                    method: 'GET'
+                });
+                
+                if (response.ok) {
+                    const html = await response.text();
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="success">✅ Quote Form Working!</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Quote ID:</strong> ${quoteId}</p>
+                            <p>The form should open in a new window or display below:</p>
+                            <iframe srcdoc="${html.replace(/"/g, '&quot;')}" width="100%" height="600" style="border: 1px solid #ddd;"></iframe>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="error">❌ Quote Form Error</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Error:</strong> ${response.statusText}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3 class="error">❌ Network Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        document.getElementById('quoteTestForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const resultDiv = document.getElementById('quoteSubmissionResult');
+            resultDiv.innerHTML = '<p class="info">Submitting test quote...</p>';
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Add missing fields
+            data.customerEmail = 'danbricks18@gmail.com';
+            data.customerName = 'Test Customer';
+            data.serviceType = 'Underfloor Heating';
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/quote-submission`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        customerName: 'Test Customer',
-                        customerEmail: 'test@example.com',
-                        customerPhone: '1234567890',
-                        selectedService: 'underfloor_heating',
-                        projectDetails: 'Test project for quote system',
-                        budget: '5000',
-                        timeline: '1 month',
-                        projectSize: '100m2',
-                        specificDetails: 'Test details',
-                        location: 'Auckland'
-                    })
+                    body: JSON.stringify(data)
                 });
-
-                const data = await response.json();
-                if (data.success) {
-                    resultDiv.innerHTML = `<p class="success">✅ Lead submitted successfully!</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
-                } else {
-                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error}</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
-                }
-            } catch (error) {
-                resultDiv.innerHTML = `<p class="error">❌ Network error: ${error.message}</p>`;
-            }
-        }
-
-        function testQuoteForm() {
-            const resultDiv = document.getElementById('quoteFormResult');
-            resultDiv.innerHTML = '<p class="info">Opening quote submission form...</p>';
-            
-            const quoteUrl = `${baseUrl}/api/quote-submission?quoteId=TEST-QUOTE-001`;
-            window.open(quoteUrl, '_blank', 'width=800,height=600');
-            
-            resultDiv.innerHTML = '<p class="success">✅ Quote form opened in new window</p>';
-        }
-
-        function testQuoteView() {
-            const resultDiv = document.getElementById('quoteViewResult');
-            resultDiv.innerHTML = '<p class="info">Opening quote view...</p>';
-            
-            const quoteUrl = `${baseUrl}/api/view-quote?quoteId=TEST-QUOTE-001&quoteNumber=QU1001`;
-            window.open(quoteUrl, '_blank', 'width=900,height=700');
-            
-            resultDiv.innerHTML = '<p class="success">✅ Quote view opened in new window</p>';
-        }
-
-        async function testAcceptQuote() {
-            const resultDiv = document.getElementById('quoteResponseResult');
-            resultDiv.innerHTML = '<p class="info">Testing quote acceptance...</p>';
-
-            try {
-                const response = await fetch(`${baseUrl}/api/quote-responses?action=accept&quoteId=TEST-QUOTE-001&quoteNumber=QU1001`);
-                const data = await response.json();
                 
-                if (data.success) {
-                    resultDiv.innerHTML = `<p class="success">✅ Quote accepted successfully!</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
-                } else {
-                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error}</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
-                }
-            } catch (error) {
-                resultDiv.innerHTML = `<p class="error">❌ Network error: ${error.message}</p>`;
-            }
-        }
-
-        async function testDeclineQuote() {
-            const resultDiv = document.getElementById('quoteResponseResult');
-            resultDiv.innerHTML = '<p class="info">Testing quote decline...</p>';
-
-            try {
-                const response = await fetch(`${baseUrl}/api/quote-responses?action=decline&quoteId=TEST-QUOTE-001&quoteNumber=QU1001`);
-                const data = await response.json();
+                const result = await response.json();
                 
-                if (data.success) {
-                    resultDiv.innerHTML = `<p class="success">✅ Quote declined successfully!</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="success">✅ Quote Submitted Successfully!</h3>
+                            <p><strong>Quote Number:</strong> ${result.quoteNumber}</p>
+                            <p><strong>Message:</strong> ${result.message}</p>
+                            <p><strong>Sheets Updated:</strong> ${result.status.sheetsUpdated ? 'Yes' : 'No'}</p>
+                            <p><strong>Customer Email Sent:</strong> ${result.status.customerEmailSent ? 'Yes' : 'No'}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
                 } else {
-                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error}</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="error">❌ Quote Submission Failed</h3>
+                            <p><strong>Error:</strong> ${result.error}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
                 }
             } catch (error) {
-                resultDiv.innerHTML = `<p class="error">❌ Network error: ${error.message}</p>`;
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3 class="error">❌ Network Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        });
+
+        async function testViewQuote() {
+            const resultDiv = document.getElementById('viewQuoteResult');
+            
+            resultDiv.innerHTML = '<p class="info">Testing view quote...</p>';
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/view-quote?quoteId=TEST-QUOTE-001&quoteNumber=QU001`, {
+                    method: 'GET'
+                });
+                
+                if (response.ok) {
+                    const html = await response.text();
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="success">✅ View Quote Working!</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p>The quote view should display below:</p>
+                            <iframe srcdoc="${html.replace(/"/g, '&quot;')}" width="100%" height="600" style="border: 1px solid #ddd;"></iframe>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="error">❌ View Quote Error</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Error:</strong> ${response.statusText}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3 class="error">❌ Network Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
             }
         }
     </script>
 </body>
+</html> 
 </html> 

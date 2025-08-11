@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Quote Generation - Kiwi Underfloor Heating</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+        }
+        
+        .form-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .items-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .item-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e1e8ed;
+        }
+        
+        .item-row input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .remove-item {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .remove-item:hover {
+            background: #c0392b;
+        }
+        
+        .add-item {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        
+        .add-item:hover {
+            background: #229954;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .result-link {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        
+        .result-link:hover {
+            background: #2980b9;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .item-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Quote Generation Test</h1>
+            <p>Test the new professional quote generation system</p>
+        </div>
+
+        <form id="quoteForm">
+            <!-- Customer Information -->
+            <div class="form-section">
+                <h3>Customer Information</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="customerName">Customer Name *</label>
+                        <input type="text" id="customerName" name="customerName" value="Byron Hill" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerEmail">Customer Email *</label>
+                        <input type="email" id="customerEmail" name="customerEmail" value="byron@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerPhone">Customer Phone</label>
+                        <input type="tel" id="customerPhone" name="customerPhone" value="+64 21 123 4567">
+                    </div>
+                    <div class="form-group">
+                        <label for="customerAddress">Customer Address</label>
+                        <input type="text" id="customerAddress" name="customerAddress" value="673 South Titirangi Rd, Titirangi, Auckland">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Service Information -->
+            <div class="form-section">
+                <h3>Service Information</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="serviceType">Service Type *</label>
+                        <input type="text" id="serviceType" name="serviceType" value="Underfloor Heating Installation" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="projectDetails">Project Details</label>
+                        <input type="text" id="projectDetails" name="projectDetails" value="Electric underfloor heating system for living room and kitchen">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tradesman Information -->
+            <div class="form-section">
+                <h3>Tradesman Information</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="tradesmanName">Tradesman Name</label>
+                        <input type="text" id="tradesmanName" name="tradesmanName" value="John Smith">
+                    </div>
+                    <div class="form-group">
+                        <label for="tradesmanEmail">Tradesman Email</label>
+                        <input type="email" id="tradesmanEmail" name="tradesmanEmail" value="john@kiwiunderfloor.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="tradesmanPhone">Tradesman Phone</label>
+                        <input type="tel" id="tradesmanPhone" name="tradesmanPhone" value="+64 9 123 4567">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Company Information -->
+            <div class="form-section">
+                <h3>Company Information</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="companyName">Company Name</label>
+                        <input type="text" id="companyName" name="companyName" value="Kiwi Underfloor Heating">
+                    </div>
+                    <div class="form-group">
+                        <label for="companyAddress">Company Address</label>
+                        <input type="text" id="companyAddress" name="companyAddress" value="Auckland, New Zealand">
+                    </div>
+                    <div class="form-group">
+                        <label for="gstNumber">GST Number</label>
+                        <input type="text" id="gstNumber" name="gstNumber" value="120-681-729">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quote Items -->
+            <div class="form-section">
+                <h3>Quote Items</h3>
+                <div class="items-section">
+                    <div id="itemsContainer">
+                        <div class="item-row">
+                            <input type="text" placeholder="Description" value="UTH 3.0m 450W" class="item-description">
+                            <input type="number" placeholder="Quantity" value="1" min="1" step="0.1" class="item-quantity">
+                            <input type="number" placeholder="Unit Price" value="890.00" min="0" step="0.01" class="item-unit-price">
+                            <input type="text" placeholder="Amount" value="890.00" readonly class="item-amount">
+                            <button type="button" class="remove-item">Remove</button>
+                        </div>
+                        <div class="item-row">
+                            <input type="text" placeholder="Description" value="UTH 3.3m 500W" class="item-description">
+                            <input type="number" placeholder="Quantity" value="1" min="1" step="0.1" class="item-quantity">
+                            <input type="number" placeholder="Unit Price" value="920.00" min="0" step="0.01" class="item-unit-price">
+                            <input type="text" placeholder="Amount" value="920.00" readonly class="item-amount">
+                            <button type="button" class="remove-item">Remove</button>
+                        </div>
+                    </div>
+                    <button type="button" id="addItem" class="add-item">+ Add Item</button>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">Generate Quote</button>
+        </form>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        // Generate unique quote ID
+        function generateQuoteId() {
+            return 'Q' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Calculate item amounts
+        function calculateItemAmounts() {
+            document.querySelectorAll('.item-row').forEach(row => {
+                const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
+                const unitPrice = parseFloat(row.querySelector('.item-unit-price').value) || 0;
+                const amount = quantity * unitPrice;
+                row.querySelector('.item-amount').value = amount.toFixed(2);
+            });
+        }
+
+        // Add new item row
+        document.getElementById('addItem').addEventListener('click', function() {
+            const container = document.getElementById('itemsContainer');
+            const newRow = document.createElement('div');
+            newRow.className = 'item-row';
+            newRow.innerHTML = `
+                <input type="text" placeholder="Description" class="item-description">
+                <input type="number" placeholder="Quantity" value="1" min="1" step="0.1" class="item-quantity">
+                <input type="number" placeholder="Unit Price" value="0.00" min="0" step="0.01" class="item-unit-price">
+                <input type="text" placeholder="Amount" value="0.00" readonly class="item-amount">
+                <button type="button" class="remove-item">Remove</button>
+            `;
+            container.appendChild(newRow);
+            
+            // Add event listeners to new row
+            addItemRowListeners(newRow);
+        });
+
+        // Add event listeners to item row
+        function addItemRowListeners(row) {
+            row.querySelector('.remove-item').addEventListener('click', function() {
+                row.remove();
+            });
+            
+            row.querySelector('.item-quantity').addEventListener('input', calculateItemAmounts);
+            row.querySelector('.item-unit-price').addEventListener('input', calculateItemAmounts);
+        }
+
+        // Add event listeners to existing rows
+        document.querySelectorAll('.item-row').forEach(addItemRowListeners);
+
+        // Form submission
+        document.getElementById('quoteForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.querySelector('.submit-btn');
+            const resultDiv = document.getElementById('result');
+            
+            // Show loading state
+            submitBtn.textContent = 'Generating Quote...';
+            submitBtn.disabled = true;
+            resultDiv.style.display = 'none';
+            
+            try {
+                // Collect form data
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData);
+                
+                // Collect items
+                const items = [];
+                document.querySelectorAll('.item-row').forEach(row => {
+                    const description = row.querySelector('.item-description').value;
+                    const quantity = row.querySelector('.item-quantity').value;
+                    const unitPrice = row.querySelector('.item-unit-price').value;
+                    
+                    if (description && quantity && unitPrice) {
+                        items.push({
+                            description,
+                            quantity: parseFloat(quantity),
+                            unitPrice: parseFloat(unitPrice)
+                        });
+                    }
+                });
+                
+                // Prepare request data
+                const requestData = {
+                    ...data,
+                    quoteId: generateQuoteId(),
+                    items
+                };
+                
+                console.log('📝 Sending quote generation request:', requestData);
+                
+                // Send request
+                const response = await fetch('/api/generate-quote', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Show success
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h3>✅ Quote Generated Successfully!</h3>
+                        <p><strong>Quote Number:</strong> ${result.quote.quoteNumber}</p>
+                        <p><strong>Customer:</strong> ${result.quote.customerName}</p>
+                        <p><strong>Total Amount:</strong> $${result.quote.total}</p>
+                        <p>The quote has been sent to the customer's email address.</p>
+                        <a href="/api/generate-quote?quoteId=${result.quote.quoteId}" target="_blank" class="result-link">
+                            View Generated Quote
+                        </a>
+                    `;
+                } else {
+                    // Show error
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h3>❌ Error Generating Quote</h3>
+                        <p>${result.error}</p>
+                        ${result.details ? `<p><strong>Details:</strong> ${result.details}</p>` : ''}
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('Quote generation error:', error);
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h3>❌ Network Error</h3>
+                    <p>Failed to generate quote: ${error.message}</p>
+                `;
+            } finally {
+                // Reset button state
+                submitBtn.textContent = 'Generate Quote';
+                submitBtn.disabled = false;
+                resultDiv.style.display = 'block';
+            }
+        });
+
+        // Initialize calculations
+        calculateItemAmounts();
+    </script>
+</body>
+</html> 

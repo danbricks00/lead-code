@@ -1,0 +1,562 @@
+import { getQuoteById, updateQuoteStatus } from './quote-database.js';
+import nodemailer from 'nodemailer';
+
+export default async function handler(req, res) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  try {
+    if (req.method === 'GET') {
+      return await handleQuoteView(req, res);
+    } else if (req.method === 'POST') {
+      return await handleQuoteGeneration(req, res);
+    } else {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+  } catch (error) {
+    console.error('❌ Quote generation error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Quote generation failed',
+      details: error.message
+    });
+  }
+}
+
+async function handleQuoteView(req, res) {
+  try {
+    const { quoteId } = req.query;
+    
+    if (!quoteId) {
+      return res.status(400).json({ error: 'Quote ID is required' });
+    }
+
+    // Get quote details
+    const quote = await getQuoteById(quoteId);
+    if (!quote) {
+      return res.status(404).json({ error: 'Quote not found' });
+    }
+
+    // Generate the quote HTML
+    const quoteHtml = generateQuoteHTML(quote);
+    
+    // Return the quote as HTML
+    res.setHeader('Content-Type', 'text/html');
+    return res.status(200).send(quoteHtml);
+  } catch (error) {
+    console.error('❌ Error handling quote view:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+async function handleQuoteGeneration(req, res) {
+  try {
+    const {
+      quoteId,
+      customerName,
+      customerEmail,
+      customerPhone,
+      customerAddress,
+      serviceType,
+      projectDetails,
+      tradesmanName,
+      tradesmanEmail,
+      tradesmanPhone,
+      companyName = 'Kiwi Underfloor Heating',
+      companyAddress = 'Auckland, New Zealand',
+      gstNumber = '120-681-729',
+      items = []
+    } = req.body;
+
+    console.log('📝 Generating quote:', { quoteId, customerName, serviceType });
+
+    // Validate required fields
+    if (!quoteId || !customerName || !customerEmail || !serviceType) {
+      return res.status(400).json({
+        success: false,
+        error: 'Quote ID, customer name, email, and service type are required'
+      });
+    }
+
+    // Generate quote number
+    const quoteNumber = `QU-${Date.now().toString().slice(-4)}`;
+    
+    // Set expiry date (30 days from now)
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 30);
+
+    // Calculate totals
+    let subtotal = 0;
+    const processedItems = items.map(item => {
+      const amount = parseFloat(item.quantity || 1) * parseFloat(item.unitPrice || 0);
+      subtotal += amount;
+      return {
+        ...item,
+        amount: amount.toFixed(2)
+      };
+    });
+
+    const gst = subtotal * 0.15;
+    const total = subtotal + gst;
+
+    // Create quote data
+    const quoteData = {
+      quoteId,
+      quoteNumber,
+      customerName,
+      customerEmail,
+      customerPhone,
+      customerAddress,
+      serviceType,
+      projectDetails,
+      tradesmanName,
+      tradesmanEmail,
+      tradesmanPhone,
+      companyName,
+      companyAddress,
+      gstNumber,
+      items: processedItems,
+      subtotal: subtotal.toFixed(2),
+      gst: gst.toFixed(2),
+      total: total.toFixed(2),
+      date: new Date().toISOString().split('T')[0],
+      expiryDate: expiryDate.toISOString().split('T')[0],
+      status: 'generated'
+    };
+
+    // Save quote to database (you can implement this)
+    // await saveQuoteToDatabase(quoteData);
+
+    // Send email to customer with quote
+    await sendQuoteEmail(quoteData, req);
+
+    console.log('✅ Quote generated successfully:', { quoteNumber, total });
+
+    res.json({
+      success: true,
+      message: 'Quote generated and sent successfully',
+      quote: {
+        quoteId,
+        quoteNumber,
+        total: total.toFixed(2),
+        customerName,
+        customerEmail
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Quote generation error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate quote',
+      details: error.message
+    });
+  }
+}
+
+function generateQuoteHTML(quote) {
+  const currentUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+  
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Quote ${quote.quoteNumber} - ${quote.companyName}</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body {
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                background: #f5f5f5;
+                padding: 20px;
+            }
+            
+            .quote-container {
+                max-width: 800px;
+                margin: 0 auto;
+                background: white;
+                padding: 40px;
+                border-radius: 10px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            }
+            
+            .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 40px;
+                border-bottom: 2px solid #eee;
+                padding-bottom: 20px;
+            }
+            
+            .logo-section {
+                flex: 1;
+            }
+            
+            .logo {
+                font-size: 2.5rem;
+                font-weight: bold;
+                color: #2c3e50;
+                margin-bottom: 10px;
+            }
+            
+            .logo-subtitle {
+                font-size: 1.2rem;
+                color: #7f8c8d;
+                font-weight: 300;
+            }
+            
+            .quote-title {
+                font-size: 3rem;
+                font-weight: bold;
+                color: #2c3e50;
+                margin-bottom: 10px;
+            }
+            
+            .customer-name {
+                font-size: 1.5rem;
+                color: #34495e;
+                font-weight: 600;
+            }
+            
+            .info-section {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 40px;
+            }
+            
+            .quote-details, .company-details {
+                flex: 1;
+            }
+            
+            .info-item {
+                margin-bottom: 8px;
+                font-size: 0.9rem;
+            }
+            
+            .info-label {
+                font-weight: bold;
+                color: #7f8c8d;
+            }
+            
+            .items-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 30px;
+            }
+            
+            .items-table th {
+                background: #f8f9fa;
+                padding: 15px 10px;
+                text-align: left;
+                border-bottom: 2px solid #dee2e6;
+                font-weight: 600;
+                color: #495057;
+            }
+            
+            .items-table td {
+                padding: 15px 10px;
+                border-bottom: 1px solid #dee2e6;
+            }
+            
+            .items-table th:last-child,
+            .items-table td:last-child {
+                text-align: right;
+            }
+            
+            .items-table th:nth-child(2),
+            .items-table th:nth-child(3),
+            .items-table td:nth-child(2),
+            .items-table td:nth-child(3) {
+                text-align: right;
+            }
+            
+            .summary {
+                margin-left: auto;
+                width: 300px;
+                background: #f8f9fa;
+                padding: 20px;
+                border-radius: 8px;
+            }
+            
+            .summary-row {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 10px;
+                font-size: 0.9rem;
+            }
+            
+            .summary-row.total {
+                font-size: 1.2rem;
+                font-weight: bold;
+                border-top: 2px solid #dee2e6;
+                padding-top: 10px;
+                margin-top: 10px;
+            }
+            
+            .actions {
+                text-align: center;
+                margin-top: 40px;
+                padding-top: 30px;
+                border-top: 2px solid #eee;
+            }
+            
+            .action-btn {
+                display: inline-block;
+                padding: 15px 30px;
+                margin: 0 10px;
+                text-decoration: none;
+                border-radius: 8px;
+                font-weight: 600;
+                font-size: 1rem;
+                transition: all 0.3s;
+            }
+            
+            .accept-btn {
+                background: #27ae60;
+                color: white;
+            }
+            
+            .accept-btn:hover {
+                background: #229954;
+                transform: translateY(-2px);
+            }
+            
+            .decline-btn {
+                background: #e74c3c;
+                color: white;
+            }
+            
+            .decline-btn:hover {
+                background: #c0392b;
+                transform: translateY(-2px);
+            }
+            
+            .footer {
+                text-align: center;
+                margin-top: 30px;
+                padding-top: 20px;
+                border-top: 1px solid #eee;
+                color: #7f8c8d;
+                font-size: 0.9rem;
+            }
+            
+            @media (max-width: 768px) {
+                .quote-container {
+                    padding: 20px;
+                }
+                
+                .header {
+                    flex-direction: column;
+                    text-align: center;
+                }
+                
+                .info-section {
+                    flex-direction: column;
+                }
+                
+                .summary {
+                    width: 100%;
+                    margin-top: 20px;
+                }
+                
+                .action-btn {
+                    display: block;
+                    margin: 10px 0;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="quote-container">
+            <div class="header">
+                <div class="logo-section">
+                    <div class="logo">${quote.companyName}</div>
+                    <div class="logo-subtitle">Professional Underfloor Heating Solutions</div>
+                </div>
+                <div class="quote-info">
+                    <div class="quote-title">QUOTE</div>
+                    <div class="customer-name">${quote.customerName}</div>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <div class="quote-details">
+                    <div class="info-item">
+                        <span class="info-label">Date:</span> ${formatDate(quote.date)}
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Expiry:</span> ${formatDate(quote.expiryDate)}
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Quote Number:</span> ${quote.quoteNumber}
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Reference:</span> ${quote.customerAddress || 'Project Address'}
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">GST Number:</span> ${quote.gstNumber}
+                    </div>
+                </div>
+                <div class="company-details">
+                    <div class="info-item">
+                        <span class="info-label">Company Name:</span> ${quote.companyName}
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Address:</span> ${quote.companyAddress}
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Phone:</span> ${quote.tradesmanPhone || '+64 9 123 4567'}
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Email:</span> ${quote.tradesmanEmail || 'info@kiwiunderfloor.com'}
+                    </div>
+                </div>
+            </div>
+            
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th>Amount NZD</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${quote.items.map(item => `
+                        <tr>
+                            <td>${item.description}</td>
+                            <td>${item.quantity}</td>
+                            <td>$${parseFloat(item.unitPrice).toFixed(2)}</td>
+                            <td>$${item.amount}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            
+            <div class="summary">
+                <div class="summary-row">
+                    <span>Subtotal:</span>
+                    <span>$${quote.subtotal}</span>
+                </div>
+                <div class="summary-row">
+                    <span>TOTAL GST 15%:</span>
+                    <span>$${quote.gst}</span>
+                </div>
+                <div class="summary-row total">
+                    <span>TOTAL NZD:</span>
+                    <span>$${quote.total}</span>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <a href="${currentUrl}/api/quote-responses?action=accept&quoteId=${quote.quoteId}" class="action-btn accept-btn">
+                    ✅ Accept Quote
+                </a>
+                <a href="${currentUrl}/api/quote-responses?action=decline&quoteId=${quote.quoteId}" class="action-btn decline-btn">
+                    ❌ Decline Quote
+                </a>
+            </div>
+            
+            <div class="footer">
+                <p>This quote is valid until ${formatDate(quote.expiryDate)}</p>
+                <p>For any questions, please contact us at ${quote.tradesmanEmail || 'info@kiwiunderfloor.com'}</p>
+            </div>
+        </div>
+    </body>
+    </html>
+  `;
+}
+
+async function sendQuoteEmail(quoteData, req) {
+  try {
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+      console.log('⚠️ Gmail credentials not configured - skipping email');
+      return;
+    }
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD
+      }
+    });
+
+    const currentUrl = req.headers.host ? 
+      `https://${req.headers.host}` : 
+      'https://lead-code-aoupwojcg-dan-buis-projects-e44a173c.vercel.app';
+
+    const emailContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2c3e50;">Your Quote is Ready!</h2>
+        <p>Dear ${quoteData.customerName},</p>
+        <p>Thank you for your interest in our ${quoteData.serviceType} services. We're pleased to provide you with a detailed quote for your project.</p>
+        
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #34495e; margin-top: 0;">Quote Summary</h3>
+          <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+          <p><strong>Service:</strong> ${quoteData.serviceType}</p>
+          <p><strong>Total Amount:</strong> $${quoteData.total}</p>
+          <p><strong>Valid Until:</strong> ${formatDate(quoteData.expiryDate)}</p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}" 
+             style="background: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin-right: 10px;">
+            View Full Quote
+          </a>
+        </div>
+
+        <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #155724; margin-top: 0;">Next Steps</h3>
+          <p>1. Review the detailed quote by clicking the link above</p>
+          <p>2. Accept or decline the quote using the buttons in the quote</p>
+          <p>3. If you accept, we'll contact you to arrange the work</p>
+        </div>
+
+        <p style="margin-top: 30px;">If you have any questions about this quote, please don't hesitate to contact us.</p>
+        
+        <p style="margin-top: 30px;">Best regards,<br><strong>${quoteData.companyName}</strong></p>
+      </div>
+    `;
+
+    const mailOptions = {
+      from: process.env.MAIL_FROM || `Trade Quotes <${process.env.GMAIL_USER}>`,
+      to: quoteData.customerEmail,
+      subject: `Your Quote is Ready - ${quoteData.serviceType} Project`,
+      html: emailContent
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('✅ Quote email sent successfully');
+
+  } catch (error) {
+    console.error('❌ Error sending quote email:', error.message);
+  }
+}
+
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-NZ', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+} 

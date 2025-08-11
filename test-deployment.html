@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Deployment Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-section { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; margin: 10px; }
+        button:hover { background: #0056b3; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        .result { background: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Deployment Test</h1>
+    <p>Testing current deployment and API endpoints.</p>
+    
+    <div class="test-section">
+        <h2>📊 Current URL Info</h2>
+        <p><strong>Page URL:</strong> <span id="currentUrl"></span></p>
+        <p><strong>Base URL:</strong> <span id="baseUrl"></span></p>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Test APIs</h2>
+        <button onclick="testAPI('setup-quotes-sheet')">Test Setup Quotes Sheet</button>
+        <button onclick="testAPI('quote-submission')">Test Quote Submission (GET)</button>
+        <button onclick="testAPI('view-quote')">Test View Quote</button>
+        <div id="apiResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Setup Links</h2>
+        <p><strong>Setup Page:</strong> <a href="setup-google-sheets.html" target="_blank">setup-google-sheets.html</a></p>
+        <p><strong>Auto Quote Test:</strong> <a href="test-quote-auto.html" target="_blank">test-quote-auto.html</a></p>
+    </div>
+
+    <script>
+        // Get current URL and base URL
+        const currentUrl = window.location.href;
+        const baseUrl = currentUrl.replace('/test-deployment.html', '');
+        
+        document.getElementById('currentUrl').textContent = currentUrl;
+        document.getElementById('baseUrl').textContent = baseUrl;
+
+        async function testAPI(endpoint) {
+            const resultDiv = document.getElementById('apiResult');
+            const testUrl = `${baseUrl}/api/${endpoint}`;
+            
+            resultDiv.innerHTML = `<p class="info">Testing: ${testUrl}</p>`;
+            
+            try {
+                const response = await fetch(testUrl, {
+                    method: 'GET'
+                });
+                
+                if (response.ok) {
+                    const result = await response.text();
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="success">✅ API Response Received!</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>URL:</strong> ${testUrl}</p>
+                            <p><strong>Response:</strong></p>
+                            <pre>${result.substring(0, 500)}${result.length > 500 ? '...' : ''}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="error">❌ API Error</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>URL:</strong> ${testUrl}</p>
+                            <p><strong>Error:</strong> ${response.statusText}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3 class="error">❌ Network Error</h3>
+                        <p><strong>URL:</strong> ${testUrl}</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Type:</strong> ${error.name}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

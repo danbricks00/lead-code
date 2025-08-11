@@ -191,11 +191,17 @@ async function handleLeadSubmission(leadData, res) {
           console.log('✅ Found createTransporter method');
           
           console.log('📧 Step 3: Creating transporter...');
+          // Use fallback credentials like the contact form
+          const gmailUser = process.env.GMAIL_USER || 'danbricks18@gmail.com';
+          const gmailPass = process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom';
+          
+          console.log('📧 Using Gmail credentials:', { user: gmailUser, pass: gmailPass ? '***' : 'missing' });
+          
           transporter = createMethod({
             service: 'gmail',
             auth: {
-              user: process.env.GMAIL_USER,
-              pass: process.env.GMAIL_APP_PASSWORD
+              user: gmailUser,
+              pass: gmailPass
             }
           });
           console.log('✅ Transporter created successfully');
@@ -210,8 +216,8 @@ async function handleLeadSubmission(leadData, res) {
         throw new Error('Failed to initialize Nodemailer: ' + importError.message);
       }
 
-      if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD && transporter) {
-        console.log('✅ Gmail credentials found - attempting to send emails');
+      if (transporter) {
+        console.log('✅ Transporter ready - attempting to send emails');
         
         // Validate email format before sending
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -223,8 +229,8 @@ async function handleLeadSubmission(leadData, res) {
 
         // Send customer confirmation email
         console.log('📧 Step 4: Sending customer confirmation email...');
-        const fromDisplay = process.env.MAIL_FROM || `Kiwi Underfloor Heating <${process.env.GMAIL_USER}>`;
-        const replyTo = process.env.MAIL_REPLY_TO || process.env.GMAIL_USER;
+        const fromDisplay = process.env.MAIL_FROM || `Kiwi Underfloor Heating <${gmailUser}>`;
+        const replyTo = process.env.MAIL_REPLY_TO || gmailUser;
 
         const customerMailOptions = {
           from: fromDisplay,

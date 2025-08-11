@@ -137,6 +137,12 @@ async function handleQuoteGeneration(req, res) {
     // Send email to customer with quote
     await sendQuoteEmail(quoteData, req);
 
+    // Send admin copy for tracking and commission purposes
+    await sendAdminQuoteEmail(quoteData, req);
+
+    // Save quote to database for dashboard tracking
+    await saveQuoteToDatabase(quoteData);
+
     console.log('✅ Quote generated successfully:', { quoteNumber, total });
 
     res.json({
@@ -504,43 +510,30 @@ async function sendQuoteEmail(quoteData, req) {
       'https://lead-code-aoupwojcg-dan-buis-projects-e44a173c.vercel.app';
 
     const emailContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #2c3e50;">Your Quote is Ready!</h2>
-        <p>Dear ${quoteData.customerName},</p>
-        <p>Thank you for your interest in our ${quoteData.serviceType} services. We're pleased to provide you with a detailed quote for your project.</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <p>Hi,</p>
         
-        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #34495e; margin-top: 0;">Quote Summary</h3>
-          <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
-          <p><strong>Service:</strong> ${quoteData.serviceType}</p>
-          <p><strong>Total Amount:</strong> $${quoteData.total}</p>
-          <p><strong>Valid Until:</strong> ${formatDate(quoteData.expiryDate)}</p>
-        </div>
-
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}" 
-             style="background: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin-right: 10px;">
-            View Full Quote
-          </a>
-        </div>
-
-        <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #155724; margin-top: 0;">Next Steps</h3>
-          <p>1. Review the detailed quote by clicking the link above</p>
-          <p>2. Accept or decline the quote using the buttons in the quote</p>
-          <p>3. If you accept, we'll contact you to arrange the work</p>
-        </div>
-
-        <p style="margin-top: 30px;">If you have any questions about this quote, please don't hesitate to contact us.</p>
+        <p>Thank you for your enquiry.</p>
         
-        <p style="margin-top: 30px;">Best regards,<br><strong>${quoteData.companyName}</strong></p>
+        <p>Here's quote ${quoteData.quoteNumber} for NZD ${quoteData.total}.</p>
+        
+        <p>View your quote online:</p>
+        <p><a href="${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}" style="color: #6f42c1;">${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}</a></p>
+        
+        <p>From your online quote you can accept, decline, comment or print.</p>
+        
+        <p>If you have any questions, please let us know.</p>
+        
+        <p>Thanks,<br>${quoteData.companyName}</p>
+        
+        <p style="margin-top: 30px; font-size: 12px; color: #666;">Terms</p>
       </div>
     `;
 
     const mailOptions = {
-      from: process.env.MAIL_FROM || `Trade Quotes <${process.env.GMAIL_USER}>`,
+      from: process.env.MAIL_FROM || `${quoteData.companyName} <${process.env.GMAIL_USER}>`,
       to: quoteData.customerEmail,
-      subject: `Your Quote is Ready - ${quoteData.serviceType} Project`,
+      subject: `Quote ${quoteData.quoteNumber} - ${quoteData.serviceType}`,
       html: emailContent
     };
 
@@ -549,6 +542,165 @@ async function sendQuoteEmail(quoteData, req) {
 
   } catch (error) {
     console.error('❌ Error sending quote email:', error.message);
+  }
+}
+
+async function sendAdminQuoteEmail(quoteData, req) {
+  try {
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+      console.log('⚠️ Gmail credentials not configured - skipping admin email');
+      return;
+    }
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD
+      }
+    });
+
+    const currentUrl = req.headers.host ? 
+      `https://${req.headers.host}` : 
+      'https://lead-code-aoupwojcg-dan-buis-projects-e44a173c.vercel.app';
+
+    // Calculate potential commission (example: 10% of total)
+    const commissionRate = 0.10; // 10% commission
+    const potentialCommission = parseFloat(quoteData.total) * commissionRate;
+
+    const emailContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2c3e50;">📊 New Quote Generated - Admin Copy</h2>
+        <p>Hello Admin,</p>
+        <p>A new quote has been generated and sent to the customer. Here are the details for tracking and commission purposes:</p>
+        
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #34495e; margin-top: 0;">Quote Details</h3>
+          <p><strong>Quote ID:</strong> ${quoteData.quoteId}</p>
+          <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+          <p><strong>Customer:</strong> ${quoteData.customerName}</p>
+          <p><strong>Customer Email:</strong> ${quoteData.customerEmail}</p>
+          <p><strong>Customer Phone:</strong> ${quoteData.customerPhone || 'Not provided'}</p>
+          <p><strong>Customer Address:</strong> ${quoteData.customerAddress || 'Not provided'}</p>
+          <p><strong>Service Type:</strong> ${quoteData.serviceType}</p>
+          <p><strong>Project Details:</strong> ${quoteData.projectDetails || 'Not provided'}</p>
+        </div>
+
+        <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #155724; margin-top: 0;">Financial Details</h3>
+          <p><strong>Total Quote Amount:</strong> $${quoteData.total}</p>
+          <p><strong>Subtotal:</strong> $${quoteData.subtotal}</p>
+          <p><strong>GST (15%):</strong> $${quoteData.gst}</p>
+          <p><strong>Potential Commission (10%):</strong> $${potentialCommission.toFixed(2)}</p>
+        </div>
+
+        <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #856404; margin-top: 0;">Tradesman Information</h3>
+          <p><strong>Name:</strong> ${quoteData.tradesmanName || 'Not assigned'}</p>
+          <p><strong>Email:</strong> ${quoteData.tradesmanEmail || 'Not provided'}</p>
+          <p><strong>Phone:</strong> ${quoteData.tradesmanPhone || 'Not provided'}</p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}" 
+             style="background: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin-right: 10px;">
+            View Full Quote
+          </a>
+          <a href="${currentUrl}/admin.html" 
+             style="background: #27ae60; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            Admin Dashboard
+          </a>
+        </div>
+
+        <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <h4 style="color: #2c3e50; margin-top: 0;">Commission Tracking</h4>
+          <p><strong>Status:</strong> Pending Customer Response</p>
+          <p><strong>Commission Earned:</strong> $0.00 (Will be calculated when quote is accepted)</p>
+          <p><strong>Commission Rate:</strong> 10% of total quote value</p>
+        </div>
+
+        <p style="margin-top: 30px;">This quote has been automatically tracked in the system for commission purposes.</p>
+        
+        <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Underfloor Heating System</strong></p>
+      </div>
+    `;
+
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.GMAIL_USER;
+    const mailOptions = {
+      from: process.env.MAIL_FROM || `Trade Quotes <${process.env.GMAIL_USER}>`,
+      to: adminEmail,
+      subject: `📊 New Quote Generated - ${quoteData.quoteNumber} - $${quoteData.total}`,
+      html: emailContent
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('✅ Admin quote email sent successfully');
+
+  } catch (error) {
+    console.error('❌ Error sending admin email:', error.message);
+  }
+}
+
+async function saveQuoteToDatabase(quoteData) {
+  try {
+    if (!process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_SPREADSHEET_ID) {
+      console.log('⚠️ Google Sheets credentials not configured - skipping database save');
+      return;
+    }
+
+    const { google } = await import('googleapis');
+
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+
+    const sheets = google.sheets({ version: 'v4', auth });
+    
+    // Prepare data for Google Sheets
+    const values = [
+      [
+        new Date().toISOString(), // Timestamp
+        quoteData.quoteId,
+        quoteData.quoteNumber,
+        quoteData.customerName,
+        quoteData.customerEmail,
+        quoteData.customerPhone || '',
+        quoteData.customerAddress || '',
+        quoteData.serviceType,
+        quoteData.projectDetails || '',
+        quoteData.tradesmanName || '',
+        quoteData.tradesmanEmail || '',
+        quoteData.tradesmanPhone || '',
+        quoteData.companyName,
+        quoteData.subtotal,
+        quoteData.gst,
+        quoteData.total,
+        quoteData.date,
+        quoteData.expiryDate,
+        'generated', // Status
+        '', // Customer Response
+        '', // Response Date
+        '', // Commission Earned
+        JSON.stringify(quoteData.items) // Items as JSON
+      ]
+    ];
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+      range: 'Quotes!A:V', // Extended range for new fields
+      valueInputOption: 'RAW',
+      insertDataOption: 'INSERT_ROWS',
+      resource: { values }
+    });
+
+    console.log('✅ Quote saved to database for dashboard tracking');
+
+  } catch (error) {
+    console.error('❌ Error saving quote to database:', error.message);
   }
 }
 

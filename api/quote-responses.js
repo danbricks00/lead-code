@@ -107,6 +107,11 @@ async function handleQuoteResponse(req, res) {
       // Send notification emails based on the response
       await sendResponseNotifications(quote, action, tradesmanEmail);
 
+      // If customer accepted, calculate and track commission
+      if (action === 'accept' && !tradesmanEmail) {
+        await trackCommission(quote);
+      }
+
       // Return success page
       return res.status(200).send(generateResponsePage(action, quote, tradesmanEmail));
     } else {
@@ -460,4 +465,151 @@ function generateNotificationEmail(quote, action, recipient, message) {
     </body>
     </html>
   `;
+} 
+
+async function trackCommission(quote) {
+  try {
+    if (!process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_SPREADSHEET_ID) {
+      console.log('⚠️ Google Sheets credentials not configured - skipping commission tracking');
+      return;
+    }
+
+    const { google } = await import('googleapis');
+
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+
+    const sheets = google.sheets({ version: 'v4', auth });
+    
+    // Calculate commission (10% of total)
+    const commissionRate = 0.10;
+    const commissionAmount = parseFloat(quote.quoteAmount || quote.total || 0) * commissionRate;
+    const responseDate = new Date().toISOString();
+
+    // Find and update the quote row in the spreadsheet
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+      range: 'Quotes!A:V',
+    });
+
+    const rows = response.data.values;
+    if (!rows || rows.length === 0) {
+      console.log('❌ No quotes found in spreadsheet');
+      return;
+    }
+
+    // Find the quote by ID (assuming quoteId is in column B)
+    let quoteRowIndex = -1;
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i][1] === quote.quoteId) { // Column B (index 1) contains quoteId
+        quoteRowIndex = i + 1; // +1 because sheets are 1-indexed
+        break;
+      }
+    }
+
+    if (quoteRowIndex === -1) {
+      console.log('❌ Quote not found in spreadsheet for commission tracking');
+      return;
+    }
+
+    // Update the quote row with acceptance and commission data
+    const updateRange = `Quotes!T${quoteRowIndex}:V${quoteRowIndex}`; // Columns T, U, V
+    const updateValues = [
+      ['accepted', responseDate, commissionAmount.toFixed(2)]
+    ];
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+      range: updateRange,
+      valueInputOption: 'RAW',
+      resource: { values: updateValues }
+    });
+
+    console.log('✅ Commission tracked successfully:', {
+      quoteId: quote.quoteId,
+      commissionAmount: commissionAmount.toFixed(2)
+    });
+
+    // Send commission notification to admin
+    await sendCommissionNotification(quote, commissionAmount);
+
+  } catch (error) {
+    console.error('❌ Error tracking commission:', error.message);
+  }
+}
+
+async function sendCommissionNotification(quote, commissionAmount) {
+  try {
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+      console.log('⚠️ Gmail credentials not configured - skipping commission notification');
+      return;
+    }
+
+    let nodemailer;
+    try {
+      const module = await import('nodemailer');
+      nodemailer = module.default;
+    } catch (importError) {
+      try {
+        nodemailer = require('nodemailer');
+      } catch (requireError) {
+        console.log('❌ Cannot import Nodemailer - skipping commission notification');
+        return;
+      }
+    }
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD
+      }
+    });
+
+    const emailContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #27ae60;">💰 Commission Earned!</h2>
+        <p>Great news! A quote has been accepted and commission has been earned.</p>
+        
+        <div style="background: #d4edda; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #155724; margin-top: 0;">Commission Details</h3>
+          <p><strong>Quote ID:</strong> ${quote.quoteId}</p>
+          <p><strong>Customer:</strong> ${quote.customerName}</p>
+          <p><strong>Service:</strong> ${quote.serviceType}</p>
+          <p><strong>Quote Amount:</strong> $${quote.quoteAmount || quote.total}</p>
+          <p><strong>Commission Earned:</strong> $${commissionAmount.toFixed(2)}</p>
+          <p><strong>Commission Rate:</strong> 10%</p>
+          <p><strong>Date Earned:</strong> ${new Date().toLocaleDateString('en-NZ')}</p>
+        </div>
+
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #34495e; margin-top: 0;">Next Steps</h3>
+          <p>• Commission has been automatically tracked in the system</p>
+          <p>• You can view all commissions in your admin dashboard</p>
+          <p>• The tradesman will be notified to proceed with the work</p>
+        </div>
+
+        <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Underfloor Heating System</strong></p>
+      </div>
+    `;
+
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.GMAIL_USER;
+    const mailOptions = {
+      from: process.env.MAIL_FROM || `Trade Quotes <${process.env.GMAIL_USER}>`,
+      to: adminEmail,
+      subject: `💰 Commission Earned - $${commissionAmount.toFixed(2)} - Quote ${quote.quoteId}`,
+      html: emailContent
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('✅ Commission notification sent to admin');
+
+  } catch (error) {
+    console.error('❌ Error sending commission notification:', error.message);
+  }
 } 

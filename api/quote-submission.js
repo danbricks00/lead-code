@@ -227,42 +227,7 @@ export default async function handler(req, res) {
         console.error('❌ Email error:', emailError.message);
       }
 
-      // 3. Create Google Docs quote document
-      let docCreated = false;
-      let docUrl = '';
-      try {
-        const docResponse = await fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://lead-code-ib2oabog4-leadcode-b19d9acc.vercel.app'}/api/create-quote-doc`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            quoteNumber: quoteData.quoteNumber,
-            customerName: quoteData.customerName || 'Customer Name',
-            customerAddress: quoteData.customerAddress || 'Customer Address',
-            serviceType: quoteData.serviceType || 'Underfloor Heating Installation',
-            projectDetails: quoteData.projectDetails || 'Project Details',
-            tradesmanName: quoteData.tradesmanName,
-            tradesmanPhone: quoteData.tradesmanPhone,
-            tradesmanEmail: quoteData.tradesmanEmail,
-            totalAmount: quoteData.totalAmount,
-            itemBreakdown: quoteData.itemBreakdown,
-            validUntil: quoteData.validUntil,
-            additionalNotes: quoteData.additionalNotes
-          })
-        });
-
-        const docResult = await docResponse.json();
-        if (docResult.success) {
-          docCreated = true;
-          docUrl = docResult.data.documentUrl;
-          console.log('✅ Google Docs quote document created:', docResult.data.documentName);
-        } else {
-          console.error('❌ Failed to create Google Docs document:', docResult.error);
-        }
-      } catch (docError) {
-        console.error('❌ Error creating Google Docs document:', docError.message);
-      }
-
-      // 4. Send notification to admin
+      // 3. Send notification to admin
       try {
         const nodemailer = await import('nodemailer');
         const transporter = nodemailer.default.createTransport({
@@ -289,26 +254,9 @@ export default async function handler(req, res) {
             <pre>${quoteData.itemBreakdown}</pre>
             ${quoteData.additionalNotes ? `<p><strong>Additional Notes:</strong> ${quoteData.additionalNotes}</p>` : ''}
             
-            ${docCreated ? `
-            <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #155724; margin-top: 0;">✅ Google Docs Document Created!</h3>
-              <p><strong>Document Name:</strong> Quote ${quoteData.quoteNumber}</p>
-              <p><strong>Document URL:</strong> <a href="${docUrl}">${docUrl}</a></p>
-              <a href="${docUrl}" 
-                 style="background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
-                 📄 Open Quote Document
-              </a>
-            </div>
-            ` : `
-            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #856404; margin-top: 0;">⚠️ Manual Action Required</h3>
-              <p>Google Docs document creation failed. Please manually create the quote document using the template.</p>
-            </div>
-            `}
-            
             <h3>Next Steps:</h3>
             <ol>
-              <li>${docCreated ? 'Review the generated quote document' : 'Create quote document using Google Docs template'}</li>
+              <li>Create quote document using Google Docs template</li>
               <li>Make any necessary adjustments</li>
               <li>Save as PDF</li>
               <li>Send to customer</li>
@@ -331,9 +279,7 @@ export default async function handler(req, res) {
         timestamp: new Date().toISOString(),
         status: {
           sheetsUpdated,
-          customerEmailSent,
-          docCreated,
-          docUrl: docCreated ? docUrl : null
+          customerEmailSent
         }
       };
 

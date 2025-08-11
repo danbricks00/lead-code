@@ -21,11 +21,93 @@ export default async function handler(req, res) {
     const leadData = req.body;
     console.log('✅ Lead received:', leadData);
 
-    let sheetsUpdated = false;
+    // 1. Send customer confirmation email
     let customerEmailSent = false;
-    let emailErrorDetails = null;
+    try {
+      const nodemailer = await import('nodemailer');
+      const transporter = nodemailer.default.createTransport({
+        service: 'gmail',
+        auth: {
+          user: 'danbricks18@gmail.com',
+          pass: 'ptmcojqgthvjbqom'
+        }
+      });
 
-    // 1. Save to Google Sheets
+      const customerMailOptions = {
+        from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+        to: leadData.customerEmail,
+        subject: 'Your Project Request Confirmation - Quote Coming Soon',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2c3e50;">Thank you for your project request!</h2>
+            <p>Dear ${leadData.customerName || 'there'},</p>
+            <p>We have received your request for <strong>${leadData.selectedService || 'our services'}</strong> and are working on your quote.</p>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #34495e; margin-top: 0;">Project Details:</h3>
+              <p><strong>Service:</strong> ${leadData.selectedService || 'Not specified'}</p>
+              <p><strong>Project:</strong> ${leadData.projectDetails || 'Not specified'}</p>
+              <p><strong>Location:</strong> ${leadData.location || 'Not specified'}</p>
+              <p><strong>Size/Scope:</strong> ${leadData.projectSize || 'Not specified'}</p>
+              <p><strong>Budget:</strong> ${leadData.budget || 'Not specified'}</p>
+              <p><strong>Timeline:</strong> ${leadData.timeline || 'Not specified'}</p>
+              ${leadData.specificDetails ? `<p><strong>Specific Requirements:</strong> ${leadData.specificDetails}</p>` : ''}
+            </div>
+            
+            <p>Our qualified tradesmen are reviewing your project and will send you a detailed quote within 24 hours.</p>
+            <p>You'll receive an email with the quote and tradesman details for your approval.</p>
+            
+            <p style="margin-top: 30px;">Best regards,<br><strong>Your Trade Team</strong></p>
+          </div>
+        `
+      };
+
+      await transporter.sendMail(customerMailOptions);
+      console.log('✅ Customer confirmation email sent successfully');
+      customerEmailSent = true;
+    } catch (emailError) {
+      console.error('❌ Customer email error:', emailError.message);
+    }
+
+    // 2. Send admin notification
+    try {
+      const nodemailer = await import('nodemailer');
+      const transporter = nodemailer.default.createTransport({
+        service: 'gmail',
+        auth: {
+          user: 'danbricks18@gmail.com',
+          pass: 'ptmcojqgthvjbqom'
+        }
+      });
+
+      const adminMailOptions = {
+        from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+        to: 'danbricks18@gmail.com',
+        subject: `New ${leadData.selectedService || 'Service'} Lead - ${leadData.customerName || 'Customer'}`,
+        html: `
+          <h2>New Lead Received!</h2>
+          <p><strong>Service Type:</strong> ${leadData.selectedService || 'Not specified'}</p>
+          <p><strong>Customer:</strong> ${leadData.customerName || 'Not specified'}</p>
+          <p><strong>Email:</strong> ${leadData.customerEmail || 'Not specified'}</p>
+          <p><strong>Phone:</strong> ${leadData.customerPhone || 'Not specified'}</p>
+          <p><strong>Project Details:</strong> ${leadData.projectDetails || 'Not specified'}</p>
+          <p><strong>Project Size:</strong> ${leadData.projectSize || 'Not specified'}</p>
+          <p><strong>Specific Details:</strong> ${leadData.specificDetails || 'Not specified'}</p>
+          <p><strong>Location:</strong> ${leadData.location || 'Not specified'}</p>
+          <p><strong>Budget:</strong> ${leadData.budget || 'Not specified'}</p>
+          <p><strong>Timeline:</strong> ${leadData.timeline || 'Not specified'}</p>
+          <p><strong>⚠️ ACTION REQUIRED:</strong> Please create a quote for this customer.</p>
+        `
+      };
+
+      await transporter.sendMail(adminMailOptions);
+      console.log('✅ Admin notification email sent');
+    } catch (adminEmailError) {
+      console.error('❌ Admin email failed:', adminEmailError.message);
+    }
+
+    // 3. Save to Google Sheets (if configured)
+    let sheetsUpdated = false;
     if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {
       try {
         const auth = new google.auth.GoogleAuth({
@@ -69,105 +151,17 @@ export default async function handler(req, res) {
       }
     }
 
-    // 2. Send customer confirmation email
-    try {
-      const nodemailer = await import('nodemailer');
-      const transporter = nodemailer.default.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.GMAIL_USER || 'danbricks18@gmail.com',
-          pass: process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom'
-        }
-      });
-
-      const customerMailOptions = {
-        from: `Kiwi Underfloor Heating <${process.env.GMAIL_USER || 'danbricks18@gmail.com'}>`,
-        to: leadData.customerEmail,
-        subject: 'Your Project Request Confirmation - Quote Coming Soon',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #2c3e50;">Thank you for your project request!</h2>
-            <p>Dear ${leadData.customerName || 'there'},</p>
-            <p>We have received your request for <strong>${leadData.selectedService || 'our services'}</strong> and are working on your quote.</p>
-            
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #34495e; margin-top: 0;">Project Details:</h3>
-              <p><strong>Service:</strong> ${leadData.selectedService || 'Not specified'}</p>
-              <p><strong>Project:</strong> ${leadData.projectDetails || 'Not specified'}</p>
-              <p><strong>Location:</strong> ${leadData.location || 'Not specified'}</p>
-              <p><strong>Size/Scope:</strong> ${leadData.projectSize || 'Not specified'}</p>
-              <p><strong>Budget:</strong> ${leadData.budget || 'Not specified'}</p>
-              <p><strong>Timeline:</strong> ${leadData.timeline || 'Not specified'}</p>
-              ${leadData.specificDetails ? `<p><strong>Specific Requirements:</strong> ${leadData.specificDetails}</p>` : ''}
-            </div>
-            
-            <p>Our qualified tradesmen are reviewing your project and will send you a detailed quote within 24 hours.</p>
-            <p>You'll receive an email with the quote and tradesman details for your approval.</p>
-            
-            <p style="margin-top: 30px;">Best regards,<br><strong>Your Trade Team</strong></p>
-          </div>
-        `
-      };
-
-      await transporter.sendMail(customerMailOptions);
-      console.log('✅ Customer confirmation email sent successfully');
-      customerEmailSent = true;
-    } catch (emailError) {
-      console.error('❌ Email error:', emailError.message);
-      emailErrorDetails = emailError.message;
-    }
-
-    // 3. Send admin notification
-    try {
-      const nodemailer = await import('nodemailer');
-      const transporter = nodemailer.default.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.GMAIL_USER || 'danbricks18@gmail.com',
-          pass: process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom'
-        }
-      });
-
-      const adminMailOptions = {
-        from: `Kiwi Underfloor Heating <${process.env.GMAIL_USER || 'danbricks18@gmail.com'}>`,
-        to: 'danbricks18@gmail.com',
-        subject: `New ${leadData.selectedService || 'Service'} Lead - ${leadData.customerName || 'Customer'}`,
-        html: `
-          <h2>New Lead Received!</h2>
-          <p><strong>Service Type:</strong> ${leadData.selectedService || 'Not specified'}</p>
-          <p><strong>Customer:</strong> ${leadData.customerName || 'Not specified'}</p>
-          <p><strong>Email:</strong> ${leadData.customerEmail || 'Not specified'}</p>
-          <p><strong>Phone:</strong> ${leadData.customerPhone || 'Not specified'}</p>
-          <p><strong>Project Details:</strong> ${leadData.projectDetails || 'Not specified'}</p>
-          <p><strong>Project Size:</strong> ${leadData.projectSize || 'Not specified'}</p>
-          <p><strong>Specific Details:</strong> ${leadData.specificDetails || 'Not specified'}</p>
-          <p><strong>Location:</strong> ${leadData.location || 'Not specified'}</p>
-          <p><strong>Budget:</strong> ${leadData.budget || 'Not specified'}</p>
-          <p><strong>Timeline:</strong> ${leadData.timeline || 'Not specified'}</p>
-          <p><strong>⚠️ ACTION REQUIRED:</strong> Please create a quote using the Google Docs template.</p>
-        `
-      };
-
-      await transporter.sendMail(adminMailOptions);
-      console.log('✅ Admin notification email sent');
-    } catch (adminEmailError) {
-      console.error('❌ Admin email failed:', adminEmailError.message);
-    }
-
     // Return success response
     const response = {
       success: true,
       message: customerEmailSent 
         ? 'Lead submitted successfully! Check your email for confirmation. Quote will be sent within 24 hours.'
-        : 'Lead submitted successfully! Google Sheets updated. Email status: ' +
-          (customerEmailSent ? 'Customer email sent' : 'Customer email failed'),
+        : 'Lead submitted successfully! Admin has been notified.',
       data: leadData,
       timestamp: new Date().toISOString(),
       status: {
-        logged: true,
-        sheetsUpdated,
         customerEmailSent,
-        emailErrorDetails
+        sheetsUpdated
       }
     };
 

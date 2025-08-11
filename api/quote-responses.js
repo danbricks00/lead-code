@@ -657,10 +657,11 @@ async function updateRelatedQuotes(acceptedQuote) {
       const serviceType = row[7]; // Column H
       const status = row[18]; // Column S
       
-      // Skip the accepted quote and already processed quotes
-      if (quoteId === acceptedQuote.quoteId || 
-          status === 'customer_accepted' || 
-          status === 'job_awarded_to_another') {
+             // Skip the accepted quote and already processed quotes
+       if (quoteId === acceptedQuote.quoteId || 
+           status === 'customer_accepted' || 
+           status === 'job_awarded_to_another' ||
+           status === 'customer_declined') {
         continue;
       }
       

@@ -39,14 +39,29 @@ async function handleQuoteView(req, res) {
       return res.status(400).json({ error: 'Quote ID is required' });
     }
 
-    // Get quote details
+    console.log('🔍 Looking up quote:', quoteId);
+
+    // Get quote details from database
     const quote = await getQuoteById(quoteId);
+    
     if (!quote) {
-      return res.status(404).json({ error: 'Quote not found' });
+      console.log('❌ Quote not found in database, trying alternative lookup...');
+      
+      // Try to find quote in the main spreadsheet as fallback
+      const fallbackQuote = await findQuoteInSpreadsheet(quoteId);
+      if (!fallbackQuote) {
+        return res.status(404).json({ error: 'Quote not found' });
+      }
+      
+      console.log('✅ Found quote in fallback lookup');
+      const quoteHtml = generateQuoteHTML(fallbackQuote, true);
+      res.setHeader('Content-Type', 'text/html');
+      return res.status(200).send(quoteHtml);
     }
 
-         // Generate the quote HTML (with action buttons for web view)
-     const quoteHtml = generateQuoteHTML(quote, true);
+    console.log('✅ Quote found in database');
+    // Generate the quote HTML (with action buttons for web view)
+    const quoteHtml = generateQuoteHTML(quote, true);
     
     // Return the quote as HTML
     res.setHeader('Content-Type', 'text/html');
@@ -129,7 +144,7 @@ async function handleQuoteGeneration(req, res) {
       total: total.toFixed(2),
       date: new Date().toISOString().split('T')[0],
       expiryDate: expiryDate.toISOString().split('T')[0],
-      status: 'generated'
+             status: 'quote_sent'
     };
 
     // Save quote to database (you can implement this)
@@ -143,6 +158,9 @@ async function handleQuoteGeneration(req, res) {
 
     // Save quote to database for dashboard tracking
     await saveQuoteToDatabase(quoteData);
+    
+    // Also save to the quote database for lookup
+    await saveQuoteToQuoteDatabase(quoteData);
 
     console.log('✅ Quote generated successfully:', { quoteNumber, total });
 
@@ -497,18 +515,37 @@ async function handleQuoteGeneration(req, res) {
 
  async function generatePDF(quoteData, req) {
    try {
+     console.log('🔄 Starting PDF generation...');
+     
      const browser = await puppeteer.launch({
        headless: true,
-       args: ['--no-sandbox', '--disable-setuid-sandbox']
+       args: [
+         '--no-sandbox',
+         '--disable-setuid-sandbox',
+         '--disable-dev-shm-usage',
+         '--disable-gpu',
+         '--no-first-run',
+         '--no-zygote',
+         '--single-process'
+       ]
      });
      
+     console.log('🌐 Browser launched, creating page...');
      const page = await browser.newPage();
      
      // Generate the quote HTML (without action buttons for PDF)
      const quoteHtml = generateQuoteHTML(quoteData, false);
      
-     await page.setContent(quoteHtml, { waitUntil: 'networkidle0' });
+     console.log('📄 Setting page content...');
+     await page.setContent(quoteHtml, { 
+       waitUntil: 'networkidle0',
+       timeout: 30000 
+     });
      
+     // Wait a bit for any dynamic content to render
+     await page.waitForTimeout(2000);
+     
+     console.log('📊 Generating PDF...');
      // Generate PDF
      const pdfBuffer = await page.pdf({
        format: 'A4',
@@ -518,14 +555,18 @@ async function handleQuoteGeneration(req, res) {
          right: '20mm',
          bottom: '20mm',
          left: '20mm'
-       }
+       },
+       timeout: 30000
      });
      
+     console.log('🔒 Closing browser...');
      await browser.close();
      
+     console.log('✅ PDF generated successfully, size:', pdfBuffer.length, 'bytes');
      return pdfBuffer;
    } catch (error) {
      console.error('❌ Error generating PDF:', error.message);
+     console.error('❌ Error stack:', error.stack);
      return null;
    }
  }
@@ -551,6 +592,8 @@ async function handleQuoteGeneration(req, res) {
 
      // Generate PDF
      const pdfBuffer = await generatePDF(quoteData, req);
+     
+     console.log('📄 PDF generated:', pdfBuffer ? `Size: ${pdfBuffer.length} bytes` : 'Failed to generate');
 
      const emailContent = `
        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -575,16 +618,24 @@ async function handleQuoteGeneration(req, res) {
        </div>
      `;
 
+     const attachments = [];
+     if (pdfBuffer) {
+       attachments.push({
+         filename: `Quote-${quoteData.quoteNumber}.pdf`,
+         content: pdfBuffer,
+         contentType: 'application/pdf'
+       });
+       console.log('✅ PDF attachment added to email');
+     } else {
+       console.log('❌ No PDF buffer available for attachment');
+     }
+
      const mailOptions = {
        from: process.env.MAIL_FROM || `${quoteData.companyName} <${process.env.GMAIL_USER}>`,
        to: quoteData.customerEmail,
        subject: `Quote ${quoteData.quoteNumber} - ${quoteData.serviceType}`,
        html: emailContent,
-       attachments: pdfBuffer ? [{
-         filename: `Quote-${quoteData.quoteNumber}.pdf`,
-         content: pdfBuffer,
-         contentType: 'application/pdf'
-       }] : []
+       attachments: attachments
      };
 
      await transporter.sendMail(mailOptions);
@@ -731,7 +782,7 @@ async function saveQuoteToDatabase(quoteData) {
         quoteData.total,
         quoteData.date,
         quoteData.expiryDate,
-        'generated', // Status
+        quoteData.status || 'quote_sent', // Status
         '', // Customer Response
         '', // Response Date
         '', // Commission Earned
@@ -751,6 +802,135 @@ async function saveQuoteToDatabase(quoteData) {
 
   } catch (error) {
     console.error('❌ Error saving quote to database:', error.message);
+  }
+}
+
+async function saveQuoteToQuoteDatabase(quoteData) {
+  try {
+    if (!process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_SPREADSHEET_ID) {
+      console.log('⚠️ Google Sheets credentials not configured - skipping quote database save');
+      return;
+    }
+
+    const { google } = await import('googleapis');
+
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+
+    const sheets = google.sheets({ version: 'v4', auth });
+    
+    // Prepare data for quote database (different format for lookup)
+    const values = [
+      [
+        quoteData.quoteId, // QuoteID
+        quoteData.quoteId, // LeadID (same as quoteId for now)
+        quoteData.customerEmail, // CustomerEmail
+        quoteData.customerName, // CustomerName
+        quoteData.serviceType, // ServiceType
+        quoteData.projectDetails || '', // ProjectDetails
+        quoteData.total, // QuoteAmount
+        quoteData.status || 'quote_sent', // Status
+        new Date().toISOString(), // CreatedDate
+        quoteData.expiryDate, // ExpiryDate
+        quoteData.tradesmanEmail || '', // AssignedTradesman
+        '', // CustomerResponse
+        '', // TradesmanResponse
+        'active' // FinalStatus
+      ]
+    ];
+
+    // Try to append to the Quotes sheet in the quote database format
+    try {
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+        range: 'Quotes!A:N', // Use the quote database format
+        valueInputOption: 'RAW',
+        insertDataOption: 'INSERT_ROWS',
+        resource: { values }
+      });
+      console.log('✅ Quote saved to quote database for lookup');
+    } catch (error) {
+      console.log('⚠️ Could not save to quote database, may already exist:', error.message);
+    }
+
+  } catch (error) {
+    console.error('❌ Error saving quote to quote database:', error.message);
+  }
+}
+
+async function findQuoteInSpreadsheet(quoteId) {
+  try {
+    if (!process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_SPREADSHEET_ID) {
+      console.log('⚠️ Google Sheets credentials not configured - skipping fallback lookup');
+      return null;
+    }
+
+    const { google } = await import('googleapis');
+
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+
+    const sheets = google.sheets({ version: 'v4', auth });
+    
+    // Try to find the quote in the main spreadsheet
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+      range: 'Quotes!A:V',
+    });
+
+    const rows = response.data.values;
+    if (!rows || rows.length === 0) {
+      console.log('❌ No quotes found in spreadsheet');
+      return null;
+    }
+
+    // Find the quote by ID (column B contains quoteId)
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (row[1] === quoteId) { // Column B (index 1) contains quoteId
+        console.log('✅ Found quote in spreadsheet at row:', i + 1);
+        
+        // Convert spreadsheet row to quote object
+        return {
+          quoteId: row[1],
+          quoteNumber: row[2],
+          customerName: row[3],
+          customerEmail: row[4],
+          customerPhone: row[5],
+          customerAddress: row[6],
+          serviceType: row[7],
+          projectDetails: row[8],
+          tradesmanName: row[9],
+          tradesmanEmail: row[10],
+          tradesmanPhone: row[11],
+          companyName: row[12],
+          subtotal: row[13],
+          gst: row[14],
+          total: row[15],
+          date: row[16],
+          expiryDate: row[17],
+          status: row[18],
+          items: row[22] ? JSON.parse(row[22]) : []
+        };
+      }
+    }
+
+    console.log('❌ Quote not found in spreadsheet');
+    return null;
+
+  } catch (error) {
+    console.error('❌ Error in fallback quote lookup:', error.message);
+    return null;
   }
 }
 

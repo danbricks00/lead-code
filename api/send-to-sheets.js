@@ -423,7 +423,21 @@ async function handleLeadSubmission(leadData, res) {
 
 export async function logInterruptedSession(sessionData) {
   try {
-    const auth = getAuth();
+    if (!process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_SPREADSHEET_ID) {
+      console.log('⚠️ Google Sheets credentials not configured - skipping interrupted session log');
+      return { success: true };
+    }
+
+    const { google } = await import('googleapis');
+    
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+
     const sheets = google.sheets({ version: 'v4', auth });
     
     const rowData = [
@@ -444,12 +458,11 @@ export async function logInterruptedSession(sessionData) {
     ];
 
     await sheets.spreadsheets.values.append({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: 'Leads!A:A',
+      spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+      range: 'Leads!A:N',
       valueInputOption: 'RAW',
-      requestBody: {
-        values: [rowData]
-      }
+      insertDataOption: 'INSERT_ROWS',
+      resource: { values: [rowData] }
     });
 
     console.log('✅ Interrupted session logged to sheet');

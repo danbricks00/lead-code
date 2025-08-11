@@ -40,7 +40,6 @@ Your Google Docs template must include these exact placeholders (case-sensitive)
 - `{{CUSTOMER_EMAIL}}` - Customer's email address
 - `{{CUSTOMER_PHONE}}` - Customer's phone number
 - `{{CUSTOMER_ADDRESS}}` - Customer's location/address
-- `{{SERVICE_TYPE}}` - Type of service requested
 
 ### Tradesman Information
 - `{{TRADESMAN_NAME}}` - Tradesman/company name
@@ -68,7 +67,6 @@ Name: {{CUSTOMER_NAME}}
 Email: {{CUSTOMER_EMAIL}}
 Phone: {{CUSTOMER_PHONE}}
 Address: {{CUSTOMER_ADDRESS}}
-Service: {{SERVICE_TYPE}}
 
 TRADESMAN DETAILS
 Company: {{TRADESMAN_NAME}}

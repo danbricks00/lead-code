@@ -66,7 +66,6 @@ export default async function handler(req, res) {
         '{{CUSTOMER_EMAIL}}': quoteData.customerEmail || 'N/A',
         '{{CUSTOMER_PHONE}}': quoteData.customerPhone || 'N/A',
         '{{CUSTOMER_ADDRESS}}': quoteData.location || 'N/A',
-        '{{SERVICE_TYPE}}': quoteData.serviceType || 'N/A',
         '{{TRADESMAN_NAME}}': quoteData.tradesmanName || 'N/A',
         '{{TRADESMAN_EMAIL}}': quoteData.tradesmanEmail || 'N/A',
         '{{TRADESMAN_PHONE}}': quoteData.tradesmanPhone || 'N/A',

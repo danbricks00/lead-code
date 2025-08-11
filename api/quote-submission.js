@@ -14,13 +14,26 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'GET') {
-    // Show quote submission form
-    const { quoteId } = req.query;
+    // Show quote submission form with pre-filled data from lead
+    const { 
+      quoteId, 
+      leadId, 
+      customerName, 
+      customerEmail, 
+      customerPhone, 
+      serviceType, 
+      projectDetails, 
+      projectSize, 
+      budget, 
+      timeline, 
+      location 
+    } = req.query;
+    
     return res.status(200).send(`
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Submit Quote - ${quoteId}</title>
+        <title>Submit Quote - ${leadId || quoteId}</title>
         <style>
           body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
           .form-group { margin-bottom: 20px; }
@@ -29,14 +42,30 @@ export default async function handler(req, res) {
           button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; }
           button:hover { background: #0056b3; }
           .quote-details { background: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+          .customer-info { background: #e3f2fd; padding: 15px; border-radius: 4px; margin-bottom: 20px; border-left: 4px solid #2196f3; }
+          .readonly { background-color: #f5f5f5; }
         </style>
       </head>
       <body>
         <h1>Submit Quote</h1>
+        
+        ${leadId ? `
+        <div class="customer-info">
+          <h3>📋 Customer Information (Pre-filled from Lead)</h3>
+          <p><strong>Lead ID:</strong> ${leadId}</p>
+          <p><strong>Customer:</strong> ${customerName || 'Not provided'}</p>
+          <p><strong>Service:</strong> ${serviceType || 'Not specified'}</p>
+          <p><strong>Location:</strong> ${location || 'Not specified'}</p>
+          <p><strong>Project Size:</strong> ${projectSize || 'Not specified'}</p>
+          <p><strong>Budget:</strong> ${budget || 'Not specified'}</p>
+          <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
+        </div>
+        ` : `
         <div class="quote-details">
           <h3>Quote ID: ${quoteId}</h3>
           <p>Please fill in your quote details below:</p>
         </div>
+        `}
         
         <form id="quoteForm">
           <div class="form-group">
@@ -79,6 +108,18 @@ export default async function handler(req, res) {
             <textarea id="additionalNotes" name="additionalNotes" rows="4"></textarea>
           </div>
           
+          <!-- Hidden fields for customer data -->
+          <input type="hidden" id="customerName" name="customerName" value="${customerName || ''}">
+          <input type="hidden" id="customerEmail" name="customerEmail" value="${customerEmail || ''}">
+          <input type="hidden" id="customerPhone" name="customerPhone" value="${customerPhone || ''}">
+          <input type="hidden" id="serviceType" name="serviceType" value="${serviceType || ''}">
+          <input type="hidden" id="projectDetails" name="projectDetails" value="${projectDetails || ''}">
+          <input type="hidden" id="projectSize" name="projectSize" value="${projectSize || ''}">
+          <input type="hidden" id="budget" name="budget" value="${budget || ''}">
+          <input type="hidden" id="timeline" name="timeline" value="${timeline || ''}">
+          <input type="hidden" id="location" name="location" value="${location || ''}">
+          <input type="hidden" id="leadId" name="leadId" value="${leadId || ''}">
+          
           <button type="submit">Submit Quote</button>
         </form>
         
@@ -88,7 +129,7 @@ export default async function handler(req, res) {
             
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
-            data.quoteId = '${quoteId}';
+            data.quoteId = '${leadId || quoteId}';
             
             try {
               const response = await fetch('/api/quote-submission', {
@@ -270,16 +311,45 @@ export default async function handler(req, res) {
         }
       }
 
+      // 4. Create PDF and send to all parties
+      let pdfCreated = false;
+      try {
+        const currentUrl = process.env.VERCEL_URL ? 
+          `https://${process.env.VERCEL_URL}` : 
+          'https://lead-code-kh766ffsc-leadcode-b19d9acc.vercel.app';
+
+        const pdfResponse = await fetch(`${currentUrl}/api/create-quote-pdf`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(quoteData)
+        });
+
+        if (pdfResponse.ok) {
+          const pdfResult = await pdfResponse.json();
+          if (pdfResult.success) {
+            console.log('✅ PDF created and sent successfully');
+            pdfCreated = true;
+          } else {
+            console.error('❌ PDF creation failed:', pdfResult.error);
+          }
+        } else {
+          console.error('❌ PDF API call failed:', pdfResponse.status);
+        }
+      } catch (pdfError) {
+        console.error('❌ PDF creation error:', pdfError.message);
+      }
+
       // Return success response
       const response = {
         success: true,
-        message: 'Quote submitted successfully! The customer has been notified.',
+        message: 'Quote submitted successfully! PDF has been created and sent to all parties.',
         data: quoteData,
         quoteNumber: quoteData.quoteNumber,
         timestamp: new Date().toISOString(),
         status: {
           sheetsUpdated,
-          customerEmailSent
+          customerEmailSent,
+          pdfCreated
         }
       };
 

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Complete Workflow Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-section { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; margin: 10px; }
+        button:hover { background: #0056b3; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        .result { background: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 10px; }
+        .workflow-step { background: #e3f2fd; padding: 15px; border-radius: 4px; margin: 10px 0; border-left: 4px solid #2196f3; }
+    </style>
+</head>
+<body>
+    <h1>🔄 Complete Workflow Test</h1>
+    <p>This page tests the complete workflow: Lead → Tradesman Email → Quote → PDF</p>
+    
+    <div class="test-section">
+        <h2>📋 Workflow Steps</h2>
+        <div class="workflow-step">
+            <h3>1. 📧 Lead Notification</h3>
+            <p>Simulates a customer completing the chatbot and sends lead notification to tradesman</p>
+            <button onclick="testLeadNotification()">Test Lead Notification</button>
+        </div>
+        
+        <div class="workflow-step">
+            <h3>2. 📝 Quote Submission</h3>
+            <p>Tests the quote submission with pre-filled customer data</p>
+            <button onclick="testQuoteSubmission()">Test Quote Submission</button>
+        </div>
+        
+        <div class="workflow-step">
+            <h3>3. 📄 PDF Generation</h3>
+            <p>Tests the PDF creation and email sending</p>
+            <button onclick="testPDFGeneration()">Test PDF Generation</button>
+        </div>
+        
+        <div class="workflow-step">
+            <h3>4. 🔄 Complete Workflow</h3>
+            <p>Runs the entire workflow from start to finish</p>
+            <button onclick="testCompleteWorkflow()">Test Complete Workflow</button>
+        </div>
+        
+        <div id="workflowResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Test Data</h2>
+        <p><strong>Customer:</strong> Test Customer</p>
+        <p><strong>Service:</strong> Underfloor Heating</p>
+        <p><strong>Location:</strong> Auckland</p>
+        <p><strong>Budget:</strong> $5000-10000</p>
+    </div>
+
+    <script>
+        const baseUrl = window.location.origin;
+        let currentLeadId = null;
+
+        async function testLeadNotification() {
+            const resultDiv = document.getElementById('workflowResult');
+            resultDiv.innerHTML = '<p class="info">Testing lead notification...</p>';
+            
+            const testLeadData = {
+                customerName: 'Test Customer',
+                customerEmail: 'danbricks18@gmail.com',
+                customerPhone: '021123456',
+                selectedService: 'underfloor_heating',
+                projectDetails: 'Bathroom heating installation',
+                projectSize: '100m2',
+                budget: '5000-10000',
+                timeline: '1 month',
+                location: 'Auckland',
+                specificDetails: 'Need quick installation'
+            };
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/lead-notification`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testLeadData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentLeadId = result.data.leadId;
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="success">✅ Lead Notification Successful!</h3>
+                            <p><strong>Lead ID:</strong> ${result.data.leadId}</p>
+                            <p><strong>Customer:</strong> ${result.data.customerName}</p>
+                            <p><strong>Service:</strong> ${result.data.serviceType}</p>
+                            <p><strong>Emails Sent:</strong> ${result.status.emailsSent}</p>
+                            <p><strong>Sheets Updated:</strong> ${result.status.sheetsUpdated ? 'Yes' : 'No'}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="error">❌ Lead Notification Failed</h3>
+                            <p><strong>Error:</strong> ${result.error}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3 class="error">❌ Network Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testQuoteSubmission() {
+            const resultDiv = document.getElementById('workflowResult');
+            resultDiv.innerHTML = '<p class="info">Testing quote submission...</p>';
+            
+            const testQuoteData = {
+                quoteId: currentLeadId || 'TEST-QUOTE-001',
+                tradesmanName: 'Test Tradesman',
+                tradesmanPhone: '021987654',
+                tradesmanEmail: 'tradesman@test.com',
+                quoteNumber: 'QU' + Date.now(),
+                totalAmount: '7500',
+                itemBreakdown: 'Materials: $4500\nLabor: $2000\nInstallation: $1000',
+                validUntil: '2024-09-11',
+                additionalNotes: 'Test quote for workflow',
+                customerEmail: 'danbricks18@gmail.com',
+                customerName: 'Test Customer',
+                serviceType: 'Underfloor Heating',
+                location: 'Auckland'
+            };
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/quote-submission`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testQuoteData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="success">✅ Quote Submission Successful!</h3>
+                            <p><strong>Quote Number:</strong> ${result.quoteNumber}</p>
+                            <p><strong>Sheets Updated:</strong> ${result.status.sheetsUpdated ? 'Yes' : 'No'}</p>
+                            <p><strong>Customer Email Sent:</strong> ${result.status.customerEmailSent ? 'Yes' : 'No'}</p>
+                            <p><strong>PDF Created:</strong> ${result.status.pdfCreated ? 'Yes' : 'No'}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="error">❌ Quote Submission Failed</h3>
+                            <p><strong>Error:</strong> ${result.error}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3 class="error">❌ Network Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testPDFGeneration() {
+            const resultDiv = document.getElementById('workflowResult');
+            resultDiv.innerHTML = '<p class="info">Testing PDF generation...</p>';
+            
+            const testQuoteData = {
+                quoteId: 'TEST-PDF-001',
+                tradesmanName: 'Test Tradesman',
+                tradesmanPhone: '021987654',
+                tradesmanEmail: 'tradesman@test.com',
+                quoteNumber: 'PDF' + Date.now(),
+                totalAmount: '8000',
+                itemBreakdown: 'Materials: $5000\nLabor: $2000\nInstallation: $1000',
+                validUntil: '2024-09-11',
+                additionalNotes: 'Test PDF generation',
+                customerEmail: 'danbricks18@gmail.com',
+                customerName: 'Test Customer',
+                serviceType: 'Underfloor Heating',
+                location: 'Auckland'
+            };
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/create-quote-pdf`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testQuoteData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="success">✅ PDF Generation Successful!</h3>
+                            <p><strong>Document ID:</strong> ${result.data.documentId}</p>
+                            <p><strong>Quote Number:</strong> ${result.data.quoteNumber}</p>
+                            <p><strong>PDF Generated:</strong> ${result.status.pdfGenerated ? 'Yes' : 'No'}</p>
+                            <p><strong>Customer Email Sent:</strong> ${result.status.customerEmailSent ? 'Yes' : 'No'}</p>
+                            <p><strong>Tradesman Email Sent:</strong> ${result.status.tradesmanEmailSent ? 'Yes' : 'No'}</p>
+                            <p><strong>Admin Email Sent:</strong> ${result.status.adminEmailSent ? 'Yes' : 'No'}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="error">❌ PDF Generation Failed</h3>
+                            <p><strong>Error:</strong> ${result.error}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3 class="error">❌ Network Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testCompleteWorkflow() {
+            const resultDiv = document.getElementById('workflowResult');
+            resultDiv.innerHTML = '<p class="info">Testing complete workflow...</p>';
+            
+            // Step 1: Lead Notification
+            resultDiv.innerHTML += '<p class="info">Step 1: Sending lead notification...</p>';
+            await testLeadNotification();
+            
+            // Wait a moment
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Step 2: Quote Submission
+            resultDiv.innerHTML += '<p class="info">Step 2: Submitting quote...</p>';
+            await testQuoteSubmission();
+            
+            resultDiv.innerHTML += '<p class="success">✅ Complete workflow test finished!</p>';
+        }
+    </script>
+</body>
+</html>

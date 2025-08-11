@@ -3,6 +3,8 @@ import { getAllTradesmen } from './database.js';
 import { addQuote } from './quote-database.js';
 
 export default async function handler(req, res) {
+  console.log('🔍 API endpoint called:', req.method, req.url);
+  
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -69,25 +71,13 @@ async function handleLeadSubmission(leadData, res) {
     let customerEmailSent = false;
     let tradesmanEmailSent = false;
     let quoteGenerated = false;
-    let quote = null; // Initialize quote variable
+    let quote = null;
     let tradesmenFound = [];
     let emailErrorDetails = null;
 
-    // Debug: Log all environment variables
-    console.log('🔍 ALL ENVIRONMENT VARIABLES:');
-    console.log('GMAIL_USER:', process.env.GMAIL_USER ? '✅ Set' : '❌ Missing');
-    console.log('GMAIL_APP_PASSWORD:', process.env.GMAIL_APP_PASSWORD ? '✅ Set' : '❌ Missing');
-    console.log('GOOGLE_PROJECT_ID:', process.env.GOOGLE_PROJECT_ID ? '✅ Set' : '❌ Missing');
-    console.log('GOOGLE_PRIVATE_KEY:', process.env.GOOGLE_PRIVATE_KEY ? '✅ Set' : '❌ Missing');
-    console.log('GOOGLE_SPREADSHEET_ID:', process.env.GOOGLE_SPREADSHEET_ID ? '✅ Set' : '❌ Missing');
-
-    // 1. Try to add to Google Sheets (if credentials are available)
-    console.log('🔍 Checking Google Sheets credentials...');
-    
+    // 1. Try to add to Google Sheets
     if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {
       try {
-        console.log('✅ Google Sheets credentials found - attempting to save lead data');
-        
         const auth = new google.auth.GoogleAuth({
           credentials: {
             client_email: process.env.GOOGLE_CLIENT_EMAIL,
@@ -127,12 +117,9 @@ async function handleLeadSubmission(leadData, res) {
       } catch (sheetsError) {
         console.error('❌ Google Sheets error:', sheetsError.message);
       }
-    } else {
-      console.log('⚠️ Google Sheets credentials not configured - skipping sheets update');
     }
 
     // 2. Get tradesmen for the service
-    console.log('🔍 Getting tradesmen for service:', leadData.selectedService);
     try {
       tradesmenFound = await getAllTradesmen(leadData.selectedService);
       console.log(`✅ Found ${tradesmenFound.length} tradesmen for ${leadData.selectedService}`);
@@ -141,7 +128,6 @@ async function handleLeadSubmission(leadData, res) {
     }
 
     // 3. Generate quote for the lead
-    console.log('🔍 Generating quote for lead');
     try {
       const quoteData = {
         leadID: `LEAD-${Date.now()}`,
@@ -164,67 +150,41 @@ async function handleLeadSubmission(leadData, res) {
       console.error('❌ Error generating quote:', quoteError.message);
     }
 
-    // 4. Send emails with detailed error handling
-    console.log('🔍 Attempting to send emails...');
+    // 4. Send emails
     try {
-      // Import nodemailer using dynamic import with better error handling
       let nodemailer;
       let transporter;
       
-      console.log('📧 Step 1: Importing Nodemailer...');
       try {
-        // Try multiple import methods
         const nodemailerModule = await import('nodemailer');
         nodemailer = nodemailerModule.default || nodemailerModule;
-        console.log('✅ Nodemailer imported successfully');
-        console.log('📧 Nodemailer type:', typeof nodemailer);
-        console.log('📧 Available methods:', Object.keys(nodemailer || {}));
         
-        // Try to find the createTransporter method
-        console.log('📧 Step 2: Finding createTransporter method...');
         const createMethod = nodemailer.createTransporter || 
                            nodemailer.createTransport || 
                            nodemailer.default?.createTransporter ||
                            nodemailer.default?.createTransport;
         
         if (createMethod && typeof createMethod === 'function') {
-          console.log('✅ Found createTransporter method');
-          
-          console.log('📧 Step 3: Creating transporter...');
+          // Use fallback credentials
+          const gmailUser = process.env.GMAIL_USER || 'danbricks18@gmail.com';
+          const gmailPass = process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom';
+
           transporter = createMethod({
             service: 'gmail',
             auth: {
-              user: process.env.GMAIL_USER,
-              pass: process.env.GMAIL_APP_PASSWORD
+              user: gmailUser,
+              pass: gmailPass
             }
           });
-          console.log('✅ Transporter created successfully');
-          
-        } else {
-          throw new Error('createTransporter method not found in nodemailer');
         }
-        
       } catch (importError) {
-        console.log('❌ Nodemailer import/creation failed:', importError.message);
-        emailErrorDetails = `Nodemailer initialization failed: ${importError.message}`;
-        throw new Error('Failed to initialize Nodemailer: ' + importError.message);
+        console.error('❌ Nodemailer import failed:', importError.message);
       }
 
-      if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD && transporter) {
-        console.log('✅ Gmail credentials found - attempting to send emails');
-        
-        // Validate email format before sending
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(leadData.customerEmail)) {
-          console.log('❌ Invalid customer email format:', leadData.customerEmail);
-          emailErrorDetails = `Invalid email format: ${leadData.customerEmail}`;
-          throw new Error(`Invalid email format: ${leadData.customerEmail}`);
-        }
-
+      if (transporter) {
         // Send customer confirmation email
-        console.log('📧 Step 4: Sending customer confirmation email...');
-        const fromDisplay = process.env.MAIL_FROM || `Kiwi Underfloor Heating <${process.env.GMAIL_USER}>`;
-        const replyTo = process.env.MAIL_REPLY_TO || process.env.GMAIL_USER;
+        const fromDisplay = `Kiwi Underfloor Heating <${process.env.GMAIL_USER || 'danbricks18@gmail.com'}>`;
+        const replyTo = process.env.GMAIL_USER || 'danbricks18@gmail.com';
 
         const customerMailOptions = {
           from: fromDisplay,
@@ -257,26 +217,22 @@ async function handleLeadSubmission(leadData, res) {
         };
 
         try {
-          const customerResult = await transporter.sendMail(customerMailOptions);
-          console.log('✅ Customer confirmation email sent successfully:', customerResult.messageId);
+          await transporter.sendMail(customerMailOptions);
+          console.log('✅ Customer confirmation email sent successfully');
           customerEmailSent = true;
         } catch (customerEmailError) {
           console.error('❌ Customer email failed:', customerEmailError.message);
-          emailErrorDetails = `Customer email failed: ${customerEmailError.message}`;
         }
 
-        // Send tradesman emails with quote information
+        // Send tradesman emails
         if (tradesmenFound.length > 0) {
-          console.log(`📧 Step 5: Sending tradesman emails to ${tradesmenFound.length} tradesmen...`);
-          
-          // Get the current deployment URL dynamically
           const currentUrl = process.env.VERCEL_URL ? 
             `https://${process.env.VERCEL_URL}` : 
-            'https://lead-code-ox5xwuliq-dan-buis-projects-e44a173c.vercel.app';
+            'https://lead-code-4syyu57e9-leadcode-b19d9acc.vercel.app';
           
           for (const tradesman of tradesmenFound) {
             try {
-                const quoteUrl = `${currentUrl}/api/quote-submission?quoteId=${quote?.quoteId || 'QUOTE-ID'}`;
+              const quoteUrl = `${currentUrl}/api/quote-submission?quoteId=${quote?.quoteId || 'QUOTE-ID'}`;
               
               const tradesmanMailOptions = {
                 from: fromDisplay,
@@ -324,16 +280,15 @@ async function handleLeadSubmission(leadData, res) {
                 `
               };
 
-              const tradesmanResult = await transporter.sendMail(tradesmanMailOptions);
-              console.log(`✅ Tradesman email sent to: ${tradesman.email}`, tradesmanResult.messageId);
+              await transporter.sendMail(tradesmanMailOptions);
+              console.log(`✅ Tradesman email sent to: ${tradesman.email}`);
             } catch (tradesmanEmailError) {
               console.error(`❌ Failed to send email to ${tradesman.email}:`, tradesmanEmailError.message);
             }
           }
           tradesmanEmailSent = true;
         } else {
-          // Fallback: Send to admin email if no tradesmen found
-          console.log('📧 No tradesmen found for this service, sending to admin email');
+          // Send to admin if no tradesmen found
           const adminMailOptions = {
             from: fromDisplay,
             replyTo,
@@ -352,36 +307,24 @@ async function handleLeadSubmission(leadData, res) {
               <p><strong>Budget:</strong> ${leadData.budget}</p>
               <p><strong>Timeline:</strong> ${leadData.timeline}</p>
               <p><strong>⚠️ ACTION REQUIRED:</strong> No tradesmen are registered for this service type.</p>
-              <p>Please either:</p>
-              <ul>
-                <li>Register a tradesman for ${leadData.selectedService} service</li>
-                <li>Contact the customer directly</li>
-                <li>Forward this lead to an appropriate tradesman</li>
-              </ul>
             `
           };
 
           try {
-            const adminResult = await transporter.sendMail(adminMailOptions);
-            console.log('✅ Admin notification email sent:', adminResult.messageId);
+            await transporter.sendMail(adminMailOptions);
+            console.log('✅ Admin notification email sent');
             tradesmanEmailSent = true;
           } catch (adminEmailError) {
             console.error('❌ Admin email failed:', adminEmailError.message);
           }
         }
-
-      } else {
-        console.log('⚠️ Gmail credentials not configured or transporter not available - skipping email sending');
-        emailErrorDetails = 'Gmail credentials not configured or transporter not available';
       }
     } catch (emailError) {
-      console.error('❌ Email error:', emailError);
-      console.error('❌ Error details:', emailError.message);
-      console.error('❌ Error stack:', emailError.stack);
+      console.error('❌ Email error:', emailError.message);
       emailErrorDetails = emailError.message;
     }
 
-    // Return success response with detailed status
+    // Return success response
     const response = {
       success: true,
       message: customerEmailSent && tradesmanEmailSent
@@ -399,10 +342,7 @@ async function handleLeadSubmission(leadData, res) {
         tradesmanEmailSent,
         quoteGenerated,
         tradesmenFound: tradesmenFound.length,
-        emailErrorDetails,
-        note: customerEmailSent && tradesmanEmailSent
-          ? 'All systems working! Quote workflow initiated.'
-          : 'Google Sheets working! Email may need configuration'
+        emailErrorDetails
       }
     };
 
@@ -411,8 +351,6 @@ async function handleLeadSubmission(leadData, res) {
 
   } catch (error) {
     console.error('❌ Error processing lead:', error);
-    console.error('❌ Error details:', error.message);
-    console.error('❌ Error stack:', error.stack);
     res.status(500).json({
       success: false,
       error: 'Failed to process lead',
@@ -424,7 +362,6 @@ async function handleLeadSubmission(leadData, res) {
 export async function logInterruptedSession(sessionData) {
   try {
     if (!process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_SPREADSHEET_ID) {
-      console.log('⚠️ Google Sheets credentials not configured - skipping interrupted session log');
       return { success: true };
     }
 
@@ -465,7 +402,6 @@ export async function logInterruptedSession(sessionData) {
       resource: { values: [rowData] }
     });
 
-    console.log('✅ Interrupted session logged to sheet');
     return { success: true };
   } catch (error) {
     console.error('❌ Error logging interrupted session:', error);

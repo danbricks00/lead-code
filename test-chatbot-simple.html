@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Chatbot - Simple</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-section { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; margin: 10px; }
+        button:hover { background: #0056b3; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        .result { background: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 10px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Test Chatbot - Simple</h1>
+    <p>This tests just the basic chatbot functionality (lead submission and emails) without Google Docs.</p>
+    
+    <div class="test-section">
+        <h2>Submit Lead</h2>
+        <form id="leadForm">
+            <div class="form-group">
+                <label for="customerName">Customer Name:</label>
+                <input type="text" id="customerName" value="Test Customer" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="customerEmail">Customer Email:</label>
+                <input type="email" id="customerEmail" value="test@example.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="customerPhone">Customer Phone:</label>
+                <input type="tel" id="customerPhone" value="1234567890" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="selectedService">Service Type:</label>
+                <select id="selectedService" required>
+                    <option value="underfloor_heating">Underfloor Heating</option>
+                    <option value="plumbing">Plumbing</option>
+                    <option value="electrical">Electrical</option>
+                    <option value="carpentry">Carpentry</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="projectDetails">Project Details:</label>
+                <textarea id="projectDetails" rows="3">Test project for chatbot functionality</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="budget">Budget:</label>
+                <select id="budget" required>
+                    <option value="under_5000">Under $5,000</option>
+                    <option value="5000_10000">$5,000 - $10,000</option>
+                    <option value="10000_20000">$10,000 - $20,000</option>
+                    <option value="over_20000">Over $20,000</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="timeline">Timeline:</label>
+                <select id="timeline" required>
+                    <option value="asap">ASAP</option>
+                    <option value="1_2_weeks">1-2 weeks</option>
+                    <option value="1_month">1 month</option>
+                    <option value="flexible">Flexible</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="projectSize">Project Size:</label>
+                <input type="text" id="projectSize" value="100m2">
+            </div>
+            
+            <div class="form-group">
+                <label for="specificDetails">Specific Details:</label>
+                <textarea id="specificDetails" rows="3">Additional test details</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="location">Location:</label>
+                <input type="text" id="location" value="Auckland" required>
+            </div>
+            
+            <button type="submit">Submit Lead</button>
+        </form>
+        
+        <div id="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Quick Test</h2>
+        <p>Test with minimal data:</p>
+        <button onclick="testMinimal()">Test Minimal Lead</button>
+        <div id="minimalResult"></div>
+    </div>
+
+    <script>
+        const baseUrl = 'https://lead-code-3ws6th2es-leadcode-b19d9acc.vercel.app';
+
+        document.getElementById('leadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p class="info">Submitting lead...</p>';
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/send-to-sheets`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="success">✅ Lead Submitted Successfully!</h3>
+                            <p><strong>Message:</strong> ${result.message}</p>
+                            <p><strong>Sheets Updated:</strong> ${result.status.sheetsUpdated ? 'Yes' : 'No'}</p>
+                            <p><strong>Customer Email Sent:</strong> ${result.status.customerEmailSent ? 'Yes' : 'No'}</p>
+                            ${result.status.emailErrorDetails ? `<p><strong>Email Error:</strong> ${result.status.emailErrorDetails}</p>` : ''}
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="error">❌ Lead Submission Failed</h3>
+                            <p><strong>Error:</strong> ${result.error}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3 class="error">❌ Network Error</h3>
+                        <p>${error.message}</p>
+                        <p>This might be a CORS issue or the API is not responding.</p>
+                    </div>
+                `;
+            }
+        });
+
+        async function testMinimal() {
+            const resultDiv = document.getElementById('minimalResult');
+            resultDiv.innerHTML = '<p class="info">Testing minimal lead submission...</p>';
+            
+            const minimalData = {
+                customerName: 'Minimal Test',
+                customerEmail: 'minimal@test.com',
+                customerPhone: '1234567890',
+                selectedService: 'underfloor_heating',
+                projectDetails: 'Minimal test project',
+                budget: '5000_10000',
+                timeline: '1_month',
+                projectSize: '50m2',
+                specificDetails: 'Minimal details',
+                location: 'Auckland'
+            };
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/send-to-sheets`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(minimalData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="success">✅ Minimal Test Successful!</h3>
+                            <p><strong>Message:</strong> ${result.message}</p>
+                            <p><strong>Sheets Updated:</strong> ${result.status.sheetsUpdated ? 'Yes' : 'No'}</p>
+                            <p><strong>Customer Email Sent:</strong> ${result.status.customerEmailSent ? 'Yes' : 'No'}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3 class="error">❌ Minimal Test Failed</h3>
+                            <p><strong>Error:</strong> ${result.error}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3 class="error">❌ Network Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

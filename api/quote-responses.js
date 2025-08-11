@@ -110,6 +110,9 @@ async function handleQuoteResponse(req, res) {
       // If customer accepted, calculate and track commission
       if (action === 'accept' && !tradesmanEmail) {
         await trackCommission(quote);
+        
+        // Update all other quotes for the same job to "Job Awarded to Another Tradesman"
+        await updateRelatedQuotes(quote);
       }
 
       // Return success page
@@ -611,5 +614,177 @@ async function sendCommissionNotification(quote, commissionAmount) {
 
   } catch (error) {
     console.error('❌ Error sending commission notification:', error.message);
+  }
+}
+
+async function updateRelatedQuotes(acceptedQuote) {
+  try {
+    if (!process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_SPREADSHEET_ID) {
+      console.log('⚠️ Google Sheets credentials not configured - skipping related quotes update');
+      return;
+    }
+
+    const { google } = await import('googleapis');
+
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+
+    const sheets = google.sheets({ version: 'v4', auth });
+    
+    // Get all quotes from the spreadsheet
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+      range: 'Quotes!A:V',
+    });
+
+    const rows = response.data.values;
+    if (!rows || rows.length === 0) {
+      console.log('❌ No quotes found in spreadsheet');
+      return;
+    }
+
+    // Find all quotes for the same customer and service type (same job)
+    const relatedQuotes = [];
+    for (let i = 1; i < rows.length; i++) { // Skip header row
+      const row = rows[i];
+      const quoteId = row[1]; // Column B
+      const customerEmail = row[4]; // Column E
+      const serviceType = row[7]; // Column H
+      const status = row[18]; // Column S
+      
+      // Skip the accepted quote and already processed quotes
+      if (quoteId === acceptedQuote.quoteId || 
+          status === 'customer_accepted' || 
+          status === 'job_awarded_to_another') {
+        continue;
+      }
+      
+      // Check if it's the same job (same customer email and service type)
+      if (customerEmail === acceptedQuote.customerEmail && 
+          serviceType === acceptedQuote.serviceType) {
+        relatedQuotes.push({
+          rowIndex: i + 1, // +1 because sheets are 1-indexed
+          quoteId: quoteId,
+          tradesmanEmail: row[10] // Column K
+        });
+      }
+    }
+
+    if (relatedQuotes.length === 0) {
+      console.log('✅ No related quotes found to update');
+      return;
+    }
+
+    console.log(`📝 Found ${relatedQuotes.length} related quotes to update`);
+
+    // Update each related quote
+    for (const quote of relatedQuotes) {
+      const updateRange = `Quotes!S${quote.rowIndex}:U${quote.rowIndex}`; // Columns S, T, U
+      const updateValues = [
+        ['job_awarded_to_another', new Date().toISOString(), `Job awarded to another tradesman - Quote ${acceptedQuote.quoteId} was accepted`]
+      ];
+
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+        range: updateRange,
+        valueInputOption: 'RAW',
+        resource: { values: updateValues }
+      });
+
+      console.log(`✅ Updated quote ${quote.quoteId} to "Job Awarded to Another Tradesman"`);
+    }
+
+    // Send notifications to other tradesmen
+    await sendJobAwardedNotifications(relatedQuotes, acceptedQuote);
+
+  } catch (error) {
+    console.error('❌ Error updating related quotes:', error.message);
+  }
+}
+
+async function sendJobAwardedNotifications(relatedQuotes, acceptedQuote) {
+  try {
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+      console.log('⚠️ Gmail credentials not configured - skipping job awarded notifications');
+      return;
+    }
+
+    let nodemailer;
+    try {
+      const module = await import('nodemailer');
+      nodemailer = module.default;
+    } catch (importError) {
+      try {
+        nodemailer = require('nodemailer');
+      } catch (requireError) {
+        console.log('❌ Cannot import Nodemailer - skipping job awarded notifications');
+        return;
+      }
+    }
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD
+      }
+    });
+
+    const fromDisplay = process.env.MAIL_FROM || `Trade Quotes <${process.env.GMAIL_USER}>`;
+
+    // Send notification to each tradesman whose quote wasn't selected
+    for (const quote of relatedQuotes) {
+      if (quote.tradesmanEmail) {
+        const emailContent = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #e74c3c;">📋 Job Update - Quote Status</h2>
+            <p>Hello,</p>
+            <p>We wanted to let you know that the customer has selected another tradesman for the ${acceptedQuote.serviceType} project.</p>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #34495e; margin-top: 0;">Project Details</h3>
+              <p><strong>Customer:</strong> ${acceptedQuote.customerName}</p>
+              <p><strong>Service Type:</strong> ${acceptedQuote.serviceType}</p>
+              <p><strong>Your Quote ID:</strong> ${quote.quoteId}</p>
+              <p><strong>Status:</strong> Job Awarded to Another Tradesman</p>
+            </div>
+
+            <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #856404; margin-top: 0;">What This Means</h3>
+              <p>• Your quote is no longer under consideration for this project</p>
+              <p>• The customer has chosen to proceed with another tradesman</p>
+              <p>• You can view this update in your dashboard</p>
+              <p>• We'll continue to send you new opportunities that match your services</p>
+            </div>
+
+            <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #155724; margin-top: 0;">Keep in Touch</h3>
+              <p>Thank you for your interest in this project. We appreciate your time and will continue to send you relevant opportunities.</p>
+              <p>If you have any questions, please don't hesitate to contact us.</p>
+            </div>
+
+            <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Underfloor Heating Team</strong></p>
+          </div>
+        `;
+
+        const mailOptions = {
+          from: fromDisplay,
+          to: quote.tradesmanEmail,
+          subject: `Job Update - ${acceptedQuote.serviceType} Project - Quote ${quote.quoteId}`,
+          html: emailContent
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log(`✅ Job awarded notification sent to ${quote.tradesmanEmail}`);
+      }
+    }
+
+  } catch (error) {
+    console.error('❌ Error sending job awarded notifications:', error.message);
   }
 } 

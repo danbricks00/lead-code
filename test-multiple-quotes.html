@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Multiple Quotes Scenario</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .scenario {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #3498db;
+        }
+        .tradesman-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+        }
+        .tradesman-a { border-color: #27ae60; }
+        .tradesman-b { border-color: #f39c12; }
+        .tradesman-c { border-color: #e74c3c; }
+        .tradesman-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .quote-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #495057;
+        }
+        input, select, textarea {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .items-section {
+            grid-column: 1 / -1;
+        }
+        .item-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #229954;
+        }
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+        .btn-warning:hover {
+            background: #e67e22;
+        }
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+        .status-accepted { background: #27ae60; }
+        .status-declined { background: #e74c3c; }
+        .status-pending { background: #f39c12; }
+        .status-awarded { background: #6c757d; }
+        .quote-list {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .quote-item {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        .quote-item.accepted { border-left-color: #27ae60; }
+        .quote-item.declined { border-left-color: #e74c3c; }
+        .quote-item.awarded { border-left-color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Multiple Quotes Scenario</h1>
+        
+        <div class="scenario">
+            <h3>📋 Scenario: Multiple Tradesmen Quotes</h3>
+            <p>This test demonstrates what happens when multiple tradesmen (A, B, C) submit quotes for the same job, and the customer accepts one of them:</p>
+            <ul>
+                <li><strong>Tradesman A:</strong> Quote accepted by customer → Status: "Accepted"</li>
+                <li><strong>Tradesman B:</strong> Quote not selected → Status: "Job Awarded to Another Tradesman"</li>
+                <li><strong>Tradesman C:</strong> Quote not selected → Status: "Job Awarded to Another Tradesman"</li>
+            </ul>
+        </div>
+
+        <div class="tradesman-section tradesman-a">
+            <div class="tradesman-title">👷 Tradesman A (Will be Accepted)</div>
+            <form class="quote-form" id="formA">
+                <div class="form-group">
+                    <label>Customer Name:</label>
+                    <input type="text" name="customerName" value="John Smith" required>
+                </div>
+                <div class="form-group">
+                    <label>Customer Email:</label>
+                    <input type="email" name="customerEmail" value="john.smith@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Service Type:</label>
+                    <input type="text" name="serviceType" value="Underfloor Heating Installation" required>
+                </div>
+                <div class="form-group">
+                    <label>Tradesman Email:</label>
+                    <input type="email" name="tradesmanEmail" value="tradesman.a@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Company Name:</label>
+                    <input type="text" name="companyName" value="Auckland Heating Solutions" required>
+                </div>
+                <div class="form-group">
+                    <label>Quote Amount:</label>
+                    <input type="number" name="quoteAmount" value="2500" step="0.01" required>
+                </div>
+                <div class="items-section">
+                    <label>Quote Items:</label>
+                    <div id="itemsA">
+                        <div class="item-row">
+                            <input type="text" placeholder="Description" value="Underfloor heating system" required>
+                            <input type="number" placeholder="Qty" value="1" required>
+                            <input type="number" placeholder="Unit Price" value="2000" step="0.01" required>
+                            <input type="number" placeholder="Amount" value="2000" step="0.01" readonly>
+                            <button type="button" class="btn btn-danger btn-small" onclick="removeItem(this)">Remove</button>
+                        </div>
+                        <div class="item-row">
+                            <input type="text" placeholder="Description" value="Installation labor" required>
+                            <input type="number" placeholder="Qty" value="1" required>
+                            <input type="number" placeholder="Unit Price" value="500" step="0.01" required>
+                            <input type="number" placeholder="Amount" value="500" step="0.01" readonly>
+                            <button type="button" class="btn btn-danger btn-small" onclick="removeItem(this)">Remove</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="addItem('itemsA')">Add Item</button>
+                </div>
+                <button type="submit" class="btn btn-success">Generate Quote A</button>
+            </form>
+        </div>
+
+        <div class="tradesman-section tradesman-b">
+            <div class="tradesman-title">👷 Tradesman B (Will be Awarded to Another)</div>
+            <form class="quote-form" id="formB">
+                <div class="form-group">
+                    <label>Customer Name:</label>
+                    <input type="text" name="customerName" value="John Smith" required>
+                </div>
+                <div class="form-group">
+                    <label>Customer Email:</label>
+                    <input type="email" name="customerEmail" value="john.smith@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Service Type:</label>
+                    <input type="text" name="serviceType" value="Underfloor Heating Installation" required>
+                </div>
+                <div class="form-group">
+                    <label>Tradesman Email:</label>
+                    <input type="email" name="tradesmanEmail" value="tradesman.b@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Company Name:</label>
+                    <input type="text" name="companyName" value="Kiwi Heating Pros" required>
+                </div>
+                <div class="form-group">
+                    <label>Quote Amount:</label>
+                    <input type="number" name="quoteAmount" value="2800" step="0.01" required>
+                </div>
+                <div class="items-section">
+                    <label>Quote Items:</label>
+                    <div id="itemsB">
+                        <div class="item-row">
+                            <input type="text" placeholder="Description" value="Premium underfloor heating system" required>
+                            <input type="number" placeholder="Qty" value="1" required>
+                            <input type="number" placeholder="Unit Price" value="2300" step="0.01" required>
+                            <input type="number" placeholder="Amount" value="2300" step="0.01" readonly>
+                            <button type="button" class="btn btn-danger btn-small" onclick="removeItem(this)">Remove</button>
+                        </div>
+                        <div class="item-row">
+                            <input type="text" placeholder="Description" value="Installation and setup" required>
+                            <input type="number" placeholder="Qty" value="1" required>
+                            <input type="number" placeholder="Unit Price" value="500" step="0.01" required>
+                            <input type="number" placeholder="Amount" value="500" step="0.01" readonly>
+                            <button type="button" class="btn btn-danger btn-small" onclick="removeItem(this)">Remove</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="addItem('itemsB')">Add Item</button>
+                </div>
+                <button type="submit" class="btn btn-warning">Generate Quote B</button>
+            </form>
+        </div>
+
+        <div class="tradesman-section tradesman-c">
+            <div class="tradesman-title">👷 Tradesman C (Will be Awarded to Another)</div>
+            <form class="quote-form" id="formC">
+                <div class="form-group">
+                    <label>Customer Name:</label>
+                    <input type="text" name="customerName" value="John Smith" required>
+                </div>
+                <div class="form-group">
+                    <label>Customer Email:</label>
+                    <input type="email" name="customerEmail" value="john.smith@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Service Type:</label>
+                    <input type="text" name="serviceType" value="Underfloor Heating Installation" required>
+                </div>
+                <div class="form-group">
+                    <label>Tradesman Email:</label>
+                    <input type="email" name="tradesmanEmail" value="tradesman.c@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Company Name:</label>
+                    <input type="text" name="companyName" value="Auckland Warm Floors" required>
+                </div>
+                <div class="form-group">
+                    <label>Quote Amount:</label>
+                    <input type="number" name="quoteAmount" value="2200" step="0.01" required>
+                </div>
+                <div class="items-section">
+                    <label>Quote Items:</label>
+                    <div id="itemsC">
+                        <div class="item-row">
+                            <input type="text" placeholder="Description" value="Standard underfloor heating system" required>
+                            <input type="number" placeholder="Qty" value="1" required>
+                            <input type="number" placeholder="Unit Price" value="1800" step="0.01" required>
+                            <input type="number" placeholder="Amount" value="1800" step="0.01" readonly>
+                            <button type="button" class="btn btn-danger btn-small" onclick="removeItem(this)">Remove</button>
+                        </div>
+                        <div class="item-row">
+                            <input type="text" placeholder="Description" value="Basic installation" required>
+                            <input type="number" placeholder="Qty" value="1" required>
+                            <input type="number" placeholder="Unit Price" value="400" step="0.01" required>
+                            <input type="number" placeholder="Amount" value="400" step="0.01" readonly>
+                            <button type="button" class="btn btn-danger btn-small" onclick="removeItem(this)">Remove</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="addItem('itemsC')">Add Item</button>
+                </div>
+                <button type="submit" class="btn btn-danger">Generate Quote C</button>
+            </form>
+        </div>
+
+        <div class="results">
+            <h3>📊 Test Results</h3>
+            <div id="results">
+                <p>Generate quotes above to see the results...</p>
+            </div>
+            <div class="quote-list" id="quoteList"></div>
+        </div>
+    </div>
+
+    <script>
+        let generatedQuotes = [];
+
+        // Handle form submissions
+        document.getElementById('formA').addEventListener('submit', (e) => {
+            e.preventDefault();
+            generateQuote('formA', 'A');
+        });
+
+        document.getElementById('formB').addEventListener('submit', (e) => {
+            e.preventDefault();
+            generateQuote('formB', 'B');
+        });
+
+        document.getElementById('formC').addEventListener('submit', (e) => {
+            e.preventDefault();
+            generateQuote('formC', 'C');
+        });
+
+        async function generateQuote(formId, tradesman) {
+            const form = document.getElementById(formId);
+            const formData = new FormData(form);
+            
+            // Collect items
+            const itemsContainer = document.getElementById(`items${tradesman}`);
+            const itemRows = itemsContainer.querySelectorAll('.item-row');
+            const items = [];
+            
+            itemRows.forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                if (inputs[0].value && inputs[1].value && inputs[2].value) {
+                    items.push({
+                        description: inputs[0].value,
+                        quantity: inputs[1].value,
+                        unitPrice: inputs[2].value,
+                        amount: inputs[3].value
+                    });
+                }
+            });
+
+            const quoteData = {
+                quoteId: `TEST-${tradesman}-${Date.now()}`,
+                customerName: formData.get('customerName'),
+                customerEmail: formData.get('customerEmail'),
+                customerPhone: '+64 21 123 4567',
+                customerAddress: '123 Test Street, Auckland',
+                serviceType: formData.get('serviceType'),
+                projectDetails: 'Test project for multiple quotes scenario',
+                tradesmanName: `Tradesman ${tradesman}`,
+                tradesmanEmail: formData.get('tradesmanEmail'),
+                tradesmanPhone: '+64 9 123 4567',
+                companyName: formData.get('companyName'),
+                companyAddress: 'Auckland, New Zealand',
+                gstNumber: '120-681-729',
+                items: items
+            };
+
+            try {
+                const response = await fetch('/api/generate-quote', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(quoteData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    const quote = {
+                        ...quoteData,
+                        quoteNumber: result.quote.quoteNumber,
+                        total: result.quote.total,
+                        status: 'generated',
+                        tradesman: tradesman
+                    };
+                    
+                    generatedQuotes.push(quote);
+                    updateResults();
+                    
+                    alert(`✅ Quote ${tradesman} generated successfully!\nQuote Number: ${result.quote.quoteNumber}\nTotal: $${result.quote.total}`);
+                } else {
+                    alert(`❌ Failed to generate quote: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Error generating quote:', error);
+                alert('❌ Error generating quote. Check console for details.');
+            }
+        }
+
+        function updateResults() {
+            const resultsDiv = document.getElementById('results');
+            const quoteListDiv = document.getElementById('quoteList');
+            
+            if (generatedQuotes.length === 0) {
+                resultsDiv.innerHTML = '<p>Generate quotes above to see the results...</p>';
+                quoteListDiv.innerHTML = '';
+                return;
+            }
+
+            let resultsHtml = `
+                <h4>Generated Quotes (${generatedQuotes.length}/3)</h4>
+                <p><strong>Next Step:</strong> When all 3 quotes are generated, you can simulate accepting Quote A to see how the others change to "Job Awarded to Another Tradesman".</p>
+            `;
+
+            if (generatedQuotes.length === 3) {
+                resultsHtml += `
+                    <button class="btn btn-success" onclick="simulateAcceptQuoteA()">
+                        🎯 Simulate Accepting Quote A
+                    </button>
+                `;
+            }
+
+            resultsDiv.innerHTML = resultsHtml;
+
+            // Display quotes
+            let quotesHtml = '<h4>Generated Quotes:</h4>';
+            generatedQuotes.forEach(quote => {
+                const statusClass = getStatusClass(quote.status);
+                quotesHtml += `
+                    <div class="quote-item ${statusClass}">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>Quote ${quote.tradesman}</strong> - ${quote.quoteNumber}
+                                <br>
+                                <small>${quote.companyName} - $${quote.total}</small>
+                            </div>
+                            <span class="status-badge ${statusClass}">${getStatusText(quote.status)}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            quoteListDiv.innerHTML = quotesHtml;
+        }
+
+        function getStatusClass(status) {
+            switch (status) {
+                case 'customer_accepted': return 'status-accepted';
+                case 'customer_declined': return 'status-declined';
+                case 'job_awarded_to_another': return 'status-awarded';
+                default: return 'status-pending';
+            }
+        }
+
+        function getStatusText(status) {
+            switch (status) {
+                case 'customer_accepted': return 'Accepted';
+                case 'customer_declined': return 'Declined';
+                case 'job_awarded_to_another': return 'Job Awarded to Another';
+                default: return 'Pending';
+            }
+        }
+
+        async function simulateAcceptQuoteA() {
+            const quoteA = generatedQuotes.find(q => q.tradesman === 'A');
+            if (!quoteA) {
+                alert('Quote A not found!');
+                return;
+            }
+
+            try {
+                // Simulate accepting quote A
+                const response = await fetch(`/api/quote-responses?action=accept&quoteId=${quoteA.quoteId}`, {
+                    method: 'GET'
+                });
+
+                if (response.ok) {
+                    // Update local status
+                    quoteA.status = 'customer_accepted';
+                    
+                    // Update other quotes to "job_awarded_to_another"
+                    generatedQuotes.forEach(quote => {
+                        if (quote.tradesman !== 'A') {
+                            quote.status = 'job_awarded_to_another';
+                        }
+                    });
+
+                    updateResults();
+                    alert('✅ Quote A accepted! Other quotes now show "Job Awarded to Another Tradesman"');
+                } else {
+                    alert('❌ Failed to accept quote');
+                }
+            } catch (error) {
+                console.error('Error accepting quote:', error);
+                alert('❌ Error accepting quote. Check console for details.');
+            }
+        }
+
+        function addItem(containerId) {
+            const container = document.getElementById(containerId);
+            const newRow = document.createElement('div');
+            newRow.className = 'item-row';
+            newRow.innerHTML = `
+                <input type="text" placeholder="Description" required>
+                <input type="number" placeholder="Qty" value="1" required>
+                <input type="number" placeholder="Unit Price" step="0.01" required>
+                <input type="number" placeholder="Amount" step="0.01" readonly>
+                <button type="button" class="btn btn-danger btn-small" onclick="removeItem(this)">Remove</button>
+            `;
+            container.appendChild(newRow);
+        }
+
+        function removeItem(button) {
+            const container = button.closest('.items-section');
+            const itemRows = container.querySelectorAll('.item-row');
+            if (itemRows.length > 1) {
+                button.closest('.item-row').remove();
+            }
+        }
+
+        // Calculate amounts when inputs change
+        document.addEventListener('input', function(e) {
+            if (e.target.type === 'number' && e.target.placeholder === 'Unit Price') {
+                const row = e.target.closest('.item-row');
+                const qtyInput = row.querySelector('input[placeholder="Qty"]');
+                const unitPriceInput = e.target;
+                const amountInput = row.querySelector('input[placeholder="Amount"]');
+                
+                const qty = parseFloat(qtyInput.value) || 0;
+                const unitPrice = parseFloat(unitPriceInput.value) || 0;
+                const amount = qty * unitPrice;
+                
+                amountInput.value = amount.toFixed(2);
+            }
+        });
+    </script>
+</body>
+</html> 

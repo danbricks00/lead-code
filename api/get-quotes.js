@@ -170,9 +170,10 @@ export default async function handler(req, res) {
       total: filteredQuotes.length,
       summary: {
         total: filteredQuotes.length,
-        accepted: filteredQuotes.filter(q => q.CustomerResponse === 'accepted').length,
-        declined: filteredQuotes.filter(q => q.CustomerResponse === 'declined').length,
-        pending: filteredQuotes.filter(q => !q.CustomerResponse || q.CustomerResponse === '').length,
+        accepted: filteredQuotes.filter(q => q.Status === 'customer_accepted').length,
+        declined: filteredQuotes.filter(q => q.Status === 'customer_declined').length,
+        jobAwardedToAnother: filteredQuotes.filter(q => q.Status === 'job_awarded_to_another').length,
+        pending: filteredQuotes.filter(q => !q.Status || q.Status === 'generated').length,
         totalValue: filteredQuotes.reduce((sum, q) => sum + parseFloat(q.TotalAmount || 0), 0).toFixed(2),
         totalCommission: filteredQuotes.reduce((sum, q) => sum + parseFloat(q.CommissionEarned || 0), 0).toFixed(2)
       }

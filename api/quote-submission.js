@@ -185,32 +185,39 @@ export default async function handler(req, res) {
         const customerMailOptions = {
           from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
           to: quoteData.customerEmail || 'danbricks18@gmail.com',
-          subject: `Quote ${quoteData.quoteNumber} - ${quoteData.serviceType || 'Your Project'}`,
+          subject: `Professional Quote ${quoteData.quoteNumber} - ${quoteData.serviceType || 'Your Project'}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #2c3e50;">Your Quote is Ready!</h2>
+              <h2 style="color: #2c3e50;">Your Professional Quote is Ready!</h2>
               <p>Dear ${quoteData.customerName || 'there'},</p>
-              <p>We have prepared your quote for <strong>${quoteData.serviceType || 'your project'}</strong>.</p>
+              <p>Please find attached your professional quote for <strong>${quoteData.serviceType || 'your project'}</strong>.</p>
               
               <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
+                <h3 style="color: #34495e; margin-top: 0;">Quote Summary:</h3>
                 <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
                 <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
                 <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
                 <p><strong>Tradesman:</strong> ${quoteData.tradesmanName}</p>
-                <p><strong>Contact:</strong> ${quoteData.tradesmanPhone}</p>
               </div>
               
               <div style="text-align: center; margin: 30px 0;">
                 <a href="${currentUrl}/api/view-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
-                   style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-                   View Full Quote
+                   style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
+                   View Quote Online
+                </a>
+                <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+                   style="background: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
+                   Accept Quote
+                </a>
+                <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+                   style="background: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
+                   Decline Quote
                 </a>
               </div>
               
-              <p>Please find your professional PDF quote attached to this email.</p>
-              <p>You can also view the complete quote with itemized breakdown by clicking the link above.</p>
-              <p>Please review the quote and let us know if you have any questions.</p>
+              <p><strong>Note:</strong> The attached PDF quote is ready for printing and professional use.</p>
+              <p>You can view the quote online and accept/decline it using the links above.</p>
+              <p>Please review the attached quote and let us know if you have any questions.</p>
               
               <p style="margin-top: 30px;">Best regards,<br><strong>${quoteData.tradesmanName}</strong></p>
             </div>
@@ -317,12 +324,32 @@ export default async function handler(req, res) {
       try {
         const currentUrl = process.env.VERCEL_URL ? 
           `https://${process.env.VERCEL_URL}` : 
-          'https://lead-code-kh766ffsc-leadcode-b19d9acc.vercel.app';
+          'https://lead-code.vercel.app';
+
+        // Ensure all required fields are present for PDF generation
+        const pdfQuoteData = {
+          quoteId: quoteData.quoteId,
+          tradesmanName: quoteData.tradesmanName,
+          tradesmanPhone: quoteData.tradesmanPhone,
+          tradesmanEmail: quoteData.tradesmanEmail,
+          quoteNumber: quoteData.quoteNumber,
+          totalAmount: quoteData.totalAmount,
+          itemBreakdown: quoteData.itemBreakdown,
+          validUntil: quoteData.validUntil,
+          additionalNotes: quoteData.additionalNotes,
+          customerEmail: quoteData.customerEmail,
+          customerName: quoteData.customerName,
+          serviceType: quoteData.serviceType || 'Underfloor Heating',
+          location: quoteData.location || quoteData.customerAddress || 'Auckland',
+          customerPhone: quoteData.customerPhone
+        };
+
+        console.log('📄 Sending data to PDF generation:', pdfQuoteData);
 
         const pdfResponse = await fetch(`${currentUrl}/api/xero-quote-real-pdf`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(quoteData)
+          body: JSON.stringify(pdfQuoteData)
         });
 
         if (pdfResponse.ok) {

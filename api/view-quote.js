@@ -17,28 +17,78 @@ export default async function handler(req, res) {
     try {
       const { quoteId, quoteNumber } = req.query;
       
-      // For now, we'll show a sample quote since we don't have the full database integration
-      // In a real system, you'd fetch this from Google Sheets or your database
-      const sampleQuote = {
-        quoteId: quoteId || 'QUOTE-001',
-        quoteNumber: quoteNumber || 'QU1001',
-        customerName: 'John Smith',
-        customerAddress: '123 Main Street, Auckland',
-        serviceType: 'Underfloor Heating Installation',
-        projectDetails: 'Installation of underfloor heating system in bathroom areas',
-        tradesmanName: 'Heat NZ Ltd',
-        tradesmanPhone: '+64 9 123 4567',
-        tradesmanEmail: 'info@heatnz.co.nz',
-        totalAmount: '8,500.00',
-        itemBreakdown: `
-          • Underfloor heating mats (67 sqm): $4,020.00
-          • Thermostat and controls: $850.00
-          • Installation labor (16 hours): $2,400.00
-          • Materials and fittings: $1,230.00
-        `,
-        validUntil: '2024-09-10',
-        additionalNotes: 'Price includes GST. Installation to be completed within 2 weeks of acceptance.'
-      };
+      // Try to fetch quote data from Google Sheets
+      let quoteData = null;
+      
+      if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {
+        try {
+          const auth = new google.auth.GoogleAuth({
+            credentials: {
+              client_email: process.env.GOOGLE_CLIENT_EMAIL,
+              private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+            },
+            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+          });
+
+          const sheets = google.sheets({ version: 'v4', auth });
+          
+          // Fetch quote data from Google Sheets
+          const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+            range: 'Quotes!A:K',
+          });
+
+          const rows = response.data.values || [];
+          
+          // Find the quote by quoteId or quoteNumber
+          const quoteRow = rows.find(row => 
+            row[1] === quoteId || row[2] === quoteNumber
+          );
+
+          if (quoteRow) {
+            quoteData = {
+              quoteId: quoteRow[1],
+              quoteNumber: quoteRow[2],
+              tradesmanName: quoteRow[3],
+              tradesmanEmail: quoteRow[4],
+              tradesmanPhone: quoteRow[5],
+              totalAmount: quoteRow[6],
+              itemBreakdown: quoteRow[7],
+              validUntil: quoteRow[8],
+              additionalNotes: quoteRow[9],
+              status: quoteRow[10]
+            };
+            console.log('✅ Found quote data:', quoteData);
+          }
+        } catch (sheetsError) {
+          console.error('❌ Google Sheets error:', sheetsError.message);
+        }
+      }
+
+      // Fallback to sample data if no quote found
+      if (!quoteData) {
+        quoteData = {
+          quoteId: quoteId || 'QUOTE-001',
+          quoteNumber: quoteNumber || 'QU1001',
+          customerName: 'John Smith',
+          customerAddress: '123 Main Street, Auckland',
+          serviceType: 'Underfloor Heating Installation',
+          projectDetails: 'Installation of underfloor heating system in bathroom areas',
+          tradesmanName: 'Heat NZ Ltd',
+          tradesmanPhone: '+64 9 123 4567',
+          tradesmanEmail: 'info@heatnz.co.nz',
+          totalAmount: '8,500.00',
+          itemBreakdown: `
+            • Underfloor heating mats (67 sqm): $4,020.00
+            • Thermostat and controls: $850.00
+            • Installation labor (16 hours): $2,400.00
+            • Materials and fittings: $1,230.00
+          `,
+          validUntil: '2024-09-10',
+          additionalNotes: 'Price includes GST. Installation to be completed within 2 weeks of acceptance.'
+        };
+        console.log('⚠️ Using sample quote data');
+      }
 
       const currentUrl = process.env.VERCEL_URL ? 
         `https://${process.env.VERCEL_URL}` : 
@@ -136,66 +186,59 @@ export default async function handler(req, res) {
         </head>
         <body>
           <div class="actions">
-            <h2>Quote ${sampleQuote.quoteNumber}</h2>
+            <h2>Quote ${quoteData.quoteNumber}</h2>
             <p>Please review the quote below and choose your action:</p>
-            <a href="${currentUrl}/api/quote-responses?action=accept&quoteId=${sampleQuote.quoteId}&quoteNumber=${sampleQuote.quoteNumber}" 
+            <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
                class="accept-btn">✅ Accept Quote</a>
-            <a href="${currentUrl}/api/quote-responses?action=decline&quoteId=${sampleQuote.quoteId}&quoteNumber=${sampleQuote.quoteNumber}" 
+            <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
                class="decline-btn">❌ Decline Quote</a>
           </div>
 
           <div class="quote-header">
             <h1>QUOTE</h1>
-            <h2>Quote Number: ${sampleQuote.quoteNumber}</h2>
+            <h2>Quote Number: ${quoteData.quoteNumber}</h2>
             <p>Date: ${new Date().toLocaleDateString()}</p>
           </div>
 
           <div class="quote-details">
-            <div class="customer-info">
-              <h3>TO:</h3>
-              <p><strong>${sampleQuote.customerName}</strong><br>
-              ${sampleQuote.customerAddress}</p>
-            </div>
-
             <div class="project-info">
               <h3>SERVICE:</h3>
-              <p><strong>${sampleQuote.serviceType}</strong></p>
-              <p><strong>PROJECT:</strong> ${sampleQuote.projectDetails}</p>
+              <p><strong>Underfloor Heating Installation</strong></p>
             </div>
 
             <div class="pricing-info">
               <h3>ITEM BREAKDOWN:</h3>
-              <div class="item-breakdown">${sampleQuote.itemBreakdown}</div>
+              <div class="item-breakdown">${quoteData.itemBreakdown}</div>
             </div>
 
             <div class="total-amount">
-              TOTAL: $${sampleQuote.totalAmount}
+              TOTAL: $${quoteData.totalAmount}
             </div>
 
             <div class="valid-until">
-              <strong>Valid until: ${sampleQuote.validUntil}</strong>
+              <strong>Valid until: ${quoteData.validUntil}</strong>
             </div>
 
-            ${sampleQuote.additionalNotes ? `
+            ${quoteData.additionalNotes ? `
             <div class="additional-notes">
               <h3>Additional Notes:</h3>
-              <p>${sampleQuote.additionalNotes}</p>
+              <p>${quoteData.additionalNotes}</p>
             </div>
             ` : ''}
 
             <div class="tradesman-info">
               <h3>TRADESMAN DETAILS:</h3>
-              <p><strong>${sampleQuote.tradesmanName}</strong><br>
-              Phone: ${sampleQuote.tradesmanPhone}<br>
-              Email: ${sampleQuote.tradesmanEmail}</p>
+              <p><strong>${quoteData.tradesmanName}</strong><br>
+              Phone: ${quoteData.tradesmanPhone}<br>
+              Email: ${quoteData.tradesmanEmail}</p>
             </div>
           </div>
 
           <div class="actions">
             <p><strong>Ready to proceed?</strong></p>
-            <a href="${currentUrl}/api/quote-responses?action=accept&quoteId=${sampleQuote.quoteId}&quoteNumber=${sampleQuote.quoteNumber}" 
+            <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
                class="accept-btn">✅ Accept Quote</a>
-            <a href="${currentUrl}/api/quote-responses?action=decline&quoteId=${sampleQuote.quoteId}&quoteNumber=${sampleQuote.quoteNumber}" 
+            <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
                class="decline-btn">❌ Decline Quote</a>
           </div>
 

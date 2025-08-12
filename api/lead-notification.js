@@ -46,7 +46,7 @@ export default async function handler(req, res) {
           });
 
           const mailOptions = {
-            from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+            from: 'Kiwi Trade <danbricks18@gmail.com>',
             to: tradesmanEmail,
             subject: `🔥 New Lead: ${leadData.selectedService} - ${leadData.location}`,
             html: `
@@ -80,7 +80,7 @@ export default async function handler(req, res) {
                 <p>Click the button above to submit a quote. The form will be pre-filled with the customer's information.</p>
                 
                 <p style="margin-top: 30px; color: #6c757d; font-size: 14px;">
-                  This lead was generated from the Kiwi Underfloor Heating website.
+                  This lead was generated from the Kiwi Trade website.
                 </p>
               </div>
             `

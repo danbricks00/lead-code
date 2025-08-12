@@ -21,7 +21,7 @@
 2. **Create New App:**
    - Click "New App"
    - Choose "Web app"
-   - Name: "Kiwi Underfloor Heating Quotes"
+   - Name: "Kiwi Trade Quotes"
    - Description: "Quote generation system for underfloor heating leads"
 
 3. **Configure App Settings:**

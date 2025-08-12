@@ -422,7 +422,7 @@ export default async function handler(req, res) {
                   const element = document.getElementById(id);
                   elementStatus[id] = element ? 'Found' : 'Missing';
                   if (element) {
-                      elementStatus[id] += ` (value: ${element.value})`;
+                      elementStatus[id] += ' (value: ' + element.value + ')';
                   }
               });
               
@@ -436,7 +436,7 @@ export default async function handler(req, res) {
                   const finalStatus = {};
                   elements.forEach(id => {
                       const element = document.getElementById(id);
-                      finalStatus[id] = element ? `Found (value: ${element.value})` : 'Missing';
+                      finalStatus[id] = element ? 'Found (value: ' + element.value + ')' : 'Missing';
                   });
                   
                   debugOutput.innerHTML += '<br><br><strong>After Calculation:</strong><br>' + 

@@ -134,7 +134,7 @@ export default async function handler(req, res) {
         </head>
         <body>
             <div class="header">
-                <div class="company-logo">KIWI UNDERFLOOR HEATING</div>
+                <div class="company-logo">KIWI TRADE</div>
                 <h1>QUOTE</h1>
                 <h2>Quote Number: ${quoteData.quoteNumber}</h2>
                 <p><strong>Date:</strong> ${formatDate(new Date())}</p>
@@ -192,10 +192,10 @@ export default async function handler(req, res) {
             </div>
             
             <div class="footer">
-                <p><strong>Kiwi Underfloor Heating</strong></p>
+                <p><strong>Kiwi Trade</strong></p>
                 <p>Professional underfloor heating solutions for your home</p>
                 <p>This quote was generated using our automated system</p>
-                <p>Thank you for choosing Kiwi Underfloor Heating!</p>
+                <p>Thank you for choosing Kiwi Trade!</p>
             </div>
         </body>
         </html>
@@ -226,7 +226,7 @@ export default async function handler(req, res) {
 
       // Send to customer
       const customerMailOptions = {
-        from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+        from: 'Kiwi Trade <danbricks18@gmail.com>',
         to: quoteData.customerEmail || 'danbricks18@gmail.com',
         subject: `Quote ${quoteData.quoteNumber} - ${quoteData.serviceType || 'Your Project'}`,
         html: `
@@ -280,7 +280,7 @@ export default async function handler(req, res) {
 
       // Send to tradesman
       const tradesmanMailOptions = {
-        from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+        from: 'Kiwi Trade <danbricks18@gmail.com>',
         to: quoteData.tradesmanEmail,
         subject: `Quote ${quoteData.quoteNumber} - Copy for ${quoteData.customerName}`,
         html: `
@@ -314,7 +314,7 @@ export default async function handler(req, res) {
 
       // Send to admin
       const adminMailOptions = {
-        from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+        from: 'Kiwi Trade <danbricks18@gmail.com>',
         to: 'danbricks18@gmail.com',
         subject: `Quote ${quoteData.quoteNumber} - Admin Copy`,
         html: `

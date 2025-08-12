@@ -144,7 +144,7 @@ export default async function handler(req, res) {
         </head>
         <body>
             <div class="header">
-                <div class="company-logo">KIWI UNDERFLOOR HEATING</div>
+                <div class="company-logo">KIWI TRADE</div>
                 <h1>QUOTE</h1>
                 <h2>Quote Number: ${quoteData.quoteNumber}</h2>
                 <p><strong>Date:</strong> ${formatDate(new Date())}</p>
@@ -327,7 +327,7 @@ export default async function handler(req, res) {
 
       // Send to tradesman
       const tradesmanMailOptions = {
-        from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+        from: 'Kiwi Trade <danbricks18@gmail.com>',
         to: quoteData.tradesmanEmail,
         subject: `Quote ${quoteData.quoteNumber} - Copy for ${quoteData.customerName}`,
         html: `
@@ -359,7 +359,7 @@ export default async function handler(req, res) {
 
       // Send to admin
       const adminMailOptions = {
-        from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+        from: 'Kiwi Trade <danbricks18@gmail.com>',
         to: 'danbricks18@gmail.com',
         subject: `Quote ${quoteData.quoteNumber} - Admin Copy`,
         html: `

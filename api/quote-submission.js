@@ -290,6 +290,64 @@ export default async function handler(req, res) {
         }
       }
 
+      // 3. Send confirmation email to tradesman
+      let tradesmanEmailSent = false;
+      try {
+        const nodemailer = await import('nodemailer');
+        const transporter = nodemailer.default.createTransport({
+          service: 'gmail',
+          auth: {
+            user: 'danbricks18@gmail.com',
+            pass: 'ptmcojqgthvjbqom'
+          }
+        });
+
+        const currentUrl = process.env.VERCEL_URL ? 
+          `https://${process.env.VERCEL_URL}` : 
+          'https://lead-code.vercel.app';
+
+        const tradesmanMailOptions = {
+          from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+          to: quoteData.tradesmanEmail,
+          subject: `Quote Submitted Successfully - ${quoteData.quoteNumber}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #2c3e50;">✅ Quote Submitted Successfully!</h2>
+              <p>Dear ${quoteData.tradesmanName},</p>
+              <p>Your quote has been successfully submitted and is being processed.</p>
+              
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
+                <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+                <p><strong>Customer:</strong> ${quoteData.customerName || 'Not specified'}</p>
+                <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
+                <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
+                <p><strong>Status:</strong> Submitted and being processed</p>
+              </div>
+              
+              <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #27ae60; margin-top: 0;">What happens next:</h3>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                  <li>✅ Quote saved to Google Sheets</li>
+                  <li>📄 Professional PDF being generated</li>
+                  <li>📧 Customer will receive quote email with PDF attachment</li>
+                  <li>📧 You will receive a copy of the customer email</li>
+                  <li>📊 Quote status will be updated in dashboard</li>
+                </ul>
+              </div>
+              
+              <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Underfloor Heating System</strong></p>
+            </div>
+          `
+        };
+
+        await transporter.sendMail(tradesmanMailOptions);
+        console.log('✅ Tradesman confirmation email sent successfully');
+        tradesmanEmailSent = true;
+      } catch (emailError) {
+        console.error('❌ Tradesman email error:', emailError.message);
+      }
+
       // 4. Create PDF and send to all parties
       let pdfCreated = false;
       try {
@@ -351,6 +409,7 @@ export default async function handler(req, res) {
         timestamp: new Date().toISOString(),
         status: {
           sheetsUpdated,
+          tradesmanEmailSent,
           customerEmailSent: pdfCreated, // Only true if PDF was created successfully
           pdfCreated
         }

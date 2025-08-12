@@ -81,35 +81,81 @@ export default async function handler(req, res) {
       console.error('❌ Customer email error:', emailError.message);
     }
 
-    // 2. Send tradesman notification (always send, regardless of customer email success)
+    // 2. Send tradesman notification directly (no API call needed)
     let tradesmanNotified = false;
     try {
+      const nodemailer = await import('nodemailer');
+      const transporter = nodemailer.default.createTransport({
+        service: 'gmail',
+        auth: {
+          user: 'danbricks18@gmail.com',
+          pass: 'ptmcojqgthvjbqom'
+        }
+      });
+
+      // Generate unique lead ID
+      const leadId = `LEAD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Get current URL for quote links
       const currentUrl = process.env.VERCEL_URL ? 
         `https://${process.env.VERCEL_URL}` : 
         'https://lead-code.vercel.app';
 
-      console.log('📧 Sending tradesman notification to:', `${currentUrl}/api/lead-notification`);
+      // Create quote submission link with pre-filled data
+      const quoteLink = `${currentUrl}/api/quote-submission?leadId=${leadId}&customerName=${encodeURIComponent(leadData.customerName)}&customerEmail=${encodeURIComponent(leadData.customerEmail)}&customerPhone=${encodeURIComponent(leadData.customerPhone)}&serviceType=${encodeURIComponent(leadData.selectedService)}&projectDetails=${encodeURIComponent(leadData.projectDetails)}&projectSize=${encodeURIComponent(leadData.projectSize)}&budget=${encodeURIComponent(leadData.budget)}&timeline=${encodeURIComponent(leadData.timeline)}&location=${encodeURIComponent(leadData.location)}`;
 
-      const notificationResponse = await fetch(`${currentUrl}/api/lead-notification`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(leadData)
-      });
+      // Send email to tradesmen
+      const tradesmanEmails = ['danbricks18@gmail.com']; // Add more tradesman emails here
+      
+      for (const tradesmanEmail of tradesmanEmails) {
+        try {
+          const mailOptions = {
+            from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+            to: tradesmanEmail,
+            subject: `🔥 New Lead: ${leadData.selectedService} - ${leadData.location}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #2c3e50;">🔥 New Lead Available!</h2>
+                <p>A new customer has submitted a lead request. Here are the details:</p>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <h3 style="color: #34495e; margin-top: 0;">Customer Details:</h3>
+                  <p><strong>Name:</strong> ${leadData.customerName}</p>
+                  <p><strong>Email:</strong> ${leadData.customerEmail}</p>
+                  <p><strong>Phone:</strong> ${leadData.customerPhone}</p>
+                  <p><strong>Location:</strong> ${leadData.location}</p>
+                  
+                  <h3 style="color: #34495e;">Project Details:</h3>
+                  <p><strong>Service:</strong> ${leadData.selectedService}</p>
+                  <p><strong>Project Size:</strong> ${leadData.projectSize}</p>
+                  <p><strong>Budget:</strong> ${leadData.budget}</p>
+                  <p><strong>Timeline:</strong> ${leadData.timeline}</p>
+                  <p><strong>Details:</strong> ${leadData.projectDetails}</p>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${quoteLink}" 
+                     style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-size: 16px; font-weight: bold;">
+                     📝 Submit Quote
+                  </a>
+                </div>
+                
+                <p><strong>Lead ID:</strong> ${leadId}</p>
+                <p>Click the button above to submit a quote. The form will be pre-filled with the customer's information.</p>
+                
+                <p style="margin-top: 30px; color: #6c757d; font-size: 14px;">
+                  This lead was generated from the Kiwi Underfloor Heating website.
+                </p>
+              </div>
+            `
+          };
 
-      console.log('📧 Tradesman notification response status:', notificationResponse.status);
-
-      if (notificationResponse.ok) {
-        const notificationResult = await notificationResponse.json();
-        console.log('📧 Tradesman notification result:', notificationResult);
-        if (notificationResult.success) {
-          console.log('✅ Tradesman notification sent successfully');
+          await transporter.sendMail(mailOptions);
+          console.log(`✅ Lead notification sent to ${tradesmanEmail}`);
           tradesmanNotified = true;
-        } else {
-          console.error('❌ Tradesman notification failed:', notificationResult.error);
+        } catch (emailError) {
+          console.error(`❌ Failed to send email to ${tradesmanEmail}:`, emailError.message);
         }
-      } else {
-        const errorText = await notificationResponse.text();
-        console.error('❌ Tradesman notification API call failed:', notificationResponse.status, errorText);
       }
     } catch (notificationError) {
       console.error('❌ Tradesman notification error:', notificationError.message);

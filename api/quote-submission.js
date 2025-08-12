@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 import puppeteer from 'puppeteer';
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType } from 'docx';
 
 export default async function handler(req, res) {
   console.log('🔍 Quote submission API called:', req.method, req.url);
@@ -584,8 +585,11 @@ export default async function handler(req, res) {
         console.error('❌ Tradesman email error:', emailError.message);
       }
 
-      // 4. Create PDF and send to customer directly
-      let pdfEmailSent = false;
+      // 4. Create quote document with multiple fallback options (PDF → DOCX → HTML)
+      let quoteAttachment = null;
+      let attachmentType = 'none';
+      let attachmentFilename = '';
+      
       try {
         // Format date as DD/MM/YYYY
         const formatDate = (date) => {
@@ -624,6 +628,165 @@ export default async function handler(req, res) {
           }
           
           return rows.join('');
+        };
+
+        // Function to create DOCX document
+        const createDocxQuote = async (quoteData) => {
+          const breakdownRows = [];
+          
+          // Add breakdown rows
+          if (quoteData.labourSubtotal && parseFloat(quoteData.labourSubtotal) > 0) {
+            const labourRate = parseFloat(quoteData.labourRate) || 0;
+            const labourHours = parseFloat(quoteData.labourHours) || 0;
+            const labourSubtotal = parseFloat(quoteData.labourSubtotal) || 0;
+            breakdownRows.push(
+              new TableRow({
+                children: [
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Labour' })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${labourRate.toFixed(2)}/hour × ${labourHours} hours` })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${labourSubtotal.toFixed(2)}` })] })] })
+                ]
+              })
+            );
+          }
+          
+          if (quoteData.materialSubtotal && parseFloat(quoteData.materialSubtotal) > 0) {
+            const materialRate = parseFloat(quoteData.materialRate) || 0;
+            const materialSQM = parseFloat(quoteData.materialSQM) || 0;
+            const materialSubtotal = parseFloat(quoteData.materialSubtotal) || 0;
+            breakdownRows.push(
+              new TableRow({
+                children: [
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Materials' })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${materialRate.toFixed(2)}/sqm × ${materialSQM} sqm` })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${materialSubtotal.toFixed(2)}` })] })] })
+                ]
+              })
+            );
+          }
+          
+          if (quoteData.installationSubtotal && parseFloat(quoteData.installationSubtotal) > 0) {
+            const installationSubtotal = parseFloat(quoteData.installationSubtotal) || 0;
+            breakdownRows.push(
+              new TableRow({
+                children: [
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Installation' })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Installation services' })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${installationSubtotal.toFixed(2)}` })] })] })
+                ]
+              })
+            );
+          }
+
+          const doc = new Document({
+            sections: [{
+              properties: {},
+              children: [
+                new Paragraph({
+                  children: [new TextRun({ text: 'KIWI UNDERFLOOR HEATING', bold: true, size: 32 })],
+                  alignment: AlignmentType.CENTER
+                }),
+                new Paragraph({
+                  children: [new TextRun({ text: 'QUOTE', bold: true, size: 40 })],
+                  alignment: AlignmentType.CENTER
+                }),
+                new Paragraph({
+                  children: [new TextRun({ text: `Quote Number: ${quoteData.quoteNumber}`, bold: true })],
+                  alignment: AlignmentType.CENTER
+                }),
+                new Paragraph({
+                  children: [new TextRun({ text: `Date: ${formatDate(new Date())}` })],
+                  alignment: AlignmentType.CENTER
+                }),
+                new Paragraph({
+                  children: [new TextRun({ text: `Valid Until: ${formatDate(quoteData.validUntil)}` })],
+                  alignment: AlignmentType.CENTER
+                }),
+                new Paragraph({ children: [new TextRun({ text: '' })] }), // Spacing
+                new Paragraph({
+                  children: [new TextRun({ text: 'Customer Details', bold: true, size: 24 })]
+                }),
+                new Paragraph({
+                  children: [new TextRun({ text: `Name: ${quoteData.customerName || 'Not specified'}` })]
+                }),
+                new Paragraph({
+                  children: [new TextRun({ text: `Email: ${quoteData.customerEmail || 'Not specified'}` })]
+                }),
+                new Paragraph({
+                  children: [new TextRun({ text: `Phone: ${quoteData.customerPhone || 'Not specified'}` })]
+                }),
+                new Paragraph({
+                  children: [new TextRun({ text: `Address: ${quoteData.location || 'Auckland'}` })]
+                }),
+                new Paragraph({ children: [new TextRun({ text: '' })] }), // Spacing
+                new Paragraph({
+                  children: [new TextRun({ text: 'Tradesman Details', bold: true, size: 24 })]
+                }),
+                new Paragraph({
+                  children: [new TextRun({ text: `Company: ${quoteData.tradesmanName}` })]
+                }),
+                new Paragraph({
+                  children: [new TextRun({ text: `Email: ${quoteData.tradesmanEmail}` })]
+                }),
+                new Paragraph({
+                  children: [new TextRun({ text: `Phone: ${quoteData.tradesmanPhone || 'Not specified'}` })]
+                }),
+                new Paragraph({
+                  children: [new TextRun({ text: `Service: ${quoteData.serviceType || 'Underfloor Heating'}` })]
+                }),
+                new Paragraph({ children: [new TextRun({ text: '' })] }), // Spacing
+                new Paragraph({
+                  children: [new TextRun({ text: 'Quote Breakdown', bold: true, size: 24 })]
+                }),
+                new Table({
+                  width: { size: 100, type: WidthType.PERCENTAGE },
+                  rows: [
+                    new TableRow({
+                      children: [
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Item', bold: true })] })] }),
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Description', bold: true })] })] }),
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Amount', bold: true })] })] })
+                      ]
+                    }),
+                    ...breakdownRows
+                  ]
+                }),
+                new Paragraph({ children: [new TextRun({ text: '' })] }), // Spacing
+                new Paragraph({
+                  children: [new TextRun({ text: `Total Amount: $${quoteData.totalAmount}`, bold: true, size: 28 })],
+                  alignment: AlignmentType.RIGHT
+                }),
+                ...(quoteData.additionalNotes ? [
+                  new Paragraph({ children: [new TextRun({ text: '' })] }),
+                  new Paragraph({
+                    children: [new TextRun({ text: 'Additional Notes', bold: true, size: 24 })]
+                  }),
+                  new Paragraph({
+                    children: [new TextRun({ text: quoteData.additionalNotes })]
+                  })
+                ] : []),
+                new Paragraph({ children: [new TextRun({ text: '' })] }), // Spacing
+                new Paragraph({
+                  children: [new TextRun({ text: 'Kiwi Underfloor Heating', bold: true })],
+                  alignment: AlignmentType.CENTER
+                }),
+                new Paragraph({
+                  children: [new TextRun({ text: 'Professional underfloor heating solutions for your home' })],
+                  alignment: AlignmentType.CENTER
+                }),
+                new Paragraph({
+                  children: [new TextRun({ text: 'This quote was generated using our automated system' })],
+                  alignment: AlignmentType.CENTER
+                }),
+                new Paragraph({
+                  children: [new TextRun({ text: 'Thank you for choosing Kiwi Underfloor Heating!' })],
+                  alignment: AlignmentType.CENTER
+                })
+              ]
+            }]
+          });
+
+          return await Packer.toBuffer(doc);
         };
 
         // Create professional HTML for PDF generation matching the image format
@@ -830,27 +993,58 @@ export default async function handler(req, res) {
           </html>
         `;
 
-        // Try to generate PDF with Puppeteer
-        let pdfBuffer = null;
+        // Multi-format quote generation with fallback system
+        console.log('🔄 Starting quote generation with fallback system...');
+        
+        // Try 1: Generate PDF with Puppeteer
         try {
+          console.log('📄 Attempting PDF generation with Puppeteer...');
           const browser = await puppeteer.launch({
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
           });
-          
           const page = await browser.newPage();
-          await page.setContent(htmlContent);
-          
-          pdfBuffer = await page.pdf({
+          await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+          const pdfBuffer = await page.pdf({
             format: 'A4',
             landscape: true,
+            printBackground: true,
             margin: { top: '0.3in', right: '0.3in', bottom: '0.3in', left: '0.3in' }
           });
-          
           await browser.close();
+          
+          quoteAttachment = pdfBuffer;
+          attachmentType = 'pdf';
+          attachmentFilename = `Quote-${quoteData.quoteNumber}.pdf`;
           console.log('✅ PDF generated successfully with Puppeteer');
         } catch (puppeteerError) {
-          console.log('⚠️ Puppeteer failed, using HTML fallback:', puppeteerError.message);
+          console.log('⚠️ PDF generation failed, trying DOCX...');
+          
+          // Try 2: Generate DOCX document
+          try {
+            console.log('📝 Attempting DOCX generation...');
+            const docxBuffer = await createDocxQuote(quoteData);
+            
+            quoteAttachment = docxBuffer;
+            attachmentType = 'docx';
+            attachmentFilename = `Quote-${quoteData.quoteNumber}.docx`;
+            console.log('✅ DOCX generated successfully');
+          } catch (docxError) {
+            console.log('⚠️ DOCX generation failed, using HTML fallback...');
+            
+            // Try 3: Use HTML as final fallback
+            try {
+              console.log('🌐 Using HTML fallback...');
+              quoteAttachment = Buffer.from(htmlContent, 'utf8');
+              attachmentType = 'html';
+              attachmentFilename = `Quote-${quoteData.quoteNumber}.html`;
+              console.log('✅ HTML fallback ready');
+            } catch (htmlError) {
+              console.log('❌ All quote generation methods failed:', htmlError.message);
+              quoteAttachment = null;
+              attachmentType = 'none';
+            }
+          }
         }
 
         // Get current URL for links
@@ -868,7 +1062,39 @@ export default async function handler(req, res) {
           }
         });
 
-        // Send email to customer with PDF or HTML attachment
+        // Determine attachment content type and message
+        const getAttachmentInfo = () => {
+          switch (attachmentType) {
+            case 'pdf':
+              return {
+                contentType: 'application/pdf',
+                message: 'Please find your professional PDF quote attached to this email.',
+                note: ''
+              };
+            case 'docx':
+              return {
+                contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                message: 'Please find your professional DOCX quote attached to this email.',
+                note: 'You can open this file with Microsoft Word, Google Docs, or any compatible word processor.'
+              };
+            case 'html':
+              return {
+                contentType: 'text/html',
+                message: 'Please find your quote attached as an HTML file.',
+                note: 'The attached HTML file can be opened in any web browser and printed as a PDF for a professional look.'
+              };
+            default:
+              return {
+                contentType: 'text/plain',
+                message: 'Quote details are included in this email.',
+                note: 'No attachment was generated due to technical limitations.'
+              };
+          }
+        };
+
+        const attachmentInfo = getAttachmentInfo();
+
+        // Send email to customer with appropriate attachment
         const customerMailOptions = {
           from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
           to: quoteData.customerEmail || 'danbricks18@gmail.com',
@@ -885,6 +1111,7 @@ export default async function handler(req, res) {
                 <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
                 <p><strong>Valid Until:</strong> ${formatDate(quoteData.validUntil)}</p>
                 <p><strong>Tradesman:</strong> ${quoteData.tradesmanName}</p>
+                <p><strong>Format:</strong> ${attachmentType.toUpperCase()}</p>
               </div>
               
               <div style="text-align: center; margin: 30px 0;">
@@ -902,26 +1129,24 @@ export default async function handler(req, res) {
                 </a>
               </div>
               
-              ${pdfBuffer ? 
-                '<p>Please find your professional PDF quote attached to this email.</p>' :
-                '<p><strong>Note:</strong> The attached HTML file can be opened in any web browser and printed as a PDF for a professional look.</p>'
-              }
+              <p>${attachmentInfo.message}</p>
+              ${attachmentInfo.note ? `<p><strong>Note:</strong> ${attachmentInfo.note}</p>` : ''}
               <p>You can view the quote online and accept/decline it using the links above.</p>
               <p>Please review the attached quote and let us know if you have any questions.</p>
               
               <p style="margin-top: 30px;">Best regards,<br><strong>${quoteData.tradesmanName}</strong></p>
             </div>
           `,
-          attachments: [{
-            filename: pdfBuffer ? `Quote-${quoteData.quoteNumber}.pdf` : `Quote-${quoteData.quoteNumber}.html`,
-            content: pdfBuffer ? pdfBuffer.toString('base64') : Buffer.from(htmlContent, 'utf8').toString('base64'),
+          attachments: quoteAttachment ? [{
+            filename: attachmentFilename,
+            content: quoteAttachment.toString('base64'),
             encoding: 'base64',
-            contentType: pdfBuffer ? 'application/pdf' : 'text/html'
-          }]
+            contentType: attachmentInfo.contentType
+          }] : []
         };
 
         await transporter.sendMail(customerMailOptions);
-        console.log('✅ Customer email sent with quote attachment');
+        console.log(`✅ Customer email sent with ${attachmentType.toUpperCase()} attachment`);
         pdfEmailSent = true;
 
         // Send copy to tradesman
@@ -940,17 +1165,19 @@ export default async function handler(req, res) {
                 <p><strong>Customer:</strong> ${quoteData.customerName}</p>
                 <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
                 <p><strong>Service:</strong> ${quoteData.serviceType}</p>
+                <p><strong>Format:</strong> ${attachmentType.toUpperCase()}</p>
               </div>
               
               <p>The customer has been notified and can view the quote online.</p>
+              <p>Your quote was generated in ${attachmentType.toUpperCase()} format and sent to the customer.</p>
             </div>
           `,
-          attachments: [{
-            filename: pdfBuffer ? `Quote-${quoteData.quoteNumber}.pdf` : `Quote-${quoteData.quoteNumber}.html`,
-            content: pdfBuffer ? pdfBuffer.toString('base64') : Buffer.from(htmlContent, 'utf8').toString('base64'),
+          attachments: quoteAttachment ? [{
+            filename: attachmentFilename,
+            content: quoteAttachment.toString('base64'),
             encoding: 'base64',
-            contentType: pdfBuffer ? 'application/pdf' : 'text/html'
-          }]
+            contentType: attachmentInfo.contentType
+          }] : []
         };
 
         await transporter.sendMail(tradesmanCopyMailOptions);

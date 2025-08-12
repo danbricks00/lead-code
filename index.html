@@ -756,9 +756,47 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
             color: white; 
             padding: 1.2rem; 
-            text-align: center; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
             font-weight: 600; 
             font-size: 1.1rem;
+        }
+        
+        .chat-title {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .chat-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .chat-control-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        .chat-control-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .minimize-btn {
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+        
+        .close-btn {
+            font-size: 1.8rem;
+            line-height: 1;
         }
         
         .chat-messages { 
@@ -889,16 +927,30 @@
                 right: 20px; 
                 left: 20px; 
                 height: 450px; 
+                bottom: 80px;
             }
             .chatbot-container {
                 right: 20px;
                 left: 20px;
+                bottom: 20px;
+            }
+            .chat-toggle {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
             }
             .nav-menu {
                 display: none;
             }
             .hamburger {
                 display: flex !important;
+            }
+            /* Add bottom margin to prevent chatbot from blocking content */
+            .hero {
+                margin-bottom: 100px;
+            }
+            .container {
+                margin-bottom: 100px;
             }
         }
         
@@ -909,19 +961,27 @@
                 right: 10px; 
                 left: 10px; 
                 height: 400px;
+                bottom: 70px;
             }
             .chatbot-container {
                 right: 10px;
                 left: 10px;
+                bottom: 15px;
+            }
+            .chat-toggle {
+                width: 45px;
+                height: 45px;
+                font-size: 1rem;
             }
             .hero { 
                 padding: 4rem 1rem 6rem 1rem; 
-                margin-bottom: 80px;
+                margin-bottom: 100px;
             }
             .hero-content h1 { font-size: 2rem; }
             .hero-content p { font-size: 1rem; }
             .container {
                 padding: 0 1rem;
+                margin-bottom: 100px;
             }
             .services {
                 padding: 2rem 0;
@@ -1148,10 +1208,14 @@
         <button class="chat-toggle" onclick="toggleChat()">💬</button>
         <div class="chat-window" id="chatWindow">
             <div class="chat-header">
-                Kiwi Underfloor Heating Assistant
+                <span class="chat-title">Kiwi Trade</span>
+                <div class="chat-controls">
+                    <button class="chat-control-btn minimize-btn" onclick="minimizeChat()" title="Minimize">−</button>
+                    <button class="chat-control-btn close-btn" onclick="closeChat()" title="Close">×</button>
+                </div>
             </div>
             <div class="chat-messages" id="chatMessages">
-                <div class="message bot-message">👋 Welcome to Kiwi Underfloor Heating! We'll ask a couple of quick questions to prepare your underfloor heating quote.</div>
+                <div class="message bot-message">👋 Welcome to Kiwi Trade! We'll ask a couple of quick questions to prepare your underfloor heating quote.</div>
             </div>
             <div class="chat-input-container">
                 <input type="text" class="chat-input" id="chatInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
@@ -1186,10 +1250,36 @@
                 // Start simplified UFH flow when opening chat
                 const messagesContainer = document.getElementById('chatMessages');
                 if (messagesContainer.children.length <= 1) {
-                    messagesContainer.innerHTML = '<div class="message bot-message">👋 Welcome to Kiwi Underfloor Heating! We\'ll ask a couple of quick questions to prepare your underfloor heating quote.</div>';
+                    messagesContainer.innerHTML = '<div class="message bot-message">👋 Welcome to Kiwi Trade! We\'ll ask a couple of quick questions to prepare your underfloor heating quote.</div>';
                     startChat();
                 }
             }
+        }
+
+        function minimizeChat() {
+            const chatWindow = document.getElementById('chatWindow');
+            chatWindow.style.display = 'none';
+        }
+
+        function closeChat() {
+            const chatWindow = document.getElementById('chatWindow');
+            chatWindow.style.display = 'none';
+            // Reset chat state when closing
+            chatState = {
+                step: 'welcome',
+                selectedService: 'underfloor_heating',
+                projectDetails: '',
+                projectSize: '',
+                specificDetails: '',
+                location: '',
+                budget: '',
+                timeline: '',
+                customerName: '',
+                customerEmail: '',
+                customerPhone: '',
+                areasCount: '',
+                areaSizes: ''
+            };
         }
 
         function openChat() {
@@ -1197,7 +1287,7 @@
             // Start simplified UFH flow when opening chat
             const messagesContainer = document.getElementById('chatMessages');
             if (messagesContainer.children.length <= 1) {
-                messagesContainer.innerHTML = '<div class="message bot-message">👋 Welcome to Kiwi Underfloor Heating! We\'ll ask a couple of quick questions to prepare your underfloor heating quote.</div>';
+                messagesContainer.innerHTML = '<div class="message bot-message">👋 Welcome to Kiwi Trade! We\'ll ask a couple of quick questions to prepare your underfloor heating quote.</div>';
                 startChat();
             }
         }

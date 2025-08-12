@@ -1,5 +1,7 @@
+import puppeteer from 'puppeteer';
+
 export default async function handler(req, res) {
-  console.log('📄 Xero Quote Simple API called:', req.method, req.url);
+  console.log('📄 Xero Quote Real PDF API called:', req.method, req.url);
   
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,7 +16,7 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
       const quoteData = req.body;
-      console.log('✅ Quote data received for simple PDF creation:', quoteData);
+      console.log('✅ Quote data received for real PDF creation:', quoteData);
 
       // Format date as DD/MM/YYYY
       const formatDate = (date) => {
@@ -22,25 +24,20 @@ export default async function handler(req, res) {
         return d.toLocaleDateString('en-GB'); // DD/MM/YYYY format
       };
 
-      // For now, we'll create a professional HTML quote that can be easily converted to PDF
-      // This approach works better in serverless environments
-      const htmlQuote = `
+      // Create professional HTML for PDF generation
+      const htmlContent = `
         <!DOCTYPE html>
         <html>
         <head>
             <title>Quote ${quoteData.quoteNumber}</title>
             <style>
-                @page { 
-                    margin: 1in; 
-                    size: A4;
-                }
+                @page { margin: 1in; }
                 body { 
                     font-family: 'Arial', sans-serif; 
                     margin: 0; 
                     padding: 20px; 
                     color: #333;
                     line-height: 1.6;
-                    font-size: 12px;
                 }
                 .header { 
                     text-align: center; 
@@ -51,14 +48,14 @@ export default async function handler(req, res) {
                 .header h1 { 
                     color: #2c3e50; 
                     margin: 0; 
-                    font-size: 24px; 
+                    font-size: 28px; 
                 }
                 .header h2 { 
                     color: #34495e; 
                     margin: 10px 0; 
-                    font-size: 18px; 
+                    font-size: 20px; 
                 }
-                .section { margin: 20px 0; }
+                .section { margin: 25px 0; }
                 .info-grid { 
                     display: table; 
                     width: 100%; 
@@ -194,16 +191,43 @@ export default async function handler(req, res) {
         </html>
       `;
 
-      // For now, we'll send the HTML quote as an attachment
-      // In a production environment, you could use a service like:
-      // - AWS Lambda with Chrome
-      // - External PDF generation service
-      // - Browser automation service
+      // Try to generate PDF using Puppeteer with serverless-friendly settings
+      console.log('🔄 Starting real PDF generation...');
+      let pdfBuffer;
       
-      // Convert HTML to base64 for email attachment
-      const htmlBase64 = Buffer.from(htmlQuote, 'utf8').toString('base64');
+      try {
+        const browser = await puppeteer.launch({
+          headless: true,
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process',
+            '--disable-extensions'
+          ]
+        });
+        
+        const page = await browser.newPage();
+        await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+        
+        pdfBuffer = await page.pdf({
+          format: 'A4',
+          margin: { top: '0.5in', right: '0.5in', bottom: '0.5in', left: '0.5in' },
+          printBackground: true
+        });
+        
+        await browser.close();
+        console.log('✅ Real PDF generated successfully');
+      } catch (pdfError) {
+        console.log('⚠️ PDF generation failed, falling back to HTML:', pdfError.message);
+        // Fallback to HTML if PDF generation fails
+        pdfBuffer = null;
+      }
 
-      // Send emails with HTML quote attachment (can be opened in browser and printed as PDF)
+      // Send emails with PDF or HTML attachment
       const nodemailer = await import('nodemailer');
       const transporter = nodemailer.default.createTransport({
         service: 'gmail',
@@ -216,6 +240,19 @@ export default async function handler(req, res) {
       const currentUrl = process.env.VERCEL_URL ? 
         `https://${process.env.VERCEL_URL}` : 
         'https://lead-code.vercel.app';
+
+      // Prepare attachment
+      const attachment = pdfBuffer ? {
+        filename: `Quote-${quoteData.quoteNumber}.pdf`,
+        content: pdfBuffer.toString('base64'),
+        encoding: 'base64',
+        contentType: 'application/pdf'
+      } : {
+        filename: `Quote-${quoteData.quoteNumber}.html`,
+        content: Buffer.from(htmlContent, 'utf8').toString('base64'),
+        encoding: 'base64',
+        contentType: 'text/html'
+      };
 
       // Send to customer
       const customerMailOptions = {
@@ -239,37 +276,33 @@ export default async function handler(req, res) {
             <div style="text-align: center; margin: 30px 0;">
               <a href="${currentUrl}/api/view-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
                  style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
-                 View Quote Online
+               View Quote Online
               </a>
               <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
                  style="background: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
-                 Accept Quote
+               Accept Quote
               </a>
               <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
                  style="background: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
-                 Decline Quote
+               Decline Quote
               </a>
             </div>
             
-            <p><strong>Note:</strong> The attached HTML file can be opened in any web browser and printed as a PDF for a professional look.</p>
+            ${pdfBuffer ? 
+              '<p>Please find your professional PDF quote attached to this email.</p>' :
+              '<p><strong>Note:</strong> The attached HTML file can be opened in any web browser and printed as a PDF for a professional look.</p>'
+            }
             <p>You can view the quote online and accept/decline it using the links above.</p>
             <p>Please review the attached quote and let us know if you have any questions.</p>
             
             <p style="margin-top: 30px;">Best regards,<br><strong>${quoteData.tradesmanName}</strong></p>
           </div>
         `,
-        attachments: [
-          {
-            filename: `Quote-${quoteData.quoteNumber}.html`,
-            content: htmlBase64,
-            encoding: 'base64',
-            contentType: 'text/html'
-          }
-        ]
+        attachments: [attachment]
       };
 
       await transporter.sendMail(customerMailOptions);
-      console.log('✅ Customer email sent with HTML quote');
+      console.log(`✅ Customer email sent with ${pdfBuffer ? 'PDF' : 'HTML'} quote`);
 
       // Send to tradesman
       const tradesmanMailOptions = {
@@ -292,18 +325,16 @@ export default async function handler(req, res) {
             <p>The customer has been notified and can view the quote online.</p>
           </div>
         `,
-        attachments: [
-          {
-            filename: `Quote-${quoteData.quoteNumber}-Copy.html`,
-            content: htmlBase64,
-            encoding: 'base64',
-            contentType: 'text/html'
-          }
-        ]
+        attachments: [{
+          filename: pdfBuffer ? `Quote-${quoteData.quoteNumber}-Copy.pdf` : `Quote-${quoteData.quoteNumber}-Copy.html`,
+          content: pdfBuffer ? pdfBuffer.toString('base64') : Buffer.from(htmlContent, 'utf8').toString('base64'),
+          encoding: 'base64',
+          contentType: pdfBuffer ? 'application/pdf' : 'text/html'
+        }]
       };
 
       await transporter.sendMail(tradesmanMailOptions);
-      console.log('✅ Tradesman email sent with HTML quote');
+      console.log(`✅ Tradesman email sent with ${pdfBuffer ? 'PDF' : 'HTML'} quote`);
 
       // Send to admin
       const adminMailOptions = {
@@ -327,48 +358,46 @@ export default async function handler(req, res) {
             <p>All parties have been notified and received quote copies.</p>
           </div>
         `,
-        attachments: [
-          {
-            filename: `Quote-${quoteData.quoteNumber}-Admin.html`,
-            content: htmlBase64,
-            encoding: 'base64',
-            contentType: 'text/html'
-          }
-        ]
+        attachments: [{
+          filename: pdfBuffer ? `Quote-${quoteData.quoteNumber}-Admin.pdf` : `Quote-${quoteData.quoteNumber}-Admin.html`,
+          content: pdfBuffer ? pdfBuffer.toString('base64') : Buffer.from(htmlContent, 'utf8').toString('base64'),
+          encoding: 'base64',
+          contentType: pdfBuffer ? 'application/pdf' : 'text/html'
+        }]
       };
 
       await transporter.sendMail(adminMailOptions);
-      console.log('✅ Admin email sent with HTML quote');
+      console.log(`✅ Admin email sent with ${pdfBuffer ? 'PDF' : 'HTML'} quote`);
 
       // Return success response
       const response = {
         success: true,
-        message: 'Professional quote created and sent successfully! (HTML format - can be printed as PDF)',
+        message: pdfBuffer ? 'Professional PDF quote created and sent successfully!' : 'Professional quote created and sent successfully! (HTML format - can be printed as PDF)',
         data: {
           quoteNumber: quoteData.quoteNumber,
           customerName: quoteData.customerName,
           totalAmount: quoteData.totalAmount,
-          method: 'Xero Simple (HTML)'
+          method: pdfBuffer ? 'Xero Real PDF' : 'Xero Real PDF (HTML Fallback)'
         },
         status: {
-          method: 'Xero Simple (HTML)',
-          pdfGenerated: false,
-          htmlGenerated: true,
+          method: pdfBuffer ? 'Xero Real PDF' : 'Xero Real PDF (HTML Fallback)',
+          pdfGenerated: !!pdfBuffer,
+          htmlGenerated: !pdfBuffer,
           customerEmailSent: true,
           tradesmanEmailSent: true,
           adminEmailSent: true,
-          note: 'HTML file can be opened in browser and printed as PDF'
+          note: pdfBuffer ? 'Real PDF generated successfully' : 'HTML file can be opened in browser and printed as PDF'
         }
       };
 
-      console.log('📊 Xero Simple Quote Response:', response);
+      console.log('📊 Xero Real PDF Quote Response:', response);
       return res.json(response);
 
     } catch (error) {
-      console.error('❌ Error creating Xero simple quote:', error);
+      console.error('❌ Error creating Xero real PDF quote:', error);
       return res.status(500).json({
         success: false,
-        error: 'Failed to create Xero simple quote',
+        error: 'Failed to create Xero real PDF quote',
         details: error.message
       });
     }

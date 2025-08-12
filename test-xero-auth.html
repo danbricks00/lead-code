@@ -54,12 +54,13 @@
             const resultDiv = document.getElementById('envStatus');
             
             try {
-                const response = await fetch(`${baseUrl}/api/xero-callback`);
+                const response = await fetch(`${baseUrl}/api/test-xero-config`);
+                const data = await response.json();
                 
-                if (response.status === 200) {
-                    resultDiv.innerHTML = '<span class="success">✅ Callback API working</span>';
+                if (data.success && data.config.hasAllRequired) {
+                    resultDiv.innerHTML = '<span class="success">✅ Environment variables configured</span>';
                 } else {
-                    resultDiv.innerHTML = '<span class="error">❌ Callback API not working</span>';
+                    resultDiv.innerHTML = '<span class="error">❌ Environment variables missing</span>';
                 }
             } catch (error) {
                 resultDiv.innerHTML = '<span class="error">❌ Connection error</span>';
@@ -140,7 +141,7 @@
             };
             
             try {
-                const response = await fetch(`${baseUrl}/api/xero-quote-simple`, {
+                const response = await fetch(`${baseUrl}/api/xero-quote-real-pdf`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(testData)

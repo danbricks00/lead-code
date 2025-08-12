@@ -18,6 +18,12 @@ export default async function handler(req, res) {
       const quoteData = req.body;
       console.log('✅ Quote data received for PDF creation:', quoteData);
 
+      // Format date as DD/MM/YYYY
+      const formatDate = (date) => {
+        const d = new Date(date);
+        return d.toLocaleDateString('en-GB'); // DD/MM/YYYY format
+      };
+
       // Create professional HTML for PDF generation
       const htmlContent = `
         <!DOCTYPE html>
@@ -116,8 +122,8 @@ export default async function handler(req, res) {
                 <div class="company-logo">KIWI UNDERFLOOR HEATING</div>
                 <h1>QUOTE</h1>
                 <h2>Quote Number: ${quoteData.quoteNumber}</h2>
-                <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-                <p><strong>Valid Until:</strong> ${quoteData.validUntil || '30 days from date'}</p>
+                <p><strong>Date:</strong> ${formatDate(new Date())}</p>
+                <p><strong>Valid Until:</strong> ${quoteData.validUntil ? formatDate(quoteData.validUntil) : '30 days from date'}</p>
             </div>
             
             <div class="section">
@@ -180,38 +186,14 @@ export default async function handler(req, res) {
         </html>
       `;
 
-      // Generate PDF using Puppeteer with Chrome binary for Vercel
+      // Use a different approach for PDF generation that works in serverless
       console.log('🔄 Starting PDF generation...');
-      const browser = await puppeteer.launch({
-        headless: true,
-        executablePath: process.env.CHROME_BIN || '/usr/bin/google-chrome-stable',
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--no-first-run',
-          '--no-zygote',
-          '--single-process'
-        ]
-      });
       
-      const page = await browser.newPage();
-      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-      
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        margin: { top: '0.5in', right: '0.5in', bottom: '0.5in', left: '0.5in' },
-        printBackground: true
-      });
-      
-      await browser.close();
-      console.log('✅ PDF generated successfully');
+      // For now, we'll use a simple approach that works in Vercel
+      // Convert HTML to base64 and send as attachment
+      const htmlBase64 = Buffer.from(htmlContent, 'utf8').toString('base64');
 
-      // Convert to base64 for email attachment
-      const pdfBase64 = pdfBuffer.toString('base64');
-
-      // Send emails with PDF attachment
+      // Send emails with HTML attachment (can be opened in browser and printed as PDF)
       const nodemailer = await import('nodemailer');
       const transporter = nodemailer.default.createTransport({
         service: 'gmail',
@@ -240,43 +222,44 @@ export default async function handler(req, res) {
               <h3 style="color: #34495e; margin-top: 0;">Quote Summary:</h3>
               <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
               <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
-              <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
+              <p><strong>Valid Until:</strong> ${quoteData.validUntil ? formatDate(quoteData.validUntil) : '30 days from date'}</p>
               <p><strong>Tradesman:</strong> ${quoteData.tradesmanName}</p>
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
               <a href="${currentUrl}/api/view-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
                  style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
-                 View Quote Online
+               View Quote Online
               </a>
               <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
                  style="background: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
-                 Accept Quote
+               Accept Quote
               </a>
               <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
                  style="background: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
-                 Decline Quote
+               Decline Quote
               </a>
             </div>
             
+            <p><strong>Note:</strong> The attached HTML file can be opened in any web browser and printed as a PDF for a professional look.</p>
             <p>You can view the quote online and accept/decline it using the links above.</p>
-            <p>Please review the attached PDF quote and let us know if you have any questions.</p>
+            <p>Please review the attached quote and let us know if you have any questions.</p>
             
             <p style="margin-top: 30px;">Best regards,<br><strong>${quoteData.tradesmanName}</strong></p>
           </div>
         `,
         attachments: [
           {
-            filename: `Quote-${quoteData.quoteNumber}.pdf`,
-            content: pdfBase64,
+            filename: `Quote-${quoteData.quoteNumber}.html`,
+            content: htmlBase64,
             encoding: 'base64',
-            contentType: 'application/pdf'
+            contentType: 'text/html'
           }
         ]
       };
 
       await transporter.sendMail(customerMailOptions);
-      console.log('✅ Customer email sent with PDF');
+      console.log('✅ Customer email sent with HTML quote');
 
       // Send to tradesman
       const tradesmanMailOptions = {
@@ -301,16 +284,16 @@ export default async function handler(req, res) {
         `,
         attachments: [
           {
-            filename: `Quote-${quoteData.quoteNumber}-Copy.pdf`,
-            content: pdfBase64,
+            filename: `Quote-${quoteData.quoteNumber}-Copy.html`,
+            content: htmlBase64,
             encoding: 'base64',
-            contentType: 'application/pdf'
+            contentType: 'text/html'
           }
         ]
       };
 
       await transporter.sendMail(tradesmanMailOptions);
-      console.log('✅ Tradesman email sent with PDF');
+      console.log('✅ Tradesman email sent with HTML quote');
 
       // Send to admin
       const adminMailOptions = {
@@ -331,38 +314,40 @@ export default async function handler(req, res) {
               <p><strong>Service:</strong> ${quoteData.serviceType}</p>
             </div>
             
-            <p>All parties have been notified and received PDF copies.</p>
+            <p>All parties have been notified and received quote copies.</p>
           </div>
         `,
         attachments: [
           {
-            filename: `Quote-${quoteData.quoteNumber}-Admin.pdf`,
-            content: pdfBase64,
+            filename: `Quote-${quoteData.quoteNumber}-Admin.html`,
+            content: htmlBase64,
             encoding: 'base64',
-            contentType: 'application/pdf'
+            contentType: 'text/html'
           }
         ]
       };
 
       await transporter.sendMail(adminMailOptions);
-      console.log('✅ Admin email sent with PDF');
+      console.log('✅ Admin email sent with HTML quote');
 
       // Return success response
       const response = {
         success: true,
-        message: 'Professional PDF quote created and sent successfully!',
+        message: 'Professional quote created and sent successfully! (HTML format - can be printed as PDF)',
         data: {
           quoteNumber: quoteData.quoteNumber,
           customerName: quoteData.customerName,
           totalAmount: quoteData.totalAmount,
-          method: 'Xero OAuth (PDF)'
+          method: 'Xero PDF (HTML)'
         },
         status: {
-          method: 'Xero OAuth (PDF)',
-          pdfGenerated: true,
+          method: 'Xero PDF (HTML)',
+          pdfGenerated: false,
+          htmlGenerated: true,
           customerEmailSent: true,
           tradesmanEmailSent: true,
-          adminEmailSent: true
+          adminEmailSent: true,
+          note: 'HTML file can be opened in browser and printed as PDF'
         }
       };
 

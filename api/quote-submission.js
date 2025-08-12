@@ -184,11 +184,11 @@ export default async function handler(req, res) {
               <div class="breakdown-row">
                 <div class="breakdown-col">
                   <label for="labourRate">Rate per Hour ($):</label>
-                  <input type="number" id="labourRate" name="labourRate" step="0.01" min="0" placeholder="e.g., 75.00">
+                  <input type="number" id="labourRate" name="labourRate" step="0.01" min="0" placeholder="e.g., 75.00" oninput="calculateTotals()" onchange="calculateTotals()">
                 </div>
                 <div class="breakdown-col">
                   <label for="labourHours">Hours:</label>
-                  <input type="number" id="labourHours" name="labourHours" step="0.5" min="0" placeholder="e.g., 8">
+                  <input type="number" id="labourHours" name="labourHours" step="0.5" min="0" placeholder="e.g., 8" oninput="calculateTotals()" onchange="calculateTotals()">
                 </div>
                 <div class="breakdown-col">
                   <label for="labourSubtotal">Subtotal ($):</label>
@@ -202,11 +202,11 @@ export default async function handler(req, res) {
               <div class="breakdown-row">
                 <div class="breakdown-col">
                   <label for="materialRate">Cost per SQM ($):</label>
-                  <input type="number" id="materialRate" name="materialRate" step="0.01" min="0" placeholder="e.g., 45.00">
+                  <input type="number" id="materialRate" name="materialRate" step="0.01" min="0" placeholder="e.g., 45.00" oninput="calculateTotals()" onchange="calculateTotals()">
                 </div>
                 <div class="breakdown-col">
                   <label for="materialSQM">Total SQM:</label>
-                  <input type="number" id="materialSQM" name="materialSQM" step="0.1" min="0" placeholder="e.g., 25.5">
+                  <input type="number" id="materialSQM" name="materialSQM" step="0.1" min="0" placeholder="e.g., 25.5" oninput="calculateTotals()" onchange="calculateTotals()">
                 </div>
                 <div class="breakdown-col">
                   <label for="materialSubtotal">Subtotal ($):</label>
@@ -220,7 +220,7 @@ export default async function handler(req, res) {
               <div class="breakdown-row">
                 <div class="breakdown-col">
                   <label for="installationAmount">Installation Cost ($):</label>
-                  <input type="number" id="installationAmount" name="installationAmount" step="0.01" min="0" placeholder="e.g., 500.00">
+                  <input type="number" id="installationAmount" name="installationAmount" step="0.01" min="0" placeholder="e.g., 500.00" oninput="calculateTotals()" onchange="calculateTotals()">
                 </div>
                 <div class="breakdown-col">
                   <label>&nbsp;</label>
@@ -271,6 +271,7 @@ export default async function handler(req, res) {
         <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px; border: 1px solid #dee2e6;">
           <h4>Debug Information</h4>
           <button type="button" onclick="testCalculation()" style="background: #28a745; margin-right: 10px;">Test Calculation</button>
+          <button type="button" onclick="calculateTotals()" style="background: #ffc107; margin-right: 10px;">Manual Calculate</button>
           <button type="button" onclick="console.log('Form elements:', document.getElementById('labourRate'), document.getElementById('labourSubtotal'))" style="background: #17a2b8;">Check Elements</button>
           <div id="debugOutput" style="margin-top: 10px; font-family: monospace; font-size: 12px;"></div>
         </div>
@@ -300,34 +301,26 @@ export default async function handler(req, res) {
                   
                   console.log('💰 Subtotals:', { labourSubtotal, materialSubtotal, installationSubtotal, total });
                   
-                  // Update display with visual feedback
+                  // Update display immediately
                   const labourSubtotalEl = document.getElementById('labourSubtotal');
                   const materialSubtotalEl = document.getElementById('materialSubtotal');
                   const installationSubtotalEl = document.getElementById('installationSubtotal');
                   const totalAmountEl = document.getElementById('totalAmount');
                   
                   if (labourSubtotalEl) {
-                      labourSubtotalEl.classList.add('calculating');
                       labourSubtotalEl.value = labourSubtotal.toFixed(2);
-                      setTimeout(() => labourSubtotalEl.classList.remove('calculating'), 300);
                   }
                   
                   if (materialSubtotalEl) {
-                      materialSubtotalEl.classList.add('calculating');
                       materialSubtotalEl.value = materialSubtotal.toFixed(2);
-                      setTimeout(() => materialSubtotalEl.classList.remove('calculating'), 300);
                   }
                   
                   if (installationSubtotalEl) {
-                      installationSubtotalEl.classList.add('calculating');
                       installationSubtotalEl.value = installationSubtotal.toFixed(2);
-                      setTimeout(() => installationSubtotalEl.classList.remove('calculating'), 300);
                   }
                   
                   if (totalAmountEl) {
-                      totalAmountEl.classList.add('calculating');
                       totalAmountEl.value = total.toFixed(2);
-                      setTimeout(() => totalAmountEl.classList.remove('calculating'), 300);
                   }
                   
                   // Generate item breakdown
@@ -364,7 +357,7 @@ export default async function handler(req, res) {
               }
           }
           
-          // Function to add event listeners safely
+          // Function to add event listeners
           function addEventListeners() {
               console.log('🔧 Adding event listeners...');
               
@@ -379,13 +372,10 @@ export default async function handler(req, res) {
               elements.forEach(id => {
                   const element = document.getElementById(id);
                   if (element) {
-                      // Remove existing listeners to prevent duplicates
-                      element.removeEventListener('input', calculateTotals);
-                      element.removeEventListener('change', calculateTotals);
-                      
-                      // Add new listeners
+                      // Add event listeners
                       element.addEventListener('input', calculateTotals);
                       element.addEventListener('change', calculateTotals);
+                      element.addEventListener('keyup', calculateTotals);
                       console.log('✅ Added event listener to:', id);
                   } else {
                       console.error('❌ Element not found:', id);

@@ -80,7 +80,7 @@
                 // Extract client ID (remove the "..." part)
                 const clientId = configData.config.clientId.replace('...', '');
                 const redirectUri = encodeURIComponent('https://lead-code.vercel.app/api/xero-callback');
-                const scope = encodeURIComponent('offline_access accounting.transactions accounting.contacts accounting.settings');
+                const scope = encodeURIComponent('offline_access accounting.transactions.read');
                 
                 authUrl = `https://login.xero.com/identity/connect/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=test123`;
                 

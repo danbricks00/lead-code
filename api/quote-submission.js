@@ -199,70 +199,8 @@ export default async function handler(req, res) {
       quoteData.itemBreakdown = quoteData.itemBreakdown ? quoteData.itemBreakdown.trim() : '';
       quoteData.additionalNotes = quoteData.additionalNotes ? quoteData.additionalNotes.trim() : '';
 
-      // 1. Send email to customer with quote (PRIORITY - like the working chatbot)
+      // Note: Customer email will be sent by the PDF generation endpoint with the actual PDF attachment
       let customerEmailSent = false;
-      try {
-        const nodemailer = await import('nodemailer');
-        const transporter = nodemailer.default.createTransport({
-          service: 'gmail',
-          auth: {
-            user: 'danbricks18@gmail.com',
-            pass: 'ptmcojqgthvjbqom'
-          }
-        });
-
-        const currentUrl = process.env.VERCEL_URL ? 
-          `https://${process.env.VERCEL_URL}` : 
-          'https://lead-code.vercel.app';
-
-        const customerMailOptions = {
-          from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
-          to: quoteData.customerEmail || 'danbricks18@gmail.com',
-          subject: `Professional Quote ${quoteData.quoteNumber} - ${quoteData.serviceType || 'Your Project'}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #2c3e50;">Your Professional Quote is Ready!</h2>
-              <p>Dear ${quoteData.customerName || 'there'},</p>
-              <p>Please find attached your professional quote for <strong>${quoteData.serviceType || 'your project'}</strong>.</p>
-              
-              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #34495e; margin-top: 0;">Quote Summary:</h3>
-                <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
-                <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
-                <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
-                <p><strong>Tradesman:</strong> ${quoteData.tradesmanName}</p>
-              </div>
-              
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${currentUrl}/api/view-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
-                   style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
-                   View Quote Online
-                </a>
-                <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
-                   style="background: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
-                   Accept Quote
-                </a>
-                <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
-                   style="background: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
-                   Decline Quote
-                </a>
-              </div>
-              
-              <p><strong>Note:</strong> The attached PDF quote is ready for printing and professional use.</p>
-              <p>You can view the quote online and accept/decline it using the links above.</p>
-              <p>Please review the attached quote and let us know if you have any questions.</p>
-              
-              <p style="margin-top: 30px;">Best regards,<br><strong>${quoteData.tradesmanName}</strong></p>
-            </div>
-          `
-        };
-
-        await transporter.sendMail(customerMailOptions);
-        console.log('✅ Customer quote email sent successfully');
-        customerEmailSent = true;
-      } catch (emailError) {
-        console.error('❌ Email error:', emailError.message);
-      }
 
       // 2. Send notification to admin
       try {
@@ -385,8 +323,11 @@ export default async function handler(req, res) {
           body: JSON.stringify(pdfQuoteData)
         });
 
+        console.log('📄 PDF Response status:', pdfResponse.status);
+
         if (pdfResponse.ok) {
           const pdfResult = await pdfResponse.json();
+          console.log('📄 PDF Result:', pdfResult);
           if (pdfResult.success) {
             console.log('✅ PDF created and sent successfully');
             pdfCreated = true;
@@ -394,7 +335,8 @@ export default async function handler(req, res) {
             console.error('❌ PDF creation failed:', pdfResult.error);
           }
         } else {
-          console.error('❌ PDF API call failed:', pdfResponse.status);
+          const errorText = await pdfResponse.text();
+          console.error('❌ PDF API call failed:', pdfResponse.status, errorText);
         }
       } catch (pdfError) {
         console.error('❌ PDF creation error:', pdfError.message);
@@ -403,13 +345,13 @@ export default async function handler(req, res) {
       // Return success response
       const response = {
         success: true,
-        message: 'Quote submitted successfully! PDF has been created and sent to all parties.',
+        message: pdfCreated ? 'Quote submitted successfully! Professional PDF has been created and sent to all parties.' : 'Quote submitted successfully! PDF generation is in progress.',
         data: quoteData,
         quoteNumber: quoteData.quoteNumber,
         timestamp: new Date().toISOString(),
         status: {
           sheetsUpdated,
-          customerEmailSent,
+          customerEmailSent: pdfCreated, // Only true if PDF was created successfully
           pdfCreated
         }
       };

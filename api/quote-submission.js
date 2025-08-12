@@ -138,8 +138,8 @@ export default async function handler(req, res) {
             }
             
             if (data.tradesmanPhone) {
-              // Clean phone number - remove spaces and special characters
-              data.tradesmanPhone = data.tradesmanPhone.replace(/[^0-9+\-()]/g, '');
+              // Clean phone number - just trim whitespace
+              data.tradesmanPhone = data.tradesmanPhone.trim();
             }
             
             // Ensure required fields are present

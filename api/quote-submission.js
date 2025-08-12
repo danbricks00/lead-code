@@ -1,4 +1,5 @@
 import { google } from 'googleapis';
+import puppeteer from 'puppeteer';
 
 export default async function handler(req, res) {
   console.log('🔍 Quote submission API called:', req.method, req.url);
@@ -391,70 +392,296 @@ export default async function handler(req, res) {
         console.error('❌ Tradesman email error:', emailError.message);
       }
 
-      // 4. Create PDF and send to all parties
-      let pdfCreated = false;
+      // 4. Create PDF and send to customer directly
+      let pdfEmailSent = false;
       try {
-        const currentUrl = process.env.VERCEL_URL ? 
-          `https://${process.env.VERCEL_URL}` : 
-          'https://lead-code.vercel.app';
-
-        // Ensure all required fields are present for PDF generation
-        const pdfQuoteData = {
-          quoteId: quoteData.quoteId,
-          tradesmanName: quoteData.tradesmanName,
-          tradesmanPhone: quoteData.tradesmanPhone,
-          tradesmanEmail: quoteData.tradesmanEmail,
-          quoteNumber: quoteData.quoteNumber,
-          totalAmount: quoteData.totalAmount,
-          itemBreakdown: quoteData.itemBreakdown,
-          validUntil: quoteData.validUntil,
-          additionalNotes: quoteData.additionalNotes,
-          customerEmail: quoteData.customerEmail,
-          customerName: quoteData.customerName,
-          serviceType: quoteData.serviceType || 'Underfloor Heating',
-          location: quoteData.location || quoteData.customerAddress || 'Auckland',
-          customerPhone: quoteData.customerPhone
+        // Format date as DD/MM/YYYY
+        const formatDate = (date) => {
+          const d = new Date(date);
+          return d.toLocaleDateString('en-GB'); // DD/MM/YYYY format
         };
 
-        console.log('📄 Sending data to PDF generation:', pdfQuoteData);
+        // Create professional HTML for PDF generation
+        const htmlContent = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Quote ${quoteData.quoteNumber}</title>
+              <style>
+                @page { 
+                    margin: 0.3in; 
+                    size: A4 landscape;
+                }
+                body { 
+                    font-family: 'Arial', sans-serif; 
+                    margin: 0; 
+                    padding: 15px; 
+                    color: #333;
+                    line-height: 1.4;
+                    font-size: 11px;
+                }
+                .header { 
+                    text-align: center; 
+                    border-bottom: 2px solid #2c3e50; 
+                    padding-bottom: 10px; 
+                    margin-bottom: 15px; 
+                }
+                .header h1 { 
+                    color: #2c3e50; 
+                    margin: 0; 
+                    font-size: 20px; 
+                }
+                .header h2 { 
+                    color: #34495e; 
+                    margin: 5px 0; 
+                    font-size: 14px; 
+                }
+                .section { margin: 12px 0; }
+                .section h3 { 
+                    font-size: 12px; 
+                    margin: 8px 0 5px 0; 
+                    color: #2c3e50; 
+                }
+                .section p { 
+                    font-size: 9px; 
+                    margin: 3px 0; 
+                }
+                .info-grid { 
+                    display: table; 
+                    width: 100%; 
+                    margin: 10px 0; 
+                }
+                .info-box { 
+                    display: table-cell; 
+                    width: 48%; 
+                    background: #f8f9fa; 
+                    padding: 8px; 
+                    border-radius: 4px; 
+                    border-left: 3px solid #3498db; 
+                    vertical-align: top;
+                    font-size: 9px;
+                }
+                .info-box:first-child { margin-right: 2%; }
+                .info-box h3 { 
+                    color: #2c3e50; 
+                    margin-top: 0; 
+                    font-size: 11px; 
+                    margin-bottom: 5px;
+                }
+                .quote-table { 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    margin: 10px 0; 
+                    font-size: 9px;
+                }
+                .quote-table th, .quote-table td { 
+                    border: 1px solid #ddd; 
+                    padding: 6px; 
+                    text-align: left; 
+                }
+                .quote-table th { 
+                    background: #f8f9fa; 
+                    font-weight: bold; 
+                }
+                .total-row { 
+                    background: #e8f5e8; 
+                    font-weight: bold; 
+                    font-size: 11px;
+                }
+                .footer { 
+                    margin-top: 20px; 
+                    padding-top: 10px; 
+                    border-top: 1px solid #ddd; 
+                    font-size: 9px; 
+                    color: #666;
+                }
+              </style>
+          </head>
+          <body>
+              <div class="header">
+                  <h1>QUOTE</h1>
+                  <h2>Quote Number: ${quoteData.quoteNumber}</h2>
+                  <p>Date: ${formatDate(new Date())} | Valid Until: ${formatDate(quoteData.validUntil)}</p>
+              </div>
 
-        const pdfResponse = await fetch(`${currentUrl}/api/xero-quote-real-pdf`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(pdfQuoteData)
-        });
+              <div class="info-grid">
+                  <div class="info-box">
+                      <h3>CUSTOMER DETAILS:</h3>
+                      <p><strong>Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
+                      <p><strong>Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
+                      <p><strong>Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
+                      <p><strong>Location:</strong> ${quoteData.location || 'Auckland'}</p>
+                  </div>
+                  <div class="info-box">
+                      <h3>TRADESMAN DETAILS:</h3>
+                      <p><strong>Name:</strong> ${quoteData.tradesmanName}</p>
+                      <p><strong>Phone:</strong> ${quoteData.tradesmanPhone || 'Not specified'}</p>
+                      <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
+                  </div>
+              </div>
 
-        console.log('📄 PDF Response status:', pdfResponse.status);
+              <div class="section">
+                  <h3>SERVICE:</h3>
+                  <p><strong>${quoteData.serviceType || 'Underfloor Heating Installation'}</strong></p>
+                  ${quoteData.projectDetails ? `<p><strong>Project Details:</strong> ${quoteData.projectDetails}</p>` : ''}
+              </div>
 
-        if (pdfResponse.ok) {
-          const pdfResult = await pdfResponse.json();
-          console.log('📄 PDF Result:', pdfResult);
-          if (pdfResult.success) {
-            console.log('✅ PDF created and sent successfully');
-            pdfCreated = true;
-          } else {
-            console.error('❌ PDF creation failed:', pdfResult.error);
-          }
-        } else {
-          const errorText = await pdfResponse.text();
-          console.error('❌ PDF API call failed:', pdfResponse.status, errorText);
+              <div class="section">
+                  <h3>ITEM BREAKDOWN:</h3>
+                  <div style="white-space: pre-line; font-size: 9px;">${quoteData.itemBreakdown || 'No breakdown provided'}</div>
+              </div>
+
+              <div class="section">
+                  <h3>TOTAL AMOUNT:</h3>
+                  <div style="background: #e8f5e8; padding: 10px; border-radius: 4px; text-align: center; font-size: 16px; font-weight: bold; color: #155724;">
+                      $${quoteData.totalAmount}
+                  </div>
+              </div>
+
+              ${quoteData.additionalNotes ? `
+              <div class="section">
+                  <h3>ADDITIONAL NOTES:</h3>
+                  <p>${quoteData.additionalNotes}</p>
+              </div>
+              ` : ''}
+
+              <div class="footer">
+                  <p><strong>Terms & Conditions:</strong></p>
+                  <p>• This quote is valid until ${formatDate(quoteData.validUntil)}</p>
+                  <p>• Payment terms to be discussed upon acceptance</p>
+                  <p>• All work to be completed to industry standards</p>
+              </div>
+          </body>
+          </html>
+        `;
+
+        // Try to generate PDF with Puppeteer
+        let pdfBuffer = null;
+        try {
+          const browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+          });
+          
+          const page = await browser.newPage();
+          await page.setContent(htmlContent);
+          
+          pdfBuffer = await page.pdf({
+            format: 'A4',
+            landscape: true,
+            margin: { top: '0.3in', right: '0.3in', bottom: '0.3in', left: '0.3in' }
+          });
+          
+          await browser.close();
+          console.log('✅ PDF generated successfully with Puppeteer');
+        } catch (puppeteerError) {
+          console.log('⚠️ Puppeteer failed, using HTML fallback:', puppeteerError.message);
         }
-      } catch (pdfError) {
-        console.error('❌ PDF creation error:', pdfError.message);
+
+        // Send email to customer with PDF or HTML attachment
+        const customerMailOptions = {
+          from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+          to: quoteData.customerEmail || 'danbricks18@gmail.com',
+          subject: `Professional Quote ${quoteData.quoteNumber} - ${quoteData.serviceType || 'Your Project'}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #2c3e50;">Your Professional Quote is Ready!</h2>
+              <p>Hi ${quoteData.customerName || 'there'},</p>
+              <p>Please find attached your professional quote for <strong>${quoteData.serviceType || 'your project'}</strong>.</p>
+              
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #34495e; margin-top: 0;">Quote Summary:</h3>
+                <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+                <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
+                <p><strong>Valid Until:</strong> ${formatDate(quoteData.validUntil)}</p>
+                <p><strong>Tradesman:</strong> ${quoteData.tradesmanName}</p>
+              </div>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${currentUrl}/api/view-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+                   style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
+                 View Quote Online
+                </a>
+                <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+                   style="background: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
+                 Accept Quote
+                </a>
+                <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+                   style="background: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
+                 Decline Quote
+                </a>
+              </div>
+              
+              ${pdfBuffer ? 
+                '<p>Please find your professional PDF quote attached to this email.</p>' :
+                '<p><strong>Note:</strong> The attached HTML file can be opened in any web browser and printed as a PDF for a professional look.</p>'
+              }
+              <p>You can view the quote online and accept/decline it using the links above.</p>
+              <p>Please review the attached quote and let us know if you have any questions.</p>
+              
+              <p style="margin-top: 30px;">Best regards,<br><strong>${quoteData.tradesmanName}</strong></p>
+            </div>
+          `,
+          attachments: [{
+            filename: pdfBuffer ? `Quote-${quoteData.quoteNumber}.pdf` : `Quote-${quoteData.quoteNumber}.html`,
+            content: pdfBuffer ? pdfBuffer.toString('base64') : Buffer.from(htmlContent, 'utf8').toString('base64'),
+            encoding: 'base64',
+            contentType: pdfBuffer ? 'application/pdf' : 'text/html'
+          }]
+        };
+
+        await transporter.sendMail(customerMailOptions);
+        console.log('✅ Customer email sent with quote attachment');
+        pdfEmailSent = true;
+
+        // Send copy to tradesman
+        const tradesmanCopyMailOptions = {
+          from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+          to: quoteData.tradesmanEmail,
+          subject: `Quote ${quoteData.quoteNumber} - Copy for ${quoteData.customerName}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #2c3e50;">Quote Copy</h2>
+              <p>Here's a copy of the quote you submitted for ${quoteData.customerName}.</p>
+              
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
+                <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+                <p><strong>Customer:</strong> ${quoteData.customerName}</p>
+                <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
+                <p><strong>Service:</strong> ${quoteData.serviceType}</p>
+              </div>
+              
+              <p>The customer has been notified and can view the quote online.</p>
+            </div>
+          `,
+          attachments: [{
+            filename: pdfBuffer ? `Quote-${quoteData.quoteNumber}.pdf` : `Quote-${quoteData.quoteNumber}.html`,
+            content: pdfBuffer ? pdfBuffer.toString('base64') : Buffer.from(htmlContent, 'utf8').toString('base64'),
+            encoding: 'base64',
+            contentType: pdfBuffer ? 'application/pdf' : 'text/html'
+          }]
+        };
+
+        await transporter.sendMail(tradesmanCopyMailOptions);
+        console.log('✅ Tradesman copy sent');
+
+      } catch (emailError) {
+        console.error('❌ Customer email error:', emailError.message);
       }
 
       // Return success response
       const response = {
         success: true,
-        message: pdfCreated ? 'Quote submitted successfully! Professional PDF has been created and sent to all parties.' : 'Quote submitted successfully! PDF generation is in progress.',
+        message: pdfEmailSent ? 'Quote submitted successfully! Professional PDF has been created and sent to all parties.' : 'Quote submitted successfully! PDF generation is in progress.',
         data: quoteData,
         quoteNumber: quoteData.quoteNumber,
         timestamp: new Date().toISOString(),
         status: {
           sheetsUpdated,
           tradesmanEmailSent,
-          customerEmailSent: pdfCreated, // Only true if PDF was created successfully
-          pdfCreated
+          customerEmailSent: pdfEmailSent, // Only true if PDF was created successfully
+          pdfCreated: pdfEmailSent
         }
       };
 

@@ -46,7 +46,7 @@ export default async function handler(req, res) {
       }
 
       const customerMailOptions = {
-        from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+        from: 'Kiwi Trade <danbricks18@gmail.com>',
         to: leadData.customerEmail,
         subject: 'Your Project Request Confirmation - Quote Coming Soon',
         html: `
@@ -69,7 +69,7 @@ export default async function handler(req, res) {
             <p>Our qualified tradesmen are reviewing your project and will send you a detailed quote within 24 hours.</p>
             <p>You'll receive an email with the quote and tradesman details for your approval.</p>
             
-            <p style="margin-top: 30px;">Best regards,<br><strong>Your Trade Team</strong></p>
+            <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade</strong></p>
           </div>
         `
       };
@@ -110,7 +110,7 @@ export default async function handler(req, res) {
       for (const tradesmanEmail of tradesmanEmails) {
         try {
           const mailOptions = {
-            from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+            from: 'Kiwi Trade <danbricks18@gmail.com>',
             to: tradesmanEmail,
             subject: `🔥 New Lead: ${leadData.selectedService} - ${leadData.location}`,
             html: `
@@ -144,7 +144,7 @@ export default async function handler(req, res) {
                 <p>Click the button above to submit a quote. The form will be pre-filled with the customer's information.</p>
                 
                 <p style="margin-top: 30px; color: #6c757d; font-size: 14px;">
-                  This lead was generated from the Kiwi Underfloor Heating website.
+                  This lead was generated from the Kiwi Trade website.
                 </p>
               </div>
             `

@@ -261,7 +261,7 @@ async function sendAdminQuoteEmail(quoteData, req) {
                     </a>
                 </div>
 
-                <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Underfloor Heating System</strong></p>
+                <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade</strong></p>
             </div>
         `;
 
@@ -425,7 +425,7 @@ app.post('/api/generate-quote', async (req, res) => {
             tradesmanName,
             tradesmanEmail,
             tradesmanPhone,
-            companyName = 'Kiwi Underfloor Heating',
+            companyName = 'Kiwi Trade ',
             companyAddress = 'Auckland, New Zealand',
             gstNumber = '120-681-729',
             items = []
@@ -535,7 +535,7 @@ app.get('/api/generate-quote', async (req, res) => {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Quote ${quoteId} - Kiwi Underfloor Heating</title>
+            <title>Quote ${quoteId} - Kiwi Trade</title>
             <style>
                 body { font-family: Arial, sans-serif; margin: 40px; }
                 .actions { text-align: center; margin-bottom: 40px; padding: 20px; background: #f8f9fa; }

@@ -151,7 +151,7 @@ export default async function handler(req, res) {
 
       // Send to customer
       const customerMailOptions = {
-        from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+        from: 'Kiwi Trade <danbricks18@gmail.com>',
         to: quoteData.customerEmail || 'danbricks18@gmail.com',
         subject: `Quote ${quoteData.quoteNumber} - ${quoteData.serviceType || 'Your Project'}`,
         html: `
@@ -196,7 +196,7 @@ export default async function handler(req, res) {
 
       // Send to tradesman
       const tradesmanMailOptions = {
-        from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+        from: 'Kiwi Trade <danbricks18@gmail.com>',
         to: quoteData.tradesmanEmail,
         subject: `Quote ${quoteData.quoteNumber} - Copy for ${quoteData.customerName}`,
         html: `
@@ -230,7 +230,7 @@ export default async function handler(req, res) {
 
       // Send to admin
       const adminMailOptions = {
-        from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+        from: 'Kiwi Trade <danbricks18@gmail.com>',
         to: 'danbricks18@gmail.com',
         subject: `Quote ${quoteData.quoteNumber} - Admin Copy`,
         html: `

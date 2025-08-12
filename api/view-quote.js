@@ -291,7 +291,7 @@ export default async function handler(req, res) {
           </div>
 
           <div class="header">
-            <h1 class="company-name">KIWI UNDERFLOOR HEATING</h1>
+            <h1 class="company-name">KIWI TRADE</h1>
             <h2 class="quote-title">QUOTE</h2>
             <p class="quote-number">Quote Number: ${quoteData.quoteNumber}</p>
             <p class="quote-dates">Date: ${new Date().toLocaleDateString('en-GB')}</p>
@@ -351,7 +351,7 @@ export default async function handler(req, res) {
           ` : ''}
 
           <div class="footer">
-            <p><strong>Kiwi Underfloor Heating</strong></p>
+                            <p><strong>Kiwi Trade</strong></p>
             <p>Professional underfloor heating solutions for your home</p>
             <p>This quote was generated using our automated system</p>
             <p>Thank you for choosing Kiwi Underfloor Heating!</p>

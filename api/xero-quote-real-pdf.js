@@ -202,10 +202,10 @@ export default async function handler(req, res) {
             </div>
             
             <div class="footer">
-                <p><strong>Kiwi Underfloor Heating</strong></p>
+                <p><strong>Kiwi Trade</strong></p>
                 <p>Professional underfloor heating solutions for your home</p>
                 <p>This quote was generated using our automated system</p>
-                <p>Thank you for choosing Kiwi Underfloor Heating!</p>
+                <p>Thank you for choosing Kiwi Trade!</p>
             </div>
         </body>
         </html>
@@ -277,7 +277,7 @@ export default async function handler(req, res) {
 
       // Send to customer
       const customerMailOptions = {
-        from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+        from: 'Kiwi Trade <danbricks18@gmail.com>',
         to: quoteData.customerEmail || 'danbricks18@gmail.com',
         subject: `Quote ${quoteData.quoteNumber} - ${quoteData.serviceType || 'Your Project'}`,
         html: `

@@ -266,78 +266,108 @@ export default async function handler(req, res) {
 
           <button type="submit">Submit Quote</button>
         </form>
+        
+        <!-- Debug section -->
+        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px; border: 1px solid #dee2e6;">
+          <h4>Debug Information</h4>
+          <button type="button" onclick="testCalculation()" style="background: #28a745; margin-right: 10px;">Test Calculation</button>
+          <button type="button" onclick="console.log('Form elements:', document.getElementById('labourRate'), document.getElementById('labourSubtotal'))" style="background: #17a2b8;">Check Elements</button>
+          <div id="debugOutput" style="margin-top: 10px; font-family: monospace; font-size: 12px;"></div>
+        </div>
 
       <script>
           // Function to calculate subtotals and total
           function calculateTotals() {
               console.log('🔄 Calculating totals...');
               
-              // Add visual feedback
-              const subtotalElements = ['labourSubtotal', 'materialSubtotal', 'installationSubtotal', 'totalAmount'];
-              subtotalElements.forEach(id => {
-                  const element = document.getElementById(id);
-                  if (element) {
-                      element.classList.add('calculating');
+              try {
+                  // Get input values
+                  const labourRate = parseFloat(document.getElementById('labourRate').value) || 0;
+                  const labourHours = parseFloat(document.getElementById('labourHours').value) || 0;
+                  const materialRate = parseFloat(document.getElementById('materialRate').value) || 0;
+                  const materialSQM = parseFloat(document.getElementById('materialSQM').value) || 0;
+                  const installationAmount = parseFloat(document.getElementById('installationAmount').value) || 0;
+                  
+                  console.log('📊 Values:', { labourRate, labourHours, materialRate, materialSQM, installationAmount });
+                  
+                  // Calculate subtotals
+                  const labourSubtotal = labourRate * labourHours;
+                  const materialSubtotal = materialRate * materialSQM;
+                  const installationSubtotal = installationAmount;
+                  
+                  // Calculate total
+                  const total = labourSubtotal + materialSubtotal + installationSubtotal;
+                  
+                  console.log('💰 Subtotals:', { labourSubtotal, materialSubtotal, installationSubtotal, total });
+                  
+                  // Update display with visual feedback
+                  const labourSubtotalEl = document.getElementById('labourSubtotal');
+                  const materialSubtotalEl = document.getElementById('materialSubtotal');
+                  const installationSubtotalEl = document.getElementById('installationSubtotal');
+                  const totalAmountEl = document.getElementById('totalAmount');
+                  
+                  if (labourSubtotalEl) {
+                      labourSubtotalEl.classList.add('calculating');
+                      labourSubtotalEl.value = labourSubtotal.toFixed(2);
+                      setTimeout(() => labourSubtotalEl.classList.remove('calculating'), 300);
                   }
-              });
-              
-              const labourRate = parseFloat(document.getElementById('labourRate').value) || 0;
-              const labourHours = parseFloat(document.getElementById('labourHours').value) || 0;
-              const materialRate = parseFloat(document.getElementById('materialRate').value) || 0;
-              const materialSQM = parseFloat(document.getElementById('materialSQM').value) || 0;
-              const installationAmount = parseFloat(document.getElementById('installationAmount').value) || 0;
-              
-              console.log('📊 Values:', { labourRate, labourHours, materialRate, materialSQM, installationAmount });
-              
-              // Calculate subtotals
-              const labourSubtotal = labourRate * labourHours;
-              const materialSubtotal = materialRate * materialSQM;
-              const installationSubtotal = installationAmount;
-              
-              // Calculate total
-              const total = labourSubtotal + materialSubtotal + installationSubtotal;
-              
-              console.log('💰 Subtotals:', { labourSubtotal, materialSubtotal, installationSubtotal, total });
-              
-              // Update display
-              document.getElementById('labourSubtotal').value = labourSubtotal.toFixed(2);
-              document.getElementById('materialSubtotal').value = materialSubtotal.toFixed(2);
-              document.getElementById('installationSubtotal').value = installationSubtotal.toFixed(2);
-              document.getElementById('totalAmount').value = total.toFixed(2);
-              
-              // Remove visual feedback
-              subtotalElements.forEach(id => {
-                  const element = document.getElementById(id);
-                  if (element) {
-                      element.classList.remove('calculating');
+                  
+                  if (materialSubtotalEl) {
+                      materialSubtotalEl.classList.add('calculating');
+                      materialSubtotalEl.value = materialSubtotal.toFixed(2);
+                      setTimeout(() => materialSubtotalEl.classList.remove('calculating'), 300);
                   }
-              });
-              
-              // Generate item breakdown
-              generateItemBreakdown(labourRate, labourHours, labourSubtotal, materialRate, materialSQM, materialSubtotal, installationAmount);
+                  
+                  if (installationSubtotalEl) {
+                      installationSubtotalEl.classList.add('calculating');
+                      installationSubtotalEl.value = installationSubtotal.toFixed(2);
+                      setTimeout(() => installationSubtotalEl.classList.remove('calculating'), 300);
+                  }
+                  
+                  if (totalAmountEl) {
+                      totalAmountEl.classList.add('calculating');
+                      totalAmountEl.value = total.toFixed(2);
+                      setTimeout(() => totalAmountEl.classList.remove('calculating'), 300);
+                  }
+                  
+                  // Generate item breakdown
+                  generateItemBreakdown(labourRate, labourHours, labourSubtotal, materialRate, materialSQM, materialSubtotal, installationAmount);
+                  
+              } catch (error) {
+                  console.error('❌ Error in calculateTotals:', error);
+              }
           }
           
           // Function to generate item breakdown
           function generateItemBreakdown(labourRate, labourHours, labourSubtotal, materialRate, materialSQM, materialSubtotal, installationAmount) {
-              let breakdown = '';
-              
-              if (labourSubtotal > 0) {
-                  breakdown += 'Labour: $' + labourRate.toFixed(2) + '/hour × ' + labourHours + ' hours = $' + labourSubtotal.toFixed(2) + '\n';
+              try {
+                  let breakdown = '';
+                  
+                  if (labourSubtotal > 0) {
+                      breakdown += 'Labour: $' + labourRate.toFixed(2) + '/hour x ' + labourHours + ' hours = $' + labourSubtotal.toFixed(2) + '\n';
+                  }
+                  
+                  if (materialSubtotal > 0) {
+                      breakdown += 'Materials: $' + materialRate.toFixed(2) + '/sqm x ' + materialSQM + ' sqm = $' + materialSubtotal.toFixed(2) + '\n';
+                  }
+                  
+                  if (installationAmount > 0) {
+                      breakdown += 'Installation: $' + installationAmount.toFixed(2) + '\n';
+                  }
+                  
+                  const itemBreakdownEl = document.getElementById('itemBreakdown');
+                  if (itemBreakdownEl) {
+                      itemBreakdownEl.value = breakdown;
+                  }
+              } catch (error) {
+                  console.error('❌ Error in generateItemBreakdown:', error);
               }
-              
-              if (materialSubtotal > 0) {
-                  breakdown += 'Materials: $' + materialRate.toFixed(2) + '/sqm × ' + materialSQM + ' sqm = $' + materialSubtotal.toFixed(2) + '\n';
-              }
-              
-              if (installationAmount > 0) {
-                  breakdown += 'Installation: $' + installationAmount.toFixed(2) + '\n';
-              }
-              
-              document.getElementById('itemBreakdown').value = breakdown;
           }
           
           // Function to add event listeners safely
           function addEventListeners() {
+              console.log('🔧 Adding event listeners...');
+              
               const elements = [
                   'labourRate',
                   'labourHours', 
@@ -349,6 +379,11 @@ export default async function handler(req, res) {
               elements.forEach(id => {
                   const element = document.getElementById(id);
                   if (element) {
+                      // Remove existing listeners to prevent duplicates
+                      element.removeEventListener('input', calculateTotals);
+                      element.removeEventListener('change', calculateTotals);
+                      
+                      // Add new listeners
                       element.addEventListener('input', calculateTotals);
                       element.addEventListener('change', calculateTotals);
                       console.log('✅ Added event listener to:', id);
@@ -369,7 +404,44 @@ export default async function handler(req, res) {
           if (document.readyState === 'loading') {
               document.addEventListener('DOMContentLoaded', addEventListeners);
           } else {
+              console.log('📄 DOM already loaded, adding listeners immediately...');
               addEventListeners();
+              calculateTotals(); // Initial calculation
+          }
+          
+          // Test function for debugging
+          function testCalculation() {
+              console.log('🧪 Testing calculation...');
+              const debugOutput = document.getElementById('debugOutput');
+              
+              // Test if elements exist
+              const elements = ['labourRate', 'labourHours', 'materialRate', 'materialSQM', 'installationAmount', 'labourSubtotal', 'materialSubtotal', 'installationSubtotal', 'totalAmount'];
+              const elementStatus = {};
+              
+              elements.forEach(id => {
+                  const element = document.getElementById(id);
+                  elementStatus[id] = element ? 'Found' : 'Missing';
+                  if (element) {
+                      elementStatus[id] += ` (value: ${element.value})`;
+                  }
+              });
+              
+              debugOutput.innerHTML = '<strong>Element Status:</strong><br>' + 
+                  Object.entries(elementStatus).map(([id, status]) => id + ': ' + status).join('<br>');
+              
+              // Test calculation
+              calculateTotals();
+              
+              setTimeout(() => {
+                  const finalStatus = {};
+                  elements.forEach(id => {
+                      const element = document.getElementById(id);
+                      finalStatus[id] = element ? `Found (value: ${element.value})` : 'Missing';
+                  });
+                  
+                  debugOutput.innerHTML += '<br><br><strong>After Calculation:</strong><br>' + 
+                      Object.entries(finalStatus).map(([id, status]) => id + ': ' + status).join('<br>');
+              }, 500);
           }
           
           document.getElementById('quoteForm').addEventListener('submit', async (e) => {
@@ -515,7 +587,7 @@ export default async function handler(req, res) {
         });
 
         const adminMailOptions = {
-          from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+          from: 'Kiwi Trade <danbricks18@gmail.com>',
           to: 'danbricks18@gmail.com',
           subject: `Quote ${quoteData.quoteNumber} Submitted - ${quoteData.tradesmanName}`,
           html: `
@@ -608,7 +680,7 @@ export default async function handler(req, res) {
           'https://lead-code.vercel.app';
 
         const tradesmanMailOptions = {
-          from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+          from: 'Kiwi Trade <danbricks18@gmail.com>',
           to: quoteData.tradesmanEmail,
           subject: `Quote Submitted Successfully - ${quoteData.quoteNumber}`,
           html: `
@@ -637,7 +709,7 @@ export default async function handler(req, res) {
                 </ul>
               </div>
               
-              <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Underfloor Heating System</strong></p>
+              <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
             </div>
           `
         };
@@ -747,7 +819,7 @@ export default async function handler(req, res) {
               properties: {},
               children: [
                 new Paragraph({
-                  children: [new TextRun({ text: 'KIWI UNDERFLOOR HEATING', bold: true, size: 32 })],
+                  children: [new TextRun({ text: 'KIWI TRADE', bold: true, size: 32 })],
                   alignment: AlignmentType.CENTER
                 }),
                 new Paragraph({
@@ -831,7 +903,7 @@ export default async function handler(req, res) {
                 ] : []),
                 new Paragraph({ children: [new TextRun({ text: '' })] }), // Spacing
                 new Paragraph({
-                  children: [new TextRun({ text: 'Kiwi Underfloor Heating', bold: true })],
+                  children: [new TextRun({ text: 'Kiwi Trade', bold: true })],
                   alignment: AlignmentType.CENTER
                 }),
                 new Paragraph({
@@ -843,7 +915,7 @@ export default async function handler(req, res) {
                   alignment: AlignmentType.CENTER
                 }),
                 new Paragraph({
-                  children: [new TextRun({ text: 'Thank you for choosing Kiwi Underfloor Heating!' })],
+                  children: [new TextRun({ text: 'Thank you for choosing Kiwi Trade!' })],
                   alignment: AlignmentType.CENTER
                 })
               ]
@@ -988,7 +1060,7 @@ export default async function handler(req, res) {
           </head>
           <body>
               <div class="header">
-                  <h1 class="company-name">KIWI UNDERFLOOR HEATING</h1>
+                  <h1 class="company-name">KIWI TRADE</h1>
                   <h2 class="quote-title">QUOTE</h2>
                   <p class="quote-number">Quote Number: ${quoteData.quoteNumber}</p>
                   <p class="quote-dates">Date: ${formatDate(new Date())}</p>
@@ -1048,10 +1120,10 @@ export default async function handler(req, res) {
               ` : ''}
 
               <div class="footer">
-                  <p><strong>Kiwi Underfloor Heating</strong></p>
+                  <p><strong>Kiwi Trade</strong></p>
                   <p>Professional underfloor heating solutions for your home</p>
                   <p>This quote was generated using our automated system</p>
-                  <p>Thank you for choosing Kiwi Underfloor Heating!</p>
+                  <p>Thank you for choosing Kiwi Trade!</p>
               </div>
           </body>
           </html>
@@ -1160,7 +1232,7 @@ export default async function handler(req, res) {
 
         // Send email to customer with appropriate attachment
         const customerMailOptions = {
-          from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+          from: 'Kiwi Trade <danbricks18@gmail.com>',
           to: quoteData.customerEmail || 'danbricks18@gmail.com',
           subject: `Professional Quote ${quoteData.quoteNumber} - ${quoteData.serviceType || 'Your Project'}`,
           html: `
@@ -1215,7 +1287,7 @@ export default async function handler(req, res) {
 
         // Send copy to tradesman
         const tradesmanCopyMailOptions = {
-          from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
+          from: 'Kiwi Trade <danbricks18@gmail.com>',
           to: quoteData.tradesmanEmail,
           subject: `Quote ${quoteData.quoteNumber} - Copy for ${quoteData.customerName}`,
           html: `

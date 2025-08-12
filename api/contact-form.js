@@ -64,13 +64,13 @@ export default async function handler(req, res) {
                 ${message.replace(/\n/g, '<br>')}
             </div>
             <hr>
-            <p><em>This message was sent from the Kiwi Underfloor Heating contact form.</em></p>
+            <p><em>This message was sent from the Kiwi Trade contact form.</em></p>
         `;
 
         // Send email to admin
         const adminEmail = gmailUser;
         const mailOptions = {
-            from: process.env.MAIL_FROM || `Kiwi Underfloor Heating <${gmailUser}>`,
+            from: process.env.MAIL_FROM || `Kiwi Trade <${gmailUser}>`,
             to: adminEmail,
             replyTo: email, // Set reply-to as the customer's email
             subject: emailSubject,
@@ -83,9 +83,9 @@ export default async function handler(req, res) {
 
         // Send confirmation email to customer
         const customerConfirmation = {
-            from: process.env.MAIL_FROM || `Kiwi Underfloor Heating <${gmailUser}>`,
+            from: process.env.MAIL_FROM || `Kiwi Trade <${gmailUser}>`,
             to: email,
-            subject: 'Thank you for contacting Kiwi Underfloor Heating',
+            subject: 'Thank you for contacting Kiwi Trade',
             html: `
                 <h2>Thank you for your message!</h2>
                 <p>Hi ${name},</p>
@@ -99,7 +99,7 @@ export default async function handler(req, res) {
                     <li>Phone: +64 9 123 4567</li>
                     <li>Email: support@kiwiunderfloor.com</li>
                 </ul>
-                <p>Best regards,<br>The Kiwi Underfloor Heating Team</p>
+                <p>Best regards,<br>The Kiwi Trade Team</p>
             `
         };
 

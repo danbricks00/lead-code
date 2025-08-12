@@ -401,7 +401,35 @@ export default async function handler(req, res) {
           return d.toLocaleDateString('en-GB'); // DD/MM/YYYY format
         };
 
-        // Create professional HTML for PDF generation
+        // Function to generate breakdown table rows from itemBreakdown text
+        const generateBreakdownRows = (itemBreakdown) => {
+          if (!itemBreakdown) {
+            return '<tr><td colspan="3">No breakdown provided</td></tr>';
+          }
+          
+          // Split by newlines and process each line
+          const lines = itemBreakdown.split('\n').filter(line => line.trim());
+          if (lines.length === 0) {
+            return '<tr><td colspan="3">No breakdown provided</td></tr>';
+          }
+          
+          return lines.map(line => {
+            // Try to extract item name and amount from the line
+            const trimmedLine = line.trim();
+            if (trimmedLine.includes('$')) {
+              // If line contains $, try to extract amount
+              const parts = trimmedLine.split('$');
+              const itemName = parts[0].trim();
+              const amount = parts[1] ? '$' + parts[1].trim() : '';
+              return `<tr><td>${itemName}</td><td>${itemName}</td><td>${amount}</td></tr>`;
+            } else {
+              // If no $, treat as item name only
+              return `<tr><td>${trimmedLine}</td><td>${trimmedLine}</td><td>$${quoteData.totalAmount}</td></tr>`;
+            }
+          }).join('');
+        };
+
+        // Create professional HTML for PDF generation matching the image format
         const htmlContent = `
           <!DOCTYPE html>
           <html>
@@ -415,141 +443,191 @@ export default async function handler(req, res) {
                 body { 
                     font-family: 'Arial', sans-serif; 
                     margin: 0; 
-                    padding: 15px; 
+                    padding: 20px; 
                     color: #333;
                     line-height: 1.4;
-                    font-size: 11px;
+                    font-size: 12px;
                 }
                 .header { 
                     text-align: center; 
-                    border-bottom: 2px solid #2c3e50; 
-                    padding-bottom: 10px; 
-                    margin-bottom: 15px; 
+                    margin-bottom: 25px; 
                 }
-                .header h1 { 
-                    color: #2c3e50; 
+                .company-name { 
+                    color: #4a90e2; 
                     margin: 0; 
-                    font-size: 20px; 
+                    font-size: 18px; 
+                    font-weight: normal;
                 }
-                .header h2 { 
-                    color: #34495e; 
+                .quote-title { 
+                    color: #333; 
+                    margin: 10px 0 5px 0; 
+                    font-size: 24px; 
+                    font-weight: bold;
+                }
+                .quote-number { 
+                    color: #333; 
                     margin: 5px 0; 
                     font-size: 14px; 
+                    font-weight: bold;
                 }
-                .section { margin: 12px 0; }
-                .section h3 { 
+                .quote-dates { 
+                    color: #333; 
+                    margin: 5px 0; 
                     font-size: 12px; 
-                    margin: 8px 0 5px 0; 
-                    color: #2c3e50; 
                 }
-                .section p { 
-                    font-size: 9px; 
-                    margin: 3px 0; 
+                .divider { 
+                    border-top: 1px solid #333; 
+                    margin: 15px 0; 
                 }
-                .info-grid { 
-                    display: table; 
-                    width: 100%; 
-                    margin: 10px 0; 
+                .details-section { 
+                    display: flex; 
+                    margin: 20px 0; 
+                    gap: 20px;
                 }
-                .info-box { 
-                    display: table-cell; 
-                    width: 48%; 
+                .details-column { 
+                    flex: 1; 
                     background: #f8f9fa; 
-                    padding: 8px; 
+                    padding: 15px; 
                     border-radius: 4px; 
-                    border-left: 3px solid #3498db; 
-                    vertical-align: top;
-                    font-size: 9px;
+                    border-left: 4px solid #4a90e2; 
                 }
-                .info-box:first-child { margin-right: 2%; }
-                .info-box h3 { 
-                    color: #2c3e50; 
-                    margin-top: 0; 
-                    font-size: 11px; 
-                    margin-bottom: 5px;
+                .details-title { 
+                    color: #333; 
+                    margin: 0 0 10px 0; 
+                    font-size: 14px; 
+                    font-weight: bold;
                 }
-                .quote-table { 
+                .details-content { 
+                    font-size: 12px; 
+                    line-height: 1.6;
+                }
+                .details-content p { 
+                    margin: 5px 0; 
+                }
+                .quote-breakdown { 
+                    margin: 20px 0; 
+                }
+                .breakdown-title { 
+                    color: #333; 
+                    margin: 0 0 10px 0; 
+                    font-size: 14px; 
+                    font-weight: bold;
+                    border-left: 4px solid #4a90e2; 
+                    padding-left: 10px;
+                }
+                .breakdown-table { 
                     width: 100%; 
                     border-collapse: collapse; 
                     margin: 10px 0; 
-                    font-size: 9px;
+                    font-size: 12px;
                 }
-                .quote-table th, .quote-table td { 
+                .breakdown-table th, .breakdown-table td { 
                     border: 1px solid #ddd; 
-                    padding: 6px; 
+                    padding: 8px; 
                     text-align: left; 
                 }
-                .quote-table th { 
-                    background: #f8f9fa; 
+                .breakdown-table th { 
+                    background: #333; 
+                    color: white; 
                     font-weight: bold; 
                 }
-                .total-row { 
-                    background: #e8f5e8; 
+                .total-section { 
+                    text-align: right; 
+                    margin: 20px 0; 
+                }
+                .total-amount { 
+                    font-size: 18px; 
                     font-weight: bold; 
-                    font-size: 11px;
+                    color: #333;
+                }
+                .notes-section { 
+                    margin: 20px 0; 
+                }
+                .notes-title { 
+                    color: #333; 
+                    margin: 0 0 10px 0; 
+                    font-size: 14px; 
+                    font-weight: bold;
                 }
                 .footer { 
-                    margin-top: 20px; 
-                    padding-top: 10px; 
+                    margin-top: 30px; 
+                    padding-top: 15px; 
                     border-top: 1px solid #ddd; 
-                    font-size: 9px; 
+                    font-size: 10px; 
                     color: #666;
+                    text-align: center;
+                }
+                .footer p { 
+                    margin: 3px 0; 
                 }
               </style>
           </head>
           <body>
               <div class="header">
-                  <h1>QUOTE</h1>
-                  <h2>Quote Number: ${quoteData.quoteNumber}</h2>
-                  <p>Date: ${formatDate(new Date())} | Valid Until: ${formatDate(quoteData.validUntil)}</p>
+                  <h1 class="company-name">KIWI UNDERFLOOR HEATING</h1>
+                  <h2 class="quote-title">QUOTE</h2>
+                  <p class="quote-number">Quote Number: ${quoteData.quoteNumber}</p>
+                  <p class="quote-dates">Date: ${formatDate(new Date())}</p>
+                  <p class="quote-dates">Valid Until: ${formatDate(quoteData.validUntil)}</p>
               </div>
 
-              <div class="info-grid">
-                  <div class="info-box">
-                      <h3>CUSTOMER DETAILS:</h3>
-                      <p><strong>Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
-                      <p><strong>Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
-                      <p><strong>Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
-                      <p><strong>Location:</strong> ${quoteData.location || 'Auckland'}</p>
+              <div class="divider"></div>
+
+              <div class="details-section">
+                  <div class="details-column">
+                      <h3 class="details-title">Customer Details</h3>
+                      <div class="details-content">
+                          <p><strong>Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
+                          <p><strong>Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
+                          <p><strong>Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
+                          <p><strong>Address:</strong> ${quoteData.location || 'Auckland'}</p>
+                      </div>
                   </div>
-                  <div class="info-box">
-                      <h3>TRADESMAN DETAILS:</h3>
-                      <p><strong>Name:</strong> ${quoteData.tradesmanName}</p>
-                      <p><strong>Phone:</strong> ${quoteData.tradesmanPhone || 'Not specified'}</p>
-                      <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
+                  <div class="details-column">
+                      <h3 class="details-title">Tradesman Details</h3>
+                      <div class="details-content">
+                          <p><strong>Company:</strong> ${quoteData.tradesmanName}</p>
+                          <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
+                          <p><strong>Phone:</strong> ${quoteData.tradesmanPhone || 'Not specified'}</p>
+                          <p><strong>Service:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
+                      </div>
                   </div>
               </div>
 
-              <div class="section">
-                  <h3>SERVICE:</h3>
-                  <p><strong>${quoteData.serviceType || 'Underfloor Heating Installation'}</strong></p>
-                  ${quoteData.projectDetails ? `<p><strong>Project Details:</strong> ${quoteData.projectDetails}</p>` : ''}
+              <div class="divider"></div>
+
+              <div class="quote-breakdown">
+                  <h3 class="breakdown-title">Quote Breakdown</h3>
+                  <table class="breakdown-table">
+                      <thead>
+                          <tr>
+                              <th>Item</th>
+                              <th>Description</th>
+                              <th>Amount</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          ${generateBreakdownRows(quoteData.itemBreakdown)}
+                      </tbody>
+                  </table>
               </div>
 
-              <div class="section">
-                  <h3>ITEM BREAKDOWN:</h3>
-                  <div style="white-space: pre-line; font-size: 9px;">${quoteData.itemBreakdown || 'No breakdown provided'}</div>
-              </div>
-
-              <div class="section">
-                  <h3>TOTAL AMOUNT:</h3>
-                  <div style="background: #e8f5e8; padding: 10px; border-radius: 4px; text-align: center; font-size: 16px; font-weight: bold; color: #155724;">
-                      $${quoteData.totalAmount}
-                  </div>
+              <div class="total-section">
+                  <div class="total-amount">Total Amount: $${quoteData.totalAmount}</div>
               </div>
 
               ${quoteData.additionalNotes ? `
-              <div class="section">
-                  <h3>ADDITIONAL NOTES:</h3>
+              <div class="notes-section">
+                  <h3 class="notes-title">Additional Notes</h3>
                   <p>${quoteData.additionalNotes}</p>
               </div>
               ` : ''}
 
               <div class="footer">
-                  <p><strong>Terms & Conditions:</strong></p>
-                  <p>• This quote is valid until ${formatDate(quoteData.validUntil)}</p>
-                  <p>• Payment terms to be discussed upon acceptance</p>
-                  <p>• All work to be completed to industry standards</p>
+                  <p><strong>Kiwi Underfloor Heating</strong></p>
+                  <p>Professional underfloor heating solutions for your home</p>
+                  <p>This quote was generated using our automated system</p>
+                  <p>Thank you for choosing Kiwi Underfloor Heating!</p>
               </div>
           </body>
           </html>
@@ -712,4 +790,4 @@ export default async function handler(req, res) {
       });
     }
   }
-} 
+}

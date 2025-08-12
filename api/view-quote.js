@@ -94,15 +94,43 @@ export default async function handler(req, res) {
         `https://${process.env.VERCEL_URL}` : 
         'https://lead-code.vercel.app';
 
+      // Function to generate breakdown table rows from itemBreakdown text
+      const generateBreakdownRows = (itemBreakdown) => {
+        if (!itemBreakdown) {
+          return '<tr><td colspan="3">No breakdown provided</td></tr>';
+        }
+        
+        // Split by newlines and process each line
+        const lines = itemBreakdown.split('\n').filter(line => line.trim());
+        if (lines.length === 0) {
+          return '<tr><td colspan="3">No breakdown provided</td></tr>';
+        }
+        
+        return lines.map(line => {
+          // Try to extract item name and amount from the line
+          const trimmedLine = line.trim();
+          if (trimmedLine.includes('$')) {
+            // If line contains $, try to extract amount
+            const parts = trimmedLine.split('$');
+            const itemName = parts[0].trim();
+            const amount = parts[1] ? '$' + parts[1].trim() : '';
+            return `<tr><td>${itemName}</td><td>${itemName}</td><td>${amount}</td></tr>`;
+          } else {
+            // If no $, treat as item name only
+            return `<tr><td>${trimmedLine}</td><td>${trimmedLine}</td><td>$${quoteData.totalAmount}</td></tr>`;
+          }
+        }).join('');
+      };
+
       return res.status(200).send(`
         <!DOCTYPE html>
         <html>
         <head>
-          <title>Quote ${sampleQuote.quoteNumber} - ${sampleQuote.serviceType}</title>
+          <title>Quote ${quoteData.quoteNumber} - ${quoteData.serviceType || 'Underfloor Heating'}</title>
           <style>
             body { 
               font-family: Arial, sans-serif; 
-              max-width: 800px; 
+              max-width: 900px; 
               margin: 0 auto; 
               padding: 20px; 
               line-height: 1.6;
@@ -138,49 +166,117 @@ export default async function handler(req, res) {
               text-decoration: none;
               display: inline-block;
             }
-            .quote-header {
-              text-align: center;
-              margin-bottom: 30px;
-              border-bottom: 2px solid #007bff;
-              padding-bottom: 20px;
+            .header { 
+              text-align: center; 
+              margin-bottom: 25px; 
             }
-            .quote-details {
-              background: #f8f9fa;
-              padding: 20px;
-              border-radius: 8px;
-              margin-bottom: 20px;
+            .company-name { 
+              color: #4a90e2; 
+              margin: 0; 
+              font-size: 18px; 
+              font-weight: normal;
             }
-            .customer-info, .project-info, .pricing-info {
-              margin-bottom: 25px;
-            }
-            .total-amount {
-              background: #e8f5e8;
-              padding: 20px;
-              border-radius: 8px;
-              text-align: center;
-              font-size: 24px;
+            .quote-title { 
+              color: #333; 
+              margin: 10px 0 5px 0; 
+              font-size: 24px; 
               font-weight: bold;
-              color: #155724;
-              margin: 20px 0;
             }
-            .tradesman-info {
-              background: #fff3cd;
-              padding: 15px;
-              border-radius: 8px;
-              margin-top: 20px;
+            .quote-number { 
+              color: #333; 
+              margin: 5px 0; 
+              font-size: 14px; 
+              font-weight: bold;
             }
-            .item-breakdown {
-              background: #f8f9fa;
-              padding: 15px;
-              border-radius: 8px;
-              margin: 15px 0;
-              white-space: pre-line;
+            .quote-dates { 
+              color: #333; 
+              margin: 5px 0; 
+              font-size: 12px; 
             }
-            .valid-until {
+            .divider { 
+              border-top: 1px solid #333; 
+              margin: 15px 0; 
+            }
+            .details-section { 
+              display: flex; 
+              margin: 20px 0; 
+              gap: 20px;
+            }
+            .details-column { 
+              flex: 1; 
+              background: #f8f9fa; 
+              padding: 15px; 
+              border-radius: 4px; 
+              border-left: 4px solid #4a90e2; 
+            }
+            .details-title { 
+              color: #333; 
+              margin: 0 0 10px 0; 
+              font-size: 14px; 
+              font-weight: bold;
+            }
+            .details-content { 
+              font-size: 12px; 
+              line-height: 1.6;
+            }
+            .details-content p { 
+              margin: 5px 0; 
+            }
+            .quote-breakdown { 
+              margin: 20px 0; 
+            }
+            .breakdown-title { 
+              color: #333; 
+              margin: 0 0 10px 0; 
+              font-size: 14px; 
+              font-weight: bold;
+              border-left: 4px solid #4a90e2; 
+              padding-left: 10px;
+            }
+            .breakdown-table { 
+              width: 100%; 
+              border-collapse: collapse; 
+              margin: 10px 0; 
+              font-size: 12px;
+            }
+            .breakdown-table th, .breakdown-table td { 
+              border: 1px solid #ddd; 
+              padding: 8px; 
+              text-align: left; 
+            }
+            .breakdown-table th { 
+              background: #333; 
+              color: white; 
+              font-weight: bold; 
+            }
+            .total-section { 
+              text-align: right; 
+              margin: 20px 0; 
+            }
+            .total-amount { 
+              font-size: 18px; 
+              font-weight: bold; 
+              color: #333;
+            }
+            .notes-section { 
+              margin: 20px 0; 
+            }
+            .notes-title { 
+              color: #333; 
+              margin: 0 0 10px 0; 
+              font-size: 14px; 
+              font-weight: bold;
+            }
+            .footer { 
+              margin-top: 30px; 
+              padding-top: 15px; 
+              border-top: 1px solid #ddd; 
+              font-size: 10px; 
+              color: #666;
               text-align: center;
-              color: #6c757d;
-              font-style: italic;
-              margin: 20px 0;
+            }
+            .footer p { 
+              margin: 3px 0; 
             }
           </style>
         </head>
@@ -194,44 +290,71 @@ export default async function handler(req, res) {
                class="decline-btn">❌ Decline Quote</a>
           </div>
 
-          <div class="quote-header">
-            <h1>QUOTE</h1>
-            <h2>Quote Number: ${quoteData.quoteNumber}</h2>
-            <p>Date: ${new Date().toLocaleDateString()}</p>
+          <div class="header">
+            <h1 class="company-name">KIWI UNDERFLOOR HEATING</h1>
+            <h2 class="quote-title">QUOTE</h2>
+            <p class="quote-number">Quote Number: ${quoteData.quoteNumber}</p>
+            <p class="quote-dates">Date: ${new Date().toLocaleDateString('en-GB')}</p>
+            <p class="quote-dates">Valid Until: ${quoteData.validUntil ? new Date(quoteData.validUntil).toLocaleDateString('en-GB') : '30 days from date'}</p>
           </div>
 
-          <div class="quote-details">
-            <div class="project-info">
-              <h3>SERVICE:</h3>
-              <p><strong>Underfloor Heating Installation</strong></p>
-            </div>
+          <div class="divider"></div>
 
-            <div class="pricing-info">
-              <h3>ITEM BREAKDOWN:</h3>
-              <div class="item-breakdown">${quoteData.itemBreakdown}</div>
+          <div class="details-section">
+            <div class="details-column">
+              <h3 class="details-title">Customer Details</h3>
+              <div class="details-content">
+                <p><strong>Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
+                <p><strong>Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
+                <p><strong>Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
+                <p><strong>Address:</strong> ${quoteData.location || 'Auckland'}</p>
+              </div>
             </div>
+            <div class="details-column">
+              <h3 class="details-title">Tradesman Details</h3>
+              <div class="details-content">
+                <p><strong>Company:</strong> ${quoteData.tradesmanName}</p>
+                <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
+                <p><strong>Phone:</strong> ${quoteData.tradesmanPhone || 'Not specified'}</p>
+                <p><strong>Service:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
+              </div>
+            </div>
+          </div>
 
-            <div class="total-amount">
-              TOTAL: $${quoteData.totalAmount}
-            </div>
+          <div class="divider"></div>
 
-            <div class="valid-until">
-              <strong>Valid until: ${quoteData.validUntil}</strong>
-            </div>
+          <div class="quote-breakdown">
+            <h3 class="breakdown-title">Quote Breakdown</h3>
+            <table class="breakdown-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Description</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${generateBreakdownRows(quoteData.itemBreakdown)}
+              </tbody>
+            </table>
+          </div>
 
-            ${quoteData.additionalNotes ? `
-            <div class="additional-notes">
-              <h3>Additional Notes:</h3>
-              <p>${quoteData.additionalNotes}</p>
-            </div>
-            ` : ''}
+          <div class="total-section">
+            <div class="total-amount">Total Amount: $${quoteData.totalAmount}</div>
+          </div>
 
-            <div class="tradesman-info">
-              <h3>TRADESMAN DETAILS:</h3>
-              <p><strong>${quoteData.tradesmanName}</strong><br>
-              Phone: ${quoteData.tradesmanPhone}<br>
-              Email: ${quoteData.tradesmanEmail}</p>
-            </div>
+          ${quoteData.additionalNotes ? `
+          <div class="notes-section">
+            <h3 class="notes-title">Additional Notes</h3>
+            <p>${quoteData.additionalNotes}</p>
+          </div>
+          ` : ''}
+
+          <div class="footer">
+            <p><strong>Kiwi Underfloor Heating</strong></p>
+            <p>Professional underfloor heating solutions for your home</p>
+            <p>This quote was generated using our automated system</p>
+            <p>Thank you for choosing Kiwi Underfloor Heating!</p>
           </div>
 
           <div class="actions">

@@ -52,7 +52,7 @@ export default async function handler(req, res) {
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #2c3e50;">Thank you for your project request!</h2>
-            <p>Dear ${leadData.customerName || 'there'},</p>
+            <p>Hi ${leadData.customerName || 'there'},</p>
             <p>We have received your request for <strong>${leadData.selectedService || 'our services'}</strong> and are working on your quote.</p>
             
             <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
@@ -81,34 +81,38 @@ export default async function handler(req, res) {
       console.error('❌ Customer email error:', emailError.message);
     }
 
-    // 2. Send tradesman notification (only if customer email was sent successfully)
+    // 2. Send tradesman notification (always send, regardless of customer email success)
     let tradesmanNotified = false;
-    if (customerEmailSent) {
-      try {
-        const currentUrl = process.env.VERCEL_URL ? 
-          `https://${process.env.VERCEL_URL}` : 
-          'https://lead-code.vercel.app';
+    try {
+      const currentUrl = process.env.VERCEL_URL ? 
+        `https://${process.env.VERCEL_URL}` : 
+        'https://lead-code.vercel.app';
 
-        const notificationResponse = await fetch(`${currentUrl}/api/lead-notification`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(leadData)
-        });
+      console.log('📧 Sending tradesman notification to:', `${currentUrl}/api/lead-notification`);
 
-        if (notificationResponse.ok) {
-          const notificationResult = await notificationResponse.json();
-          if (notificationResult.success) {
-            console.log('✅ Tradesman notification sent successfully');
-            tradesmanNotified = true;
-          } else {
-            console.error('❌ Tradesman notification failed:', notificationResult.error);
-          }
+      const notificationResponse = await fetch(`${currentUrl}/api/lead-notification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(leadData)
+      });
+
+      console.log('📧 Tradesman notification response status:', notificationResponse.status);
+
+      if (notificationResponse.ok) {
+        const notificationResult = await notificationResponse.json();
+        console.log('📧 Tradesman notification result:', notificationResult);
+        if (notificationResult.success) {
+          console.log('✅ Tradesman notification sent successfully');
+          tradesmanNotified = true;
         } else {
-          console.error('❌ Tradesman notification API call failed:', notificationResponse.status);
+          console.error('❌ Tradesman notification failed:', notificationResult.error);
         }
-      } catch (notificationError) {
-        console.error('❌ Tradesman notification error:', notificationError.message);
+      } else {
+        const errorText = await notificationResponse.text();
+        console.error('❌ Tradesman notification API call failed:', notificationResponse.status, errorText);
       }
+    } catch (notificationError) {
+      console.error('❌ Tradesman notification error:', notificationError.message);
     }
 
     // Note: Admin notification is now handled by lead-notification.js to avoid duplicates

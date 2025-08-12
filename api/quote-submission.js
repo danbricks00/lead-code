@@ -184,11 +184,11 @@ export default async function handler(req, res) {
               <div class="breakdown-row">
                 <div class="breakdown-col">
                   <label for="labourRate">Rate per Hour ($):</label>
-                  <input type="number" id="labourRate" name="labourRate" step="0.01" min="0" placeholder="e.g., 75.00" oninput="calculateTotals()" onchange="calculateTotals()">
+                  <input type="number" id="labourRate" name="labourRate" step="0.01" min="0" placeholder="e.g., 75.00">
                 </div>
                 <div class="breakdown-col">
                   <label for="labourHours">Hours:</label>
-                  <input type="number" id="labourHours" name="labourHours" step="0.5" min="0" placeholder="e.g., 8" oninput="calculateTotals()" onchange="calculateTotals()">
+                  <input type="number" id="labourHours" name="labourHours" step="0.5" min="0" placeholder="e.g., 8">
                 </div>
                 <div class="breakdown-col">
                   <label for="labourSubtotal">Subtotal ($):</label>
@@ -202,11 +202,11 @@ export default async function handler(req, res) {
               <div class="breakdown-row">
                 <div class="breakdown-col">
                   <label for="materialRate">Cost per SQM ($):</label>
-                  <input type="number" id="materialRate" name="materialRate" step="0.01" min="0" placeholder="e.g., 45.00" oninput="calculateTotals()" onchange="calculateTotals()">
+                  <input type="number" id="materialRate" name="materialRate" step="0.01" min="0" placeholder="e.g., 45.00">
                 </div>
                 <div class="breakdown-col">
                   <label for="materialSQM">Total SQM:</label>
-                  <input type="number" id="materialSQM" name="materialSQM" step="0.1" min="0" placeholder="e.g., 25.5" oninput="calculateTotals()" onchange="calculateTotals()">
+                  <input type="number" id="materialSQM" name="materialSQM" step="0.1" min="0" placeholder="e.g., 25.5">
                 </div>
                 <div class="breakdown-col">
                   <label for="materialSubtotal">Subtotal ($):</label>
@@ -220,7 +220,7 @@ export default async function handler(req, res) {
               <div class="breakdown-row">
                 <div class="breakdown-col">
                   <label for="installationAmount">Installation Cost ($):</label>
-                  <input type="number" id="installationAmount" name="installationAmount" step="0.01" min="0" placeholder="e.g., 500.00" oninput="calculateTotals()" onchange="calculateTotals()">
+                  <input type="number" id="installationAmount" name="installationAmount" step="0.01" min="0" placeholder="e.g., 500.00">
                 </div>
                 <div class="breakdown-col">
                   <label>&nbsp;</label>
@@ -270,9 +270,9 @@ export default async function handler(req, res) {
         <!-- Debug section -->
         <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px; border: 1px solid #dee2e6;">
           <h4>Debug Information</h4>
-          <button type="button" onclick="testCalculation()" style="background: #28a745; margin-right: 10px;">Test Calculation</button>
-          <button type="button" onclick="calculateTotals()" style="background: #ffc107; margin-right: 10px;">Manual Calculate</button>
-          <button type="button" onclick="console.log('Form elements:', document.getElementById('labourRate'), document.getElementById('labourSubtotal'))" style="background: #17a2b8;">Check Elements</button>
+          <button type="button" id="testCalcBtn" style="background: #28a745; margin-right: 10px;">Test Calculation</button>
+          <button type="button" id="manualCalcBtn" style="background: #ffc107; margin-right: 10px;">Manual Calculate</button>
+          <button type="button" id="checkElementsBtn" style="background: #17a2b8;">Check Elements</button>
           <div id="debugOutput" style="margin-top: 10px; font-family: monospace; font-size: 12px;"></div>
         </div>
 
@@ -381,6 +381,25 @@ export default async function handler(req, res) {
                       console.error('❌ Element not found:', id);
                   }
               });
+              
+              // Add debug button listeners
+              const testCalcBtn = document.getElementById('testCalcBtn');
+              const manualCalcBtn = document.getElementById('manualCalcBtn');
+              const checkElementsBtn = document.getElementById('checkElementsBtn');
+              
+              if (testCalcBtn) {
+                  testCalcBtn.addEventListener('click', testCalculation);
+              }
+              
+              if (manualCalcBtn) {
+                  manualCalcBtn.addEventListener('click', calculateTotals);
+              }
+              
+              if (checkElementsBtn) {
+                  checkElementsBtn.addEventListener('click', function() {
+                      console.log('Form elements:', document.getElementById('labourRate'), document.getElementById('labourSubtotal'));
+                  });
+              }
           }
           
           // Initialize when DOM is loaded

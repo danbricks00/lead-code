@@ -90,7 +90,7 @@ export default async function handler(req, res) {
 
           <div class="form-group">
             <label for="totalAmount">Total Quote Amount ($):</label>
-            <input type="number" id="totalAmount" name="totalAmount" step="0.01" required>
+            <input type="text" id="totalAmount" name="totalAmount" placeholder="e.g., 5000.00" required>
           </div>
 
           <div class="form-group">
@@ -130,6 +130,23 @@ export default async function handler(req, res) {
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
             data.quoteId = '${leadId || quoteId}';
+            
+            // Clean and validate data
+            if (data.totalAmount) {
+              // Remove any non-numeric characters except decimal point
+              data.totalAmount = data.totalAmount.replace(/[^0-9.]/g, '');
+            }
+            
+            if (data.tradesmanPhone) {
+              // Clean phone number - remove spaces and special characters
+              data.tradesmanPhone = data.tradesmanPhone.replace(/[^0-9+\-()]/g, '');
+            }
+            
+            // Ensure required fields are present
+            if (!data.tradesmanName || !data.tradesmanEmail || !data.totalAmount) {
+              alert('Please fill in all required fields: Name, Email, and Total Amount');
+              return;
+            }
           
           try {
             const response = await fetch('/api/quote-submission', {
@@ -166,6 +183,22 @@ export default async function handler(req, res) {
       const quoteData = req.body;
       console.log('✅ Quote received:', quoteData);
 
+      // Basic validation
+      if (!quoteData.tradesmanName || !quoteData.tradesmanEmail || !quoteData.totalAmount) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields: tradesmanName, tradesmanEmail, totalAmount'
+        });
+      }
+
+      // Clean and validate data
+      quoteData.tradesmanName = quoteData.tradesmanName.trim();
+      quoteData.tradesmanEmail = quoteData.tradesmanEmail.trim();
+      quoteData.totalAmount = quoteData.totalAmount.toString().replace(/[^0-9.]/g, '');
+      quoteData.tradesmanPhone = quoteData.tradesmanPhone ? quoteData.tradesmanPhone.trim() : '';
+      quoteData.itemBreakdown = quoteData.itemBreakdown ? quoteData.itemBreakdown.trim() : '';
+      quoteData.additionalNotes = quoteData.additionalNotes ? quoteData.additionalNotes.trim() : '';
+
       // 1. Send email to customer with quote (PRIORITY - like the working chatbot)
       let customerEmailSent = false;
       try {
@@ -180,7 +213,7 @@ export default async function handler(req, res) {
 
         const currentUrl = process.env.VERCEL_URL ? 
           `https://${process.env.VERCEL_URL}` : 
-          'https://lead-code-r8wsx5vhy-leadcode-b19d9acc.vercel.app';
+          'https://lead-code.vercel.app';
 
         const customerMailOptions = {
           from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',

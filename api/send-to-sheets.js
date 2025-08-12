@@ -20,6 +20,12 @@ export default async function handler(req, res) {
   try {
     const leadData = req.body;
     console.log('✅ Lead received:', leadData);
+    console.log('📧 Customer email check:', {
+      customerEmail: leadData.customerEmail,
+      customerName: leadData.customerName,
+      hasEmail: !!leadData.customerEmail,
+      emailType: typeof leadData.customerEmail
+    });
 
     // 1. Send customer confirmation email
     let customerEmailSent = false;
@@ -32,6 +38,12 @@ export default async function handler(req, res) {
           pass: 'ptmcojqgthvjbqom'
         }
       });
+
+      // Check if customer email is provided
+      if (!leadData.customerEmail) {
+        console.error('❌ No customer email provided in lead data');
+        throw new Error('No customer email provided');
+      }
 
       const customerMailOptions = {
         from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',

@@ -159,11 +159,11 @@ export default async function handler(req, res) {
       };
 
       console.log('📊 Lead Notification Response:', response);
-      res.json(response);
+      return res.json(response);
 
     } catch (error) {
       console.error('❌ Error processing lead notification:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Failed to process lead notification',
         details: error.message

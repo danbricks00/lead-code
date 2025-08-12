@@ -358,11 +358,11 @@ export default async function handler(req, res) {
       };
 
       console.log('📊 Xero PDF Quote Response:', response);
-      res.json(response);
+      return res.json(response);
 
     } catch (error) {
       console.error('❌ Error creating Xero PDF quote:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Failed to create Xero PDF quote',
         details: error.message

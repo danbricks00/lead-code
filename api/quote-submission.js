@@ -583,6 +583,16 @@ export default async function handler(req, res) {
           `https://${process.env.VERCEL_URL}` : 
           'https://lead-code.vercel.app';
 
+        // Setup email transporter
+        const nodemailer = await import('nodemailer');
+        const transporter = nodemailer.default.createTransport({
+          service: 'gmail',
+          auth: {
+            user: 'danbricks18@gmail.com',
+            pass: 'ptmcojqgthvjbqom'
+          }
+        });
+
         // Send email to customer with PDF or HTML attachment
         const customerMailOptions = {
           from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',

@@ -112,12 +112,12 @@ export default async function handler(req, res) {
           <input type="hidden" id="customerName" name="customerName" value="${customerName || ''}">
           <input type="hidden" id="customerEmail" name="customerEmail" value="${customerEmail || ''}">
           <input type="hidden" id="customerPhone" name="customerPhone" value="${customerPhone || ''}">
-          <input type="hidden" id="serviceType" name="serviceType" value="${serviceType || ''}">
+          <input type="hidden" id="serviceType" name="serviceType" value="${serviceType || 'Underfloor Heating'}">
           <input type="hidden" id="projectDetails" name="projectDetails" value="${projectDetails || ''}">
           <input type="hidden" id="projectSize" name="projectSize" value="${projectSize || ''}">
           <input type="hidden" id="budget" name="budget" value="${budget || ''}">
           <input type="hidden" id="timeline" name="timeline" value="${timeline || ''}">
-          <input type="hidden" id="location" name="location" value="${location || ''}">
+          <input type="hidden" id="location" name="location" value="${location || 'Auckland'}">
           <input type="hidden" id="leadId" name="leadId" value="${leadId || ''}">
 
           <button type="submit">Submit Quote</button>
@@ -158,10 +158,10 @@ export default async function handler(req, res) {
             const result = await response.json();
             
             if (result.success) {
-                alert('Quote submitted successfully! The customer will be notified.');
+                alert('✅ Quote submitted successfully! The customer will receive your professional quote with PDF attachment.');
                 window.close();
             } else {
-                alert('Error: ' + result.error);
+                alert('❌ Error: ' + result.error);
             }
           } catch (error) {
               alert('Error submitting quote: ' + error.message);
@@ -198,6 +198,49 @@ export default async function handler(req, res) {
       quoteData.tradesmanPhone = quoteData.tradesmanPhone ? quoteData.tradesmanPhone.trim() : '';
       quoteData.itemBreakdown = quoteData.itemBreakdown ? quoteData.itemBreakdown.trim() : '';
       quoteData.additionalNotes = quoteData.additionalNotes ? quoteData.additionalNotes.trim() : '';
+
+      // Fetch customer data from Google Sheets if missing
+      if ((!quoteData.customerName || !quoteData.customerEmail || !quoteData.customerPhone) && quoteData.leadId && process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {
+        try {
+          const auth = new google.auth.GoogleAuth({
+            credentials: {
+              client_email: process.env.GOOGLE_CLIENT_EMAIL,
+              private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+            },
+            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+          });
+
+          const sheets = google.sheets({ version: 'v4', auth });
+          
+          // Fetch lead data from Google Sheets
+          const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+            range: 'Sheet1!A:K',
+          });
+
+          const rows = response.data.values || [];
+          
+          // Find the lead by leadId
+          const leadRow = rows.find(row => row[13] === quoteData.leadId); // Assuming leadId is in column N
+
+          if (leadRow) {
+            // Update quote data with customer information from Google Sheets
+            quoteData.customerName = quoteData.customerName || leadRow[1] || '';
+            quoteData.customerEmail = quoteData.customerEmail || leadRow[2] || '';
+            quoteData.customerPhone = quoteData.customerPhone || leadRow[3] || '';
+            quoteData.serviceType = quoteData.serviceType || leadRow[4] || 'Underfloor Heating';
+            quoteData.projectDetails = quoteData.projectDetails || leadRow[5] || '';
+            quoteData.location = quoteData.location || leadRow[10] || 'Auckland';
+            console.log('✅ Customer data fetched from Google Sheets:', {
+              customerName: quoteData.customerName,
+              customerEmail: quoteData.customerEmail,
+              customerPhone: quoteData.customerPhone
+            });
+          }
+        } catch (sheetsError) {
+          console.error('❌ Google Sheets error fetching customer data:', sheetsError.message);
+        }
+      }
 
       // Note: Customer email will be sent by the PDF generation endpoint with the actual PDF attachment
       let customerEmailSent = false;

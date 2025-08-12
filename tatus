@@ -3,3 +3,6 @@
 [33m56eb82f[m Update multiple files:
 [33mb019c18[m email fix, working on quote
 [33mc55855a[m Add email debug tools to identify email sending issues
+[33m43a1400[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m new api
+[33mb099b1f[m test quote again
+[33m84a381c[m trying to fix quote format

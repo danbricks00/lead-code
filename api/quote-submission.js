@@ -208,7 +208,8 @@ export default async function handler(req, res) {
                 </a>
               </div>
               
-              <p>You can view the complete quote with itemized breakdown by clicking the link above.</p>
+              <p>Please find your professional PDF quote attached to this email.</p>
+              <p>You can also view the complete quote with itemized breakdown by clicking the link above.</p>
               <p>Please review the quote and let us know if you have any questions.</p>
               
               <p style="margin-top: 30px;">Best regards,<br><strong>${quoteData.tradesmanName}</strong></p>
@@ -318,7 +319,7 @@ export default async function handler(req, res) {
           `https://${process.env.VERCEL_URL}` : 
           'https://lead-code-kh766ffsc-leadcode-b19d9acc.vercel.app';
 
-        const pdfResponse = await fetch(`${currentUrl}/api/create-quote-pdf`, {
+        const pdfResponse = await fetch(`${currentUrl}/api/xero-quote-real-pdf`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(quoteData)

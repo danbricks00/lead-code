@@ -102,7 +102,7 @@ ADDITIONAL NOTES
             resultDiv.innerHTML = '<p class="info">Checking environment...</p>';
             
             try {
-                const response = await fetch(`${baseUrl}/api/create-quote-pdf`, {
+                const response = await fetch(`${baseUrl}/api/xero-quote-real-pdf`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ test: true })
@@ -159,7 +159,7 @@ ADDITIONAL NOTES
             resultDiv.innerHTML = '<p class="info">Testing template connection...</p>';
             
             try {
-                const response = await fetch(`${baseUrl}/api/create-quote-pdf`, {
+                const response = await fetch(`${baseUrl}/api/xero-quote-real-pdf`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -217,7 +217,7 @@ ADDITIONAL NOTES
             };
             
             try {
-                const response = await fetch(`${baseUrl}/api/create-quote-pdf`, {
+                const response = await fetch(`${baseUrl}/api/xero-quote-real-pdf`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(testData)

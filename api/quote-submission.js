@@ -36,15 +36,85 @@ export default async function handler(req, res) {
     <head>
         <title>Submit Quote - ${leadId || quoteId}</title>
       <style>
-          body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .form-group { margin-bottom: 20px; }
+          body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
+          .form-group { margin-bottom: 20px; }
           label { display: block; margin-bottom: 5px; font-weight: bold; }
           input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
           button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #0056b3; }
+          button:hover { background: #0056b3; }
           .quote-details { background: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
           .customer-info { background: #e3f2fd; padding: 15px; border-radius: 4px; margin-bottom: 20px; border-left: 4px solid #2196f3; }
           .readonly { background-color: #f5f5f5; }
+          
+          .breakdown-section {
+              background: #f8f9fa;
+              padding: 15px;
+              border-radius: 8px;
+              margin-bottom: 20px;
+              border: 1px solid #e9ecef;
+          }
+          
+          .breakdown-section h4 {
+              margin: 0 0 15px 0;
+              color: #495057;
+              border-bottom: 2px solid #007bff;
+              padding-bottom: 5px;
+          }
+          
+          .breakdown-row {
+              display: flex;
+              gap: 15px;
+              align-items: end;
+          }
+          
+          .breakdown-col {
+              flex: 1;
+          }
+          
+          .total-section {
+              background: #e8f5e8;
+              padding: 15px;
+              border-radius: 8px;
+              margin-bottom: 20px;
+              border: 2px solid #28a745;
+          }
+          
+          .total-section h4 {
+              margin: 0 0 15px 0;
+              color: #155724;
+              font-size: 1.2em;
+          }
+          
+          .total-row {
+              display: flex;
+              align-items: center;
+              gap: 15px;
+          }
+          
+          .total-row label {
+              flex: 1;
+              margin: 0;
+          }
+          
+          .total-row input {
+              flex: 1;
+              font-size: 1.1em;
+              font-weight: bold;
+              background-color: #d4edda;
+              border-color: #28a745;
+          }
+          
+          @media (max-width: 768px) {
+              .breakdown-row {
+                  flex-direction: column;
+                  gap: 10px;
+              }
+              
+              .total-row {
+                  flex-direction: column;
+                  gap: 10px;
+              }
+          }
       </style>
     </head>
     <body>
@@ -90,18 +160,78 @@ export default async function handler(req, res) {
           </div>
 
           <div class="form-group">
-            <label for="totalAmount">Total Quote Amount ($):</label>
-            <input type="text" id="totalAmount" name="totalAmount" placeholder="e.g., 5000.00" required>
-          </div>
-
-          <div class="form-group">
-            <label for="itemBreakdown">Item Breakdown:</label>
-            <textarea id="itemBreakdown" name="itemBreakdown" rows="6" placeholder="List each item and its cost..."></textarea>
-          </div>
-
-          <div class="form-group">
             <label for="validUntil">Quote Valid Until:</label>
             <input type="date" id="validUntil" name="validUntil" required>
+          </div>
+
+          <div class="form-group">
+            <h3>Cost Breakdown</h3>
+            <div class="breakdown-section">
+              <h4>Labour</h4>
+              <div class="breakdown-row">
+                <div class="breakdown-col">
+                  <label for="labourRate">Rate per Hour ($):</label>
+                  <input type="number" id="labourRate" name="labourRate" step="0.01" min="0" placeholder="e.g., 75.00">
+                </div>
+                <div class="breakdown-col">
+                  <label for="labourHours">Hours:</label>
+                  <input type="number" id="labourHours" name="labourHours" step="0.5" min="0" placeholder="e.g., 8">
+                </div>
+                <div class="breakdown-col">
+                  <label for="labourSubtotal">Subtotal ($):</label>
+                  <input type="text" id="labourSubtotal" name="labourSubtotal" readonly>
+                </div>
+              </div>
+            </div>
+
+            <div class="breakdown-section">
+              <h4>Materials</h4>
+              <div class="breakdown-row">
+                <div class="breakdown-col">
+                  <label for="materialRate">Cost per SQM ($):</label>
+                  <input type="number" id="materialRate" name="materialRate" step="0.01" min="0" placeholder="e.g., 45.00">
+                </div>
+                <div class="breakdown-col">
+                  <label for="materialSQM">Total SQM:</label>
+                  <input type="number" id="materialSQM" name="materialSQM" step="0.1" min="0" placeholder="e.g., 25.5">
+                </div>
+                <div class="breakdown-col">
+                  <label for="materialSubtotal">Subtotal ($):</label>
+                  <input type="text" id="materialSubtotal" name="materialSubtotal" readonly>
+                </div>
+              </div>
+            </div>
+
+            <div class="breakdown-section">
+              <h4>Installation</h4>
+              <div class="breakdown-row">
+                <div class="breakdown-col">
+                  <label for="installationAmount">Installation Cost ($):</label>
+                  <input type="number" id="installationAmount" name="installationAmount" step="0.01" min="0" placeholder="e.g., 500.00">
+                </div>
+                <div class="breakdown-col">
+                  <label>&nbsp;</label>
+                  <div style="height: 38px;"></div>
+                </div>
+                <div class="breakdown-col">
+                  <label for="installationSubtotal">Subtotal ($):</label>
+                  <input type="text" id="installationSubtotal" name="installationSubtotal" readonly>
+                </div>
+              </div>
+            </div>
+
+            <div class="total-section">
+              <h4>Total Amount</h4>
+              <div class="total-row">
+                <label for="totalAmount">Total Quote Amount ($):</label>
+                <input type="text" id="totalAmount" name="totalAmount" readonly>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="itemBreakdown">Item Breakdown (Auto-generated):</label>
+            <textarea id="itemBreakdown" name="itemBreakdown" rows="6" readonly></textarea>
           </div>
 
           <div class="form-group">
@@ -125,48 +255,110 @@ export default async function handler(req, res) {
         </form>
 
       <script>
+          // Function to calculate subtotals and total
+          function calculateTotals() {
+              const labourRate = parseFloat(document.getElementById('labourRate').value) || 0;
+              const labourHours = parseFloat(document.getElementById('labourHours').value) || 0;
+              const materialRate = parseFloat(document.getElementById('materialRate').value) || 0;
+              const materialSQM = parseFloat(document.getElementById('materialSQM').value) || 0;
+              const installationAmount = parseFloat(document.getElementById('installationAmount').value) || 0;
+              
+              // Calculate subtotals
+              const labourSubtotal = labourRate * labourHours;
+              const materialSubtotal = materialRate * materialSQM;
+              const installationSubtotal = installationAmount;
+              
+              // Calculate total
+              const total = labourSubtotal + materialSubtotal + installationSubtotal;
+              
+              // Update display
+              document.getElementById('labourSubtotal').value = labourSubtotal.toFixed(2);
+              document.getElementById('materialSubtotal').value = materialSubtotal.toFixed(2);
+              document.getElementById('installationSubtotal').value = installationSubtotal.toFixed(2);
+              document.getElementById('totalAmount').value = total.toFixed(2);
+              
+              // Generate item breakdown
+              generateItemBreakdown(labourRate, labourHours, labourSubtotal, materialRate, materialSQM, materialSubtotal, installationAmount);
+          }
+          
+          // Function to generate item breakdown
+          function generateItemBreakdown(labourRate, labourHours, labourSubtotal, materialRate, materialSQM, materialSubtotal, installationAmount) {
+              let breakdown = '';
+              
+              if (labourSubtotal > 0) {
+                  breakdown += 'Labour: $' + labourRate.toFixed(2) + '/hour × ' + labourHours + ' hours = $' + labourSubtotal.toFixed(2) + '\n';
+              }
+              
+              if (materialSubtotal > 0) {
+                  breakdown += 'Materials: $' + materialRate.toFixed(2) + '/sqm × ' + materialSQM + ' sqm = $' + materialSubtotal.toFixed(2) + '\n';
+              }
+              
+              if (installationAmount > 0) {
+                  breakdown += 'Installation: $' + installationAmount.toFixed(2) + '\n';
+              }
+              
+              document.getElementById('itemBreakdown').value = breakdown;
+          }
+          
+          // Add event listeners for real-time calculations
+          document.getElementById('labourRate').addEventListener('input', calculateTotals);
+          document.getElementById('labourHours').addEventListener('input', calculateTotals);
+          document.getElementById('materialRate').addEventListener('input', calculateTotals);
+          document.getElementById('materialSQM').addEventListener('input', calculateTotals);
+          document.getElementById('installationAmount').addEventListener('input', calculateTotals);
+          
           document.getElementById('quoteForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
-            data.quoteId = '${leadId || quoteId}';
-            
-            // Clean and validate data
-            if (data.totalAmount) {
-              // Remove any non-numeric characters except decimal point
-              data.totalAmount = data.totalAmount.replace(/[^0-9.]/g, '');
-            }
-            
-            if (data.tradesmanPhone) {
-              // Clean phone number - just trim whitespace
-              data.tradesmanPhone = data.tradesmanPhone.trim();
-            }
-            
-            // Ensure required fields are present
-            if (!data.tradesmanName || !data.tradesmanEmail || !data.totalAmount) {
-              alert('Please fill in all required fields: Name, Email, and Total Amount');
-              return;
-            }
-          
-          try {
-            const response = await fetch('/api/quote-submission', {
-              method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(data)
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                alert('✅ Quote submitted successfully! The customer will receive your professional quote with PDF attachment.');
-                window.close();
-            } else {
-                alert('❌ Error: ' + result.error);
-            }
-          } catch (error) {
-              alert('Error submitting quote: ' + error.message);
-            }
+              e.preventDefault();
+              
+              const formData = new FormData(e.target);
+              const data = Object.fromEntries(formData.entries());
+              data.quoteId = '${leadId || quoteId}';
+              
+              // Clean and validate data
+              if (data.totalAmount) {
+                  // Remove any non-numeric characters except decimal point
+                  data.totalAmount = data.totalAmount.replace(/[^0-9.]/g, '');
+              }
+              
+              if (data.tradesmanPhone) {
+                  // Clean phone number - just trim whitespace
+                  data.tradesmanPhone = data.tradesmanPhone.trim();
+              }
+              
+              // Ensure required fields are present
+              if (!data.tradesmanName || !data.tradesmanEmail || !data.totalAmount) {
+                  alert('Please fill in all required fields: Name, Email, and Total Amount');
+                  return;
+              }
+              
+              // Validate that at least one cost category has been entered
+              const labourSubtotal = parseFloat(data.labourSubtotal) || 0;
+              const materialSubtotal = parseFloat(data.materialSubtotal) || 0;
+              const installationSubtotal = parseFloat(data.installationSubtotal) || 0;
+              
+              if (labourSubtotal === 0 && materialSubtotal === 0 && installationSubtotal === 0) {
+                  alert('Please enter at least one cost category (Labour, Materials, or Installation)');
+                  return;
+              }
+              
+              try {
+                  const response = await fetch('/api/quote-submission', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(data)
+                  });
+                  
+                  const result = await response.json();
+                  
+                  if (result.success) {
+                      alert('✅ Quote submitted successfully! The customer will receive your professional quote with PDF attachment.');
+                      window.close();
+                  } else {
+                      alert('❌ Error: ' + result.error);
+                  }
+              } catch (error) {
+                  alert('Error submitting quote: ' + error.message);
+              }
           });
           
           // Set default valid until date (30 days from now)
@@ -401,32 +593,37 @@ export default async function handler(req, res) {
           return d.toLocaleDateString('en-GB'); // DD/MM/YYYY format
         };
 
-        // Function to generate breakdown table rows from itemBreakdown text
-        const generateBreakdownRows = (itemBreakdown) => {
-          if (!itemBreakdown) {
+        // Function to generate breakdown table rows from new structured data
+        const generateBreakdownRows = (quoteData) => {
+          const rows = [];
+          
+          // Labour row
+          if (quoteData.labourSubtotal && parseFloat(quoteData.labourSubtotal) > 0) {
+            const labourRate = parseFloat(quoteData.labourRate) || 0;
+            const labourHours = parseFloat(quoteData.labourHours) || 0;
+            const labourSubtotal = parseFloat(quoteData.labourSubtotal) || 0;
+            rows.push(`<tr><td>Labour</td><td>$${labourRate.toFixed(2)}/hour × ${labourHours} hours</td><td>$${labourSubtotal.toFixed(2)}</td></tr>`);
+          }
+          
+          // Materials row
+          if (quoteData.materialSubtotal && parseFloat(quoteData.materialSubtotal) > 0) {
+            const materialRate = parseFloat(quoteData.materialRate) || 0;
+            const materialSQM = parseFloat(quoteData.materialSQM) || 0;
+            const materialSubtotal = parseFloat(quoteData.materialSubtotal) || 0;
+            rows.push(`<tr><td>Materials</td><td>$${materialRate.toFixed(2)}/sqm × ${materialSQM} sqm</td><td>$${materialSubtotal.toFixed(2)}</td></tr>`);
+          }
+          
+          // Installation row
+          if (quoteData.installationSubtotal && parseFloat(quoteData.installationSubtotal) > 0) {
+            const installationSubtotal = parseFloat(quoteData.installationSubtotal) || 0;
+            rows.push(`<tr><td>Installation</td><td>Installation services</td><td>$${installationSubtotal.toFixed(2)}</td></tr>`);
+          }
+          
+          if (rows.length === 0) {
             return '<tr><td colspan="3">No breakdown provided</td></tr>';
           }
           
-          // Split by newlines and process each line
-          const lines = itemBreakdown.split('\n').filter(line => line.trim());
-          if (lines.length === 0) {
-            return '<tr><td colspan="3">No breakdown provided</td></tr>';
-          }
-          
-          return lines.map(line => {
-            // Try to extract item name and amount from the line
-            const trimmedLine = line.trim();
-            if (trimmedLine.includes('$')) {
-              // If line contains $, try to extract amount
-              const parts = trimmedLine.split('$');
-              const itemName = parts[0].trim();
-              const amount = parts[1] ? '$' + parts[1].trim() : '';
-              return `<tr><td>${itemName}</td><td>${itemName}</td><td>${amount}</td></tr>`;
-            } else {
-              // If no $, treat as item name only
-              return `<tr><td>${trimmedLine}</td><td>${trimmedLine}</td><td>$${quoteData.totalAmount}</td></tr>`;
-            }
-          }).join('');
+          return rows.join('');
         };
 
         // Create professional HTML for PDF generation matching the image format
@@ -607,7 +804,7 @@ export default async function handler(req, res) {
                           </tr>
                       </thead>
                       <tbody>
-                          ${generateBreakdownRows(quoteData.itemBreakdown)}
+                          ${generateBreakdownRows(quoteData)}
                       </tbody>
                   </table>
               </div>

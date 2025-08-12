@@ -30,95 +30,115 @@ export default async function handler(req, res) {
         <html>
         <head>
             <title>Quote ${quoteData.quoteNumber}</title>
-            <style>
-                @page { margin: 1in; }
-                body { 
-                    font-family: 'Arial', sans-serif; 
-                    margin: 0; 
-                    padding: 20px; 
-                    color: #333;
-                    line-height: 1.6;
-                }
-                .header { 
-                    text-align: center; 
-                    border-bottom: 3px solid #2c3e50; 
-                    padding-bottom: 20px; 
-                    margin-bottom: 30px; 
-                }
-                .header h1 { 
-                    color: #2c3e50; 
-                    margin: 0; 
-                    font-size: 28px; 
-                }
-                .header h2 { 
-                    color: #34495e; 
-                    margin: 10px 0; 
-                    font-size: 20px; 
-                }
-                .section { margin: 25px 0; }
-                .info-grid { 
-                    display: table; 
-                    width: 100%; 
-                    margin: 20px 0; 
-                }
-                .info-box { 
-                    display: table-cell; 
-                    width: 48%; 
-                    background: #f8f9fa; 
-                    padding: 15px; 
-                    border-radius: 8px; 
-                    border-left: 4px solid #3498db; 
-                    vertical-align: top;
-                }
-                .info-box:first-child { margin-right: 2%; }
-                .info-box h3 { 
-                    color: #2c3e50; 
-                    margin-top: 0; 
-                    font-size: 16px; 
-                }
-                .quote-table { 
-                    width: 100%; 
-                    border-collapse: collapse; 
-                    margin: 20px 0; 
-                    font-size: 11px;
-                }
-                .quote-table th, .quote-table td { 
-                    border: 1px solid #ddd; 
-                    padding: 8px; 
-                    text-align: left; 
-                }
-                .quote-table th { 
-                    background: #2c3e50; 
-                    color: white; 
-                    font-weight: bold; 
-                }
-                .quote-table tr:nth-child(even) { background: #f8f9fa; }
-                .total-section { 
-                    text-align: right; 
-                    margin: 25px 0; 
-                    padding: 15px; 
-                    background: #ecf0f1; 
-                    border-radius: 8px; 
-                }
-                .total-amount { 
-                    font-size: 20px; 
-                    font-weight: bold; 
-                    color: #2c3e50; 
-                }
-                .footer { 
-                    margin-top: 30px; 
-                    text-align: center; 
-                    color: #7f8c8d; 
-                    font-size: 12px; 
-                    border-top: 1px solid #ddd; 
-                    padding-top: 15px; 
-                }
-                .company-logo { 
-                    font-size: 20px; 
-                    font-weight: bold; 
-                    color: #3498db; 
-                    margin-bottom: 8px; 
-                }
+                         <style>
+                 @page { 
+                     margin: 0.5in; 
+                     size: A4 landscape;
+                 }
+                 body { 
+                     font-family: 'Arial', sans-serif; 
+                     margin: 0; 
+                     padding: 15px; 
+                     color: #333;
+                     line-height: 1.4;
+                     font-size: 11px;
+                 }
+                                 .header { 
+                     text-align: center; 
+                     border-bottom: 2px solid #2c3e50; 
+                     padding-bottom: 10px; 
+                     margin-bottom: 15px; 
+                 }
+                 .header h1 { 
+                     color: #2c3e50; 
+                     margin: 0; 
+                     font-size: 20px; 
+                 }
+                 .header h2 { 
+                     color: #34495e; 
+                     margin: 5px 0; 
+                     font-size: 14px; 
+                 }
+                 .section { margin: 12px 0; }
+                 .section h3 { 
+                     font-size: 12px; 
+                     margin: 8px 0 5px 0; 
+                     color: #2c3e50; 
+                 }
+                 .section p { 
+                     font-size: 9px; 
+                     margin: 3px 0; 
+                 }
+                                 .info-grid { 
+                     display: table; 
+                     width: 100%; 
+                     margin: 10px 0; 
+                 }
+                 .info-box { 
+                     display: table-cell; 
+                     width: 48%; 
+                     background: #f8f9fa; 
+                     padding: 8px; 
+                     border-radius: 4px; 
+                     border-left: 3px solid #3498db; 
+                     vertical-align: top;
+                     font-size: 9px;
+                 }
+                 .info-box:first-child { margin-right: 2%; }
+                 .info-box h3 { 
+                     color: #2c3e50; 
+                     margin-top: 0; 
+                     font-size: 11px; 
+                     margin-bottom: 5px;
+                 }
+                                 .quote-table { 
+                     width: 100%; 
+                     border-collapse: collapse; 
+                     margin: 10px 0; 
+                     font-size: 9px;
+                 }
+                 .quote-table th, .quote-table td { 
+                     border: 1px solid #ddd; 
+                     padding: 4px; 
+                     text-align: left; 
+                 }
+                 .quote-table th { 
+                     background: #2c3e50; 
+                     color: white; 
+                     font-weight: bold; 
+                     font-size: 9px;
+                 }
+                 .quote-table tr:nth-child(even) { background: #f8f9fa; }
+                 .total-section { 
+                     text-align: right; 
+                     margin: 15px 0; 
+                     padding: 10px; 
+                     background: #ecf0f1; 
+                     border-radius: 4px; 
+                 }
+                 .total-amount { 
+                     font-size: 16px; 
+                     font-weight: bold; 
+                     color: #2c3e50; 
+                 }
+                                 .footer { 
+                     margin-top: 15px; 
+                     text-align: center; 
+                     color: #7f8c8d; 
+                     font-size: 8px; 
+                     border-top: 1px solid #ddd; 
+                     padding-top: 8px; 
+                 }
+                 .footer p { 
+                     margin: 2px 0; 
+                     font-size: 8px; 
+                 }
+                 .company-logo { 
+                     font-size: 16px; 
+                     font-weight: bold; 
+                     color: #3498db; 
+                     margin-bottom: 5px; 
+                 }
                 .page-break { page-break-before: always; }
             </style>
         </head>
@@ -213,11 +233,12 @@ export default async function handler(req, res) {
         const page = await browser.newPage();
         await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
         
-        pdfBuffer = await page.pdf({
-          format: 'A4',
-          margin: { top: '0.5in', right: '0.5in', bottom: '0.5in', left: '0.5in' },
-          printBackground: true
-        });
+                 pdfBuffer = await page.pdf({
+           format: 'A4',
+           landscape: true,
+           margin: { top: '0.3in', right: '0.3in', bottom: '0.3in', left: '0.3in' },
+           printBackground: true
+         });
         
         await browser.close();
         console.log('✅ Real PDF generated successfully');

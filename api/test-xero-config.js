@@ -18,7 +18,7 @@ export default async function handler(req, res) {
       const redirectUri = process.env.XERO_REDIRECT_URI;
 
       const config = {
-        clientId: clientId ? `${clientId.substring(0, 8)}...` : 'NOT SET',
+        clientId: clientId || 'NOT SET',
         clientSecret: clientSecret ? 'SET' : 'NOT SET',
         redirectUri: redirectUri || 'NOT SET',
         hasAllRequired: !!(clientId && clientSecret && redirectUri)

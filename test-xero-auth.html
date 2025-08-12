@@ -67,14 +67,28 @@
         }
 
         // Generate Xero authentication URL
-        function generateAuthUrl() {
-            const clientId = 'YOUR_XERO_CLIENT_ID'; // This should come from environment
-            const redirectUri = encodeURIComponent('https://lead-code-b19d9acc.vercel.app/api/xero-callback');
-            const scope = encodeURIComponent('offline_access accounting.transactions.read accounting.transactions.write accounting.contacts.read accounting.contacts.write accounting.settings.read');
-            
-            authUrl = `https://login.xero.com/identity/connect/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=test123`;
-            
-            document.getElementById('authUrl').textContent = authUrl;
+        async function generateAuthUrl() {
+            try {
+                // Get client ID from environment
+                const configResponse = await fetch(`${baseUrl}/api/test-xero-config`);
+                const configData = await configResponse.json();
+                
+                if (!configData.success || !configData.config.clientId || configData.config.clientId === 'NOT SET') {
+                    throw new Error('Client ID not available');
+                }
+                
+                // Extract client ID (remove the "..." part)
+                const clientId = configData.config.clientId.replace('...', '');
+                const redirectUri = encodeURIComponent('https://lead-code.vercel.app/api/xero-callback');
+                const scope = encodeURIComponent('offline_access accounting.transactions.read accounting.transactions.write accounting.contacts.read accounting.contacts.write accounting.settings.read');
+                
+                authUrl = `https://login.xero.com/identity/connect/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=test123`;
+                
+                document.getElementById('authUrl').textContent = authUrl;
+            } catch (error) {
+                console.error('Error generating auth URL:', error);
+                document.getElementById('authUrl').textContent = 'Error: Could not generate authentication URL. Please check your configuration.';
+            }
         }
 
         // Start Xero authentication

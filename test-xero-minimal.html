@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Xero Minimal Scope Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-section { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; margin: 10px; }
+        button:hover { background: #0056b3; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        .result { background: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 10px; }
+        .auth-url { background: #e3f2fd; padding: 15px; border-radius: 4px; margin: 10px 0; font-family: monospace; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Xero Minimal Scope Test</h1>
+    <p>Testing with the most basic scopes that should work with any Xero app.</p>
+    
+    <div class="test-section">
+        <h2>🔑 Test 1: Minimal Scopes</h2>
+        <p>Try with just the basic scopes:</p>
+        <button onclick="testMinimalScopes()">Test Minimal Scopes</button>
+        <div id="minimalResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔑 Test 2: Offline Access Only</h2>
+        <p>Try with just offline_access:</p>
+        <button onclick="testOfflineOnly()">Test Offline Only</button>
+        <div id="offlineResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔑 Test 3: No Scopes</h2>
+        <p>Try without any scopes (just offline_access):</p>
+        <button onclick="testNoScopes()">Test No Scopes</button>
+        <div id="noScopesResult"></div>
+    </div>
+
+    <script>
+        const baseUrl = window.location.origin;
+
+        async function getClientId() {
+            try {
+                const response = await fetch(`${baseUrl}/api/test-xero-config`);
+                const data = await response.json();
+                return data.config.clientId;
+            } catch (error) {
+                console.error('Error getting client ID:', error);
+                return null;
+            }
+        }
+
+        async function testMinimalScopes() {
+            const resultDiv = document.getElementById('minimalResult');
+            resultDiv.innerHTML = '<p class="info">Testing minimal scopes...</p>';
+            
+            const clientId = await getClientId();
+            if (!clientId) {
+                resultDiv.innerHTML = '<p class="error">❌ Could not get client ID</p>';
+                return;
+            }
+
+            const redirectUri = encodeURIComponent('https://lead-code.vercel.app/api/xero-callback');
+            const scope = encodeURIComponent('offline_access accounting.transactions.read');
+            
+            const authUrl = `https://login.xero.com/identity/connect/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=test123`;
+            
+            resultDiv.innerHTML = `
+                <div class="result">
+                    <h3 class="info">Minimal Scopes Test</h3>
+                    <p><strong>Scopes:</strong> offline_access accounting.transactions.read</p>
+                    <div class="auth-url">${authUrl}</div>
+                    <p><a href="${authUrl}" target="_blank">Click here to test</a></p>
+                </div>
+            `;
+        }
+
+        async function testOfflineOnly() {
+            const resultDiv = document.getElementById('offlineResult');
+            resultDiv.innerHTML = '<p class="info">Testing offline access only...</p>';
+            
+            const clientId = await getClientId();
+            if (!clientId) {
+                resultDiv.innerHTML = '<p class="error">❌ Could not get client ID</p>';
+                return;
+            }
+
+            const redirectUri = encodeURIComponent('https://lead-code.vercel.app/api/xero-callback');
+            const scope = encodeURIComponent('offline_access');
+            
+            const authUrl = `https://login.xero.com/identity/connect/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=test123`;
+            
+            resultDiv.innerHTML = `
+                <div class="result">
+                    <h3 class="info">Offline Access Only Test</h3>
+                    <p><strong>Scopes:</strong> offline_access</p>
+                    <div class="auth-url">${authUrl}</div>
+                    <p><a href="${authUrl}" target="_blank">Click here to test</a></p>
+                </div>
+            `;
+        }
+
+        async function testNoScopes() {
+            const resultDiv = document.getElementById('noScopesResult');
+            resultDiv.innerHTML = '<p class="info">Testing with no scopes...</p>';
+            
+            const clientId = await getClientId();
+            if (!clientId) {
+                resultDiv.innerHTML = '<p class="error">❌ Could not get client ID</p>';
+                return;
+            }
+
+            const redirectUri = encodeURIComponent('https://lead-code.vercel.app/api/xero-callback');
+            
+            const authUrl = `https://login.xero.com/identity/connect/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=test123`;
+            
+            resultDiv.innerHTML = `
+                <div class="result">
+                    <h3 class="info">No Scopes Test</h3>
+                    <p><strong>Scopes:</strong> None (just offline_access by default)</p>
+                    <div class="auth-url">${authUrl}</div>
+                    <p><a href="${authUrl}" target="_blank">Click here to test</a></p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

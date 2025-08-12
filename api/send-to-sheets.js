@@ -81,42 +81,37 @@ export default async function handler(req, res) {
       console.error('❌ Customer email error:', emailError.message);
     }
 
-    // 2. Send admin notification
-    try {
-      const nodemailer = await import('nodemailer');
-      const transporter = nodemailer.default.createTransport({
-        service: 'gmail',
-        auth: {
-          user: 'danbricks18@gmail.com',
-          pass: 'ptmcojqgthvjbqom'
+    // 2. Send tradesman notification (only if customer email was sent successfully)
+    let tradesmanNotified = false;
+    if (customerEmailSent) {
+      try {
+        const currentUrl = process.env.VERCEL_URL ? 
+          `https://${process.env.VERCEL_URL}` : 
+          'https://lead-code.vercel.app';
+
+        const notificationResponse = await fetch(`${currentUrl}/api/lead-notification`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(leadData)
+        });
+
+        if (notificationResponse.ok) {
+          const notificationResult = await notificationResponse.json();
+          if (notificationResult.success) {
+            console.log('✅ Tradesman notification sent successfully');
+            tradesmanNotified = true;
+          } else {
+            console.error('❌ Tradesman notification failed:', notificationResult.error);
+          }
+        } else {
+          console.error('❌ Tradesman notification API call failed:', notificationResponse.status);
         }
-      });
-
-      const adminMailOptions = {
-        from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
-        to: 'danbricks18@gmail.com',
-        subject: `New ${leadData.selectedService || 'Service'} Lead - ${leadData.customerName || 'Customer'}`,
-        html: `
-          <h2>New Lead Received!</h2>
-          <p><strong>Service Type:</strong> ${leadData.selectedService || 'Not specified'}</p>
-          <p><strong>Customer:</strong> ${leadData.customerName || 'Not specified'}</p>
-          <p><strong>Email:</strong> ${leadData.customerEmail || 'Not specified'}</p>
-          <p><strong>Phone:</strong> ${leadData.customerPhone || 'Not specified'}</p>
-          <p><strong>Project Details:</strong> ${leadData.projectDetails || 'Not specified'}</p>
-          <p><strong>Project Size:</strong> ${leadData.projectSize || 'Not specified'}</p>
-          <p><strong>Specific Details:</strong> ${leadData.specificDetails || 'Not specified'}</p>
-          <p><strong>Location:</strong> ${leadData.location || 'Not specified'}</p>
-          <p><strong>Budget:</strong> ${leadData.budget || 'Not specified'}</p>
-          <p><strong>Timeline:</strong> ${leadData.timeline || 'Not specified'}</p>
-          <p><strong>⚠️ ACTION REQUIRED:</strong> Please create a quote for this customer.</p>
-        `
-      };
-
-      await transporter.sendMail(adminMailOptions);
-      console.log('✅ Admin notification email sent');
-    } catch (adminEmailError) {
-      console.error('❌ Admin email failed:', adminEmailError.message);
+      } catch (notificationError) {
+        console.error('❌ Tradesman notification error:', notificationError.message);
+      }
     }
+
+    // Note: Admin notification is now handled by lead-notification.js to avoid duplicates
 
     // 3. Save to Google Sheets (if configured)
     let sheetsUpdated = false;
@@ -173,6 +168,7 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString(),
       status: {
         customerEmailSent,
+        tradesmanNotified,
         sheetsUpdated
       }
     };

@@ -578,6 +578,11 @@ export default async function handler(req, res) {
           console.log('⚠️ Puppeteer failed, using HTML fallback:', puppeteerError.message);
         }
 
+        // Get current URL for links
+        const currentUrl = process.env.VERCEL_URL ? 
+          `https://${process.env.VERCEL_URL}` : 
+          'https://lead-code.vercel.app';
+
         // Send email to customer with PDF or HTML attachment
         const customerMailOptions = {
           from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',

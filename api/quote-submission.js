@@ -105,6 +105,18 @@ export default async function handler(req, res) {
               border-color: #28a745;
           }
           
+          .breakdown-col input[readonly] {
+              background-color: #f8f9fa;
+              border-color: #6c757d;
+              color: #495057;
+              font-weight: 600;
+          }
+          
+          .calculating {
+              background-color: #fff3cd !important;
+              border-color: #ffc107 !important;
+          }
+          
           @media (max-width: 768px) {
               .breakdown-row {
                   flex-direction: column;
@@ -231,8 +243,8 @@ export default async function handler(req, res) {
           </div>
 
           <div class="form-group">
-            <label for="itemBreakdown">Item Breakdown (Auto-generated):</label>
-            <textarea id="itemBreakdown" name="itemBreakdown" rows="6" readonly></textarea>
+            <label for="itemBreakdown">Item Breakdown (Auto-generated, optional to edit):</label>
+            <textarea id="itemBreakdown" name="itemBreakdown" rows="6" placeholder="Auto-generated breakdown will appear here. You can edit this if needed."></textarea>
           </div>
 
           <div class="form-group">
@@ -258,11 +270,24 @@ export default async function handler(req, res) {
       <script>
           // Function to calculate subtotals and total
           function calculateTotals() {
+              console.log('🔄 Calculating totals...');
+              
+              // Add visual feedback
+              const subtotalElements = ['labourSubtotal', 'materialSubtotal', 'installationSubtotal', 'totalAmount'];
+              subtotalElements.forEach(id => {
+                  const element = document.getElementById(id);
+                  if (element) {
+                      element.classList.add('calculating');
+                  }
+              });
+              
               const labourRate = parseFloat(document.getElementById('labourRate').value) || 0;
               const labourHours = parseFloat(document.getElementById('labourHours').value) || 0;
               const materialRate = parseFloat(document.getElementById('materialRate').value) || 0;
               const materialSQM = parseFloat(document.getElementById('materialSQM').value) || 0;
               const installationAmount = parseFloat(document.getElementById('installationAmount').value) || 0;
+              
+              console.log('📊 Values:', { labourRate, labourHours, materialRate, materialSQM, installationAmount });
               
               // Calculate subtotals
               const labourSubtotal = labourRate * labourHours;
@@ -272,11 +297,21 @@ export default async function handler(req, res) {
               // Calculate total
               const total = labourSubtotal + materialSubtotal + installationSubtotal;
               
+              console.log('💰 Subtotals:', { labourSubtotal, materialSubtotal, installationSubtotal, total });
+              
               // Update display
               document.getElementById('labourSubtotal').value = labourSubtotal.toFixed(2);
               document.getElementById('materialSubtotal').value = materialSubtotal.toFixed(2);
               document.getElementById('installationSubtotal').value = installationSubtotal.toFixed(2);
               document.getElementById('totalAmount').value = total.toFixed(2);
+              
+              // Remove visual feedback
+              subtotalElements.forEach(id => {
+                  const element = document.getElementById(id);
+                  if (element) {
+                      element.classList.remove('calculating');
+                  }
+              });
               
               // Generate item breakdown
               generateItemBreakdown(labourRate, labourHours, labourSubtotal, materialRate, materialSQM, materialSubtotal, installationAmount);
@@ -301,12 +336,41 @@ export default async function handler(req, res) {
               document.getElementById('itemBreakdown').value = breakdown;
           }
           
-          // Add event listeners for real-time calculations
-          document.getElementById('labourRate').addEventListener('input', calculateTotals);
-          document.getElementById('labourHours').addEventListener('input', calculateTotals);
-          document.getElementById('materialRate').addEventListener('input', calculateTotals);
-          document.getElementById('materialSQM').addEventListener('input', calculateTotals);
-          document.getElementById('installationAmount').addEventListener('input', calculateTotals);
+          // Function to add event listeners safely
+          function addEventListeners() {
+              const elements = [
+                  'labourRate',
+                  'labourHours', 
+                  'materialRate',
+                  'materialSQM',
+                  'installationAmount'
+              ];
+              
+              elements.forEach(id => {
+                  const element = document.getElementById(id);
+                  if (element) {
+                      element.addEventListener('input', calculateTotals);
+                      element.addEventListener('change', calculateTotals);
+                      console.log('✅ Added event listener to:', id);
+                  } else {
+                      console.error('❌ Element not found:', id);
+                  }
+              });
+          }
+          
+          // Initialize when DOM is loaded
+          document.addEventListener('DOMContentLoaded', function() {
+              console.log('🚀 DOM loaded, initializing quote form...');
+              addEventListeners();
+              calculateTotals(); // Initial calculation
+          });
+          
+          // Also try to add listeners immediately (in case DOM is already loaded)
+          if (document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', addEventListeners);
+          } else {
+              addEventListeners();
+          }
           
           document.getElementById('quoteForm').addEventListener('submit', async (e) => {
               e.preventDefault();

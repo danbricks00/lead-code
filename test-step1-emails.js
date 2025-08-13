@@ -7,7 +7,7 @@ import { sendStep1Emails } from './api/gmail-api-helper.js';
 const dummyLead = {
   customerName: "",
   customerEmail: "danbui@outlook.co.nz",
-  customerPhone: "0210510437",
+  customerPhone: "0275059901",
   selectedService: "underfloor_heating",
   projectDetails: "Areas: 1; Sizes: 12",
   projectSize: "12",

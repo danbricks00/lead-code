@@ -207,7 +207,7 @@ async function sendStep1Emails(lead) {
     admin: { sent: false, error: null, messageId: null }
   };
   
-  // 1. Send email to customer
+  // 1. Send email to customer (unchanged flow)
   console.log('📧 Step 1.1: Sending customer confirmation...');
   try {
     const customerSubject = `Thank you for your inquiry - Kiwi Trade`;
@@ -259,9 +259,32 @@ async function sendStep1Emails(lead) {
     console.error(`❌ Failed to send customer email:`, error.message);
   }
   
-  // 2. Send email to tradesman
+  // 2. Send email to tradesman (with enhanced pre-send validation)
   console.log('📧 Step 1.2: Sending tradesman notification...');
   try {
+    // Pre-send validation for tradesman email - check critical fields
+    console.log('🔍 Pre-send validation for Tradesman email:');
+    const criticalFields = {
+      customerName: lead.customerName,
+      selectedService: lead.selectedService,
+      quoteLink: lead.quoteLink
+    };
+    
+    const missingFields = [];
+    Object.entries(criticalFields).forEach(([field, value]) => {
+      if (!value || value.trim() === '') {
+        missingFields.push(field);
+        console.log(`⚠️ WARNING: Missing or empty critical field: ${field}`);
+      }
+    });
+    
+    if (missingFields.length > 0) {
+      console.log(`⚠️ WARNING: ${missingFields.length} critical field(s) missing/empty for tradesman email:`, missingFields);
+      console.log('🛡️ Applying safe fallback values to prevent Gmail API errors');
+    } else {
+      console.log('✅ All critical fields present for tradesman email');
+    }
+    
     const tradesmanSubject = `🔥 New Lead: ${safeLead.serviceType} - ${safeLead.location}`;
     const tradesmanHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -301,6 +324,7 @@ async function sendStep1Emails(lead) {
     
     // Log full Gmail API payload for tradesman email
     console.log('📧 Tradesman Email - Gmail API Payload:');
+    console.log('📧 To:', tradesmanEmail);
     console.log('📧 Subject:', tradesmanSubject);
     console.log('📧 Body Length:', tradesmanHtml.length, 'characters');
     console.log('📧 Body Preview:', tradesmanHtml.substring(0, 200) + '...');
@@ -316,9 +340,31 @@ async function sendStep1Emails(lead) {
     console.error(`❌ Failed to send tradesman email:`, error.message);
   }
   
-  // 3. Send email to admin
+  // 3. Send email to admin (with enhanced pre-send validation)
   console.log('📧 Step 1.3: Sending admin notification...');
   try {
+    // Pre-send validation for admin email - check critical fields
+    console.log('🔍 Pre-send validation for Admin email:');
+    const criticalFields = {
+      customerName: lead.customerName,
+      selectedService: lead.selectedService
+    };
+    
+    const missingFields = [];
+    Object.entries(criticalFields).forEach(([field, value]) => {
+      if (!value || value.trim() === '') {
+        missingFields.push(field);
+        console.log(`⚠️ WARNING: Missing or empty critical field: ${field}`);
+      }
+    });
+    
+    if (missingFields.length > 0) {
+      console.log(`⚠️ WARNING: ${missingFields.length} critical field(s) missing/empty for admin email:`, missingFields);
+      console.log('🛡️ Applying safe fallback values to prevent Gmail API errors');
+    } else {
+      console.log('✅ All critical fields present for admin email');
+    }
+    
     const adminSubject = `📋 New Lead: ${safeLead.customerName} - ${safeLead.serviceType}`;
     const adminHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -361,6 +407,7 @@ async function sendStep1Emails(lead) {
     
     // Log full Gmail API payload for admin email
     console.log('📧 Admin Email - Gmail API Payload:');
+    console.log('📧 To:', adminEmail);
     console.log('📧 Subject:', adminSubject);
     console.log('📧 Body Length:', adminHtml.length, 'characters');
     console.log('📧 Body Preview:', adminHtml.substring(0, 200) + '...');

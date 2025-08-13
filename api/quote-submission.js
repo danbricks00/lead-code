@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
-import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, HeadingLevel, ImageRun } from 'docx';
+import { sendEmailViaGmailAPI, validateEmail, logEmailAttempt } from './gmail-api-helper.js';
+import { generateQuoteDocument } from './word-document-generator.js';
 
 export default async function handler(req, res) {
   console.log('🔍 Quote submission API called:', req.method, req.url);
@@ -150,7 +151,6 @@ export default async function handler(req, res) {
       let sheetsUpdated = false;
       let tradesmanEmailSent = false;
       let customerEmailSent = false;
-      let attachmentType = 'none';
 
       // 1. Save to Google Sheets
       if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {
@@ -205,1340 +205,258 @@ export default async function handler(req, res) {
         }
       }
 
-      // 2. Send admin notification
-      try {
-        const nodemailer = await import('nodemailer');
-        const transporter = nodemailer.default.createTransport({
-          service: 'gmail',
-          auth: {
-            user: 'danbricks18@gmail.com',
-            pass: 'ptmcojqgthvjbqom'
-          }
-        });
+      // Email configuration
+      const tradesmanEmail = 'quangbui0600@gmail.com';
+      const adminEmail = 'danbricks@outlooki.co.nz';
+      const customerEmail = quoteData.customerEmail;
+      
+      console.log('📧 Email recipients configured:');
+      console.log(`📧 Tradesman: ${tradesmanEmail}`);
+      console.log(`📧 Admin: ${adminEmail}`);
+      console.log(`📧 Customer: ${customerEmail}`);
 
-        const adminMailOptions = {
-          from: 'Kiwi Trade <danbricks18@gmail.com>',
-          to: 'danbricks18@gmail.com',
-          subject: `Quote ${quoteData.quoteNumber} Submitted - ${quoteData.tradesmanName}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #2c3e50;">📄 Quote Submitted - Admin Copy</h2>
-              <p>A quote has been submitted by ${quoteData.tradesmanName} for ${quoteData.customerName}.</p>
-              
-              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
-                <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
-                <p><strong>Tradesman:</strong> ${quoteData.tradesmanName}</p>
-                <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
-                <p><strong>Phone:</strong> ${quoteData.tradesmanPhone}</p>
-                <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
-                <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
-                <p><strong>Item Breakdown:</strong></p>
-                <pre style="background: #f1f1f1; padding: 10px; border-radius: 4px; white-space: pre-wrap;">${quoteData.itemBreakdown}</pre>
-                ${quoteData.additionalNotes ? `<p><strong>Additional Notes:</strong> ${quoteData.additionalNotes}</p>` : ''}
-              </div>
-              
-              <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #1976d2; margin-top: 0;">Customer Details:</h3>
-                <p><strong>Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
-                <p><strong>Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
-                <p><strong>Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
-                <p><strong>Service:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
-                <p><strong>Location:</strong> ${quoteData.location || 'Auckland'}</p>
-              </div>
-              
-              <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #856404; margin-top: 0;">Status:</h3>
-                <ul style="margin: 10px 0; padding-left: 20px;">
-                  <li>✅ Quote submitted successfully</li>
-                  <li>📧 Customer will receive quote with attachment</li>
-                  <li>🌐 Customer can view quote online</li>
-                  <li>📊 Quote status updated in system</li>
-                </ul>
-              </div>
-              
-              <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
-            </div>
-          `
-        };
-
-        await transporter.sendMail(adminMailOptions);
-        console.log('✅ Admin notification email sent');
-      } catch (adminEmailError) {
-        console.error('❌ Admin email failed:', adminEmailError.message);
+      // Validate email addresses
+      if (!validateEmail(tradesmanEmail)) {
+        throw new Error(`Invalid tradesman email: ${tradesmanEmail}`);
+      }
+      if (!validateEmail(adminEmail)) {
+        throw new Error(`Invalid admin email: ${adminEmail}`);
+      }
+      if (!validateEmail(customerEmail)) {
+        throw new Error(`Invalid customer email: ${customerEmail}`);
       }
 
-      // 3. Send confirmation email to tradesman
-      try {
-        const nodemailer = await import('nodemailer');
-        const transporter = nodemailer.default.createTransport({
-          service: 'gmail',
-          auth: {
-            user: 'danbricks18@gmail.com',
-            pass: 'ptmcojqgthvjbqom'
-          }
-        });
-
-        const currentUrl = process.env.VERCEL_URL ? 
-          `https://${process.env.VERCEL_URL}` : 
-          'https://lead-code.vercel.app';
-
-        const tradesmanMailOptions = {
-          from: 'Kiwi Trade <danbricks18@gmail.com>',
-          to: 'quangbui0600@gmail.com', // Use test email for tradesman
-          subject: `Quote Submission Successful - ${quoteData.quoteNumber}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #2c3e50;">✅ Quote Submission Successful!</h2>
-              <p>Dear ${quoteData.tradesmanName},</p>
-              <p>Your quote has been successfully submitted and is being processed.</p>
-        
-              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
-                <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
-                <p><strong>Customer:</strong> ${quoteData.customerName || 'Not specified'}</p>
-                <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
-                <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
-                <p><strong>Status:</strong> Submitted and being processed</p>
-              </div>
-
-              <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #27ae60; margin-top: 0;">What happens next:</h3>
-                <ul style="margin: 10px 0; padding-left: 20px;">
-                  <li>📄 Professional DOCX quote being generated</li>
-                  <li>📧 Customer will receive quote email with attachment</li>
-                  <li>📧 Customer can view quote online and accept/decline</li>
-                  <li>📊 Quote status will be updated in dashboard</li>
-                </ul>
-              </div>
-
-              <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
-            </div>
-          `
-        };
-
-        await transporter.sendMail(tradesmanMailOptions);
-        console.log('✅ Tradesman confirmation email sent successfully');
-        tradesmanEmailSent = true;
-      } catch (emailError) {
-        console.error('❌ Tradesman email error:', emailError.message);
-      }
-
-      // 4. Generate quote document and send to customer
-      let quoteAttachment = null;
-      let attachmentFilename = '';
-
-      // Format date function
-      const formatDate = (date) => {
-        const d = new Date(date);
-        return d.toLocaleDateString('en-GB');
+      let emailResults = {
+        tradesman: { sent: false, error: null },
+        admin: { sent: false, error: null },
+        customer: { sent: false, error: null }
       };
 
-      // Generate DOCX using the docx library for better formatting
-      const docxBuffer = await generateDocxQuote(quoteData);
-
-              // Generate breakdown rows function for PDF
-        const generateBreakdownRows = (quoteData) => {
-          const rows = [];
-          
-          if (quoteData.labourSubtotal && parseFloat(quoteData.labourSubtotal) > 0) {
-            const labourRate = parseFloat(quoteData.labourRate) || 0;
-            const labourHours = parseFloat(quoteData.labourHours) || 0;
-            const labourSubtotal = parseFloat(quoteData.labourSubtotal) || 0;
-            rows.push(`<tr><td>Labour</td><td>$${labourRate.toFixed(2)}/hour × ${labourHours} hours</td><td>$${labourSubtotal.toFixed(2)}</td></tr>`);
-          }
-          
-          if (quoteData.materialSubtotal && parseFloat(quoteData.materialSubtotal) > 0) {
-            const materialRate = parseFloat(quoteData.materialRate) || 0;
-            const materialSQM = parseFloat(quoteData.materialSQM) || 0;
-            const materialSubtotal = parseFloat(quoteData.materialSubtotal) || 0;
-            rows.push(`<tr><td>Materials</td><td>$${materialRate.toFixed(2)}/sqm × ${materialSQM} sqm</td><td>$${materialSubtotal.toFixed(2)}</td></tr>`);
-          }
-          
-          if (quoteData.installationSubtotal && parseFloat(quoteData.installationSubtotal) > 0) {
-            const installationSubtotal = parseFloat(quoteData.installationSubtotal) || 0;
-            rows.push(`<tr><td>Installation</td><td>Installation services</td><td>$${installationSubtotal.toFixed(2)}</td></tr>`);
-          }
-          
-          if (rows.length === 0) {
-            return '<tr><td colspan="3">No breakdown provided</td></tr>';
-          }
-          
-          return rows.join('');
-        };
-
-                // Create HTML content for PDF - Mobile-responsive professional format
-        const htmlContent = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-              <title>Quote ${quoteData.quoteNumber}</title>
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <style>
-                @page { 
-                    margin: 0.5in; 
-                    size: A4 landscape;
-                }
-                * {
-                    box-sizing: border-box;
-                }
-                body { 
-                    font-family: Arial, sans-serif; 
-                    margin: 0; 
-                    padding: 20px; 
-                    color: #333;
-                    line-height: 1.4;
-                    background: #fff;
-                }
-                
-                /* Header Section */
-                .header { 
-                    text-align: center; 
-                    margin-bottom: 30px; 
-                    padding: 20px 0;
-                    border-bottom: 3px solid #4a90e2;
-                }
-                .company-name { 
-                    color: #4a90e2; 
-                    font-size: 32px; 
-                    font-weight: bold;
-                    margin: 0 0 10px 0;
-                    text-transform: uppercase;
-                }
-                .quote-title { 
-                    font-size: 36px; 
-                    font-weight: bold;
-                    margin: 10px 0;
-                    color: #333;
-                }
-                .quote-info {
-                    display: flex;
-                    justify-content: space-around;
-                    flex-wrap: wrap;
-                    margin: 20px 0;
-                    gap: 20px;
-                }
-                .quote-info p {
-                    margin: 5px 0;
-                    font-size: 14px;
-                    font-weight: 600;
-                }
-                
-                /* Details Section */
-                .details-container {
-                    display: flex;
-                    gap: 20px;
-                    margin: 30px 0;
-                    flex-wrap: wrap;
-                }
-                .details-box {
-                    flex: 1;
-                    min-width: 300px;
-                    background: #f8f9fa;
-                    border: 2px solid #e9ecef;
-                    border-radius: 8px;
-                    padding: 20px;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                }
-                .details-title {
-                    color: #333;
-                    margin: 0 0 15px 0;
-                    font-size: 18px;
-                    font-weight: bold;
-                    border-bottom: 2px solid #4a90e2;
-                    padding-bottom: 8px;
-                }
-                .details-content p {
-                    margin: 8px 0;
-                    font-size: 14px;
-                }
-                .details-content strong {
-                    color: #4a90e2;
-                }
-                
-                /* Breakdown Section */
-                .breakdown-section {
-                    margin: 30px 0;
-                }
-                .breakdown-title {
-                    font-size: 20px;
-                    font-weight: bold;
-                    margin: 0 0 15px 0;
-                    color: #333;
-                    text-align: center;
-                }
-                .breakdown-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin: 15px 0;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                    border-radius: 8px;
-                    overflow: hidden;
-                }
-                .breakdown-table th {
-                    background: #333;
-                    color: white;
-                    font-weight: bold;
-                    padding: 12px 8px;
-                    text-align: left;
-                    font-size: 14px;
-                }
-                .breakdown-table td {
-                    padding: 10px 8px;
-                    border-bottom: 1px solid #ddd;
-                    font-size: 14px;
-                }
-                .breakdown-table tr:nth-child(even) {
-                    background: #f8f9fa;
-                }
-                
-                /* Total Section */
-                .total-section {
-                    text-align: right;
-                    margin: 30px 0;
-                    padding: 20px;
-                    background: #e8f5e8;
-                    border: 2px solid #28a745;
-                    border-radius: 8px;
-                }
-                .total-amount {
-                    font-size: 24px;
-                    font-weight: bold;
-                    color: #155724;
-                    margin: 0;
-                }
-                
-                /* Notes Section */
-                .notes-section {
-                    margin: 30px 0;
-                    padding: 20px;
-                    background: #fff3cd;
-                    border: 1px solid #ffeaa7;
-                    border-radius: 8px;
-                }
-                .notes-title {
-                    color: #856404;
-                    margin: 0 0 10px 0;
-                    font-size: 16px;
-                    font-weight: bold;
-                }
-                
-                /* Footer */
-                .footer {
-                    margin-top: 40px;
-                    padding: 20px;
-                    border-top: 2px solid #ddd;
-                    text-align: center;
-                    background: #f8f9fa;
-                    border-radius: 8px;
-                }
-                .footer p {
-                    margin: 5px 0;
-                    font-size: 12px;
-                    color: #666;
-                }
-                .footer strong {
-                    color: #4a90e2;
-                }
-                
-                /* Mobile Responsive */
-                @media (max-width: 768px) {
-                    body {
-                        padding: 10px;
-                    }
-                    .company-name {
-                        font-size: 24px;
-                    }
-                    .quote-title {
-                        font-size: 28px;
-                    }
-                    .details-container {
-                        flex-direction: column;
-                    }
-                    .details-box {
-                        min-width: auto;
-                    }
-                    .quote-info {
-                        flex-direction: column;
-                        text-align: center;
-                    }
-                    .breakdown-table {
-                        font-size: 12px;
-                    }
-                    .breakdown-table th,
-                    .breakdown-table td {
-                        padding: 8px 4px;
-                        font-size: 12px;
-                    }
-                    .total-amount {
-                        font-size: 20px;
-                    }
-                }
-                
-                @media print {
-                    body {
-                        margin: 0;
-                        padding: 10px;
-                    }
-                    .header {
-                        margin-bottom: 20px;
-                    }
-                    .details-container {
-                        margin: 20px 0;
-                    }
-                    .breakdown-section {
-                        margin: 20px 0;
-                    }
-                    .total-section {
-                        margin: 20px 0;
-                    }
-                }
-              </style>
-          </head>
-          <body>
-              <div class="header">
-                  <h1 class="company-name">KIWI TRADE</h1>
-                  <h2 class="quote-title">QUOTE</h2>
-                  <div class="quote-info">
-                      <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
-                      <p><strong>Date:</strong> ${formatDate(new Date())}</p>
-                      <p><strong>Valid Until:</strong> ${formatDate(quoteData.validUntil)}</p>
-                  </div>
-              </div>
-
-              <div class="details-container">
-                  <div class="details-box">
-                      <h3 class="details-title">Customer Details</h3>
-                      <div class="details-content">
-                          <p><strong>Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
-                          <p><strong>Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
-                          <p><strong>Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
-                          <p><strong>Address:</strong> ${quoteData.location || 'Auckland'}</p>
-                      </div>
-                  </div>
-                  <div class="details-box">
-                      <h3 class="details-title">Tradesman Details</h3>
-                      <div class="details-content">
-                          <p><strong>Company:</strong> ${quoteData.tradesmanName}</p>
-                          <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
-                          <p><strong>Phone:</strong> ${quoteData.tradesmanPhone || 'Not specified'}</p>
-                          <p><strong>Service:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
-                      </div>
-                  </div>
-              </div>
-
-              <div class="breakdown-section">
-                  <h3 class="breakdown-title">Quote Breakdown</h3>
-                  <table class="breakdown-table">
-                      <thead>
-                          <tr>
-                              <th>Item</th>
-                              <th>Description</th>
-                              <th>Amount</th>
-                          </tr>
-                      </thead>
-                      <tbody>
-                          ${generateBreakdownRows(quoteData)}
-                      </tbody>
-                  </table>
-              </div>
-
-              <div class="total-section">
-                  <div class="total-amount">Total Amount: $${quoteData.totalAmount}</div>
-              </div>
-
-              ${quoteData.additionalNotes ? `
-              <div class="notes-section">
-                  <h3 class="notes-title">Additional Notes</h3>
-                  <p>${quoteData.additionalNotes}</p>
-              </div>
-              ` : ''}
-
-              <div class="footer">
-                  <p><strong>Kiwi Trade</strong></p>
-                  <p>Professional underfloor heating solutions for your home</p>
-                  <p>This quote was generated using our automated system</p>
-                  <p>Thank you for choosing Kiwi Trade!</p>
-              </div>
-          </body>
-          </html>
-        `;
-
-      // Generate DOCX directly (more reliable than PDF in serverless environment)
+      // Generate Word document attachment
+      let quoteAttachment = null;
+      let attachmentFilename = '';
+      
+      console.log('📄 Generating Word document quote...');
       try {
-        const docxBuffer = await generateDocxQuote(quoteData);
-        quoteAttachment = docxBuffer;
-        attachmentType = 'docx';
-        attachmentFilename = `Quote-${quoteData.quoteNumber}.docx`;
-        console.log('✅ DOCX generated successfully');
-      } catch (docxError) {
-        console.log('⚠️ DOCX generation failed, using HTML fallback...');
-        quoteAttachment = Buffer.from(htmlContent, 'utf8');
-        attachmentType = 'html';
-        attachmentFilename = `Quote-${quoteData.quoteNumber}.html`;
-        console.log('✅ HTML fallback ready');
+        const docResult = await generateQuoteDocument(quoteData);
+        quoteAttachment = {
+          content: docResult.buffer,
+          filename: docResult.filename,
+          contentType: docResult.contentType
+        };
+        attachmentFilename = docResult.filename;
+        console.log(`✅ Word document generated: ${attachmentFilename}`);
+      } catch (docError) {
+        console.error('❌ Failed to generate Word document:', docError.message);
+        // Continue without attachment
       }
 
-      // Send email to customer
+      // 2. Send confirmation email to tradesman
+      console.log('📧 Step 1: Sending tradesman confirmation...');
       try {
-        const nodemailer = await import('nodemailer');
-        const transporter = nodemailer.default.createTransport({
-          service: 'gmail',
-          auth: {
-            user: 'danbricks18@gmail.com',
-            pass: 'ptmcojqgthvjbqom'
-          }
-        });
+        const tradesmanSubject = `Quote Submission Successful - ${quoteData.quoteNumber}`;
+        const tradesmanHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2c3e50;">✅ Quote Submission Successful!</h2>
+            <p>Dear ${quoteData.tradesmanName},</p>
+            <p>Your quote has been successfully submitted and is being processed.</p>
+      
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
+              <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+              <p><strong>Customer:</strong> ${quoteData.customerName || 'Not specified'}</p>
+              <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
+              <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
+              <p><strong>Status:</strong> Submitted and being processed</p>
+            </div>
 
+            <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #27ae60; margin-top: 0;">What happens next:</h3>
+              <ul style="margin: 10px 0; padding-left: 20px;">
+                <li>📄 Professional DOCX quote being generated</li>
+                <li>📧 Customer will receive quote email with attachment</li>
+                <li>📧 Customer can view quote online and accept/decline</li>
+                <li>📊 Quote status will be updated in dashboard</li>
+              </ul>
+            </div>
+
+            <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+          </div>
+        `;
+
+        const tradesmanResult = await sendEmailViaGmailAPI(tradesmanEmail, tradesmanSubject, tradesmanHtml, quoteAttachment);
+        emailResults.tradesman.sent = true;
+        logEmailAttempt(tradesmanEmail, tradesmanSubject, 'SUCCESS', null, quoteAttachment);
+        console.log(`✅ Tradesman email sent successfully: ${tradesmanResult.messageId}`);
+        tradesmanEmailSent = true;
+      } catch (error) {
+        emailResults.tradesman.error = error.message;
+        logEmailAttempt(tradesmanEmail, 'Quote Submission Successful', 'FAILED', error, quoteAttachment);
+        console.error(`❌ Failed to send tradesman email:`, error.message);
+      }
+
+      // 3. Send email to admin with attachment
+      console.log('📧 Step 2: Sending admin notification...');
+      try {
+        const adminSubject = `Quote ${quoteData.quoteNumber} Submitted - ${quoteData.tradesmanName}`;
+        const adminHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2c3e50;">📄 Quote Submitted - Admin Copy</h2>
+            <p>A quote has been submitted by ${quoteData.tradesmanName} for ${quoteData.customerName}.</p>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
+              <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+              <p><strong>Tradesman:</strong> ${quoteData.tradesmanName}</p>
+              <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
+              <p><strong>Phone:</strong> ${quoteData.tradesmanPhone}</p>
+              <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
+              <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
+              <p><strong>Item Breakdown:</strong></p>
+              <pre style="background: #f1f1f1; padding: 10px; border-radius: 4px; white-space: pre-wrap;">${quoteData.itemBreakdown}</pre>
+              ${quoteData.additionalNotes ? `<p><strong>Additional Notes:</strong> ${quoteData.additionalNotes}</p>` : ''}
+            </div>
+            
+            <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #1976d2; margin-top: 0;">Customer Details:</h3>
+              <p><strong>Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
+              <p><strong>Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
+              <p><strong>Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
+              <p><strong>Service:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
+              <p><strong>Location:</strong> ${quoteData.location || 'Auckland'}</p>
+            </div>
+            
+            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #856404; margin-top: 0;">Status:</h3>
+              <ul style="margin: 10px 0; padding-left: 20px;">
+                <li>✅ Quote submitted successfully</li>
+                <li>📧 Customer will receive quote with attachment</li>
+                <li>🌐 Customer can view quote online</li>
+                <li>📊 Quote status updated in system</li>
+              </ul>
+            </div>
+            
+            <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+          </div>
+        `;
+
+        const adminResult = await sendEmailViaGmailAPI(adminEmail, adminSubject, adminHtml, quoteAttachment);
+        emailResults.admin.sent = true;
+        logEmailAttempt(adminEmail, adminSubject, 'SUCCESS', null, quoteAttachment);
+        console.log(`✅ Admin email sent successfully: ${adminResult.messageId}`);
+      } catch (error) {
+        emailResults.admin.error = error.message;
+        logEmailAttempt(adminEmail, 'Quote Submitted - Admin Copy', 'FAILED', error, quoteAttachment);
+        console.error(`❌ Failed to send admin email:`, error.message);
+      }
+
+      // 4. Send email to customer with attachment
+      console.log('📧 Step 3: Sending customer quote...');
+      try {
         const currentUrl = process.env.VERCEL_URL ? 
           `https://${process.env.VERCEL_URL}` : 
           'https://lead-code.vercel.app';
 
-        const getAttachmentInfo = () => {
-          switch (attachmentType) {
-            case 'pdf':
-              return {
-                contentType: 'application/pdf',
-                message: 'Please find your professional PDF quote attached to this email.',
-                note: ''
-              };
-            case 'docx':
-              return {
-                contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                message: 'Please find your professional DOCX quote attached to this email.',
-                note: 'You can open this file with Microsoft Word, Google Docs, or any compatible word processor.'
-              };
-            case 'html':
-              return {
-                contentType: 'text/html',
-                message: 'Please find your quote attached as an HTML file.',
-                note: 'The attached HTML file can be opened in any web browser and printed as a PDF for a professional look.'
-              };
-            default:
-              return {
-                contentType: 'text/plain',
-                message: 'Quote details are included in this email.',
-                note: 'No attachment was generated due to technical limitations.'
-              };
-          }
-        };
-
-        const attachmentInfo = getAttachmentInfo();
-
-        const customerMailOptions = {
-          from: 'Kiwi Trade <danbricks18@gmail.com>',
-          to: quoteData.customerEmail || 'danbricks18@gmail.com',
-          subject: `Professional Quote ${quoteData.quoteNumber} - ${quoteData.serviceType || 'Your Project'}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #2c3e50;">Your Professional Quote is Ready!</h2>
-              <p>Hi ${quoteData.customerName || 'there'},</p>
-              <p>Please find attached your professional quote for <strong>${quoteData.serviceType || 'your project'}</strong>.</p>
-              
-              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #34495e; margin-top: 0;">Quote Summary:</h3>
-                <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
-                <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
-                <p><strong>Valid Until:</strong> ${formatDate(quoteData.validUntil)}</p>
-                <p><strong>Tradesman:</strong> ${quoteData.tradesmanName}</p>
-                <p><strong>Format:</strong> ${attachmentType.toUpperCase()}</p>
-              </div>
-
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${currentUrl}/api/view-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
-                   style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
-                 View Quote Online
-                </a>
-                <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
-                   style="background: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
-            Accept Quote
-          </a>
-                <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
-                   style="background: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
-            Decline Quote
-          </a>
-              </div>
-
-              <p>${attachmentInfo.message}</p>
-              ${attachmentInfo.note ? `<p><strong>Note:</strong> ${attachmentInfo.note}</p>` : ''}
-              <p>You can view the quote online and accept/decline it using the links above.</p>
-              <p>Please review the attached quote and let us know if you have any questions.</p>
-              
-              <p style="margin-top: 30px;">Best regards,<br><strong>${quoteData.tradesmanName}</strong></p>
+        const customerSubject = `Your Quote - ${quoteData.quoteNumber} - Kiwi Trade`;
+        const customerHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2c3e50;">Your Quote is Ready!</h2>
+            <p>Dear ${quoteData.customerName},</p>
+            <p>Thank you for your inquiry. We have prepared a detailed quote for your project.</p>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #34495e; margin-top: 0;">Quote Summary:</h3>
+              <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+              <p><strong>Service:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
+              <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
+              <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
+              <p><strong>Location:</strong> ${quoteData.location || 'Auckland'}</p>
             </div>
-          `,
-          attachments: quoteAttachment ? [{
-            filename: attachmentFilename,
-            content: quoteAttachment.toString('base64'),
-            encoding: 'base64',
-            contentType: attachmentInfo.contentType
-          }] : []
-        };
+            
+            <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #27ae60; margin-top: 0;">What's included:</h3>
+              <ul style="margin: 10px 0; padding-left: 20px;">
+                <li>📄 Professional quote document (attached)</li>
+                <li>🌐 Online quote viewer with accept/decline options</li>
+                <li>📞 Direct contact with our team</li>
+                <li>⚡ Fast response to your decision</li>
+              </ul>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${currentUrl}/api/view-quote?quoteId=${quoteData.quoteId}" 
+                 style="background: #4a90e2; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-size: 16px; font-weight: bold; margin: 10px;">
+                 🌐 View Quote Online
+              </a>
+              <a href="mailto:${quoteData.tradesmanEmail}?subject=Quote ${quoteData.quoteNumber} - Question" 
+                 style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-size: 16px; font-weight: bold; margin: 10px;">
+                 📧 Ask Questions
+              </a>
+            </div>
+            
+            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #856404; margin-top: 0;">Next Steps:</h3>
+              <ol style="margin: 10px 0; padding-left: 20px;">
+                <li>Review the attached quote document</li>
+                <li>Visit the online quote to accept or decline</li>
+                <li>Contact us if you have any questions</li>
+                <li>We'll proceed with your project once confirmed</li>
+              </ol>
+            </div>
+            
+            <p><strong>Reference:</strong> ${quoteData.quoteNumber}</p>
+            <p>If you have any questions, please don't hesitate to contact us.</p>
+            
+            <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade Team</strong></p>
+          </div>
+        `;
 
-        console.log('📧 Attempting to send customer email...');
-        console.log('📧 Customer email:', quoteData.customerEmail);
-        console.log('📧 Attachment type:', attachmentType);
-        console.log('📧 Attachment size:', quoteAttachment ? quoteAttachment.length : 'No attachment');
-        
-        await transporter.sendMail(customerMailOptions);
-        console.log(`✅ Customer email sent with ${attachmentType.toUpperCase()} attachment`);
+        const customerResult = await sendEmailViaGmailAPI(customerEmail, customerSubject, customerHtml, quoteAttachment);
+        emailResults.customer.sent = true;
+        logEmailAttempt(customerEmail, customerSubject, 'SUCCESS', null, quoteAttachment);
+        console.log(`✅ Customer email sent successfully: ${customerResult.messageId}`);
         customerEmailSent = true;
-      } catch (emailError) {
-        console.error('❌ Customer email error:', emailError.message);
+      } catch (error) {
+        emailResults.customer.error = error.message;
+        logEmailAttempt(customerEmail, 'Your Quote', 'FAILED', error, quoteAttachment);
+        console.error(`❌ Failed to send customer email:`, error.message);
       }
+
+      // Calculate email success rate
+      const totalEmails = 3;
+      const successfulEmails = Object.values(emailResults).filter(result => result.sent).length;
+      const emailSuccessRate = (successfulEmails / totalEmails) * 100;
 
       // Return success response
       const response = {
-        success: true,
-        message: customerEmailSent ? 'Quote submitted successfully! Professional quote has been created and sent to all parties.' : 'Quote submitted successfully! Quote generation is in progress.',
-        data: quoteData,
-        quoteNumber: quoteData.quoteNumber,
-        timestamp: new Date().toISOString(),
+        success: emailSuccessRate >= 66, // At least 2 out of 3 emails must succeed
+        message: emailSuccessRate >= 66 ? 'Quote submitted successfully! Professional quote has been created and sent to all parties.' : 'Quote submitted successfully! Some notifications may be delayed.',
+        data: {
+          quoteNumber: quoteData.quoteNumber,
+          customerName: quoteData.customerName,
+          totalAmount: quoteData.totalAmount,
+          tradesmanName: quoteData.tradesmanName
+        },
         status: {
+          emailResults,
+          emailSuccessRate: `${emailSuccessRate.toFixed(1)}%`,
           sheetsUpdated,
-          tradesmanEmailSent,
-          customerEmailSent,
-          attachmentType
+          attachmentGenerated: !!quoteAttachment
         }
       };
 
-      console.log('📊 Quote Response:', response);
-      res.json(response);
+      console.log('📊 Quote Submission Response:', response);
+      return res.json(response);
 
     } catch (error) {
-      console.error('❌ Error processing quote:', error);
-      
-      // Check if we have partial success
-      if (sheetsUpdated || tradesmanEmailSent) {
-        res.json({
-          success: true,
-          message: 'Quote submitted successfully! Some notifications may be delayed.',
-          data: quoteData,
-          quoteNumber: quoteData.quoteNumber,
-          timestamp: new Date().toISOString(),
-          status: {
-            sheetsUpdated,
-            tradesmanEmailSent,
-            customerEmailSent: false,
-            error: error.message
-          }
-        });
-      } else {
-        res.status(500).json({
-          success: false,
-          error: 'Failed to process quote',
-          details: error.message
-        });
-      }
+      console.error('❌ Error processing quote submission:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to process quote submission',
+        details: error.message
+      });
     }
   }
-} 
 
-async function generateDocxQuote(quoteData) {
-  // Format date function
-  const formatDate = (date) => {
-    const d = new Date(date);
-    return d.toLocaleDateString('en-GB');
-  };
-
-  const doc = new Document({
-    sections: [{
-      properties: {
-        page: {
-          size: {
-            width: 11906, // A4 landscape width in twips
-            height: 8420, // A4 landscape height in twips
-          },
-          margin: {
-            top: 1440, // 1 inch
-            right: 1440,
-            bottom: 1440,
-            left: 1440,
-          },
-        },
-      },
-      children: [
-        // Header
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "KIWI TRADE",
-              size: 48, // 24pt
-              bold: true,
-              color: "4A90E2",
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 400 },
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "QUOTE",
-              size: 56, // 28pt
-              bold: true,
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 400 },
-        }),
-        
-        // Quote Info
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: `Quote Number: ${quoteData.quoteNumber}`,
-              size: 24, // 12pt
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: `Date: ${formatDate(new Date())}`,
-              size: 24,
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: `Valid Until: ${formatDate(quoteData.validUntil)}`,
-              size: 24,
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 600 },
-        }),
-
-        // Divider
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "________________________________________________________________________________",
-              size: 24,
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 600 },
-        }),
-
-        // Customer and Tradesman Details Table
-        new Table({
-          width: {
-            size: 100,
-            type: WidthType.PERCENTAGE,
-          },
-          rows: [
-            new TableRow({
-              children: [
-                new TableCell({
-                  children: [
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: "Customer Details",
-                          size: 32, // 16pt
-                          bold: true,
-                        }),
-                      ],
-                      spacing: { after: 200 },
-                    }),
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: `Name: ${quoteData.customerName || 'Not specified'}`,
-                          size: 28, // 14pt
-                        }),
-                      ],
-                      spacing: { after: 100 },
-                    }),
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: `Email: ${quoteData.customerEmail || 'Not specified'}`,
-                          size: 28,
-                        }),
-                      ],
-                      spacing: { after: 100 },
-                    }),
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: `Phone: ${quoteData.customerPhone || 'Not specified'}`,
-                          size: 28,
-                        }),
-                      ],
-                      spacing: { after: 100 },
-                    }),
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: `Address: ${quoteData.location || 'Auckland'}`,
-                          size: 28,
-                        }),
-                      ],
-                      spacing: { after: 100 },
-                    }),
-                  ],
-                  width: {
-                    size: 50,
-                    type: WidthType.PERCENTAGE,
-                  },
-                  shading: {
-                    fill: "F8F9FA",
-                  },
-                  borders: {
-                    top: { style: BorderStyle.SINGLE, size: 1 },
-                    bottom: { style: BorderStyle.SINGLE, size: 1 },
-                    left: { style: BorderStyle.SINGLE, size: 1 },
-                    right: { style: BorderStyle.SINGLE, size: 1 },
-                  },
-                }),
-                new TableCell({
-                  children: [
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: "Tradesman Details",
-                          size: 32,
-                          bold: true,
-                        }),
-                      ],
-                      spacing: { after: 200 },
-                    }),
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: `Company: ${quoteData.tradesmanName}`,
-                          size: 28,
-                        }),
-                      ],
-                      spacing: { after: 100 },
-                    }),
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: `Email: ${quoteData.tradesmanEmail}`,
-                          size: 28,
-                        }),
-                      ],
-                      spacing: { after: 100 },
-                    }),
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: `Phone: ${quoteData.tradesmanPhone || 'Not specified'}`,
-                          size: 28,
-                        }),
-                      ],
-                      spacing: { after: 100 },
-                    }),
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: `Service: ${quoteData.serviceType || 'Underfloor Heating'}`,
-                          size: 28,
-                        }),
-                      ],
-                      spacing: { after: 100 },
-                    }),
-                  ],
-                  width: {
-                    size: 50,
-                    type: WidthType.PERCENTAGE,
-                  },
-                  shading: {
-                    fill: "F8F9FA",
-                  },
-                  borders: {
-                    top: { style: BorderStyle.SINGLE, size: 1 },
-                    bottom: { style: BorderStyle.SINGLE, size: 1 },
-                    left: { style: BorderStyle.SINGLE, size: 1 },
-                    right: { style: BorderStyle.SINGLE, size: 1 },
-                  },
-                }),
-              ],
-            }),
-          ],
-        }),
-
-        new Paragraph({
-          spacing: { after: 600 },
-        }),
-
-        // Divider
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "________________________________________________________________________________",
-              size: 24,
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 400 },
-        }),
-
-        // Quote Breakdown Title
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "Quote Breakdown",
-              size: 36, // 18pt
-              bold: true,
-            }),
-          ],
-          spacing: { after: 400 },
-        }),
-
-        // Quote Breakdown Table
-        new Table({
-          width: {
-            size: 100,
-            type: WidthType.PERCENTAGE,
-          },
-          rows: [
-            // Header row
-            new TableRow({
-              children: [
-                new TableCell({
-                  children: [
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: "Item",
-                          size: 28,
-                          bold: true,
-                          color: "FFFFFF",
-                        }),
-                      ],
-                      alignment: AlignmentType.CENTER,
-                    }),
-                  ],
-                  shading: {
-                    fill: "333333",
-                  },
-                  borders: {
-                    top: { style: BorderStyle.SINGLE, size: 1 },
-                    bottom: { style: BorderStyle.SINGLE, size: 1 },
-                    left: { style: BorderStyle.SINGLE, size: 1 },
-                    right: { style: BorderStyle.SINGLE, size: 1 },
-                  },
-                }),
-                new TableCell({
-                  children: [
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: "Description",
-                          size: 28,
-                          bold: true,
-                          color: "FFFFFF",
-                        }),
-                      ],
-                      alignment: AlignmentType.CENTER,
-                    }),
-                  ],
-                  shading: {
-                    fill: "333333",
-                  },
-                  borders: {
-                    top: { style: BorderStyle.SINGLE, size: 1 },
-                    bottom: { style: BorderStyle.SINGLE, size: 1 },
-                    left: { style: BorderStyle.SINGLE, size: 1 },
-                    right: { style: BorderStyle.SINGLE, size: 1 },
-                  },
-                }),
-                new TableCell({
-                  children: [
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: "Amount",
-                          size: 28,
-                          bold: true,
-                          color: "FFFFFF",
-                        }),
-                      ],
-                      alignment: AlignmentType.CENTER,
-                    }),
-                  ],
-                  shading: {
-                    fill: "333333",
-                  },
-                  borders: {
-                    top: { style: BorderStyle.SINGLE, size: 1 },
-                    bottom: { style: BorderStyle.SINGLE, size: 1 },
-                    left: { style: BorderStyle.SINGLE, size: 1 },
-                    right: { style: BorderStyle.SINGLE, size: 1 },
-                  },
-                }),
-              ],
-            }),
-            // Data rows
-            ...generateDocxBreakdownRows(quoteData),
-          ],
-        }),
-
-        new Paragraph({
-          spacing: { after: 600 },
-        }),
-
-        // Total Amount
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: `Total Amount: $${quoteData.totalAmount}`,
-              size: 36, // 18pt
-              bold: true,
-            }),
-          ],
-          alignment: AlignmentType.RIGHT,
-          spacing: { after: 600 },
-        }),
-
-        // Additional Notes
-        ...(quoteData.additionalNotes ? [
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: "Additional Notes",
-                size: 32,
-                bold: true,
-              }),
-            ],
-            spacing: { after: 200 },
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: quoteData.additionalNotes,
-                size: 28,
-              }),
-            ],
-            spacing: { after: 600 },
-          }),
-        ] : []),
-
-        // Footer
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "Kiwi Trade",
-              size: 24,
-              bold: true,
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "Professional underfloor heating solutions for your home",
-              size: 24,
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "This quote was generated using our automated system",
-              size: 24,
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "Thank you for choosing Kiwi Trade!",
-              size: 24,
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 200 },
-        }),
-      ],
-    }],
-  });
-
-  return await Packer.toBuffer(doc);
+  return res.status(405).json({ error: 'Method not allowed' });
 }
-
-function generateDocxBreakdownRows(quoteData) {
-  const rows = [];
-  
-  // Generate breakdown from the quote data
-  if (quoteData.labourSubtotal && parseFloat(quoteData.labourSubtotal) > 0) {
-    const labourRate = parseFloat(quoteData.labourRate) || 0;
-    const labourHours = parseFloat(quoteData.labourHours) || 0;
-    const labourSubtotal = parseFloat(quoteData.labourSubtotal) || 0;
-    
-    rows.push(
-      new TableRow({
-        children: [
-          new TableCell({
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Labour",
-                    size: 28,
-                  }),
-                ],
-              }),
-            ],
-            borders: {
-              top: { style: BorderStyle.SINGLE, size: 1 },
-              bottom: { style: BorderStyle.SINGLE, size: 1 },
-              left: { style: BorderStyle.SINGLE, size: 1 },
-              right: { style: BorderStyle.SINGLE, size: 1 },
-            },
-          }),
-          new TableCell({
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `$${labourRate.toFixed(2)}/hour × ${labourHours} hours`,
-                    size: 28,
-                  }),
-                ],
-              }),
-            ],
-            borders: {
-              top: { style: BorderStyle.SINGLE, size: 1 },
-              bottom: { style: BorderStyle.SINGLE, size: 1 },
-              left: { style: BorderStyle.SINGLE, size: 1 },
-              right: { style: BorderStyle.SINGLE, size: 1 },
-            },
-          }),
-          new TableCell({
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `$${labourSubtotal.toFixed(2)}`,
-                    size: 28,
-                  }),
-                ],
-              }),
-            ],
-            borders: {
-              top: { style: BorderStyle.SINGLE, size: 1 },
-              bottom: { style: BorderStyle.SINGLE, size: 1 },
-              left: { style: BorderStyle.SINGLE, size: 1 },
-              right: { style: BorderStyle.SINGLE, size: 1 },
-            },
-          }),
-        ],
-      })
-    );
-  }
-  
-  if (quoteData.materialSubtotal && parseFloat(quoteData.materialSubtotal) > 0) {
-    const materialRate = parseFloat(quoteData.materialRate) || 0;
-    const materialSQM = parseFloat(quoteData.materialSQM) || 0;
-    const materialSubtotal = parseFloat(quoteData.materialSubtotal) || 0;
-    
-    rows.push(
-      new TableRow({
-        children: [
-          new TableCell({
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Materials",
-                    size: 28,
-                  }),
-                ],
-              }),
-            ],
-            borders: {
-              top: { style: BorderStyle.SINGLE, size: 1 },
-              bottom: { style: BorderStyle.SINGLE, size: 1 },
-              left: { style: BorderStyle.SINGLE, size: 1 },
-              right: { style: BorderStyle.SINGLE, size: 1 },
-            },
-          }),
-          new TableCell({
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `$${materialRate.toFixed(2)}/sqm × ${materialSQM} sqm`,
-                    size: 28,
-                  }),
-                ],
-              }),
-            ],
-            borders: {
-              top: { style: BorderStyle.SINGLE, size: 1 },
-              bottom: { style: BorderStyle.SINGLE, size: 1 },
-              left: { style: BorderStyle.SINGLE, size: 1 },
-              right: { style: BorderStyle.SINGLE, size: 1 },
-            },
-          }),
-          new TableCell({
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `$${materialSubtotal.toFixed(2)}`,
-                    size: 28,
-                  }),
-                ],
-              }),
-            ],
-            borders: {
-              top: { style: BorderStyle.SINGLE, size: 1 },
-              bottom: { style: BorderStyle.SINGLE, size: 1 },
-              left: { style: BorderStyle.SINGLE, size: 1 },
-              right: { style: BorderStyle.SINGLE, size: 1 },
-            },
-          }),
-        ],
-      })
-    );
-  }
-  
-  if (quoteData.installationSubtotal && parseFloat(quoteData.installationSubtotal) > 0) {
-    const installationSubtotal = parseFloat(quoteData.installationSubtotal) || 0;
-    
-    rows.push(
-      new TableRow({
-        children: [
-          new TableCell({
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Installation",
-                    size: 28,
-                  }),
-                ],
-              }),
-            ],
-            borders: {
-              top: { style: BorderStyle.SINGLE, size: 1 },
-              bottom: { style: BorderStyle.SINGLE, size: 1 },
-              left: { style: BorderStyle.SINGLE, size: 1 },
-              right: { style: BorderStyle.SINGLE, size: 1 },
-            },
-          }),
-          new TableCell({
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Installation services",
-                    size: 28,
-                  }),
-                ],
-              }),
-            ],
-            borders: {
-              top: { style: BorderStyle.SINGLE, size: 1 },
-              bottom: { style: BorderStyle.SINGLE, size: 1 },
-              left: { style: BorderStyle.SINGLE, size: 1 },
-              right: { style: BorderStyle.SINGLE, size: 1 },
-            },
-          }),
-          new TableCell({
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `$${installationSubtotal.toFixed(2)}`,
-                    size: 28,
-                  }),
-                ],
-              }),
-            ],
-            borders: {
-              top: { style: BorderStyle.SINGLE, size: 1 },
-              bottom: { style: BorderStyle.SINGLE, size: 1 },
-              left: { style: BorderStyle.SINGLE, size: 1 },
-              right: { style: BorderStyle.SINGLE, size: 1 },
-            },
-          }),
-        ],
-      })
-    );
-  }
-  
-  // If no breakdown items, add a default row
-  if (rows.length === 0) {
-    rows.push(
-      new TableRow({
-        children: [
-          new TableCell({
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Underfloor Heating Installation",
-                    size: 28,
-                  }),
-                ],
-              }),
-            ],
-            borders: {
-              top: { style: BorderStyle.SINGLE, size: 1 },
-              bottom: { style: BorderStyle.SINGLE, size: 1 },
-              left: { style: BorderStyle.SINGLE, size: 1 },
-              right: { style: BorderStyle.SINGLE, size: 1 },
-            },
-          }),
-          new TableCell({
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Complete underfloor heating system installation including materials and labor",
-                    size: 28,
-                  }),
-                ],
-              }),
-            ],
-            borders: {
-              top: { style: BorderStyle.SINGLE, size: 1 },
-              bottom: { style: BorderStyle.SINGLE, size: 1 },
-              left: { style: BorderStyle.SINGLE, size: 1 },
-              right: { style: BorderStyle.SINGLE, size: 1 },
-            },
-          }),
-          new TableCell({
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `$${quoteData.totalAmount}`,
-                    size: 28,
-                  }),
-                ],
-              }),
-            ],
-            borders: {
-              top: { style: BorderStyle.SINGLE, size: 1 },
-              bottom: { style: BorderStyle.SINGLE, size: 1 },
-              left: { style: BorderStyle.SINGLE, size: 1 },
-              right: { style: BorderStyle.SINGLE, size: 1 },
-            },
-          }),
-        ],
-      })
-    );
-  }
-  
-  return rows;
-} 

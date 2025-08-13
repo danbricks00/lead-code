@@ -304,6 +304,7 @@ export default async function handler(req, res) {
       const createDocxQuote = async (quoteData) => {
         const { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, AlignmentType, BorderStyle, WidthType } = await import('docx');
         
+        // Create breakdown rows with proper table formatting
         const breakdownRows = [];
         
         if (quoteData.labourSubtotal && parseFloat(quoteData.labourSubtotal) > 0) {
@@ -313,9 +314,21 @@ export default async function handler(req, res) {
           breakdownRows.push(
             new TableRow({
               children: [
-                new TableCell({ children: [new Paragraph({ text: 'Labour' })] }),
-                new TableCell({ children: [new Paragraph({ text: `$${labourRate.toFixed(2)}/hour × ${labourHours} hours` })] }),
-                new TableCell({ children: [new Paragraph({ text: `$${labourSubtotal.toFixed(2)}` })] })
+                new TableCell({ 
+                  children: [new Paragraph({ text: 'Labour' })],
+                  width: { size: 20, type: WidthType.PERCENTAGE },
+                  borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } }
+                }),
+                new TableCell({ 
+                  children: [new Paragraph({ text: `$${labourRate.toFixed(2)}/hour × ${labourHours} hours` })],
+                  width: { size: 50, type: WidthType.PERCENTAGE },
+                  borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } }
+                }),
+                new TableCell({ 
+                  children: [new Paragraph({ text: `$${labourSubtotal.toFixed(2)}` })],
+                  width: { size: 30, type: WidthType.PERCENTAGE },
+                  borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } }
+                })
               ]
             })
           );
@@ -328,9 +341,21 @@ export default async function handler(req, res) {
           breakdownRows.push(
             new TableRow({
               children: [
-                new TableCell({ children: [new Paragraph({ text: 'Materials' })] }),
-                new TableCell({ children: [new Paragraph({ text: `$${materialRate.toFixed(2)}/sqm × ${materialSQM} sqm` })] }),
-                new TableCell({ children: [new Paragraph({ text: `$${materialSubtotal.toFixed(2)}` })] })
+                new TableCell({ 
+                  children: [new Paragraph({ text: 'Materials' })],
+                  width: { size: 20, type: WidthType.PERCENTAGE },
+                  borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } }
+                }),
+                new TableCell({ 
+                  children: [new Paragraph({ text: `$${materialRate.toFixed(2)}/sqm × ${materialSQM} sqm` })],
+                  width: { size: 50, type: WidthType.PERCENTAGE },
+                  borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } }
+                }),
+                new TableCell({ 
+                  children: [new Paragraph({ text: `$${materialSubtotal.toFixed(2)}` })],
+                  width: { size: 30, type: WidthType.PERCENTAGE },
+                  borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } }
+                })
               ]
             })
           );
@@ -341,150 +366,304 @@ export default async function handler(req, res) {
           breakdownRows.push(
             new TableRow({
               children: [
-                new TableCell({ children: [new Paragraph({ text: 'Installation' })] }),
-                new TableCell({ children: [new Paragraph({ text: 'Installation services' })] }),
-                new TableCell({ children: [new Paragraph({ text: `$${installationSubtotal.toFixed(2)}` })] })
+                new TableCell({ 
+                  children: [new Paragraph({ text: 'Installation' })],
+                  width: { size: 20, type: WidthType.PERCENTAGE },
+                  borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } }
+                }),
+                new TableCell({ 
+                  children: [new Paragraph({ text: 'Installation services' })],
+                  width: { size: 50, type: WidthType.PERCENTAGE },
+                  borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } }
+                }),
+                new TableCell({ 
+                  children: [new Paragraph({ text: `$${installationSubtotal.toFixed(2)}` })],
+                  width: { size: 30, type: WidthType.PERCENTAGE },
+                  borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } }
+                })
               ]
             })
           );
         }
         
+        // Create the document with proper styling
         const doc = new Document({
           sections: [{
-            properties: {},
+            properties: {
+              page: {
+                margin: {
+                  top: 1440, // 1 inch
+                  right: 1440,
+                  bottom: 1440,
+                  left: 1440
+                }
+              }
+            },
             children: [
+              // Header
               new Paragraph({
-                text: "KIWI TRADE",
-                heading: HeadingLevel.HEADING_1,
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 200 }
-              }),
-              new Paragraph({
-                text: "QUOTE",
-                heading: HeadingLevel.HEADING_2,
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 200 }
-              }),
-              new Paragraph({
-                text: `Quote Number: ${quoteData.quoteNumber}`,
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 100 }
-              }),
-              new Paragraph({
-                text: `Date: ${new Date().toLocaleDateString('en-GB')}`,
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 100 }
-              }),
-              new Paragraph({
-                text: `Valid Until: ${formatDate(quoteData.validUntil)}`,
+                children: [
+                  new TextRun({
+                    text: "KIWI TRADE",
+                    bold: true,
+                    size: 32,
+                    color: "4a90e2"
+                  })
+                ],
                 alignment: AlignmentType.CENTER,
                 spacing: { after: 400 }
               }),
               new Paragraph({
-                text: "_________________________________________________________________",
+                children: [
+                  new TextRun({
+                    text: "QUOTE",
+                    bold: true,
+                    size: 28
+                  })
+                ],
                 alignment: AlignmentType.CENTER,
-                spacing: { after: 400 }
+                spacing: { after: 300 }
               }),
               new Paragraph({
-                text: "Customer Details",
-                heading: HeadingLevel.HEADING_3,
-                spacing: { after: 200 }
-              }),
-              new Paragraph({
-                text: `Name: ${quoteData.customerName || 'Not specified'}`,
-                spacing: { after: 100 }
-              }),
-              new Paragraph({
-                text: `Email: ${quoteData.customerEmail || 'Not specified'}`,
-                spacing: { after: 100 }
-              }),
-              new Paragraph({
-                text: `Phone: ${quoteData.customerPhone || 'Not specified'}`,
-                spacing: { after: 100 }
-              }),
-              new Paragraph({
-                text: `Address: ${quoteData.location || 'Auckland'}`,
-                spacing: { after: 400 }
-              }),
-              new Paragraph({
-                text: "Tradesman Details",
-                heading: HeadingLevel.HEADING_3,
-                spacing: { after: 200 }
-              }),
-              new Paragraph({
-                text: `Company: ${quoteData.tradesmanName}`,
-                spacing: { after: 100 }
-              }),
-              new Paragraph({
-                text: `Email: ${quoteData.tradesmanEmail}`,
-                spacing: { after: 100 }
-              }),
-              new Paragraph({
-                text: `Phone: ${quoteData.tradesmanPhone || 'Not specified'}`,
-                spacing: { after: 100 }
-              }),
-              new Paragraph({
-                text: `Service: ${quoteData.serviceType || 'Underfloor Heating'}`,
-                spacing: { after: 400 }
-              }),
-              new Paragraph({
-                text: "_________________________________________________________________",
+                children: [
+                  new TextRun({
+                    text: `Quote Number: ${quoteData.quoteNumber}`,
+                    bold: true,
+                    size: 20
+                  })
+                ],
                 alignment: AlignmentType.CENTER,
-                spacing: { after: 400 }
-              }),
-              new Paragraph({
-                text: "Quote Breakdown",
-                heading: HeadingLevel.HEADING_3,
                 spacing: { after: 200 }
               }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Date: ${new Date().toLocaleDateString('en-GB')}`,
+                    size: 18
+                  })
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 200 }
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Valid Until: ${formatDate(quoteData.validUntil)}`,
+                    size: 18
+                  })
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 600 }
+              }),
+              
+              // Divider
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "_________________________________________________________________",
+                    size: 18
+                  })
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 600 }
+              }),
+              
+              // Customer and Tradesman Details in a table
               new Table({
                 width: { size: 100, type: WidthType.PERCENTAGE },
                 rows: [
                   new TableRow({
                     children: [
-                      new TableCell({ children: [new Paragraph({ text: "Item" })] }),
-                      new TableCell({ children: [new Paragraph({ text: "Description" })] }),
-                      new TableCell({ children: [new Paragraph({ text: "Amount" })] })
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [new TextRun({ text: "Customer Details", bold: true, size: 20 })],
+                            spacing: { after: 200 }
+                          }),
+                          new Paragraph({
+                            children: [new TextRun({ text: `Name: ${quoteData.customerName || 'Not specified'}`, size: 16 })],
+                            spacing: { after: 100 }
+                          }),
+                          new Paragraph({
+                            children: [new TextRun({ text: `Email: ${quoteData.customerEmail || 'Not specified'}`, size: 16 })],
+                            spacing: { after: 100 }
+                          }),
+                          new Paragraph({
+                            children: [new TextRun({ text: `Phone: ${quoteData.customerPhone || 'Not specified'}`, size: 16 })],
+                            spacing: { after: 100 }
+                          }),
+                          new Paragraph({
+                            children: [new TextRun({ text: `Address: ${quoteData.location || 'Auckland'}`, size: 16 })],
+                            spacing: { after: 100 }
+                          })
+                        ],
+                        width: { size: 50, type: WidthType.PERCENTAGE },
+                        shading: { fill: "f8f9fa" },
+                        borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } }
+                      }),
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [new TextRun({ text: "Tradesman Details", bold: true, size: 20 })],
+                            spacing: { after: 200 }
+                          }),
+                          new Paragraph({
+                            children: [new TextRun({ text: `Company: ${quoteData.tradesmanName}`, size: 16 })],
+                            spacing: { after: 100 }
+                          }),
+                          new Paragraph({
+                            children: [new TextRun({ text: `Email: ${quoteData.tradesmanEmail}`, size: 16 })],
+                            spacing: { after: 100 }
+                          }),
+                          new Paragraph({
+                            children: [new TextRun({ text: `Phone: ${quoteData.tradesmanPhone || 'Not specified'}`, size: 16 })],
+                            spacing: { after: 100 }
+                          }),
+                          new Paragraph({
+                            children: [new TextRun({ text: `Service: ${quoteData.serviceType || 'Underfloor Heating'}`, size: 16 })],
+                            spacing: { after: 100 }
+                          })
+                        ],
+                        width: { size: 50, type: WidthType.PERCENTAGE },
+                        shading: { fill: "f8f9fa" },
+                        borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } }
+                      })
+                    ]
+                  })
+                ],
+                spacing: { after: 600 }
+              }),
+              
+              // Divider
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "_________________________________________________________________",
+                    size: 18
+                  })
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 400 }
+              }),
+              
+              // Quote Breakdown
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Quote Breakdown",
+                    bold: true,
+                    size: 20
+                  })
+                ],
+                spacing: { after: 300 }
+              }),
+              
+              // Breakdown Table
+              new Table({
+                width: { size: 100, type: WidthType.PERCENTAGE },
+                rows: [
+                  new TableRow({
+                    children: [
+                      new TableCell({
+                        children: [new Paragraph({ children: [new TextRun({ text: "Item", bold: true, size: 18 })] })],
+                        width: { size: 20, type: WidthType.PERCENTAGE },
+                        shading: { fill: "333333" },
+                        borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } }
+                      }),
+                      new TableCell({
+                        children: [new Paragraph({ children: [new TextRun({ text: "Description", bold: true, size: 18 })] })],
+                        width: { size: 50, type: WidthType.PERCENTAGE },
+                        shading: { fill: "333333" },
+                        borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } }
+                      }),
+                      new TableCell({
+                        children: [new Paragraph({ children: [new TextRun({ text: "Amount", bold: true, size: 18 })] })],
+                        width: { size: 30, type: WidthType.PERCENTAGE },
+                        shading: { fill: "333333" },
+                        borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } }
+                      })
                     ]
                   }),
                   ...breakdownRows
-                ]
-              }),
-              new Paragraph({
-                text: `Total Amount: $${quoteData.totalAmount}`,
-                heading: HeadingLevel.HEADING_3,
-                alignment: AlignmentType.RIGHT,
+                ],
                 spacing: { after: 400 }
               }),
+              
+              // Total Amount
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Total Amount: $${quoteData.totalAmount}`,
+                    bold: true,
+                    size: 24
+                  })
+                ],
+                alignment: AlignmentType.RIGHT,
+                spacing: { after: 600 }
+              }),
+              
+              // Additional Notes
               ...(quoteData.additionalNotes ? [
                 new Paragraph({
-                  text: "Additional Notes",
-                  heading: HeadingLevel.HEADING_3,
+                  children: [
+                    new TextRun({
+                      text: "Additional Notes",
+                      bold: true,
+                      size: 20
+                    })
+                  ],
                   spacing: { after: 200 }
                 }),
                 new Paragraph({
-                  text: quoteData.additionalNotes,
+                  children: [
+                    new TextRun({
+                      text: quoteData.additionalNotes,
+                      size: 16
+                    })
+                  ],
                   spacing: { after: 400 }
                 })
               ] : []),
+              
+              // Footer
               new Paragraph({
-                text: "Kiwi Trade",
-                heading: HeadingLevel.HEADING_3,
+                children: [
+                  new TextRun({
+                    text: "Kiwi Trade",
+                    bold: true,
+                    size: 20
+                  })
+                ],
                 alignment: AlignmentType.CENTER,
                 spacing: { after: 200 }
               }),
               new Paragraph({
-                text: "Professional underfloor heating solutions for your home",
+                children: [
+                  new TextRun({
+                    text: "Professional underfloor heating solutions for your home",
+                    size: 16
+                  })
+                ],
                 alignment: AlignmentType.CENTER,
                 spacing: { after: 100 }
               }),
               new Paragraph({
-                text: "This quote was generated using our automated system",
+                children: [
+                  new TextRun({
+                    text: "This quote was generated using our automated system",
+                    size: 14
+                  })
+                ],
                 alignment: AlignmentType.CENTER,
                 spacing: { after: 100 }
               }),
               new Paragraph({
-                text: "Thank you for choosing Kiwi Trade!",
+                children: [
+                  new TextRun({
+                    text: "Thank you for choosing Kiwi Trade!",
+                    size: 16
+                  })
+                ],
                 alignment: AlignmentType.CENTER,
                 spacing: { after: 200 }
               })

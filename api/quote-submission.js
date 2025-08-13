@@ -100,15 +100,32 @@ export default async function handler(req, res) {
             console.log('✅ Customer data fetched from Google Sheets');
           }
         } catch (sheetsError) {
-          console.error('❌ Google Sheets error fetching customer data:', sheetsError.message);
+          console.error('⚠️ Failed to fetch customer data from sheets:', sheetsError.message);
         }
       }
 
+      // Generate quote number and valid until date
+      const quoteNumber = `QT-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+      const validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+      
+      quoteData.quoteNumber = quoteNumber;
+      quoteData.quoteId = quoteNumber;
+      quoteData.validUntil = validUntil.toISOString().split('T')[0];
+      quoteData.submittedAt = new Date().toISOString();
+
+      console.log('📋 Quote prepared:', {
+        quoteNumber: quoteData.quoteNumber,
+        customer: quoteData.customerName,
+        tradesman: quoteData.tradesmanName,
+        amount: quoteData.totalAmount
+      });
+
+      // Track success status
       let sheetsUpdated = false;
       let tradesmanEmailSent = false;
       let customerEmailSent = false;
 
-      // 1. Save to Google Sheets
+      // 1. Update Google Sheets
       if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {
         try {
           const auth = new google.auth.GoogleAuth({
@@ -121,29 +138,27 @@ export default async function handler(req, res) {
 
           const sheets = google.sheets({ version: 'v4', auth });
           
-          const values = [
-            [
-              new Date().toISOString(),
-              quoteData.quoteId,
-              quoteData.quoteNumber,
-              quoteData.tradesmanName,
-              quoteData.tradesmanEmail,
-              quoteData.tradesmanPhone,
-              quoteData.totalAmount,
-              quoteData.itemBreakdown,
-              quoteData.validUntil,
-              quoteData.additionalNotes,
-              'submitted',
-              quoteData.customerName,
-              quoteData.customerEmail,
-              quoteData.customerPhone,
-              quoteData.serviceType,
-              quoteData.location,
-              quoteData.projectDetails,
-              quoteData.projectSize,
-              quoteData.budget,
-              quoteData.timeline
-            ]
+          const quoteRow = [
+            quoteData.quoteNumber,
+            quoteData.customerName || '',
+            quoteData.customerEmail || '',
+            quoteData.customerPhone || '',
+            quoteData.serviceType || 'Underfloor Heating',
+            quoteData.projectDetails || '',
+            quoteData.projectSize || '',
+            quoteData.budget || '',
+            quoteData.timeline || '',
+            quoteData.location || 'Auckland',
+            quoteData.tradesmanName,
+            quoteData.tradesmanEmail,
+            quoteData.tradesmanPhone || '',
+            quoteData.leadId || '',
+            quoteData.totalAmount,
+            quoteData.itemBreakdown || '',
+            quoteData.additionalNotes || '',
+            quoteData.submittedAt,
+            'Submitted',
+            'Pending Customer Response'
           ];
 
           await sheets.spreadsheets.values.append({
@@ -151,13 +166,15 @@ export default async function handler(req, res) {
             range: 'Quotes!A:T',
             valueInputOption: 'RAW',
             insertDataOption: 'INSERT_ROWS',
-            resource: { values }
+            resource: {
+              values: [quoteRow]
+            }
           });
 
-          console.log('✅ Quote saved to Google Sheets');
+          console.log('✅ Quote added to Google Sheets');
           sheetsUpdated = true;
         } catch (sheetsError) {
-          console.error('❌ Google Sheets error:', sheetsError.message);
+          console.error('❌ Failed to update Google Sheets:', sheetsError.message);
         }
       }
 
@@ -167,34 +184,32 @@ export default async function handler(req, res) {
         const transporter = nodemailer.default.createTransport({
           service: 'gmail',
           auth: {
-            user: 'danbricks18@gmail.com',
-            pass: 'ptmcojqgthvjbqom'
+            user: process.env.GMAIL_USER || 'danbricks18@gmail.com',
+            pass: process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom'
           }
         });
 
         const adminMailOptions = {
           from: 'Kiwi Trade <danbricks18@gmail.com>',
           to: 'danbricks18@gmail.com',
-          subject: `Quote ${quoteData.quoteNumber} Submitted - ${quoteData.tradesmanName}`,
+          subject: `New Quote Submitted - ${quoteData.quoteNumber}`,
           html: `
-            <h2>New Quote Submitted!</h2>
-            <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
-            <p><strong>Tradesman:</strong> ${quoteData.tradesmanName}</p>
-            <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
-            <p><strong>Phone:</strong> ${quoteData.tradesmanPhone}</p>
-            <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
-            <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
-            <p><strong>Item Breakdown:</strong></p>
-            <pre>${quoteData.itemBreakdown}</pre>
-            ${quoteData.additionalNotes ? `<p><strong>Additional Notes:</strong> ${quoteData.additionalNotes}</p>` : ''}
-            
-            <h3>Next Steps:</h3>
-            <ol>
-              <li>Create quote document using Google Docs template</li>
-              <li>Make any necessary adjustments</li>
-              <li>Save as PDF</li>
-              <li>Send to customer</li>
-            </ol>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #2c3e50;">New Quote Submitted</h2>
+              <p>A new quote has been submitted and is being processed.</p>
+              
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
+                <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+                <p><strong>Customer:</strong> ${quoteData.customerName || 'Not specified'}</p>
+                <p><strong>Tradesman:</strong> ${quoteData.tradesmanName}</p>
+                <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
+                <p><strong>Service:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
+                <p><strong>Location:</strong> ${quoteData.location || 'Auckland'}</p>
+              </div>
+              
+              <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+            </div>
           `
         };
 
@@ -210,8 +225,8 @@ export default async function handler(req, res) {
         const transporter = nodemailer.default.createTransport({
           service: 'gmail',
           auth: {
-            user: 'danbricks18@gmail.com',
-            pass: 'ptmcojqgthvjbqom'
+            user: process.env.GMAIL_USER || 'danbricks18@gmail.com',
+            pass: process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom'
           }
         });
 
@@ -439,28 +454,13 @@ export default async function handler(req, res) {
       `;
 
       // Try to generate PDF, fallback to DOCX, then HTML
+      // Note: Puppeteer may not work in Vercel's serverless environment
       try {
-        const puppeteer = await import('puppeteer');
-        const browser = await puppeteer.default.launch({
-          headless: true,
-          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-        });
-        const page = await browser.newPage();
-        await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-        const pdfBuffer = await page.pdf({
-          format: 'A4',
-          landscape: true,
-          printBackground: true,
-          margin: { top: '0.3in', right: '0.3in', bottom: '0.3in', left: '0.3in' }
-        });
-        await browser.close();
-        
-        quoteAttachment = pdfBuffer;
-        attachmentType = 'pdf';
-        attachmentFilename = `Quote-${quoteData.quoteNumber}.pdf`;
-        console.log('✅ PDF generated successfully');
+        // For Vercel, we'll skip Puppeteer and go straight to DOCX
+        console.log('⚠️ Skipping Puppeteer PDF generation for Vercel compatibility');
+        throw new Error('Puppeteer not available in Vercel');
       } catch (pdfError) {
-        console.log('⚠️ PDF generation failed, trying DOCX...');
+        console.log('⚠️ PDF generation skipped, trying DOCX...');
         
         try {
           const docxBuffer = await generateDocxQuote(quoteData);
@@ -483,8 +483,8 @@ export default async function handler(req, res) {
         const transporter = nodemailer.default.createTransport({
           service: 'gmail',
           auth: {
-            user: 'danbricks18@gmail.com',
-            pass: 'ptmcojqgthvjbqom'
+            user: process.env.GMAIL_USER || 'danbricks18@gmail.com',
+            pass: process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom'
           }
         });
 
@@ -567,8 +567,7 @@ export default async function handler(req, res) {
           `,
           attachments: quoteAttachment ? [{
             filename: attachmentFilename,
-            content: quoteAttachment.toString('base64'),
-            encoding: 'base64',
+            content: quoteAttachment,
             contentType: attachmentInfo.contentType
           }] : []
         };
@@ -602,8 +601,7 @@ export default async function handler(req, res) {
           `,
           attachments: quoteAttachment ? [{
             filename: attachmentFilename,
-            content: quoteAttachment.toString('base64'),
-            encoding: 'base64',
+            content: quoteAttachment,
             contentType: attachmentInfo.contentType
           }] : []
         };

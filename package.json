@@ -23,7 +23,6 @@
     "express-session": "^1.18.2",
     "googleapis": "^154.1.0",
     "html-to-docx": "^1.8.0",
-    "nodemailer": "^7.0.5",
-    "puppeteer": "^23.0.0"
+    "nodemailer": "^7.0.5"
   }
 }

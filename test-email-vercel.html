@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vercel Email Test - Kiwi Trade</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border: 1px solid #bee5eb;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.pending { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Vercel Email System Test</h1>
+            <p>Test your email system in Vercel deployment</p>
+        </div>
+
+        <div class="info">
+            <h3>📋 What this test does:</h3>
+            <ul>
+                <li>Checks if environment variables are configured</li>
+                <li>Tests nodemailer import and configuration</li>
+                <li>Verifies Gmail authentication</li>
+                <li>Sends a test email to verify the system works</li>
+            </ul>
+        </div>
+
+        <form id="emailTestForm">
+            <div class="form-group">
+                <label for="testEmail">Test Email Address:</label>
+                <input type="email" id="testEmail" name="testEmail" value="danbricks18@gmail.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="testType">Test Type:</label>
+                <select id="testType" name="testType">
+                    <option value="Basic">Basic Test</option>
+                    <option value="Quote">Quote System Test</option>
+                    <option value="Full">Full System Test</option>
+                </select>
+            </div>
+
+            <button type="submit" id="testButton">🧪 Run Email Test</button>
+            <button type="button" id="clearLog">🗑️ Clear Log</button>
+        </form>
+
+        <div id="results"></div>
+        <div id="log" class="log" style="display: none;"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('emailTestForm');
+        const results = document.getElementById('results');
+        const log = document.getElementById('log');
+        const testButton = document.getElementById('testButton');
+        const clearLogButton = document.getElementById('clearLog');
+
+        function logMessage(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<span style="color: #666;">[${timestamp}]</span> ${message}`;
+            log.appendChild(logEntry);
+            log.scrollTop = log.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function showResult(message, type = 'info') {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = type;
+            resultDiv.innerHTML = message;
+            results.appendChild(resultDiv);
+        }
+
+        function clearResults() {
+            results.innerHTML = '';
+            log.innerHTML = '';
+            log.style.display = 'none';
+        }
+
+        clearLogButton.addEventListener('click', clearResults);
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Clear previous results
+            clearResults();
+            
+            const testEmail = document.getElementById('testEmail').value;
+            const testType = document.getElementById('testType').value;
+            
+            // Show log
+            log.style.display = 'block';
+            logMessage('🚀 Starting Vercel email test...');
+            
+            // Disable button
+            testButton.disabled = true;
+            testButton.textContent = '⏳ Testing...';
+            
+            try {
+                logMessage(`📧 Testing email system for: ${testEmail}`);
+                logMessage(`🔍 Test type: ${testType}`);
+                
+                const response = await fetch('/api/test-email-vercel', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        testEmail: testEmail,
+                        testType: testType
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    logMessage('✅ Email test completed successfully!', 'success');
+                    logMessage(`📨 Message ID: ${data.messageId}`);
+                    logMessage(`⏰ Timestamp: ${data.timestamp}`);
+                    
+                    showResult(`
+                        <h3>🎉 Email Test Successful!</h3>
+                        <p><strong>Message ID:</strong> ${data.messageId}</p>
+                        <p><strong>Timestamp:</strong> ${data.timestamp}</p>
+                        <p><strong>Test Type:</strong> ${data.testType}</p>
+                        <p>Check your email inbox for the test message.</p>
+                    `, 'success');
+                    
+                    // Show environment status
+                    if (data.environment) {
+                        let envStatus = '<h4>🔧 Environment Status:</h4><ul>';
+                        for (const [key, value] of Object.entries(data.environment)) {
+                            envStatus += `<li><strong>${key}:</strong> <span class="status ${value.includes('✅') ? 'success' : 'error'}">${value}</span></li>`;
+                        }
+                        envStatus += '</ul>';
+                        showResult(envStatus, 'info');
+                    }
+                    
+                } else {
+                    logMessage(`❌ Email test failed: ${data.error}`, 'error');
+                    if (data.details) {
+                        logMessage(`📋 Details: ${data.details}`, 'error');
+                    }
+                    
+                    showResult(`
+                        <h3>❌ Email Test Failed</h3>
+                        <p><strong>Error:</strong> ${data.error}</p>
+                        ${data.details ? `<p><strong>Details:</strong> ${data.details}</p>` : ''}
+                        ${data.environment ? `<p><strong>Environment:</strong> Check the log for environment variable status.</p>` : ''}
+                    `, 'error');
+                    
+                    // Show environment status if available
+                    if (data.environment) {
+                        let envStatus = '<h4>🔧 Environment Status:</h4><ul>';
+                        for (const [key, value] of Object.entries(data.environment)) {
+                            envStatus += `<li><strong>${key}:</strong> <span class="status ${value.includes('✅') ? 'success' : 'error'}">${value}</span></li>`;
+                        }
+                        envStatus += '</ul>';
+                        showResult(envStatus, 'info');
+                    }
+                }
+                
+            } catch (error) {
+                logMessage(`💥 Network or system error: ${error.message}`, 'error');
+                showResult(`
+                    <h3>💥 System Error</h3>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p>This might be a network issue or the API endpoint is not available.</p>
+                `, 'error');
+            } finally {
+                // Re-enable button
+                testButton.disabled = false;
+                testButton.textContent = '🧪 Run Email Test';
+                logMessage('🏁 Test completed');
+            }
+        });
+        
+        // Initial log message
+        logMessage('📱 Email test system ready');
+        logMessage('💡 Make sure you have set up environment variables in Vercel');
+    </script>
+</body>
+</html>

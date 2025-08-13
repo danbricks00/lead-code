@@ -1037,6 +1037,11 @@ export default async function handler(req, res) {
         console.error('❌ Customer email error:', emailError.message);
       }
 
+      } catch (quoteGenerationError) {
+        console.error('❌ Quote generation error:', quoteGenerationError.message);
+        // Continue with email sending even if quote generation fails
+      }
+
       // Return success response
       const response = {
         success: true,

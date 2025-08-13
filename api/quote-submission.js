@@ -219,40 +219,41 @@ export default async function handler(req, res) {
         const adminMailOptions = {
           from: 'Kiwi Trade <danbricks18@gmail.com>',
           to: 'danbricks18@gmail.com',
-          subject: `New Lead - ${quoteData.customerName} - ${quoteData.serviceType || 'Underfloor Heating'}`,
+          subject: `Quote ${quoteData.quoteNumber} Submitted - ${quoteData.tradesmanName}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #2c3e50;">📋 New Lead Received</h2>
-              <p>A new lead has been submitted and assigned to a tradesman for quote.</p>
+              <h2 style="color: #2c3e50;">📄 Quote Submitted - Admin Copy</h2>
+              <p>A quote has been submitted by ${quoteData.tradesmanName} for ${quoteData.customerName}.</p>
               
               <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #34495e; margin-top: 0;">Lead Details:</h3>
-                <p><strong>Customer Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
-                <p><strong>Customer Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
-                <p><strong>Customer Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
-                <p><strong>Service Type:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
-                <p><strong>Location:</strong> ${quoteData.location || 'Auckland'}</p>
-                <p><strong>Project Details:</strong> ${quoteData.projectDetails || 'Not specified'}</p>
-                <p><strong>Project Size:</strong> ${quoteData.projectSize || 'Not specified'}</p>
-                <p><strong>Budget:</strong> ${quoteData.budget || 'Not specified'}</p>
-                <p><strong>Timeline:</strong> ${quoteData.timeline || 'Not specified'}</p>
+                <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
+                <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+                <p><strong>Tradesman:</strong> ${quoteData.tradesmanName}</p>
+                <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
+                <p><strong>Phone:</strong> ${quoteData.tradesmanPhone}</p>
+                <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
+                <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
+                <p><strong>Item Breakdown:</strong></p>
+                <pre style="background: #f1f1f1; padding: 10px; border-radius: 4px; white-space: pre-wrap;">${quoteData.itemBreakdown}</pre>
+                ${quoteData.additionalNotes ? `<p><strong>Additional Notes:</strong> ${quoteData.additionalNotes}</p>` : ''}
               </div>
               
               <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #1976d2; margin-top: 0;">Assigned Tradesman:</h3>
-                <p><strong>Name:</strong> ${quoteData.tradesmanName}</p>
-                <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
-                <p><strong>Phone:</strong> ${quoteData.tradesmanPhone || 'Not provided'}</p>
-                <p><strong>Status:</strong> Quote request sent - awaiting response</p>
+                <h3 style="color: #1976d2; margin-top: 0;">Customer Details:</h3>
+                <p><strong>Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
+                <p><strong>Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
+                <p><strong>Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
+                <p><strong>Service:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
+                <p><strong>Location:</strong> ${quoteData.location || 'Auckland'}</p>
               </div>
               
               <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #856404; margin-top: 0;">Next Steps:</h3>
+                <h3 style="color: #856404; margin-top: 0;">Status:</h3>
                 <ul style="margin: 10px 0; padding-left: 20px;">
-                  <li>Tradesman will receive quote request email</li>
-                  <li>Tradesman will submit quote within 24 hours</li>
-                  <li>Customer will receive professional quote with attachment</li>
-                  <li>Monitor quote status in dashboard</li>
+                  <li>✅ Quote submitted successfully</li>
+                  <li>📧 Customer will receive quote with attachment</li>
+                  <li>🌐 Customer can view quote online</li>
+                  <li>📊 Quote status updated in system</li>
                 </ul>
               </div>
               
@@ -284,43 +285,30 @@ export default async function handler(req, res) {
 
         const tradesmanMailOptions = {
           from: 'Kiwi Trade <danbricks18@gmail.com>',
-          to: quoteData.tradesmanEmail, // Use actual tradesman email
-          subject: `New Lead - Quote Request for ${quoteData.customerName}`,
+          to: 'quangbui0600@gmail.com', // Use test email for tradesman
+          subject: `Quote Submission Successful - ${quoteData.quoteNumber}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #2c3e50;">📋 New Lead - Quote Request</h2>
+              <h2 style="color: #2c3e50;">✅ Quote Submission Successful!</h2>
               <p>Dear ${quoteData.tradesmanName},</p>
-              <p>You have received a new lead that requires a quote. Please review the details below and submit your quote.</p>
+              <p>Your quote has been successfully submitted and is being processed.</p>
         
               <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #34495e; margin-top: 0;">Lead Details:</h3>
-                <p><strong>Customer Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
-                <p><strong>Customer Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
-                <p><strong>Customer Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
-                <p><strong>Service Type:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
-                <p><strong>Location:</strong> ${quoteData.location || 'Auckland'}</p>
-                <p><strong>Project Details:</strong> ${quoteData.projectDetails || 'Not specified'}</p>
-                <p><strong>Project Size:</strong> ${quoteData.projectSize || 'Not specified'}</p>
-                <p><strong>Budget:</strong> ${quoteData.budget || 'Not specified'}</p>
-                <p><strong>Timeline:</strong> ${quoteData.timeline || 'Not specified'}</p>
+                <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
+                <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+                <p><strong>Customer:</strong> ${quoteData.customerName || 'Not specified'}</p>
+                <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
+                <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
+                <p><strong>Status:</strong> Submitted and being processed</p>
               </div>
 
-              <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
-                <h3 style="color: #1976d2; margin-top: 0;">Submit Your Quote</h3>
-                <p>Click the button below to submit your professional quote for this customer:</p>
-                <a href="${currentUrl}/api/quote-submission?leadId=${quoteData.quoteId}&customerName=${encodeURIComponent(quoteData.customerName || '')}&customerEmail=${encodeURIComponent(quoteData.customerEmail || '')}&customerPhone=${encodeURIComponent(quoteData.customerPhone || '')}&serviceType=${encodeURIComponent(quoteData.serviceType || '')}&projectDetails=${encodeURIComponent(quoteData.projectDetails || '')}&projectSize=${encodeURIComponent(quoteData.projectSize || '')}&budget=${encodeURIComponent(quoteData.budget || '')}&timeline=${encodeURIComponent(quoteData.timeline || '')}&location=${encodeURIComponent(quoteData.location || '')}" 
-                   style="display: inline-block; background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 10px 0;">
-                  📝 Submit Quote
-                </a>
-              </div>
-
-              <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #856404; margin-top: 0;">Important Notes:</h3>
+              <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #27ae60; margin-top: 0;">What happens next:</h3>
                 <ul style="margin: 10px 0; padding-left: 20px;">
-                  <li>Please submit your quote within 24 hours</li>
-                  <li>Include detailed cost breakdown</li>
-                  <li>Specify valid until date</li>
-                  <li>Add any additional notes or conditions</li>
+                  <li>📄 Professional DOCX quote being generated</li>
+                  <li>📧 Customer will receive quote email with attachment</li>
+                  <li>📧 Customer can view quote online and accept/decline</li>
+                  <li>📊 Quote status will be updated in dashboard</li>
                 </ul>
               </div>
 

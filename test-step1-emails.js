@@ -5,16 +5,17 @@ import { sendStep1Emails } from './api/gmail-api-helper.js';
 
 // Example dummy lead object to test Step 1 email flow
 const dummyLead = {
-  customerName: "John Doe",
-  customerEmail: "john.doe@example.com",
-  customerPhone: "0271234567",
-  serviceType: "underfloor_heating",
+  customerName: "",
+  customerEmail: "danbui@outlook.co.nz",
+  customerPhone: "0210510437",
+  selectedService: "underfloor_heating",
   projectDetails: "Areas: 1; Sizes: 12",
-  projectSize: 12,
-  location: "39 Buckley Road, Epsom",
-  quoteLink: "https://example.com/submit-quote",
-  budget: "$5,000 - $10,000",
-  timeline: "Within 2 months"
+  projectSize: "12",
+  specificDetails: "",
+  location: "39a buckley road epsom",
+  budget: "",
+  timeline: "",
+  quoteLink: ""
 };
 
 // Test function to demonstrate Step 1 email flow
@@ -59,7 +60,7 @@ async function exampleApiUsage(req, res) {
       `https://${process.env.VERCEL_URL}` : 
       'https://lead-code.vercel.app';
     
-    const quoteLink = `${currentUrl}/api/quote-submission?leadId=${leadId}&customerName=${encodeURIComponent(leadData.customerName)}&customerEmail=${encodeURIComponent(leadData.customerEmail)}&customerPhone=${encodeURIComponent(leadData.customerPhone)}&serviceType=${encodeURIComponent(leadData.serviceType)}&projectDetails=${encodeURIComponent(leadData.projectDetails)}&projectSize=${encodeURIComponent(leadData.projectSize)}&budget=${encodeURIComponent(leadData.budget)}&timeline=${encodeURIComponent(leadData.timeline)}&location=${encodeURIComponent(leadData.location)}`;
+    const quoteLink = `${currentUrl}/api/quote-submission?leadId=${leadId}&customerName=${encodeURIComponent(leadData.customerName)}&customerEmail=${encodeURIComponent(leadData.customerEmail)}&customerPhone=${encodeURIComponent(leadData.customerPhone)}&serviceType=${encodeURIComponent(leadData.selectedService)}&projectDetails=${encodeURIComponent(leadData.projectDetails)}&projectSize=${encodeURIComponent(leadData.projectSize)}&budget=${encodeURIComponent(leadData.budget)}&timeline=${encodeURIComponent(leadData.timeline)}&location=${encodeURIComponent(leadData.location)}`;
     
     // Add quote link to lead data
     const leadWithQuoteLink = {
@@ -79,7 +80,7 @@ async function exampleApiUsage(req, res) {
       data: {
         leadId,
         customerName: leadData.customerName,
-        serviceType: leadData.serviceType,
+        serviceType: leadData.selectedService,
         location: leadData.location
       },
       emailStatus: {

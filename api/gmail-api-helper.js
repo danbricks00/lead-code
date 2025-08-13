@@ -79,6 +79,10 @@ async function sendEmailViaGmailAPI(to, subject, htmlContent, attachment = null,
     // Encode message in base64
     const encodedMessage = Buffer.from(message).toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
 
+    // Log the raw base64 string before sending
+    console.log('📧 Raw Base64 Message (first 200 chars):', encodedMessage.substring(0, 200) + '...');
+    console.log('📧 Full Base64 Message Length:', encodedMessage.length, 'characters');
+
     // Send email
     const response = await gmail.users.messages.send({
       userId: 'me',
@@ -161,18 +165,19 @@ async function sendStep1Emails(lead) {
   console.log('📧 Starting Step 1 email flow for lead submission...');
   console.log('📋 Lead data:', JSON.stringify(lead, null, 2));
   
-  // Safe fallback values for all placeholders
+  // Enhanced safe fallback values for all placeholders
   const safeLead = {
-    customerName: lead.customerName || 'Customer',
+    customerName: lead.customerName || 'Valued Customer',
     customerEmail: lead.customerEmail || 'customer@example.com',
     customerPhone: lead.customerPhone || 'Not provided',
-    serviceType: lead.serviceType || 'underfloor_heating',
+    serviceType: lead.selectedService || lead.serviceType || 'General Service',
     projectDetails: lead.projectDetails || 'Project details not provided',
     projectSize: lead.projectSize || 'Not specified',
     location: lead.location || 'Auckland',
-    quoteLink: lead.quoteLink || 'https://example.com/submit-quote',
+    quoteLink: lead.quoteLink || '#',
     budget: lead.budget || 'Not specified',
-    timeline: lead.timeline || 'Not specified'
+    timeline: lead.timeline || 'Not specified',
+    specificDetails: lead.specificDetails || ''
   };
   
   // Email configuration
@@ -237,6 +242,12 @@ async function sendStep1Emails(lead) {
       </div>
     `;
     
+    // Log full Gmail API payload for customer email
+    console.log('📧 Customer Email - Gmail API Payload:');
+    console.log('📧 Subject:', customerSubject);
+    console.log('📧 Body Length:', customerHtml.length, 'characters');
+    console.log('📧 Body Preview:', customerHtml.substring(0, 200) + '...');
+    
     const customerResult = await sendEmailViaGmailAPI(customerEmail, customerSubject, customerHtml);
     emailResults.customer.sent = true;
     emailResults.customer.messageId = customerResult.messageId;
@@ -270,6 +281,7 @@ async function sendStep1Emails(lead) {
           <p><strong>Budget:</strong> ${safeLead.budget}</p>
           <p><strong>Timeline:</strong> ${safeLead.timeline}</p>
           <p><strong>Details:</strong> ${safeLead.projectDetails}</p>
+          ${safeLead.specificDetails ? `<p><strong>Specific Details:</strong> ${safeLead.specificDetails}</p>` : ''}
         </div>
         
         <div style="text-align: center; margin: 30px 0;">
@@ -286,6 +298,12 @@ async function sendStep1Emails(lead) {
         </p>
       </div>
     `;
+    
+    // Log full Gmail API payload for tradesman email
+    console.log('📧 Tradesman Email - Gmail API Payload:');
+    console.log('📧 Subject:', tradesmanSubject);
+    console.log('📧 Body Length:', tradesmanHtml.length, 'characters');
+    console.log('📧 Body Preview:', tradesmanHtml.substring(0, 200) + '...');
     
     const tradesmanResult = await sendEmailViaGmailAPI(tradesmanEmail, tradesmanSubject, tradesmanHtml);
     emailResults.tradesman.sent = true;
@@ -318,6 +336,7 @@ async function sendStep1Emails(lead) {
           <p><strong>Project Size:</strong> ${safeLead.projectSize}</p>
           <p><strong>Budget:</strong> ${safeLead.budget}</p>
           <p><strong>Timeline:</strong> ${safeLead.timeline}</p>
+          ${safeLead.specificDetails ? `<p><strong>Specific Details:</strong> ${safeLead.specificDetails}</p>` : ''}
         </div>
         
         <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
@@ -339,6 +358,12 @@ async function sendStep1Emails(lead) {
         <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
       </div>
     `;
+    
+    // Log full Gmail API payload for admin email
+    console.log('📧 Admin Email - Gmail API Payload:');
+    console.log('📧 Subject:', adminSubject);
+    console.log('📧 Body Length:', adminHtml.length, 'characters');
+    console.log('📧 Body Preview:', adminHtml.substring(0, 200) + '...');
     
     const adminResult = await sendEmailViaGmailAPI(adminEmail, adminSubject, adminHtml);
     emailResults.admin.sent = true;

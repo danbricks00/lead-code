@@ -74,29 +74,58 @@ export default async function handler(req, res) {
         }
       }
 
-      // Fallback to sample data if no quote found
+      // If no quote found, return error
       if (!quoteData) {
-        quoteData = {
-          quoteId: quoteId || 'QUOTE-001',
-          quoteNumber: quoteNumber || 'QU1001',
-          customerName: 'John Smith',
-          customerAddress: '123 Main Street, Auckland',
-          serviceType: 'Underfloor Heating Installation',
-          projectDetails: 'Installation of underfloor heating system in bathroom areas',
-          tradesmanName: 'Heat NZ Ltd',
-          tradesmanPhone: '+64 9 123 4567',
-          tradesmanEmail: 'info@heatnz.co.nz',
-          totalAmount: '8,500.00',
-          itemBreakdown: `
-            • Underfloor heating mats (67 sqm): $4,020.00
-            • Thermostat and controls: $850.00
-            • Installation labor (16 hours): $2,400.00
-            • Materials and fittings: $1,230.00
-          `,
-          validUntil: '2024-09-10',
-          additionalNotes: 'Price includes GST. Installation to be completed within 2 weeks of acceptance.'
-        };
-        console.log('⚠️ Using sample quote data');
+        console.log('❌ Quote not found');
+        return res.status(404).send(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Quote Not Found</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              body { 
+                font-family: Arial, sans-serif; 
+                max-width: 600px; 
+                margin: 50px auto; 
+                padding: 20px; 
+                text-align: center;
+                color: #333;
+              }
+              .error-box {
+                background: #f8d7da;
+                border: 1px solid #f5c6cb;
+                border-radius: 8px;
+                padding: 30px;
+                margin: 20px 0;
+              }
+              .error-title {
+                color: #721c24;
+                font-size: 24px;
+                margin-bottom: 15px;
+              }
+              .back-link {
+                display: inline-block;
+                background: #4a90e2;
+                color: white;
+                padding: 12px 24px;
+                text-decoration: none;
+                border-radius: 5px;
+                margin-top: 20px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="error-box">
+              <h1 class="error-title">Quote Not Found</h1>
+              <p>The quote you're looking for could not be found.</p>
+              <p>Quote ID: ${quoteId || 'Not provided'}</p>
+              <p>Quote Number: ${quoteNumber || 'Not provided'}</p>
+              <a href="/" class="back-link">Return to Home</a>
+            </div>
+          </body>
+          </html>
+        `);
       }
 
       const currentUrl = process.env.VERCEL_URL ? 
@@ -136,21 +165,36 @@ export default async function handler(req, res) {
         <html>
         <head>
           <title>Quote ${quoteData.quoteNumber} - ${quoteData.serviceType || 'Underfloor Heating'}</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <style>
+            * {
+                box-sizing: border-box;
+            }
             body { 
               font-family: Arial, sans-serif; 
-              max-width: 900px; 
-              margin: 0 auto; 
+              margin: 0; 
               padding: 20px; 
               line-height: 1.6;
               color: #333;
+              background: #fff;
             }
+            
+            /* Actions Section */
             .actions {
               background: #f8f9fa;
               padding: 20px;
               border-radius: 8px;
               margin-bottom: 30px;
               text-align: center;
+              border: 2px solid #e9ecef;
+            }
+            .actions h2 {
+              margin: 0 0 10px 0;
+              color: #333;
+            }
+            .actions p {
+              margin: 0 0 20px 0;
+              color: #666;
             }
             .accept-btn {
               background: #28a745;
@@ -163,6 +207,10 @@ export default async function handler(req, res) {
               margin-right: 10px;
               text-decoration: none;
               display: inline-block;
+              transition: background-color 0.3s;
+            }
+            .accept-btn:hover {
+              background: #218838;
             }
             .decline-btn {
               background: #dc3545;
@@ -174,118 +222,206 @@ export default async function handler(req, res) {
               font-size: 16px;
               text-decoration: none;
               display: inline-block;
+              transition: background-color 0.3s;
             }
+            .decline-btn:hover {
+              background: #c82333;
+            }
+            
+            /* Header Section */
             .header { 
               text-align: center; 
-              margin-bottom: 25px; 
+              margin-bottom: 30px; 
+              padding: 20px 0;
+              border-bottom: 3px solid #4a90e2;
             }
             .company-name { 
               color: #4a90e2; 
-              margin: 0; 
-              font-size: 18px; 
-              font-weight: normal;
+              margin: 0 0 10px 0; 
+              font-size: 32px; 
+              font-weight: bold;
+              text-transform: uppercase;
             }
             .quote-title { 
               color: #333; 
-              margin: 10px 0 5px 0; 
-              font-size: 24px; 
+              margin: 10px 0; 
+              font-size: 36px; 
               font-weight: bold;
             }
-            .quote-number { 
-              color: #333; 
-              margin: 5px 0; 
-              font-size: 14px; 
-              font-weight: bold;
-            }
-            .quote-dates { 
-              color: #333; 
-              margin: 5px 0; 
-              font-size: 12px; 
-            }
-            .divider { 
-              border-top: 1px solid #333; 
-              margin: 15px 0; 
-            }
-            .details-section { 
-              display: flex; 
-              margin: 20px 0; 
+            .quote-info {
+              display: flex;
+              justify-content: space-around;
+              flex-wrap: wrap;
+              margin: 20px 0;
               gap: 20px;
             }
-            .details-column { 
-              flex: 1; 
-              background: #f8f9fa; 
-              padding: 15px; 
-              border-radius: 4px; 
-              border-left: 4px solid #4a90e2; 
+            .quote-info p {
+              margin: 5px 0;
+              font-size: 14px;
+              font-weight: 600;
             }
-            .details-title { 
-              color: #333; 
-              margin: 0 0 10px 0; 
-              font-size: 14px; 
+            
+            /* Details Section */
+            .details-section {
+              display: flex;
+              gap: 20px;
+              margin: 30px 0;
+              flex-wrap: wrap;
+            }
+            .details-column {
+              flex: 1;
+              min-width: 300px;
+              background: #f8f9fa;
+              border: 2px solid #e9ecef;
+              border-radius: 8px;
+              padding: 20px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .details-title {
+              color: #333;
+              margin: 0 0 15px 0;
+              font-size: 18px;
               font-weight: bold;
+              border-bottom: 2px solid #4a90e2;
+              padding-bottom: 8px;
             }
-            .details-content { 
-              font-size: 12px; 
+            .details-content {
+              font-size: 14px;
               line-height: 1.6;
             }
-            .details-content p { 
-              margin: 5px 0; 
+            .details-content p {
+              margin: 8px 0;
             }
-            .quote-breakdown { 
-              margin: 20px 0; 
+            .details-content strong {
+              color: #4a90e2;
             }
-            .breakdown-title { 
-              color: #333; 
-              margin: 0 0 10px 0; 
-              font-size: 14px; 
+            
+            /* Breakdown Section */
+            .quote-breakdown {
+              margin: 30px 0;
+            }
+            .breakdown-title {
+              font-size: 20px;
               font-weight: bold;
-              border-left: 4px solid #4a90e2; 
-              padding-left: 10px;
-            }
-            .breakdown-table { 
-              width: 100%; 
-              border-collapse: collapse; 
-              margin: 10px 0; 
-              font-size: 12px;
-            }
-            .breakdown-table th, .breakdown-table td { 
-              border: 1px solid #ddd; 
-              padding: 8px; 
-              text-align: left; 
-            }
-            .breakdown-table th { 
-              background: #333; 
-              color: white; 
-              font-weight: bold; 
-            }
-            .total-section { 
-              text-align: right; 
-              margin: 20px 0; 
-            }
-            .total-amount { 
-              font-size: 18px; 
-              font-weight: bold; 
+              margin: 0 0 15px 0;
               color: #333;
-            }
-            .notes-section { 
-              margin: 20px 0; 
-            }
-            .notes-title { 
-              color: #333; 
-              margin: 0 0 10px 0; 
-              font-size: 14px; 
-              font-weight: bold;
-            }
-            .footer { 
-              margin-top: 30px; 
-              padding-top: 15px; 
-              border-top: 1px solid #ddd; 
-              font-size: 10px; 
-              color: #666;
               text-align: center;
             }
-            .footer p { 
-              margin: 3px 0; 
+            .breakdown-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 15px 0;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+              border-radius: 8px;
+              overflow: hidden;
+            }
+            .breakdown-table th {
+              background: #333;
+              color: white;
+              font-weight: bold;
+              padding: 12px 8px;
+              text-align: left;
+              font-size: 14px;
+            }
+            .breakdown-table td {
+              padding: 10px 8px;
+              border-bottom: 1px solid #ddd;
+              font-size: 14px;
+            }
+            .breakdown-table tr:nth-child(even) {
+              background: #f8f9fa;
+            }
+            
+            /* Total Section */
+            .total-section {
+              text-align: right;
+              margin: 30px 0;
+              padding: 20px;
+              background: #e8f5e8;
+              border: 2px solid #28a745;
+              border-radius: 8px;
+            }
+            .total-amount {
+              font-size: 24px;
+              font-weight: bold;
+              color: #155724;
+              margin: 0;
+            }
+            
+            /* Notes Section */
+            .notes-section {
+              margin: 30px 0;
+              padding: 20px;
+              background: #fff3cd;
+              border: 1px solid #ffeaa7;
+              border-radius: 8px;
+            }
+            .notes-title {
+              color: #856404;
+              margin: 0 0 10px 0;
+              font-size: 16px;
+              font-weight: bold;
+            }
+            
+            /* Footer */
+            .footer {
+              margin-top: 40px;
+              padding: 20px;
+              border-top: 2px solid #ddd;
+              text-align: center;
+              background: #f8f9fa;
+              border-radius: 8px;
+            }
+            .footer p {
+              margin: 5px 0;
+              font-size: 12px;
+              color: #666;
+            }
+            .footer strong {
+              color: #4a90e2;
+            }
+            
+            /* Mobile Responsive */
+            @media (max-width: 768px) {
+              body {
+                padding: 10px;
+              }
+              .company-name {
+                font-size: 24px;
+              }
+              .quote-title {
+                font-size: 28px;
+              }
+              .details-section {
+                flex-direction: column;
+              }
+              .details-column {
+                min-width: auto;
+              }
+              .quote-info {
+                flex-direction: column;
+                text-align: center;
+              }
+              .breakdown-table {
+                font-size: 12px;
+              }
+              .breakdown-table th,
+              .breakdown-table td {
+                padding: 8px 4px;
+                font-size: 12px;
+              }
+              .total-amount {
+                font-size: 20px;
+              }
+              .actions {
+                padding: 15px;
+              }
+              .accept-btn,
+              .decline-btn {
+                display: block;
+                margin: 10px auto;
+                width: 200px;
+              }
             }
           </style>
         </head>
@@ -302,12 +438,12 @@ export default async function handler(req, res) {
           <div class="header">
             <h1 class="company-name">KIWI TRADE</h1>
             <h2 class="quote-title">QUOTE</h2>
-            <p class="quote-number">Quote Number: ${quoteData.quoteNumber}</p>
-            <p class="quote-dates">Date: ${new Date().toLocaleDateString('en-GB')}</p>
-            <p class="quote-dates">Valid Until: ${quoteData.validUntil ? new Date(quoteData.validUntil).toLocaleDateString('en-GB') : '30 days from date'}</p>
+            <div class="quote-info">
+              <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+              <p><strong>Date:</strong> ${new Date().toLocaleDateString('en-GB')}</p>
+              <p><strong>Valid Until:</strong> ${quoteData.validUntil ? new Date(quoteData.validUntil).toLocaleDateString('en-GB') : '30 days from date'}</p>
+            </div>
           </div>
-
-          <div class="divider"></div>
 
           <div class="details-section">
             <div class="details-column">
@@ -329,8 +465,6 @@ export default async function handler(req, res) {
               </div>
             </div>
           </div>
-
-          <div class="divider"></div>
 
           <div class="quote-breakdown">
             <h3 class="breakdown-title">Quote Breakdown</h3>
@@ -360,7 +494,7 @@ export default async function handler(req, res) {
           ` : ''}
 
           <div class="footer">
-                            <p><strong>Kiwi Trade</strong></p>
+            <p><strong>Kiwi Trade</strong></p>
             <p>Professional underfloor heating solutions for your home</p>
             <p>This quote was generated using our automated system</p>
             <p>Thank you for choosing Kiwi Trade!</p>

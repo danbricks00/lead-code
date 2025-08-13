@@ -328,139 +328,302 @@ export default async function handler(req, res) {
           return rows.join('');
         };
 
-        // Create HTML content for PDF - Using simple format that matches DOCX
+                // Create HTML content for PDF - Mobile-responsive professional format
         const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Quote ${quoteData.quoteNumber}</title>
-            <style>
-              @page { 
-                  margin: 0.5in; 
-                  size: A4 landscape;
-              }
-              body { 
-                  font-family: Arial, sans-serif; 
-                  margin: 20px; 
-                  color: #333;
-                  line-height: 1.4;
-              }
-              table { 
-                  border-collapse: collapse; 
-                  width: 100%; 
-                  margin: 10px 0; 
-              }
-              th, td { 
-                  border: 1px solid #333; 
-                  padding: 8px; 
-                  text-align: left; 
-              }
-              th { 
-                  background: #333; 
-                  color: white; 
-                  font-weight: bold; 
-              }
-              .header { 
-                  text-align: center; 
-                  margin-bottom: 20px; 
-              }
-              .company-name { 
-                  color: #4a90e2; 
-                  font-size: 24px; 
-                  font-weight: bold;
-                  margin: 0;
-              }
-              .quote-title { 
-                  font-size: 28px; 
-                  font-weight: bold;
-                  margin: 10px 0;
-              }
-              .divider { 
-                  border-top: 2px solid #333; 
-                  margin: 15px 0; 
-              }
-              .total { 
-                  text-align: right; 
-                  font-size: 18px; 
-                  font-weight: bold; 
-                  margin: 20px 0;
-              }
-              .footer { 
-                  margin-top: 30px; 
-                  padding-top: 15px; 
-                  border-top: 1px solid #ddd; 
-                  text-align: center; 
-                  font-size: 12px; 
-                  color: #666;
-              }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <h1 class="company-name">KIWI TRADE</h1>
-                <h2 class="quote-title">QUOTE</h2>
-                <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
-                <p><strong>Date:</strong> ${formatDate(new Date())}</p>
-                <p><strong>Valid Until:</strong> ${formatDate(quoteData.validUntil)}</p>
-            </div>
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Quote ${quoteData.quoteNumber}</title>
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                @page { 
+                    margin: 0.5in; 
+                    size: A4 landscape;
+                }
+                * {
+                    box-sizing: border-box;
+                }
+                body { 
+                    font-family: Arial, sans-serif; 
+                    margin: 0; 
+                    padding: 20px; 
+                    color: #333;
+                    line-height: 1.4;
+                    background: #fff;
+                }
+                
+                /* Header Section */
+                .header { 
+                    text-align: center; 
+                    margin-bottom: 30px; 
+                    padding: 20px 0;
+                    border-bottom: 3px solid #4a90e2;
+                }
+                .company-name { 
+                    color: #4a90e2; 
+                    font-size: 32px; 
+                    font-weight: bold;
+                    margin: 0 0 10px 0;
+                    text-transform: uppercase;
+                }
+                .quote-title { 
+                    font-size: 36px; 
+                    font-weight: bold;
+                    margin: 10px 0;
+                    color: #333;
+                }
+                .quote-info {
+                    display: flex;
+                    justify-content: space-around;
+                    flex-wrap: wrap;
+                    margin: 20px 0;
+                    gap: 20px;
+                }
+                .quote-info p {
+                    margin: 5px 0;
+                    font-size: 14px;
+                    font-weight: 600;
+                }
+                
+                /* Details Section */
+                .details-container {
+                    display: flex;
+                    gap: 20px;
+                    margin: 30px 0;
+                    flex-wrap: wrap;
+                }
+                .details-box {
+                    flex: 1;
+                    min-width: 300px;
+                    background: #f8f9fa;
+                    border: 2px solid #e9ecef;
+                    border-radius: 8px;
+                    padding: 20px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                .details-title {
+                    color: #333;
+                    margin: 0 0 15px 0;
+                    font-size: 18px;
+                    font-weight: bold;
+                    border-bottom: 2px solid #4a90e2;
+                    padding-bottom: 8px;
+                }
+                .details-content p {
+                    margin: 8px 0;
+                    font-size: 14px;
+                }
+                .details-content strong {
+                    color: #4a90e2;
+                }
+                
+                /* Breakdown Section */
+                .breakdown-section {
+                    margin: 30px 0;
+                }
+                .breakdown-title {
+                    font-size: 20px;
+                    font-weight: bold;
+                    margin: 0 0 15px 0;
+                    color: #333;
+                    text-align: center;
+                }
+                .breakdown-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 15px 0;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    border-radius: 8px;
+                    overflow: hidden;
+                }
+                .breakdown-table th {
+                    background: #333;
+                    color: white;
+                    font-weight: bold;
+                    padding: 12px 8px;
+                    text-align: left;
+                    font-size: 14px;
+                }
+                .breakdown-table td {
+                    padding: 10px 8px;
+                    border-bottom: 1px solid #ddd;
+                    font-size: 14px;
+                }
+                .breakdown-table tr:nth-child(even) {
+                    background: #f8f9fa;
+                }
+                
+                /* Total Section */
+                .total-section {
+                    text-align: right;
+                    margin: 30px 0;
+                    padding: 20px;
+                    background: #e8f5e8;
+                    border: 2px solid #28a745;
+                    border-radius: 8px;
+                }
+                .total-amount {
+                    font-size: 24px;
+                    font-weight: bold;
+                    color: #155724;
+                    margin: 0;
+                }
+                
+                /* Notes Section */
+                .notes-section {
+                    margin: 30px 0;
+                    padding: 20px;
+                    background: #fff3cd;
+                    border: 1px solid #ffeaa7;
+                    border-radius: 8px;
+                }
+                .notes-title {
+                    color: #856404;
+                    margin: 0 0 10px 0;
+                    font-size: 16px;
+                    font-weight: bold;
+                }
+                
+                /* Footer */
+                .footer {
+                    margin-top: 40px;
+                    padding: 20px;
+                    border-top: 2px solid #ddd;
+                    text-align: center;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                }
+                .footer p {
+                    margin: 5px 0;
+                    font-size: 12px;
+                    color: #666;
+                }
+                .footer strong {
+                    color: #4a90e2;
+                }
+                
+                /* Mobile Responsive */
+                @media (max-width: 768px) {
+                    body {
+                        padding: 10px;
+                    }
+                    .company-name {
+                        font-size: 24px;
+                    }
+                    .quote-title {
+                        font-size: 28px;
+                    }
+                    .details-container {
+                        flex-direction: column;
+                    }
+                    .details-box {
+                        min-width: auto;
+                    }
+                    .quote-info {
+                        flex-direction: column;
+                        text-align: center;
+                    }
+                    .breakdown-table {
+                        font-size: 12px;
+                    }
+                    .breakdown-table th,
+                    .breakdown-table td {
+                        padding: 8px 4px;
+                        font-size: 12px;
+                    }
+                    .total-amount {
+                        font-size: 20px;
+                    }
+                }
+                
+                @media print {
+                    body {
+                        margin: 0;
+                        padding: 10px;
+                    }
+                    .header {
+                        margin-bottom: 20px;
+                    }
+                    .details-container {
+                        margin: 20px 0;
+                    }
+                    .breakdown-section {
+                        margin: 20px 0;
+                    }
+                    .total-section {
+                        margin: 20px 0;
+                    }
+                }
+              </style>
+          </head>
+          <body>
+              <div class="header">
+                  <h1 class="company-name">KIWI TRADE</h1>
+                  <h2 class="quote-title">QUOTE</h2>
+                  <div class="quote-info">
+                      <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+                      <p><strong>Date:</strong> ${formatDate(new Date())}</p>
+                      <p><strong>Valid Until:</strong> ${formatDate(quoteData.validUntil)}</p>
+                  </div>
+              </div>
 
-            <div class="divider"></div>
+              <div class="details-container">
+                  <div class="details-box">
+                      <h3 class="details-title">Customer Details</h3>
+                      <div class="details-content">
+                          <p><strong>Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
+                          <p><strong>Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
+                          <p><strong>Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
+                          <p><strong>Address:</strong> ${quoteData.location || 'Auckland'}</p>
+                      </div>
+                  </div>
+                  <div class="details-box">
+                      <h3 class="details-title">Tradesman Details</h3>
+                      <div class="details-content">
+                          <p><strong>Company:</strong> ${quoteData.tradesmanName}</p>
+                          <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
+                          <p><strong>Phone:</strong> ${quoteData.tradesmanPhone || 'Not specified'}</p>
+                          <p><strong>Service:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
+                      </div>
+                  </div>
+              </div>
 
-            <table>
-                <tr>
-                    <td style="width: 50%; background: #f8f9fa; padding: 15px; border: 1px solid #ddd;">
-                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Customer Details</h3>
-                        <p style="margin: 5px 0;"><strong>Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
-                        <p style="margin: 5px 0;"><strong>Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
-                        <p style="margin: 5px 0;"><strong>Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
-                        <p style="margin: 5px 0;"><strong>Address:</strong> ${quoteData.location || 'Auckland'}</p>
-                    </td>
-                    <td style="width: 50%; background: #f8f9fa; padding: 15px; border: 1px solid #ddd;">
-                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Tradesman Details</h3>
-                        <p style="margin: 5px 0;"><strong>Company:</strong> ${quoteData.tradesmanName}</p>
-                        <p style="margin: 5px 0;"><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
-                        <p style="margin: 5px 0;"><strong>Phone:</strong> ${quoteData.tradesmanPhone || 'Not specified'}</p>
-                        <p style="margin: 5px 0;"><strong>Service:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
-                    </td>
-                </tr>
-            </table>
+              <div class="breakdown-section">
+                  <h3 class="breakdown-title">Quote Breakdown</h3>
+                  <table class="breakdown-table">
+                      <thead>
+                          <tr>
+                              <th>Item</th>
+                              <th>Description</th>
+                              <th>Amount</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          ${generateBreakdownRows(quoteData)}
+                      </tbody>
+                  </table>
+              </div>
 
-            <div class="divider"></div>
+              <div class="total-section">
+                  <div class="total-amount">Total Amount: $${quoteData.totalAmount}</div>
+              </div>
 
-            <h3 style="margin: 20px 0 10px 0; font-size: 18px;">Quote Breakdown</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Item</th>
-                        <th>Description</th>
-                        <th>Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${generateBreakdownRows(quoteData)}
-                </tbody>
-            </table>
+              ${quoteData.additionalNotes ? `
+              <div class="notes-section">
+                  <h3 class="notes-title">Additional Notes</h3>
+                  <p>${quoteData.additionalNotes}</p>
+              </div>
+              ` : ''}
 
-            <div class="total">
-                Total Amount: $${quoteData.totalAmount}
-            </div>
-
-            ${quoteData.additionalNotes ? `
-            <div style="margin: 20px 0;">
-                <h3 style="margin: 0 0 10px 0; font-size: 16px;">Additional Notes</h3>
-                <p>${quoteData.additionalNotes}</p>
-            </div>
-            ` : ''}
-
-            <div class="footer">
-                <p><strong>Kiwi Trade</strong></p>
-                <p>Professional underfloor heating solutions for your home</p>
-                <p>This quote was generated using our automated system</p>
-                <p>Thank you for choosing Kiwi Trade!</p>
-            </div>
-        </body>
-        </html>
-      `;
+              <div class="footer">
+                  <p><strong>Kiwi Trade</strong></p>
+                  <p>Professional underfloor heating solutions for your home</p>
+                  <p>This quote was generated using our automated system</p>
+                  <p>Thank you for choosing Kiwi Trade!</p>
+              </div>
+          </body>
+          </html>
+        `;
 
       // Generate DOCX directly (more reliable than PDF in serverless environment)
       try {

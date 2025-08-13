@@ -438,43 +438,19 @@ export default async function handler(req, res) {
         </html>
       `;
 
-      // Try to generate PDF, fallback to DOCX, then HTML
+      // Generate DOCX directly (more reliable than PDF in serverless environment)
       try {
-        const puppeteer = await import('puppeteer');
-        const browser = await puppeteer.default.launch({
-          headless: true,
-          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-        });
-        const page = await browser.newPage();
-        await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-        const pdfBuffer = await page.pdf({
-          format: 'A4',
-          landscape: true,
-          printBackground: true,
-          margin: { top: '0.3in', right: '0.3in', bottom: '0.3in', left: '0.3in' }
-        });
-        await browser.close();
-        
-        quoteAttachment = pdfBuffer;
-        attachmentType = 'pdf';
-        attachmentFilename = `Quote-${quoteData.quoteNumber}.pdf`;
-        console.log('✅ PDF generated successfully');
-      } catch (pdfError) {
-        console.log('⚠️ PDF generation failed, trying DOCX...');
-        
-        try {
-          const docxBuffer = await generateDocxQuote(quoteData);
-          quoteAttachment = docxBuffer;
-          attachmentType = 'docx';
-          attachmentFilename = `Quote-${quoteData.quoteNumber}.docx`;
-          console.log('✅ DOCX generated successfully');
-        } catch (docxError) {
-          console.log('⚠️ DOCX generation failed, using HTML fallback...');
-          quoteAttachment = Buffer.from(htmlContent, 'utf8');
-          attachmentType = 'html';
-          attachmentFilename = `Quote-${quoteData.quoteNumber}.html`;
-          console.log('✅ HTML fallback ready');
-        }
+        const docxBuffer = await generateDocxQuote(quoteData);
+        quoteAttachment = docxBuffer;
+        attachmentType = 'docx';
+        attachmentFilename = `Quote-${quoteData.quoteNumber}.docx`;
+        console.log('✅ DOCX generated successfully');
+      } catch (docxError) {
+        console.log('⚠️ DOCX generation failed, using HTML fallback...');
+        quoteAttachment = Buffer.from(htmlContent, 'utf8');
+        attachmentType = 'html';
+        attachmentFilename = `Quote-${quoteData.quoteNumber}.html`;
+        console.log('✅ HTML fallback ready');
       }
 
       // Send email to customer
@@ -573,6 +549,11 @@ export default async function handler(req, res) {
           }] : []
         };
 
+        console.log('📧 Attempting to send customer email...');
+        console.log('📧 Customer email:', quoteData.customerEmail);
+        console.log('📧 Attachment type:', attachmentType);
+        console.log('📧 Attachment size:', quoteAttachment ? quoteAttachment.length : 'No attachment');
+        
         await transporter.sendMail(customerMailOptions);
         console.log(`✅ Customer email sent with ${attachmentType.toUpperCase()} attachment`);
         customerEmailSent = true;
@@ -608,6 +589,9 @@ export default async function handler(req, res) {
           }] : []
         };
 
+        console.log('📧 Attempting to send tradesman copy...');
+        console.log('📧 Tradesman email:', quoteData.tradesmanEmail);
+        
         await transporter.sendMail(tradesmanCopyMailOptions);
         console.log('✅ Tradesman copy sent');
       } catch (emailError) {

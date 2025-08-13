@@ -437,57 +437,63 @@
             calculateTotals(); // Initial calculation
         });
         
-        // Form submission
-        document.getElementById('quoteForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
-            
-            // Clean and validate data
-            if (data.totalAmount) {
-                data.totalAmount = data.totalAmount.replace(/[^0-9.]/g, '');
-            }
-            
-            if (data.tradesmanPhone) {
-                data.tradesmanPhone = data.tradesmanPhone.trim();
-            }
-            
-            // Ensure required fields are present
-            if (!data.tradesmanName || !data.tradesmanEmail || !data.totalAmount) {
-                alert('Please fill in all required fields: Name, Email, and Total Amount');
-                return;
-            }
-            
-            // Validate that at least one cost category has been entered
-            const labourSubtotal = parseFloat(data.labourSubtotal) || 0;
-            const materialSubtotal = parseFloat(data.materialSubtotal) || 0;
-            const installationSubtotal = parseFloat(data.installationSubtotal) || 0;
-            
-            if (labourSubtotal === 0 && materialSubtotal === 0 && installationSubtotal === 0) {
-                alert('Please enter at least one cost category (Labour, Materials, or Installation)');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/quote-submission', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert('✅ Quote submitted successfully! The customer will receive your professional quote with PDF attachment.');
-                    window.close();
-                } else {
-                    alert('❌ Error: ' + result.error);
-                }
-            } catch (error) {
-                alert('Error submitting quote: ' + error.message);
-            }
-        });
+                 // Form submission
+         document.getElementById('quoteForm').addEventListener('submit', async (e) => {
+             e.preventDefault();
+             
+             const formData = new FormData(e.target);
+             const data = Object.fromEntries(formData.entries());
+             
+             // Add quoteId from URL parameters if available
+             const urlParams = new URLSearchParams(window.location.search);
+             if (urlParams.has('leadId')) {
+                 data.quoteId = urlParams.get('leadId');
+             }
+             
+             // Clean and validate data
+             if (data.totalAmount) {
+                 data.totalAmount = data.totalAmount.replace(/[^0-9.]/g, '');
+             }
+             
+             if (data.tradesmanPhone) {
+                 data.tradesmanPhone = data.tradesmanPhone.trim();
+             }
+             
+             // Ensure required fields are present
+             if (!data.tradesmanName || !data.tradesmanEmail || !data.totalAmount) {
+                 alert('Please fill in all required fields: Name, Email, and Total Amount');
+                 return;
+             }
+             
+             // Validate that at least one cost category has been entered
+             const labourSubtotal = parseFloat(data.labourSubtotal) || 0;
+             const materialSubtotal = parseFloat(data.materialSubtotal) || 0;
+             const installationSubtotal = parseFloat(data.installationSubtotal) || 0;
+             
+             if (labourSubtotal === 0 && materialSubtotal === 0 && installationSubtotal === 0) {
+                 alert('Please enter at least one cost category (Labour, Materials, or Installation)');
+                 return;
+             }
+             
+             try {
+                 const response = await fetch('/api/quote-submission', {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify(data)
+                 });
+                 
+                 const result = await response.json();
+                 
+                 if (result.success) {
+                     alert('✅ Quote submitted successfully! The customer will receive your professional quote with PDF attachment.');
+                     window.close();
+                 } else {
+                     alert('❌ Error: ' + result.error);
+                 }
+             } catch (error) {
+                 alert('Error submitting quote: ' + error.message);
+             }
+         });
     </script>
 </body>
 </html>

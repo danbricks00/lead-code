@@ -211,8 +211,8 @@ export default async function handler(req, res) {
       try {
         const nodemailer = await import('nodemailer');
         const transporter = nodemailer.default.createTransport({
-          service: 'gmail',
-          auth: {
+      service: 'gmail',
+      auth: {
             user: 'danbricks18@gmail.com',
             pass: 'ptmcojqgthvjbqom'
           }
@@ -227,20 +227,20 @@ export default async function handler(req, res) {
           to: quoteData.tradesmanEmail,
           subject: `Quote Submitted Successfully - ${quoteData.quoteNumber}`,
           html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <h2 style="color: #2c3e50;">✅ Quote Submitted Successfully!</h2>
               <p>Dear ${quoteData.tradesmanName},</p>
               <p>Your quote has been successfully submitted and is being processed.</p>
-              
-              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
                 <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
                 <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
                 <p><strong>Customer:</strong> ${quoteData.customerName || 'Not specified'}</p>
                 <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
                 <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
                 <p><strong>Status:</strong> Submitted and being processed</p>
-              </div>
-              
+        </div>
+
               <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0;">
                 <h3 style="color: #27ae60; margin-top: 0;">What happens next:</h3>
                 <ul style="margin: 10px 0; padding-left: 20px;">
@@ -250,8 +250,8 @@ export default async function handler(req, res) {
                   <li>📧 You will receive a copy of the customer email</li>
                   <li>📊 Quote status will be updated in dashboard</li>
                 </ul>
-              </div>
-              
+        </div>
+
               <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
             </div>
           `
@@ -659,8 +659,8 @@ export default async function handler(req, res) {
               <div class="notes-section">
                   <h3 class="notes-title">Additional Notes</h3>
                   <p>${quoteData.additionalNotes}</p>
-              </div>
-              ` : ''}
+        </div>
+        ` : ''}
 
               <div class="footer">
                   <p><strong>Kiwi Trade</strong></p>
@@ -792,22 +792,22 @@ export default async function handler(req, res) {
                 <p><strong>Tradesman:</strong> ${quoteData.tradesmanName}</p>
                 <p><strong>Format:</strong> ${attachmentType.toUpperCase()}</p>
               </div>
-              
-              <div style="text-align: center; margin: 30px 0;">
+
+        <div style="text-align: center; margin: 30px 0;">
                 <a href="${currentUrl}/api/view-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
                    style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
                  View Quote Online
                 </a>
                 <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
                    style="background: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
-                 Accept Quote
-                </a>
+            Accept Quote
+          </a>
                 <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
                    style="background: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
-                 Decline Quote
-                </a>
-              </div>
-              
+            Decline Quote
+          </a>
+        </div>
+
               <p>${attachmentInfo.message}</p>
               ${attachmentInfo.note ? `<p><strong>Note:</strong> ${attachmentInfo.note}</p>` : ''}
               <p>You can view the quote online and accept/decline it using the links above.</p>
@@ -845,7 +845,7 @@ export default async function handler(req, res) {
                 <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
                 <p><strong>Service:</strong> ${quoteData.serviceType}</p>
                 <p><strong>Format:</strong> ${attachmentType.toUpperCase()}</p>
-              </div>
+      </div>
               
               <p>The customer has been notified and can view the quote online.</p>
               <p>Your quote was generated in ${attachmentType.toUpperCase()} format and sent to the customer.</p>
@@ -893,4 +893,4 @@ export default async function handler(req, res) {
       });
     }
   }
-}
+} 

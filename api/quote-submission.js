@@ -219,26 +219,45 @@ export default async function handler(req, res) {
         const adminMailOptions = {
           from: 'Kiwi Trade <danbricks18@gmail.com>',
           to: 'danbricks18@gmail.com',
-          subject: `Quote ${quoteData.quoteNumber} Submitted - ${quoteData.tradesmanName}`,
+          subject: `New Lead - ${quoteData.customerName} - ${quoteData.serviceType || 'Underfloor Heating'}`,
           html: `
-            <h2>New Quote Submitted!</h2>
-            <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
-            <p><strong>Tradesman:</strong> ${quoteData.tradesmanName}</p>
-            <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
-            <p><strong>Phone:</strong> ${quoteData.tradesmanPhone}</p>
-            <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
-            <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
-            <p><strong>Item Breakdown:</strong></p>
-            <pre>${quoteData.itemBreakdown}</pre>
-            ${quoteData.additionalNotes ? `<p><strong>Additional Notes:</strong> ${quoteData.additionalNotes}</p>` : ''}
-            
-            <h3>Next Steps:</h3>
-            <ol>
-              <li>Create quote document using Google Docs template</li>
-              <li>Make any necessary adjustments</li>
-              <li>Save as PDF</li>
-              <li>Send to customer</li>
-            </ol>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #2c3e50;">📋 New Lead Received</h2>
+              <p>A new lead has been submitted and assigned to a tradesman for quote.</p>
+              
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #34495e; margin-top: 0;">Lead Details:</h3>
+                <p><strong>Customer Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
+                <p><strong>Customer Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
+                <p><strong>Customer Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
+                <p><strong>Service Type:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
+                <p><strong>Location:</strong> ${quoteData.location || 'Auckland'}</p>
+                <p><strong>Project Details:</strong> ${quoteData.projectDetails || 'Not specified'}</p>
+                <p><strong>Project Size:</strong> ${quoteData.projectSize || 'Not specified'}</p>
+                <p><strong>Budget:</strong> ${quoteData.budget || 'Not specified'}</p>
+                <p><strong>Timeline:</strong> ${quoteData.timeline || 'Not specified'}</p>
+              </div>
+              
+              <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #1976d2; margin-top: 0;">Assigned Tradesman:</h3>
+                <p><strong>Name:</strong> ${quoteData.tradesmanName}</p>
+                <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
+                <p><strong>Phone:</strong> ${quoteData.tradesmanPhone || 'Not provided'}</p>
+                <p><strong>Status:</strong> Quote request sent - awaiting response</p>
+              </div>
+              
+              <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #856404; margin-top: 0;">Next Steps:</h3>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                  <li>Tradesman will receive quote request email</li>
+                  <li>Tradesman will submit quote within 24 hours</li>
+                  <li>Customer will receive professional quote with attachment</li>
+                  <li>Monitor quote status in dashboard</li>
+                </ul>
+              </div>
+              
+              <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+            </div>
           `
         };
 
@@ -266,29 +285,42 @@ export default async function handler(req, res) {
         const tradesmanMailOptions = {
           from: 'Kiwi Trade <danbricks18@gmail.com>',
           to: quoteData.tradesmanEmail, // Use actual tradesman email
-          subject: `Quote Submitted Successfully - ${quoteData.quoteNumber}`,
+          subject: `New Lead - Quote Request for ${quoteData.customerName}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #2c3e50;">✅ Quote Submitted Successfully!</h2>
+              <h2 style="color: #2c3e50;">📋 New Lead - Quote Request</h2>
               <p>Dear ${quoteData.tradesmanName},</p>
-              <p>Your quote has been successfully submitted and is being processed.</p>
+              <p>You have received a new lead that requires a quote. Please review the details below and submit your quote.</p>
         
               <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
-                <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
-                <p><strong>Customer:</strong> ${quoteData.customerName || 'Not specified'}</p>
-                <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
-                <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
-                <p><strong>Status:</strong> Submitted and being processed</p>
+                <h3 style="color: #34495e; margin-top: 0;">Lead Details:</h3>
+                <p><strong>Customer Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
+                <p><strong>Customer Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
+                <p><strong>Customer Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
+                <p><strong>Service Type:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
+                <p><strong>Location:</strong> ${quoteData.location || 'Auckland'}</p>
+                <p><strong>Project Details:</strong> ${quoteData.projectDetails || 'Not specified'}</p>
+                <p><strong>Project Size:</strong> ${quoteData.projectSize || 'Not specified'}</p>
+                <p><strong>Budget:</strong> ${quoteData.budget || 'Not specified'}</p>
+                <p><strong>Timeline:</strong> ${quoteData.timeline || 'Not specified'}</p>
               </div>
 
-              <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #27ae60; margin-top: 0;">What happens next:</h3>
+              <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+                <h3 style="color: #1976d2; margin-top: 0;">Submit Your Quote</h3>
+                <p>Click the button below to submit your professional quote for this customer:</p>
+                <a href="${currentUrl}/api/quote-submission?leadId=${quoteData.quoteId}&customerName=${encodeURIComponent(quoteData.customerName || '')}&customerEmail=${encodeURIComponent(quoteData.customerEmail || '')}&customerPhone=${encodeURIComponent(quoteData.customerPhone || '')}&serviceType=${encodeURIComponent(quoteData.serviceType || '')}&projectDetails=${encodeURIComponent(quoteData.projectDetails || '')}&projectSize=${encodeURIComponent(quoteData.projectSize || '')}&budget=${encodeURIComponent(quoteData.budget || '')}&timeline=${encodeURIComponent(quoteData.timeline || '')}&location=${encodeURIComponent(quoteData.location || '')}" 
+                   style="display: inline-block; background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 10px 0;">
+                  📝 Submit Quote
+                </a>
+              </div>
+
+              <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #856404; margin-top: 0;">Important Notes:</h3>
                 <ul style="margin: 10px 0; padding-left: 20px;">
-                  <li>📄 Professional PDF being generated</li>
-                  <li>📧 Customer will receive quote email with PDF attachment</li>
-                  <li>📧 You will receive a copy of the customer email</li>
-                  <li>📊 Quote status will be updated in dashboard</li>
+                  <li>Please submit your quote within 24 hours</li>
+                  <li>Include detailed cost breakdown</li>
+                  <li>Specify valid until date</li>
+                  <li>Add any additional notes or conditions</li>
                 </ul>
               </div>
 
@@ -763,43 +795,6 @@ export default async function handler(req, res) {
         await transporter.sendMail(customerMailOptions);
         console.log(`✅ Customer email sent with ${attachmentType.toUpperCase()} attachment`);
         customerEmailSent = true;
-
-        // Send copy to tradesman
-        const tradesmanCopyMailOptions = {
-          from: 'Kiwi Trade <danbricks18@gmail.com>',
-          to: quoteData.tradesmanEmail, // Use actual tradesman email
-          subject: `Quote ${quoteData.quoteNumber} - Copy for ${quoteData.customerName}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #2c3e50;">Quote Copy</h2>
-              <p>Here's a copy of the quote you submitted for ${quoteData.customerName}.</p>
-              
-              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
-                <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
-                <p><strong>Customer:</strong> ${quoteData.customerName}</p>
-                <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
-                <p><strong>Service:</strong> ${quoteData.serviceType}</p>
-                <p><strong>Format:</strong> ${attachmentType.toUpperCase()}</p>
-              </div>
-              
-              <p>The customer has been notified and can view the quote online.</p>
-              <p>Your quote was generated in ${attachmentType.toUpperCase()} format and sent to the customer.</p>
-            </div>
-          `,
-          attachments: quoteAttachment ? [{
-            filename: attachmentFilename,
-            content: quoteAttachment.toString('base64'),
-            encoding: 'base64',
-            contentType: attachmentInfo.contentType
-          }] : []
-        };
-
-        console.log('📧 Attempting to send tradesman copy...');
-        console.log('📧 Tradesman email:', quoteData.tradesmanEmail);
-        
-        await transporter.sendMail(tradesmanCopyMailOptions);
-        console.log('✅ Tradesman copy sent');
       } catch (emailError) {
         console.error('❌ Customer email error:', emailError.message);
       }

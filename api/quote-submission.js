@@ -1,4 +1,5 @@
 import { google } from 'googleapis';
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, HeadingLevel, ImageRun } from 'docx';
 
 export default async function handler(req, res) {
   console.log('🔍 Quote submission API called:', req.method, req.url);
@@ -270,189 +271,41 @@ export default async function handler(req, res) {
         return d.toLocaleDateString('en-GB');
       };
 
-      // Generate breakdown rows function
-      const generateBreakdownRows = (quoteData) => {
-        const rows = [];
-        
-        if (quoteData.labourSubtotal && parseFloat(quoteData.labourSubtotal) > 0) {
-          const labourRate = parseFloat(quoteData.labourRate) || 0;
-          const labourHours = parseFloat(quoteData.labourHours) || 0;
-          const labourSubtotal = parseFloat(quoteData.labourSubtotal) || 0;
-          rows.push(`<tr><td>Labour</td><td>$${labourRate.toFixed(2)}/hour × ${labourHours} hours</td><td>$${labourSubtotal.toFixed(2)}</td></tr>`);
-        }
-        
-        if (quoteData.materialSubtotal && parseFloat(quoteData.materialSubtotal) > 0) {
-          const materialRate = parseFloat(quoteData.materialRate) || 0;
-          const materialSQM = parseFloat(quoteData.materialSQM) || 0;
-          const materialSubtotal = parseFloat(quoteData.materialSubtotal) || 0;
-          rows.push(`<tr><td>Materials</td><td>$${materialRate.toFixed(2)}/sqm × ${materialSQM} sqm</td><td>$${materialSubtotal.toFixed(2)}</td></tr>`);
-        }
-        
-        if (quoteData.installationSubtotal && parseFloat(quoteData.installationSubtotal) > 0) {
-          const installationSubtotal = parseFloat(quoteData.installationSubtotal) || 0;
-          rows.push(`<tr><td>Installation</td><td>Installation services</td><td>$${installationSubtotal.toFixed(2)}</td></tr>`);
-        }
-        
-        if (rows.length === 0) {
-          return '<tr><td colspan="3">No breakdown provided</td></tr>';
-        }
-        
-        return rows.join('');
-      };
+      // Generate DOCX using the docx library for better formatting
+      const docxBuffer = await generateDocxQuote(quoteData);
 
-      // Create DOCX document function - HTML to DOCX conversion
-      const createDocxQuote = async (quoteData) => {
-        const htmlToDocx = await import('html-to-docx');
-        
-        // Use a very simple HTML template that Word can handle properly
-        const htmlContent = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-              <title>Quote ${quoteData.quoteNumber}</title>
-              <style>
-                body { 
-                    font-family: Arial, sans-serif; 
-                    margin: 20px; 
-                    color: #333;
-                    line-height: 1.4;
-                }
-                table { 
-                    border-collapse: collapse; 
-                    width: 100%; 
-                    margin: 10px 0; 
-                }
-                th, td { 
-                    border: 1px solid #333; 
-                    padding: 8px; 
-                    text-align: left; 
-                }
-                th { 
-                    background: #333; 
-                    color: white; 
-                    font-weight: bold; 
-                }
-                .header { 
-                    text-align: center; 
-                    margin-bottom: 20px; 
-                }
-                .company-name { 
-                    color: #4a90e2; 
-                    font-size: 24px; 
-                    font-weight: bold;
-                    margin: 0;
-                }
-                .quote-title { 
-                    font-size: 28px; 
-                    font-weight: bold;
-                    margin: 10px 0;
-                }
-                .divider { 
-                    border-top: 2px solid #333; 
-                    margin: 15px 0; 
-                }
-                .total { 
-                    text-align: right; 
-                    font-size: 18px; 
-                    font-weight: bold; 
-                    margin: 20px 0;
-                }
-                .footer { 
-                    margin-top: 30px; 
-                    padding-top: 15px; 
-                    border-top: 1px solid #ddd; 
-                    text-align: center; 
-                    font-size: 12px; 
-                    color: #666;
-                }
-              </style>
-          </head>
-          <body>
-              <div class="header">
-                  <h1 class="company-name">KIWI TRADE</h1>
-                  <h2 class="quote-title">QUOTE</h2>
-                  <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
-                  <p><strong>Date:</strong> ${formatDate(new Date())}</p>
-                  <p><strong>Valid Until:</strong> ${formatDate(quoteData.validUntil)}</p>
-              </div>
-
-              <div class="divider"></div>
-
-              <table>
-                  <tr>
-                      <td style="width: 50%; background: #f8f9fa; padding: 15px; border: 1px solid #ddd;">
-                          <h3 style="margin: 0 0 10px 0; font-size: 16px;">Customer Details</h3>
-                          <p style="margin: 5px 0;"><strong>Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
-                          <p style="margin: 5px 0;"><strong>Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
-                          <p style="margin: 5px 0;"><strong>Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
-                          <p style="margin: 5px 0;"><strong>Address:</strong> ${quoteData.location || 'Auckland'}</p>
-                      </td>
-                      <td style="width: 50%; background: #f8f9fa; padding: 15px; border: 1px solid #ddd;">
-                          <h3 style="margin: 0 0 10px 0; font-size: 16px;">Tradesman Details</h3>
-                          <p style="margin: 5px 0;"><strong>Company:</strong> ${quoteData.tradesmanName}</p>
-                          <p style="margin: 5px 0;"><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
-                          <p style="margin: 5px 0;"><strong>Phone:</strong> ${quoteData.tradesmanPhone || 'Not specified'}</p>
-                          <p style="margin: 5px 0;"><strong>Service:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
-                      </td>
-                  </tr>
-              </table>
-
-              <div class="divider"></div>
-
-              <h3 style="margin: 20px 0 10px 0; font-size: 18px;">Quote Breakdown</h3>
-              <table>
-                  <thead>
-                      <tr>
-                          <th>Item</th>
-                          <th>Description</th>
-                          <th>Amount</th>
-                      </tr>
-                  </thead>
-                  <tbody>
-                      ${generateBreakdownRows(quoteData)}
-                  </tbody>
-              </table>
-
-              <div class="total">
-                  Total Amount: $${quoteData.totalAmount}
-              </div>
-
-              ${quoteData.additionalNotes ? `
-              <div style="margin: 20px 0;">
-                  <h3 style="margin: 0 0 10px 0; font-size: 16px;">Additional Notes</h3>
-                  <p>${quoteData.additionalNotes}</p>
-              </div>
-              ` : ''}
-
-              <div class="footer">
-                  <p><strong>Kiwi Trade</strong></p>
-                  <p>Professional underfloor heating solutions for your home</p>
-                  <p>This quote was generated using our automated system</p>
-                  <p>Thank you for choosing Kiwi Trade!</p>
-              </div>
-          </body>
-          </html>
-        `;
-        
-        // Convert HTML to DOCX with proper options
-        const docxBuffer = await htmlToDocx.default(htmlContent, {
-          table: { row: { cantSplit: true } },
-          header: false,
-          footer: false,
-          pageNumber: false,
-          margins: {
-            top: 1440,
-            right: 1440,
-            bottom: 1440,
-            left: 1440
+              // Generate breakdown rows function for PDF
+        const generateBreakdownRows = (quoteData) => {
+          const rows = [];
+          
+          if (quoteData.labourSubtotal && parseFloat(quoteData.labourSubtotal) > 0) {
+            const labourRate = parseFloat(quoteData.labourRate) || 0;
+            const labourHours = parseFloat(quoteData.labourHours) || 0;
+            const labourSubtotal = parseFloat(quoteData.labourSubtotal) || 0;
+            rows.push(`<tr><td>Labour</td><td>$${labourRate.toFixed(2)}/hour × ${labourHours} hours</td><td>$${labourSubtotal.toFixed(2)}</td></tr>`);
           }
-        });
-        
-        return docxBuffer;
-      };
+          
+          if (quoteData.materialSubtotal && parseFloat(quoteData.materialSubtotal) > 0) {
+            const materialRate = parseFloat(quoteData.materialRate) || 0;
+            const materialSQM = parseFloat(quoteData.materialSQM) || 0;
+            const materialSubtotal = parseFloat(quoteData.materialSubtotal) || 0;
+            rows.push(`<tr><td>Materials</td><td>$${materialRate.toFixed(2)}/sqm × ${materialSQM} sqm</td><td>$${materialSubtotal.toFixed(2)}</td></tr>`);
+          }
+          
+          if (quoteData.installationSubtotal && parseFloat(quoteData.installationSubtotal) > 0) {
+            const installationSubtotal = parseFloat(quoteData.installationSubtotal) || 0;
+            rows.push(`<tr><td>Installation</td><td>Installation services</td><td>$${installationSubtotal.toFixed(2)}</td></tr>`);
+          }
+          
+          if (rows.length === 0) {
+            return '<tr><td colspan="3">No breakdown provided</td></tr>';
+          }
+          
+          return rows.join('');
+        };
 
-      // Create HTML content for PDF - Using simple format that matches DOCX
-      const htmlContent = `
+        // Create HTML content for PDF - Using simple format that matches DOCX
+        const htmlContent = `
         <!DOCTYPE html>
         <html>
         <head>
@@ -610,7 +463,7 @@ export default async function handler(req, res) {
         console.log('⚠️ PDF generation failed, trying DOCX...');
         
         try {
-          const docxBuffer = await createDocxQuote(quoteData);
+          const docxBuffer = await generateDocxQuote(quoteData);
           quoteAttachment = docxBuffer;
           attachmentType = 'docx';
           attachmentFilename = `Quote-${quoteData.quoteNumber}.docx`;
@@ -806,4 +659,707 @@ export default async function handler(req, res) {
       }
     }
   }
+} 
+
+async function generateDocxQuote(quoteData) {
+  const doc = new Document({
+    sections: [{
+      properties: {
+        page: {
+          size: {
+            width: 11906, // A4 landscape width in twips
+            height: 8420, // A4 landscape height in twips
+          },
+          margin: {
+            top: 1440, // 1 inch
+            right: 1440,
+            bottom: 1440,
+            left: 1440,
+          },
+        },
+      },
+      children: [
+        // Header
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "KIWI TRADE",
+              size: 48, // 24pt
+              bold: true,
+              color: "4A90E2",
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 400 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "QUOTE",
+              size: 56, // 28pt
+              bold: true,
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 400 },
+        }),
+        
+        // Quote Info
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Quote Number: ${quoteData.quoteNumber}`,
+              size: 24, // 12pt
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Date: ${formatDate(new Date())}`,
+              size: 24,
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Valid Until: ${formatDate(quoteData.validUntil)}`,
+              size: 24,
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 600 },
+        }),
+
+        // Divider
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "________________________________________________________________________________",
+              size: 24,
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 600 },
+        }),
+
+        // Customer and Tradesman Details Table
+        new Table({
+          width: {
+            size: 100,
+            type: WidthType.PERCENTAGE,
+          },
+          rows: [
+            new TableRow({
+              children: [
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "Customer Details",
+                          size: 32, // 16pt
+                          bold: true,
+                        }),
+                      ],
+                      spacing: { after: 200 },
+                    }),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: `Name: ${quoteData.customerName || 'Not specified'}`,
+                          size: 28, // 14pt
+                        }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: `Email: ${quoteData.customerEmail || 'Not specified'}`,
+                          size: 28,
+                        }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: `Phone: ${quoteData.customerPhone || 'Not specified'}`,
+                          size: 28,
+                        }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: `Address: ${quoteData.location || 'Auckland'}`,
+                          size: 28,
+                        }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                  ],
+                  width: {
+                    size: 50,
+                    type: WidthType.PERCENTAGE,
+                  },
+                  shading: {
+                    fill: "F8F9FA",
+                  },
+                  borders: {
+                    top: { style: BorderStyle.SINGLE, size: 1 },
+                    bottom: { style: BorderStyle.SINGLE, size: 1 },
+                    left: { style: BorderStyle.SINGLE, size: 1 },
+                    right: { style: BorderStyle.SINGLE, size: 1 },
+                  },
+                }),
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "Tradesman Details",
+                          size: 32,
+                          bold: true,
+                        }),
+                      ],
+                      spacing: { after: 200 },
+                    }),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: `Company: ${quoteData.tradesmanName}`,
+                          size: 28,
+                        }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: `Email: ${quoteData.tradesmanEmail}`,
+                          size: 28,
+                        }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: `Phone: ${quoteData.tradesmanPhone || 'Not specified'}`,
+                          size: 28,
+                        }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: `Service: ${quoteData.serviceType || 'Underfloor Heating'}`,
+                          size: 28,
+                        }),
+                      ],
+                      spacing: { after: 100 },
+                    }),
+                  ],
+                  width: {
+                    size: 50,
+                    type: WidthType.PERCENTAGE,
+                  },
+                  shading: {
+                    fill: "F8F9FA",
+                  },
+                  borders: {
+                    top: { style: BorderStyle.SINGLE, size: 1 },
+                    bottom: { style: BorderStyle.SINGLE, size: 1 },
+                    left: { style: BorderStyle.SINGLE, size: 1 },
+                    right: { style: BorderStyle.SINGLE, size: 1 },
+                  },
+                }),
+              ],
+            }),
+          ],
+        }),
+
+        new Paragraph({
+          spacing: { after: 600 },
+        }),
+
+        // Divider
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "________________________________________________________________________________",
+              size: 24,
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 400 },
+        }),
+
+        // Quote Breakdown Title
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "Quote Breakdown",
+              size: 36, // 18pt
+              bold: true,
+            }),
+          ],
+          spacing: { after: 400 },
+        }),
+
+        // Quote Breakdown Table
+        new Table({
+          width: {
+            size: 100,
+            type: WidthType.PERCENTAGE,
+          },
+          rows: [
+            // Header row
+            new TableRow({
+              children: [
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "Item",
+                          size: 28,
+                          bold: true,
+                          color: "FFFFFF",
+                        }),
+                      ],
+                      alignment: AlignmentType.CENTER,
+                    }),
+                  ],
+                  shading: {
+                    fill: "333333",
+                  },
+                  borders: {
+                    top: { style: BorderStyle.SINGLE, size: 1 },
+                    bottom: { style: BorderStyle.SINGLE, size: 1 },
+                    left: { style: BorderStyle.SINGLE, size: 1 },
+                    right: { style: BorderStyle.SINGLE, size: 1 },
+                  },
+                }),
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "Description",
+                          size: 28,
+                          bold: true,
+                          color: "FFFFFF",
+                        }),
+                      ],
+                      alignment: AlignmentType.CENTER,
+                    }),
+                  ],
+                  shading: {
+                    fill: "333333",
+                  },
+                  borders: {
+                    top: { style: BorderStyle.SINGLE, size: 1 },
+                    bottom: { style: BorderStyle.SINGLE, size: 1 },
+                    left: { style: BorderStyle.SINGLE, size: 1 },
+                    right: { style: BorderStyle.SINGLE, size: 1 },
+                  },
+                }),
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "Amount",
+                          size: 28,
+                          bold: true,
+                          color: "FFFFFF",
+                        }),
+                      ],
+                      alignment: AlignmentType.CENTER,
+                    }),
+                  ],
+                  shading: {
+                    fill: "333333",
+                  },
+                  borders: {
+                    top: { style: BorderStyle.SINGLE, size: 1 },
+                    bottom: { style: BorderStyle.SINGLE, size: 1 },
+                    left: { style: BorderStyle.SINGLE, size: 1 },
+                    right: { style: BorderStyle.SINGLE, size: 1 },
+                  },
+                }),
+              ],
+            }),
+            // Data rows
+            ...generateDocxBreakdownRows(quoteData),
+          ],
+        }),
+
+        new Paragraph({
+          spacing: { after: 600 },
+        }),
+
+        // Total Amount
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Total Amount: $${quoteData.totalAmount}`,
+              size: 36, // 18pt
+              bold: true,
+            }),
+          ],
+          alignment: AlignmentType.RIGHT,
+          spacing: { after: 600 },
+        }),
+
+        // Additional Notes
+        ...(quoteData.additionalNotes ? [
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Additional Notes",
+                size: 32,
+                bold: true,
+              }),
+            ],
+            spacing: { after: 200 },
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: quoteData.additionalNotes,
+                size: 28,
+              }),
+            ],
+            spacing: { after: 600 },
+          }),
+        ] : []),
+
+        // Footer
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "Kiwi Trade",
+              size: 24,
+              bold: true,
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "Professional underfloor heating solutions for your home",
+              size: 24,
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "This quote was generated using our automated system",
+              size: 24,
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "Thank you for choosing Kiwi Trade!",
+              size: 24,
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 },
+        }),
+      ],
+    }],
+  });
+
+  return await Packer.toBuffer(doc);
+}
+
+function generateDocxBreakdownRows(quoteData) {
+  const rows = [];
+  
+  // Generate breakdown from the quote data
+  if (quoteData.labourSubtotal && parseFloat(quoteData.labourSubtotal) > 0) {
+    const labourRate = parseFloat(quoteData.labourRate) || 0;
+    const labourHours = parseFloat(quoteData.labourHours) || 0;
+    const labourSubtotal = parseFloat(quoteData.labourSubtotal) || 0;
+    
+    rows.push(
+      new TableRow({
+        children: [
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Labour",
+                    size: 28,
+                  }),
+                ],
+              }),
+            ],
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1 },
+              bottom: { style: BorderStyle.SINGLE, size: 1 },
+              left: { style: BorderStyle.SINGLE, size: 1 },
+              right: { style: BorderStyle.SINGLE, size: 1 },
+            },
+          }),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `$${labourRate.toFixed(2)}/hour × ${labourHours} hours`,
+                    size: 28,
+                  }),
+                ],
+              }),
+            ],
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1 },
+              bottom: { style: BorderStyle.SINGLE, size: 1 },
+              left: { style: BorderStyle.SINGLE, size: 1 },
+              right: { style: BorderStyle.SINGLE, size: 1 },
+            },
+          }),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `$${labourSubtotal.toFixed(2)}`,
+                    size: 28,
+                  }),
+                ],
+              }),
+            ],
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1 },
+              bottom: { style: BorderStyle.SINGLE, size: 1 },
+              left: { style: BorderStyle.SINGLE, size: 1 },
+              right: { style: BorderStyle.SINGLE, size: 1 },
+            },
+          }),
+        ],
+      })
+    );
+  }
+  
+  if (quoteData.materialSubtotal && parseFloat(quoteData.materialSubtotal) > 0) {
+    const materialRate = parseFloat(quoteData.materialRate) || 0;
+    const materialSQM = parseFloat(quoteData.materialSQM) || 0;
+    const materialSubtotal = parseFloat(quoteData.materialSubtotal) || 0;
+    
+    rows.push(
+      new TableRow({
+        children: [
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Materials",
+                    size: 28,
+                  }),
+                ],
+              }),
+            ],
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1 },
+              bottom: { style: BorderStyle.SINGLE, size: 1 },
+              left: { style: BorderStyle.SINGLE, size: 1 },
+              right: { style: BorderStyle.SINGLE, size: 1 },
+            },
+          }),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `$${materialRate.toFixed(2)}/sqm × ${materialSQM} sqm`,
+                    size: 28,
+                  }),
+                ],
+              }),
+            ],
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1 },
+              bottom: { style: BorderStyle.SINGLE, size: 1 },
+              left: { style: BorderStyle.SINGLE, size: 1 },
+              right: { style: BorderStyle.SINGLE, size: 1 },
+            },
+          }),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `$${materialSubtotal.toFixed(2)}`,
+                    size: 28,
+                  }),
+                ],
+              }),
+            ],
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1 },
+              bottom: { style: BorderStyle.SINGLE, size: 1 },
+              left: { style: BorderStyle.SINGLE, size: 1 },
+              right: { style: BorderStyle.SINGLE, size: 1 },
+            },
+          }),
+        ],
+      })
+    );
+  }
+  
+  if (quoteData.installationSubtotal && parseFloat(quoteData.installationSubtotal) > 0) {
+    const installationSubtotal = parseFloat(quoteData.installationSubtotal) || 0;
+    
+    rows.push(
+      new TableRow({
+        children: [
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Installation",
+                    size: 28,
+                  }),
+                ],
+              }),
+            ],
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1 },
+              bottom: { style: BorderStyle.SINGLE, size: 1 },
+              left: { style: BorderStyle.SINGLE, size: 1 },
+              right: { style: BorderStyle.SINGLE, size: 1 },
+            },
+          }),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Installation services",
+                    size: 28,
+                  }),
+                ],
+              }),
+            ],
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1 },
+              bottom: { style: BorderStyle.SINGLE, size: 1 },
+              left: { style: BorderStyle.SINGLE, size: 1 },
+              right: { style: BorderStyle.SINGLE, size: 1 },
+            },
+          }),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `$${installationSubtotal.toFixed(2)}`,
+                    size: 28,
+                  }),
+                ],
+              }),
+            ],
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1 },
+              bottom: { style: BorderStyle.SINGLE, size: 1 },
+              left: { style: BorderStyle.SINGLE, size: 1 },
+              right: { style: BorderStyle.SINGLE, size: 1 },
+            },
+          }),
+        ],
+      })
+    );
+  }
+  
+  // If no breakdown items, add a default row
+  if (rows.length === 0) {
+    rows.push(
+      new TableRow({
+        children: [
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Underfloor Heating Installation",
+                    size: 28,
+                  }),
+                ],
+              }),
+            ],
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1 },
+              bottom: { style: BorderStyle.SINGLE, size: 1 },
+              left: { style: BorderStyle.SINGLE, size: 1 },
+              right: { style: BorderStyle.SINGLE, size: 1 },
+            },
+          }),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Complete underfloor heating system installation including materials and labor",
+                    size: 28,
+                  }),
+                ],
+              }),
+            ],
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1 },
+              bottom: { style: BorderStyle.SINGLE, size: 1 },
+              left: { style: BorderStyle.SINGLE, size: 1 },
+              right: { style: BorderStyle.SINGLE, size: 1 },
+            },
+          }),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `$${quoteData.totalAmount}`,
+                    size: 28,
+                  }),
+                ],
+              }),
+            ],
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1 },
+              bottom: { style: BorderStyle.SINGLE, size: 1 },
+              left: { style: BorderStyle.SINGLE, size: 1 },
+              right: { style: BorderStyle.SINGLE, size: 1 },
+            },
+          }),
+        ],
+      })
+    );
+  }
+  
+  return rows;
 } 

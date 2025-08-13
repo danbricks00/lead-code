@@ -2,6 +2,281 @@ import { google } from 'googleapis';
 import { sendEmailViaGmailAPI, validateEmail, logEmailAttempt } from './gmail-api-helper.js';
 import { generateQuoteDocument } from './word-document-generator.js';
 
+// Generate mobile-friendly HTML quote
+function generateHtmlQuote(quoteData) {
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-NZ', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
+
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quote - ${quoteData.quoteNumber}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .quote-container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #2c3e50;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .company-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .quote-title {
+            font-size: 20px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+        .quote-number {
+            font-size: 18px;
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .info-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        .info-value {
+            color: #555;
+            margin-top: 5px;
+        }
+        .breakdown-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .breakdown-table th {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+        }
+        .breakdown-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .breakdown-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        .total-row {
+            background: #e8f5e8 !important;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .total-amount {
+            font-size: 24px;
+            color: #27ae60;
+            text-align: center;
+            padding: 20px;
+            background: #e8f5e8;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+            text-align: center;
+            color: #7f8c8d;
+        }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .quote-container { padding: 20px; }
+            .info-grid { grid-template-columns: 1fr; }
+            .breakdown-table { font-size: 14px; }
+            .breakdown-table th, .breakdown-table td { padding: 8px 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="quote-container">
+        <div class="header">
+            <div class="company-name">Kiwi Trade</div>
+            <div class="quote-title">Professional Quote</div>
+            <div class="quote-number">${quoteData.quoteNumber}</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Customer Information</div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Customer Name</div>
+                    <div class="info-value">${quoteData.customerName || 'Not specified'}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Email</div>
+                    <div class="info-value">${quoteData.customerEmail || 'Not specified'}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Phone</div>
+                    <div class="info-value">${quoteData.customerPhone || 'Not specified'}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Location</div>
+                    <div class="info-value">${quoteData.location || 'Not specified'}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Project Details</div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Service Type</div>
+                    <div class="info-value">${quoteData.serviceType || 'Underfloor Heating'}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Project Size</div>
+                    <div class="info-value">${quoteData.projectSize || 'Not specified'}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Valid Until</div>
+                    <div class="info-value">${formatDate(quoteData.validUntil)}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Tradesman</div>
+                    <div class="info-value">${quoteData.tradesmanName}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Cost Breakdown</div>
+            <table class="breakdown-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${generateBreakdownRows(quoteData)}
+                    <tr class="total-row">
+                        <td colspan="2"><strong>Total</strong></td>
+                        <td><strong>$${parseFloat(quoteData.totalAmount).toFixed(2)}</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="total-amount">
+            Total Quote Amount: $${parseFloat(quoteData.totalAmount).toFixed(2)}
+        </div>
+
+        ${quoteData.additionalNotes ? `
+        <div class="section">
+            <div class="section-title">Additional Notes</div>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #f39c12;">
+                ${quoteData.additionalNotes}
+            </div>
+        </div>
+        ` : ''}
+
+        <div class="footer">
+            <p><strong>Thank you for choosing Kiwi Trade!</strong></p>
+            <p>This quote is valid until ${formatDate(quoteData.validUntil)}</p>
+            <p>For questions or to accept this quote, please contact us.</p>
+        </div>
+    </div>
+</body>
+</html>`;
+
+  return html;
+}
+
+// Generate breakdown table rows
+function generateBreakdownRows(quoteData) {
+  const rows = [];
+  
+  // Parse item breakdown if available
+  if (quoteData.itemBreakdown) {
+    const breakdownLines = quoteData.itemBreakdown.split('\n').filter(line => line.trim());
+    breakdownLines.forEach(line => {
+      if (line.includes(':')) {
+        const [item, description] = line.split(':');
+        const amountMatch = description.match(/\\$([0-9.]+)/);
+        const amount = amountMatch ? amountMatch[1] : '0.00';
+        rows.push(`
+          <tr>
+            <td>${item.trim()}</td>
+            <td>${description.replace(/\\$[0-9.]+/, '').trim()}</td>
+            <td>$${amount}</td>
+          </tr>
+        `);
+      }
+    });
+  }
+  
+  // If no breakdown or empty, show default structure
+  if (rows.length === 0) {
+    rows.push(`
+      <tr>
+        <td>Underfloor Heating Installation</td>
+        <td>Professional installation service</td>
+        <td>$${parseFloat(quoteData.totalAmount).toFixed(2)}</td>
+      </tr>
+    `);
+  }
+  
+  return rows.join('');
+}
+
 export default async function handler(req, res) {
   console.log('🔍 Quote submission API called:', req.method, req.url);
   
@@ -235,6 +510,7 @@ export default async function handler(req, res) {
       // Generate Word document attachment
       let quoteAttachment = null;
       let attachmentFilename = '';
+      let attachmentType = 'none';
       
       console.log('📄 Generating Word document quote...');
       try {
@@ -245,10 +521,28 @@ export default async function handler(req, res) {
           contentType: docResult.contentType
         };
         attachmentFilename = docResult.filename;
+        attachmentType = 'docx';
         console.log(`✅ Word document generated: ${attachmentFilename}`);
       } catch (docError) {
         console.error('❌ Failed to generate Word document:', docError.message);
-        // Continue without attachment
+        console.log('🔄 Attempting HTML fallback for mobile-friendly formatting...');
+        
+        try {
+          // Generate HTML fallback for mobile-friendly formatting
+          const htmlQuote = generateHtmlQuote(quoteData);
+          const htmlBuffer = Buffer.from(htmlQuote, 'utf-8');
+          quoteAttachment = {
+            content: htmlBuffer,
+            filename: `Quote-${quoteData.quoteNumber}-mobile.html`,
+            contentType: 'text/html'
+          };
+          attachmentFilename = quoteAttachment.filename;
+          attachmentType = 'html';
+          console.log(`✅ HTML fallback generated: ${attachmentFilename}`);
+        } catch (htmlError) {
+          console.error('❌ Failed to generate HTML fallback:', htmlError.message);
+          // Continue without attachment
+        }
       }
 
       // 2. Send confirmation email to tradesman

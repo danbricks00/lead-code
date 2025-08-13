@@ -1385,6 +1385,11 @@
                         break;
                     case 'area_sizes':
                         chatState.areaSizes = message;
+                        chatState.step = 'customer_name';
+                        addMessage("What's your name?");
+                        break;
+                    case 'customer_name':
+                        chatState.customerName = message;
                         chatState.step = 'customer_phone';
                         addMessage("What's your phone number so a tradesman can contact you about the job?");
                         break;
@@ -1490,7 +1495,13 @@
 
             console.log('Lead generated:', leadData);
 
-            fetch('/api/send-to-sheets', {
+            // Validate required fields
+            if (!leadData.customerName || !leadData.customerEmail || !leadData.customerPhone || !leadData.location) {
+                addMessage("❌ Please provide all required information: name, email, phone, and address.");
+                return;
+            }
+
+            fetch('/api/lead-notification', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(leadData)
@@ -1518,7 +1529,9 @@
                         timeline: '',
                         customerName: '',
                         customerEmail: '',
-                        customerPhone: ''
+                        customerPhone: '',
+                        areasCount: '',
+                        areaSizes: ''
                     };
 
                     // Show follow-up options after success message

@@ -105,7 +105,7 @@ export default async function handler(req, res) {
       const quoteLink = `${currentUrl}/api/quote-submission?leadId=${leadId}&customerName=${encodeURIComponent(leadData.customerName)}&customerEmail=${encodeURIComponent(leadData.customerEmail)}&customerPhone=${encodeURIComponent(leadData.customerPhone)}&serviceType=${encodeURIComponent(leadData.selectedService)}&projectDetails=${encodeURIComponent(leadData.projectDetails)}&projectSize=${encodeURIComponent(leadData.projectSize)}&budget=${encodeURIComponent(leadData.budget)}&timeline=${encodeURIComponent(leadData.timeline)}&location=${encodeURIComponent(leadData.location)}`;
 
       // Send email to tradesmen
-      const tradesmanEmails = ['danbricks18@gmail.com']; // Add more tradesman emails here
+      const tradesmanEmails = ['quangbui0600@gmail.com']; // Tradesman email for testing
       
       for (const tradesmanEmail of tradesmanEmails) {
         try {

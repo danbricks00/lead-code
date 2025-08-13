@@ -477,6 +477,9 @@
              
              try {
                  console.log('📤 Submitting quote data:', data);
+                 console.log('📧 Tradesman Email:', data.tradesmanEmail);
+                 console.log('📞 Tradesman Phone:', data.tradesmanPhone);
+                 console.log('💰 Total Amount:', data.totalAmount);
                  
                  const response = await fetch('/api/quote-submission', {
                      method: 'POST',
@@ -493,10 +496,15 @@
                      alert('✅ Quote submitted successfully! The customer will receive your professional quote with DOCX attachment.');
                      window.close();
                  } else {
+                     console.error('❌ Server error:', result.error);
                      alert('❌ Error: ' + result.error);
                  }
              } catch (error) {
                  console.error('❌ Submission error:', error);
+                 console.error('❌ Error details:', {
+                     message: error.message,
+                     stack: error.stack
+                 });
                  alert('Error submitting quote: ' + error.message);
              }
          });

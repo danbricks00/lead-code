@@ -59,6 +59,25 @@ export default async function handler(req, res) {
       console.log('📧 Tradesman Email:', quoteData.tradesmanEmail);
       console.log('💰 Total Amount:', quoteData.totalAmount);
       console.log('📞 Tradesman Phone:', quoteData.tradesmanPhone);
+      console.log('📅 Valid Until:', quoteData.validUntil);
+      console.log('🔢 Quote Number:', quoteData.quoteNumber);
+      
+      // Check for pattern validation issues
+      if (quoteData.tradesmanPhone && !/^[\+]?[0-9\s\-\(\)]+$/.test(quoteData.tradesmanPhone)) {
+        console.log('❌ Phone number pattern validation failed:', quoteData.tradesmanPhone);
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid phone number format. Please use only numbers, spaces, hyphens, and parentheses.'
+        });
+      }
+      
+      if (quoteData.tradesmanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(quoteData.tradesmanEmail)) {
+        console.log('❌ Email pattern validation failed:', quoteData.tradesmanEmail);
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid email format. Please enter a valid email address.'
+        });
+      }
       
       if (!quoteData.tradesmanName || !quoteData.tradesmanEmail || !quoteData.totalAmount) {
         console.log('❌ Validation failed - missing required fields');
@@ -246,7 +265,7 @@ export default async function handler(req, res) {
 
         const tradesmanMailOptions = {
           from: 'Kiwi Trade <danbricks18@gmail.com>',
-          to: 'quangbui0600@gmail.com', // Use test email for debugging
+          to: quoteData.tradesmanEmail, // Use actual tradesman email
           subject: `Quote Submitted Successfully - ${quoteData.quoteNumber}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -748,7 +767,7 @@ export default async function handler(req, res) {
         // Send copy to tradesman
         const tradesmanCopyMailOptions = {
           from: 'Kiwi Trade <danbricks18@gmail.com>',
-          to: 'quangbui0600@gmail.com', // Use test email for debugging
+          to: quoteData.tradesmanEmail, // Use actual tradesman email
           subject: `Quote ${quoteData.quoteNumber} - Copy for ${quoteData.customerName}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

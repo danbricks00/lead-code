@@ -127,9 +127,11 @@ export default async function handler(req, res) {
         }
       }
 
+      // Initialize status variables
       let sheetsUpdated = false;
       let tradesmanEmailSent = false;
       let customerEmailSent = false;
+      let attachmentType = 'none';
 
       // 1. Save to Google Sheets
       if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {
@@ -285,7 +287,6 @@ export default async function handler(req, res) {
 
       // 4. Generate quote document and send to customer
       let quoteAttachment = null;
-      let attachmentType = 'none';
       let attachmentFilename = '';
 
       // Format date function
@@ -669,6 +670,12 @@ export default async function handler(req, res) {
 } 
 
 async function generateDocxQuote(quoteData) {
+  // Format date function
+  const formatDate = (date) => {
+    const d = new Date(date);
+    return d.toLocaleDateString('en-GB');
+  };
+
   const doc = new Document({
     sections: [{
       properties: {

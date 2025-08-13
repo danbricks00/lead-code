@@ -19,6 +19,65 @@ export default async function handler(req, res) {
       const leadData = req.body;
       console.log('✅ Lead data received:', leadData);
 
+      // Handle interrupted session logging
+      if (leadData.action === 'log-interrupted-session') {
+        console.log('📝 Logging interrupted session...');
+        
+        // Save to Google Sheets only
+        let sheetsUpdated = false;
+        if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {
+          try {
+            const auth = new google.auth.GoogleAuth({
+              credentials: {
+                client_email: process.env.GOOGLE_CLIENT_EMAIL,
+                private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+              },
+              scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+            });
+
+            const sheets = google.sheets({ version: 'v4', auth });
+            
+            const values = [
+              [
+                new Date().toISOString(),
+                leadData.customerName || '',
+                leadData.customerEmail || '',
+                leadData.customerPhone || '',
+                leadData.selectedService || '',
+                leadData.projectDetails || '',
+                leadData.projectSize || '',
+                leadData.budget || '',
+                leadData.timeline || '',
+                leadData.location || '',
+                leadData.specificDetails || '',
+                'interrupted',
+                'INTERRUPTED-' + Date.now(),
+                'Session interrupted - no emails sent'
+              ]
+            ];
+
+            await sheets.spreadsheets.values.append({
+              spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+              range: 'Leads!A:N',
+              valueInputOption: 'RAW',
+              insertDataOption: 'INSERT_ROWS',
+              resource: { values }
+            });
+
+            console.log('✅ Interrupted session logged to Google Sheets');
+            sheetsUpdated = true;
+          } catch (sheetsError) {
+            console.error('❌ Google Sheets error:', sheetsError.message);
+          }
+        }
+
+        return res.json({
+          success: true,
+          message: 'Interrupted session logged',
+          status: { sheetsUpdated }
+        });
+      }
+
       // Generate unique lead ID
       const leadId = `LEAD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
@@ -59,6 +118,11 @@ export default async function handler(req, res) {
 
       // 1. Send email to tradesman
       console.log('📧 Step 1: Sending tradesman notification...');
+      console.log('📧 Tradesman email details:', {
+        to: tradesmanEmail,
+        subject: `🔥 New Lead: ${leadData.selectedService} - ${leadData.location}`,
+        hasQuoteLink: !!quoteLink
+      });
       try {
         const tradesmanSubject = `🔥 New Lead: ${leadData.selectedService} - ${leadData.location}`;
         const tradesmanHtml = `
@@ -109,6 +173,11 @@ export default async function handler(req, res) {
 
       // 2. Send email to admin
       console.log('📧 Step 2: Sending admin notification...');
+      console.log('📧 Admin email details:', {
+        to: adminEmail,
+        subject: `📋 New Lead: ${leadData.customerName} - ${leadData.selectedService}`,
+        customerName: leadData.customerName
+      });
       try {
         const adminSubject = `📋 New Lead: ${leadData.customerName} - ${leadData.selectedService}`;
         const adminHtml = `
@@ -162,6 +231,11 @@ export default async function handler(req, res) {
 
       // 3. Send email to customer
       console.log('📧 Step 3: Sending customer confirmation...');
+      console.log('📧 Customer email details:', {
+        to: customerEmail,
+        subject: 'Thank you for your inquiry - Kiwi Trade',
+        customerName: leadData.customerName
+      });
       try {
         const customerSubject = `Thank you for your inquiry - Kiwi Trade`;
         const customerHtml = `
@@ -277,6 +351,12 @@ export default async function handler(req, res) {
       };
 
       console.log('📊 Lead Notification Response:', response);
+      console.log('📊 Email Summary:', {
+        tradesman: emailResults.tradesman.sent ? '✅ Sent' : `❌ Failed: ${emailResults.tradesman.error}`,
+        admin: emailResults.admin.sent ? '✅ Sent' : `❌ Failed: ${emailResults.admin.error}`,
+        customer: emailResults.customer.sent ? '✅ Sent' : `❌ Failed: ${emailResults.customer.error}`,
+        successRate: `${emailSuccessRate.toFixed(1)}%`
+      });
       return res.json(response);
 
     } catch (error) {

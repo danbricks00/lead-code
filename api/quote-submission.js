@@ -304,7 +304,7 @@ export default async function handler(req, res) {
       const createDocxQuote = async (quoteData) => {
         const htmlToDocx = await import('html-to-docx');
         
-        // Use the same HTML template that we use for PDF generation
+        // Use a simplified HTML template that works better with DOCX conversion
         const htmlContent = `
           <!DOCTYPE html>
           <html>
@@ -312,89 +312,80 @@ export default async function handler(req, res) {
               <title>Quote ${quoteData.quoteNumber}</title>
               <style>
                 body { 
-                    font-family: 'Arial', sans-serif; 
-                    margin: 0; 
-                    padding: 20px; 
+                    font-family: Arial, sans-serif; 
+                    margin: 20px; 
                     color: #333;
                     line-height: 1.4;
-                    font-size: 12px;
                 }
                 .header { 
                     text-align: center; 
-                    margin-bottom: 25px; 
+                    margin-bottom: 30px; 
                 }
                 .company-name { 
                     color: #4a90e2; 
                     margin: 0; 
-                    font-size: 18px; 
-                    font-weight: normal;
-                }
-                .quote-title { 
-                    color: #333; 
-                    margin: 10px 0 5px 0; 
                     font-size: 24px; 
                     font-weight: bold;
                 }
-                .quote-number { 
+                .quote-title { 
                     color: #333; 
-                    margin: 5px 0; 
-                    font-size: 14px; 
+                    margin: 10px 0; 
+                    font-size: 28px; 
                     font-weight: bold;
                 }
-                .quote-dates { 
-                    color: #333; 
-                    margin: 5px 0; 
-                    font-size: 12px; 
+                .quote-info { 
+                    margin: 10px 0; 
+                    font-size: 14px; 
                 }
                 .divider { 
-                    border-top: 1px solid #333; 
-                    margin: 15px 0; 
-                }
-                .details-section { 
-                    display: flex; 
+                    border-top: 2px solid #333; 
                     margin: 20px 0; 
-                    gap: 20px;
+                }
+                .details-container { 
+                    margin: 20px 0; 
+                }
+                .details-row { 
+                    display: flex; 
+                    margin-bottom: 20px; 
                 }
                 .details-column { 
                     flex: 1; 
                     background: #f8f9fa; 
                     padding: 15px; 
-                    border-radius: 4px; 
-                    border-left: 4px solid #4a90e2; 
+                    border: 1px solid #ddd; 
+                    margin: 0 10px; 
                 }
                 .details-title { 
                     color: #333; 
                     margin: 0 0 10px 0; 
-                    font-size: 14px; 
+                    font-size: 16px; 
                     font-weight: bold;
                 }
                 .details-content { 
-                    font-size: 12px; 
-                    line-height: 1.6;
+                    font-size: 14px; 
+                    line-height: 1.6; 
                 }
                 .details-content p { 
                     margin: 5px 0; 
                 }
-                .quote-breakdown { 
-                    margin: 20px 0; 
+                .breakdown-section { 
+                    margin: 30px 0; 
                 }
                 .breakdown-title { 
                     color: #333; 
-                    margin: 0 0 10px 0; 
-                    font-size: 14px; 
+                    margin: 0 0 15px 0; 
+                    font-size: 18px; 
                     font-weight: bold;
-                    border-left: 4px solid #4a90e2; 
-                    padding-left: 10px;
                 }
                 .breakdown-table { 
                     width: 100%; 
                     border-collapse: collapse; 
-                    margin: 10px 0; 
-                    font-size: 12px;
+                    margin: 15px 0; 
+                    font-size: 14px;
                 }
                 .breakdown-table th, .breakdown-table td { 
-                    border: 1px solid #ddd; 
-                    padding: 8px; 
+                    border: 1px solid #333; 
+                    padding: 10px; 
                     text-align: left; 
                 }
                 .breakdown-table th { 
@@ -404,10 +395,10 @@ export default async function handler(req, res) {
                 }
                 .total-section { 
                     text-align: right; 
-                    margin: 20px 0; 
+                    margin: 30px 0; 
                 }
                 .total-amount { 
-                    font-size: 18px; 
+                    font-size: 20px; 
                     font-weight: bold; 
                     color: #333;
                 }
@@ -417,19 +408,19 @@ export default async function handler(req, res) {
                 .notes-title { 
                     color: #333; 
                     margin: 0 0 10px 0; 
-                    font-size: 14px; 
+                    font-size: 16px; 
                     font-weight: bold;
                 }
                 .footer { 
-                    margin-top: 30px; 
-                    padding-top: 15px; 
+                    margin-top: 40px; 
+                    padding-top: 20px; 
                     border-top: 1px solid #ddd; 
-                    font-size: 10px; 
-                    color: #666;
-                    text-align: center;
+                    text-align: center; 
                 }
                 .footer p { 
-                    margin: 3px 0; 
+                    margin: 5px 0; 
+                    font-size: 12px; 
+                    color: #666;
                 }
               </style>
           </head>
@@ -437,37 +428,39 @@ export default async function handler(req, res) {
               <div class="header">
                   <h1 class="company-name">KIWI TRADE</h1>
                   <h2 class="quote-title">QUOTE</h2>
-                  <p class="quote-number">Quote Number: ${quoteData.quoteNumber}</p>
-                  <p class="quote-dates">Date: ${formatDate(new Date())}</p>
-                  <p class="quote-dates">Valid Until: ${formatDate(quoteData.validUntil)}</p>
+                  <p class="quote-info"><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+                  <p class="quote-info"><strong>Date:</strong> ${formatDate(new Date())}</p>
+                  <p class="quote-info"><strong>Valid Until:</strong> ${formatDate(quoteData.validUntil)}</p>
               </div>
 
               <div class="divider"></div>
 
-              <div class="details-section">
-                  <div class="details-column">
-                      <h3 class="details-title">Customer Details</h3>
-                      <div class="details-content">
-                          <p><strong>Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
-                          <p><strong>Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
-                          <p><strong>Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
-                          <p><strong>Address:</strong> ${quoteData.location || 'Auckland'}</p>
+              <div class="details-container">
+                  <div class="details-row">
+                      <div class="details-column">
+                          <h3 class="details-title">Customer Details</h3>
+                          <div class="details-content">
+                              <p><strong>Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
+                              <p><strong>Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
+                              <p><strong>Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
+                              <p><strong>Address:</strong> ${quoteData.location || 'Auckland'}</p>
+                          </div>
                       </div>
-                  </div>
-                  <div class="details-column">
-                      <h3 class="details-title">Tradesman Details</h3>
-                      <div class="details-content">
-                          <p><strong>Company:</strong> ${quoteData.tradesmanName}</p>
-                          <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
-                          <p><strong>Phone:</strong> ${quoteData.tradesmanPhone || 'Not specified'}</p>
-                          <p><strong>Service:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
+                      <div class="details-column">
+                          <h3 class="details-title">Tradesman Details</h3>
+                          <div class="details-content">
+                              <p><strong>Company:</strong> ${quoteData.tradesmanName}</p>
+                              <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
+                              <p><strong>Phone:</strong> ${quoteData.tradesmanPhone || 'Not specified'}</p>
+                              <p><strong>Service:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
+                          </div>
                       </div>
                   </div>
               </div>
 
               <div class="divider"></div>
 
-              <div class="quote-breakdown">
+              <div class="breakdown-section">
                   <h3 class="breakdown-title">Quote Breakdown</h3>
                   <table class="breakdown-table">
                       <thead>
@@ -521,7 +514,7 @@ export default async function handler(req, res) {
         return docxBuffer;
       };
 
-      // Create HTML content for PDF
+      // Create HTML content for PDF - Updated to match DOCX format
       const htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -529,93 +522,84 @@ export default async function handler(req, res) {
             <title>Quote ${quoteData.quoteNumber}</title>
             <style>
               @page { 
-                  margin: 0.3in; 
+                  margin: 0.5in; 
                   size: A4 landscape;
               }
               body { 
-                  font-family: 'Arial', sans-serif; 
-                  margin: 0; 
-                  padding: 20px; 
+                  font-family: Arial, sans-serif; 
+                  margin: 20px; 
                   color: #333;
                   line-height: 1.4;
-                  font-size: 12px;
               }
               .header { 
                   text-align: center; 
-                  margin-bottom: 25px; 
+                  margin-bottom: 30px; 
               }
               .company-name { 
                   color: #4a90e2; 
                   margin: 0; 
-                  font-size: 18px; 
-                  font-weight: normal;
-              }
-              .quote-title { 
-                  color: #333; 
-                  margin: 10px 0 5px 0; 
                   font-size: 24px; 
                   font-weight: bold;
               }
-              .quote-number { 
+              .quote-title { 
                   color: #333; 
-                  margin: 5px 0; 
-                  font-size: 14px; 
+                  margin: 10px 0; 
+                  font-size: 28px; 
                   font-weight: bold;
               }
-              .quote-dates { 
-                  color: #333; 
-                  margin: 5px 0; 
-                  font-size: 12px; 
+              .quote-info { 
+                  margin: 10px 0; 
+                  font-size: 14px; 
               }
               .divider { 
-                  border-top: 1px solid #333; 
-                  margin: 15px 0; 
-              }
-              .details-section { 
-                  display: flex; 
+                  border-top: 2px solid #333; 
                   margin: 20px 0; 
-                  gap: 20px;
+              }
+              .details-container { 
+                  margin: 20px 0; 
+              }
+              .details-row { 
+                  display: flex; 
+                  margin-bottom: 20px; 
               }
               .details-column { 
                   flex: 1; 
                   background: #f8f9fa; 
                   padding: 15px; 
-                  border-radius: 4px; 
-                  border-left: 4px solid #4a90e2; 
+                  border: 1px solid #ddd; 
+                  margin: 0 10px; 
               }
               .details-title { 
                   color: #333; 
                   margin: 0 0 10px 0; 
-                  font-size: 14px; 
+                  font-size: 16px; 
                   font-weight: bold;
               }
               .details-content { 
-                  font-size: 12px; 
-                  line-height: 1.6;
+                  font-size: 14px; 
+                  line-height: 1.6; 
               }
               .details-content p { 
                   margin: 5px 0; 
               }
-              .quote-breakdown { 
-                  margin: 20px 0; 
+              .breakdown-section { 
+                  margin: 30px 0; 
               }
               .breakdown-title { 
                   color: #333; 
-                  margin: 0 0 10px 0; 
-                  font-size: 14px; 
+                  margin: 0 0 15px 0; 
+                  font-size: 18px; 
                   font-weight: bold;
-                  border-left: 4px solid #4a90e2; 
-                  padding-left: 10px;
               }
               .breakdown-table { 
                   width: 100%; 
                   border-collapse: collapse; 
-                  margin: 10px 0; 
-                  font-size: 12px;
+                  margin: 15px 0; 
+                  font-size: 14px;
               }
               .breakdown-table th, .breakdown-table td { 
-                  border: 1px solid #ddd; 
-                  padding: 8px; 
+                  border: 1px solid #333; 
+                  padding: 10px; 
                   text-align: left; 
               }
               .breakdown-table th { 
@@ -625,10 +609,10 @@ export default async function handler(req, res) {
               }
               .total-section { 
                   text-align: right; 
-                  margin: 20px 0; 
+                  margin: 30px 0; 
               }
               .total-amount { 
-                  font-size: 18px; 
+                  font-size: 20px; 
                   font-weight: bold; 
                   color: #333;
               }
@@ -638,19 +622,19 @@ export default async function handler(req, res) {
               .notes-title { 
                   color: #333; 
                   margin: 0 0 10px 0; 
-                  font-size: 14px; 
+                  font-size: 16px; 
                   font-weight: bold;
               }
               .footer { 
-                  margin-top: 30px; 
-                  padding-top: 15px; 
+                  margin-top: 40px; 
+                  padding-top: 20px; 
                   border-top: 1px solid #ddd; 
-                  font-size: 10px; 
-                  color: #666;
-                  text-align: center;
+                  text-align: center; 
               }
               .footer p { 
-                  margin: 3px 0; 
+                  margin: 5px 0; 
+                  font-size: 12px; 
+                  color: #666;
               }
             </style>
         </head>
@@ -658,37 +642,39 @@ export default async function handler(req, res) {
             <div class="header">
                 <h1 class="company-name">KIWI TRADE</h1>
                 <h2 class="quote-title">QUOTE</h2>
-                <p class="quote-number">Quote Number: ${quoteData.quoteNumber}</p>
-                <p class="quote-dates">Date: ${formatDate(new Date())}</p>
-                <p class="quote-dates">Valid Until: ${formatDate(quoteData.validUntil)}</p>
+                <p class="quote-info"><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+                <p class="quote-info"><strong>Date:</strong> ${formatDate(new Date())}</p>
+                <p class="quote-info"><strong>Valid Until:</strong> ${formatDate(quoteData.validUntil)}</p>
             </div>
 
             <div class="divider"></div>
 
-            <div class="details-section">
-                <div class="details-column">
-                    <h3 class="details-title">Customer Details</h3>
-                    <div class="details-content">
-                        <p><strong>Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
-                        <p><strong>Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
-                        <p><strong>Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
-                        <p><strong>Address:</strong> ${quoteData.location || 'Auckland'}</p>
+            <div class="details-container">
+                <div class="details-row">
+                    <div class="details-column">
+                        <h3 class="details-title">Customer Details</h3>
+                        <div class="details-content">
+                            <p><strong>Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
+                            <p><strong>Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
+                            <p><strong>Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
+                            <p><strong>Address:</strong> ${quoteData.location || 'Auckland'}</p>
+                        </div>
                     </div>
-                </div>
-                <div class="details-column">
-                    <h3 class="details-title">Tradesman Details</h3>
-                    <div class="details-content">
-                        <p><strong>Company:</strong> ${quoteData.tradesmanName}</p>
-                        <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
-                        <p><strong>Phone:</strong> ${quoteData.tradesmanPhone || 'Not specified'}</p>
-                        <p><strong>Service:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
+                    <div class="details-column">
+                        <h3 class="details-title">Tradesman Details</h3>
+                        <div class="details-content">
+                            <p><strong>Company:</strong> ${quoteData.tradesmanName}</p>
+                            <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
+                            <p><strong>Phone:</strong> ${quoteData.tradesmanPhone || 'Not specified'}</p>
+                            <p><strong>Service:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div class="divider"></div>
 
-            <div class="quote-breakdown">
+            <div class="breakdown-section">
                 <h3 class="breakdown-title">Quote Breakdown</h3>
                 <table class="breakdown-table">
                     <thead>

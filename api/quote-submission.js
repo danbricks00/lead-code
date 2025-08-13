@@ -246,7 +246,7 @@ export default async function handler(req, res) {
 
         const tradesmanMailOptions = {
           from: 'Kiwi Trade <danbricks18@gmail.com>',
-          to: quoteData.tradesmanEmail,
+          to: 'quangbui0600@gmail.com', // Use test email for debugging
           subject: `Quote Submitted Successfully - ${quoteData.quoteNumber}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -585,7 +585,7 @@ export default async function handler(req, res) {
         // Send copy to tradesman
         const tradesmanCopyMailOptions = {
           from: 'Kiwi Trade <danbricks18@gmail.com>',
-          to: quoteData.tradesmanEmail,
+          to: 'quangbui0600@gmail.com', // Use test email for debugging
           subject: `Quote ${quoteData.quoteNumber} - Copy for ${quoteData.customerName}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

@@ -118,7 +118,7 @@
         
         <div class="form-group">
             <label for="tradesmanPhone">Your Phone:</label>
-            <input type="tel" id="tradesmanPhone" name="tradesmanPhone" required>
+            <input type="tel" id="tradesmanPhone" name="tradesmanPhone">
         </div>
 
         <div class="form-group">
@@ -476,21 +476,27 @@
              }
              
              try {
+                 console.log('📤 Submitting quote data:', data);
+                 
                  const response = await fetch('/api/quote-submission', {
                      method: 'POST',
                      headers: { 'Content-Type': 'application/json' },
                      body: JSON.stringify(data)
                  });
                  
+                 console.log('📥 Response status:', response.status);
+                 
                  const result = await response.json();
+                 console.log('📥 Response data:', result);
                  
                  if (result.success) {
-                     alert('✅ Quote submitted successfully! The customer will receive your professional quote with PDF attachment.');
+                     alert('✅ Quote submitted successfully! The customer will receive your professional quote with DOCX attachment.');
                      window.close();
                  } else {
                      alert('❌ Error: ' + result.error);
                  }
              } catch (error) {
+                 console.error('❌ Submission error:', error);
                  alert('Error submitting quote: ' + error.message);
              }
          });

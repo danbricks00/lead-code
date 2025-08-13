@@ -53,8 +53,15 @@ export default async function handler(req, res) {
       const quoteData = req.body;
       console.log('✅ Quote received:', quoteData);
 
-      // Basic validation
+      // Basic validation with detailed logging
+      console.log('🔍 Validating quote data...');
+      console.log('📝 Tradesman Name:', quoteData.tradesmanName);
+      console.log('📧 Tradesman Email:', quoteData.tradesmanEmail);
+      console.log('💰 Total Amount:', quoteData.totalAmount);
+      console.log('📞 Tradesman Phone:', quoteData.tradesmanPhone);
+      
       if (!quoteData.tradesmanName || !quoteData.tradesmanEmail || !quoteData.totalAmount) {
+        console.log('❌ Validation failed - missing required fields');
         return res.status(400).json({
           success: false,
           error: 'Missing required fields: tradesmanName, tradesmanEmail, totalAmount'
@@ -62,12 +69,28 @@ export default async function handler(req, res) {
       }
 
       // Clean and validate data
-      quoteData.tradesmanName = quoteData.tradesmanName.trim();
-      quoteData.tradesmanEmail = quoteData.tradesmanEmail.trim();
-      quoteData.totalAmount = quoteData.totalAmount.toString().replace(/[^0-9.]/g, '');
-      quoteData.tradesmanPhone = quoteData.tradesmanPhone ? quoteData.tradesmanPhone.trim() : '';
-      quoteData.itemBreakdown = quoteData.itemBreakdown ? quoteData.itemBreakdown.trim() : '';
-      quoteData.additionalNotes = quoteData.additionalNotes ? quoteData.additionalNotes.trim() : '';
+      try {
+        quoteData.tradesmanName = quoteData.tradesmanName.trim();
+        quoteData.tradesmanEmail = quoteData.tradesmanEmail.trim();
+        quoteData.totalAmount = quoteData.totalAmount.toString().replace(/[^0-9.]/g, '');
+        quoteData.tradesmanPhone = quoteData.tradesmanPhone ? quoteData.tradesmanPhone.trim() : '';
+        quoteData.itemBreakdown = quoteData.itemBreakdown ? quoteData.itemBreakdown.trim() : '';
+        quoteData.additionalNotes = quoteData.additionalNotes ? quoteData.additionalNotes.trim() : '';
+        
+        console.log('✅ Data cleaned successfully');
+        console.log('🧹 Cleaned data:', {
+          tradesmanName: quoteData.tradesmanName,
+          tradesmanEmail: quoteData.tradesmanEmail,
+          totalAmount: quoteData.totalAmount,
+          tradesmanPhone: quoteData.tradesmanPhone
+        });
+      } catch (cleanError) {
+        console.error('❌ Error cleaning data:', cleanError);
+        return res.status(400).json({
+          success: false,
+          error: 'Error processing form data: ' + cleanError.message
+        });
+      }
 
       // Fetch customer data from Google Sheets if missing
       if ((!quoteData.customerName || !quoteData.customerEmail || !quoteData.customerPhone) && quoteData.leadId && process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {

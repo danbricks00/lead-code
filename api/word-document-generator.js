@@ -1,6 +1,6 @@
-import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, HeadingLevel, ImageRun } from 'docx';
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle } from 'docx';
 
-// Generate professional Word document quote
+// Generate professional Word document quote with mobile-friendly formatting
 async function generateQuoteDocument(quoteData) {
   try {
     console.log('📄 Generating Word document quote...');
@@ -16,7 +16,7 @@ async function generateQuoteDocument(quoteData) {
       return d.toLocaleDateString('en-GB');
     };
 
-    // Create document
+    // Create document with proper mobile-friendly formatting
     const doc = new Document({
       sections: [{
         properties: {
@@ -273,7 +273,7 @@ async function generateQuoteDocument(quoteData) {
                       }),
                     ],
                     width: {
-                      size: 40,
+                      size: 30,
                       type: WidthType.PERCENTAGE,
                     },
                     borders: {
@@ -301,7 +301,7 @@ async function generateQuoteDocument(quoteData) {
                       }),
                     ],
                     width: {
-                      size: 40,
+                      size: 50,
                       type: WidthType.PERCENTAGE,
                     },
                     borders: {
@@ -448,7 +448,7 @@ async function generateQuoteDocument(quoteData) {
   }
 }
 
-// Generate breakdown table rows
+// Generate breakdown table rows with mobile-friendly formatting
 function generateBreakdownRows(quoteData) {
   const rows = [];
   
@@ -663,14 +663,50 @@ function generateBreakdownRows(quoteData) {
             new Paragraph({
               children: [
                 new TextRun({
-                  text: "No breakdown provided",
+                  text: "Complete Service",
                   size: 14,
-                  color: "666666",
                 }),
               ],
             }),
           ],
-          columnSpan: 3,
+          borders: {
+            top: { style: BorderStyle.SINGLE, size: 1 },
+            bottom: { style: BorderStyle.SINGLE, size: 1 },
+            left: { style: BorderStyle.SINGLE, size: 1 },
+            right: { style: BorderStyle.SINGLE, size: 1 },
+          },
+        }),
+        new TableCell({
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "Underfloor heating installation including materials and labor",
+                  size: 14,
+                }),
+              ],
+            }),
+          ],
+          borders: {
+            top: { style: BorderStyle.SINGLE, size: 1 },
+            bottom: { style: BorderStyle.SINGLE, size: 1 },
+            left: { style: BorderStyle.SINGLE, size: 1 },
+            right: { style: BorderStyle.SINGLE, size: 1 },
+          },
+        }),
+        new TableCell({
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `$${quoteData.totalAmount}`,
+                  size: 14,
+                  bold: true,
+                }),
+              ],
+              alignment: AlignmentType.RIGHT,
+            }),
+          ],
           borders: {
             top: { style: BorderStyle.SINGLE, size: 1 },
             bottom: { style: BorderStyle.SINGLE, size: 1 },

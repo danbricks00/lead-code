@@ -496,8 +496,9 @@
                      alert('✅ Quote submitted successfully! The customer will receive your professional quote with DOCX attachment.');
                      window.close();
                  } else {
-                     console.error('❌ Server error:', result.error);
-                     alert('❌ Error: ' + result.error);
+                     console.error('❌ Server error:', result.error || 'Unknown error');
+                     const errorMessage = result.error || result.details || 'Unknown error occurred';
+                     alert('❌ Error: ' + errorMessage);
                  }
              } catch (error) {
                  console.error('❌ Submission error:', error);
@@ -505,7 +506,8 @@
                      message: error.message,
                      stack: error.stack
                  });
-                 alert('Error submitting quote: ' + error.message);
+                 const errorMessage = error.message || 'Unknown error occurred during submission';
+                 alert('Error submitting quote: ' + errorMessage);
              }
          });
     </script>

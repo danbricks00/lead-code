@@ -207,7 +207,7 @@ export default async function handler(req, res) {
 
       // Email configuration
       const tradesmanEmail = 'quangbui0600@gmail.com';
-      const adminEmail = 'danbricks@outlooki.co.nz';
+      const adminEmail = 'danbricks18@gmail.com';
       const customerEmail = quoteData.customerEmail;
       
       console.log('📧 Email recipients configured:');

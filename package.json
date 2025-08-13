@@ -17,11 +17,12 @@
     "auto-save": "node auto-save.js"
   },
   "dependencies": {
-    "dotenv": "^17.2.1",
     "docx": "^8.5.0",
+    "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
     "googleapis": "^154.1.0",
+    "html-to-docx": "^1.8.0",
     "nodemailer": "^7.0.5",
     "puppeteer": "^23.0.0"
   }

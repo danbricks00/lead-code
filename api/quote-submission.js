@@ -300,153 +300,225 @@ export default async function handler(req, res) {
         return rows.join('');
       };
 
-      // Create DOCX document function - Simplified approach
+      // Create DOCX document function - HTML to DOCX conversion
       const createDocxQuote = async (quoteData) => {
-        const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType, BorderStyle, WidthType } = await import('docx');
+        const htmlToDocx = await import('html-to-docx');
         
-        // Build breakdown items
-        const breakdownItems = [];
+        // Use the same HTML template that we use for PDF generation
+        const htmlContent = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Quote ${quoteData.quoteNumber}</title>
+              <style>
+                body { 
+                    font-family: 'Arial', sans-serif; 
+                    margin: 0; 
+                    padding: 20px; 
+                    color: #333;
+                    line-height: 1.4;
+                    font-size: 12px;
+                }
+                .header { 
+                    text-align: center; 
+                    margin-bottom: 25px; 
+                }
+                .company-name { 
+                    color: #4a90e2; 
+                    margin: 0; 
+                    font-size: 18px; 
+                    font-weight: normal;
+                }
+                .quote-title { 
+                    color: #333; 
+                    margin: 10px 0 5px 0; 
+                    font-size: 24px; 
+                    font-weight: bold;
+                }
+                .quote-number { 
+                    color: #333; 
+                    margin: 5px 0; 
+                    font-size: 14px; 
+                    font-weight: bold;
+                }
+                .quote-dates { 
+                    color: #333; 
+                    margin: 5px 0; 
+                    font-size: 12px; 
+                }
+                .divider { 
+                    border-top: 1px solid #333; 
+                    margin: 15px 0; 
+                }
+                .details-section { 
+                    display: flex; 
+                    margin: 20px 0; 
+                    gap: 20px;
+                }
+                .details-column { 
+                    flex: 1; 
+                    background: #f8f9fa; 
+                    padding: 15px; 
+                    border-radius: 4px; 
+                    border-left: 4px solid #4a90e2; 
+                }
+                .details-title { 
+                    color: #333; 
+                    margin: 0 0 10px 0; 
+                    font-size: 14px; 
+                    font-weight: bold;
+                }
+                .details-content { 
+                    font-size: 12px; 
+                    line-height: 1.6;
+                }
+                .details-content p { 
+                    margin: 5px 0; 
+                }
+                .quote-breakdown { 
+                    margin: 20px 0; 
+                }
+                .breakdown-title { 
+                    color: #333; 
+                    margin: 0 0 10px 0; 
+                    font-size: 14px; 
+                    font-weight: bold;
+                    border-left: 4px solid #4a90e2; 
+                    padding-left: 10px;
+                }
+                .breakdown-table { 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    margin: 10px 0; 
+                    font-size: 12px;
+                }
+                .breakdown-table th, .breakdown-table td { 
+                    border: 1px solid #ddd; 
+                    padding: 8px; 
+                    text-align: left; 
+                }
+                .breakdown-table th { 
+                    background: #333; 
+                    color: white; 
+                    font-weight: bold; 
+                }
+                .total-section { 
+                    text-align: right; 
+                    margin: 20px 0; 
+                }
+                .total-amount { 
+                    font-size: 18px; 
+                    font-weight: bold; 
+                    color: #333;
+                }
+                .notes-section { 
+                    margin: 20px 0; 
+                }
+                .notes-title { 
+                    color: #333; 
+                    margin: 0 0 10px 0; 
+                    font-size: 14px; 
+                    font-weight: bold;
+                }
+                .footer { 
+                    margin-top: 30px; 
+                    padding-top: 15px; 
+                    border-top: 1px solid #ddd; 
+                    font-size: 10px; 
+                    color: #666;
+                    text-align: center;
+                }
+                .footer p { 
+                    margin: 3px 0; 
+                }
+              </style>
+          </head>
+          <body>
+              <div class="header">
+                  <h1 class="company-name">KIWI TRADE</h1>
+                  <h2 class="quote-title">QUOTE</h2>
+                  <p class="quote-number">Quote Number: ${quoteData.quoteNumber}</p>
+                  <p class="quote-dates">Date: ${formatDate(new Date())}</p>
+                  <p class="quote-dates">Valid Until: ${formatDate(quoteData.validUntil)}</p>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="details-section">
+                  <div class="details-column">
+                      <h3 class="details-title">Customer Details</h3>
+                      <div class="details-content">
+                          <p><strong>Name:</strong> ${quoteData.customerName || 'Not specified'}</p>
+                          <p><strong>Email:</strong> ${quoteData.customerEmail || 'Not specified'}</p>
+                          <p><strong>Phone:</strong> ${quoteData.customerPhone || 'Not specified'}</p>
+                          <p><strong>Address:</strong> ${quoteData.location || 'Auckland'}</p>
+                      </div>
+                  </div>
+                  <div class="details-column">
+                      <h3 class="details-title">Tradesman Details</h3>
+                      <div class="details-content">
+                          <p><strong>Company:</strong> ${quoteData.tradesmanName}</p>
+                          <p><strong>Email:</strong> ${quoteData.tradesmanEmail}</p>
+                          <p><strong>Phone:</strong> ${quoteData.tradesmanPhone || 'Not specified'}</p>
+                          <p><strong>Service:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
+                      </div>
+                  </div>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="quote-breakdown">
+                  <h3 class="breakdown-title">Quote Breakdown</h3>
+                  <table class="breakdown-table">
+                      <thead>
+                          <tr>
+                              <th>Item</th>
+                              <th>Description</th>
+                              <th>Amount</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          ${generateBreakdownRows(quoteData)}
+                      </tbody>
+                  </table>
+              </div>
+
+              <div class="total-section">
+                  <div class="total-amount">Total Amount: $${quoteData.totalAmount}</div>
+              </div>
+
+              ${quoteData.additionalNotes ? `
+              <div class="notes-section">
+                  <h3 class="notes-title">Additional Notes</h3>
+                  <p>${quoteData.additionalNotes}</p>
+              </div>
+              ` : ''}
+
+              <div class="footer">
+                  <p><strong>Kiwi Trade</strong></p>
+                  <p>Professional underfloor heating solutions for your home</p>
+                  <p>This quote was generated using our automated system</p>
+                  <p>Thank you for choosing Kiwi Trade!</p>
+              </div>
+          </body>
+          </html>
+        `;
         
-        if (quoteData.labourSubtotal && parseFloat(quoteData.labourSubtotal) > 0) {
-          const labourRate = parseFloat(quoteData.labourRate) || 0;
-          const labourHours = parseFloat(quoteData.labourHours) || 0;
-          const labourSubtotal = parseFloat(quoteData.labourSubtotal) || 0;
-          breakdownItems.push({
-            item: 'Labour',
-            description: `$${labourRate.toFixed(2)}/hour × ${labourHours} hours`,
-            amount: `$${labourSubtotal.toFixed(2)}`
-          });
-        }
-        
-        if (quoteData.materialSubtotal && parseFloat(quoteData.materialSubtotal) > 0) {
-          const materialRate = parseFloat(quoteData.materialRate) || 0;
-          const materialSQM = parseFloat(quoteData.materialSQM) || 0;
-          const materialSubtotal = parseFloat(quoteData.materialSubtotal) || 0;
-          breakdownItems.push({
-            item: 'Materials',
-            description: `$${materialRate.toFixed(2)}/sqm × ${materialSQM} sqm`,
-            amount: `$${materialSubtotal.toFixed(2)}`
-          });
-        }
-        
-        if (quoteData.installationSubtotal && parseFloat(quoteData.installationSubtotal) > 0) {
-          const installationSubtotal = parseFloat(quoteData.installationSubtotal) || 0;
-          breakdownItems.push({
-            item: 'Installation',
-            description: 'Installation services',
-            amount: `$${installationSubtotal.toFixed(2)}`
-          });
-        }
-        
-        // Create table rows for breakdown
-        const breakdownRows = breakdownItems.map(item => 
-          new TableRow({
-            children: [
-              new TableCell({
-                children: [new Paragraph({ text: item.item })],
-                borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } }
-              }),
-              new TableCell({
-                children: [new Paragraph({ text: item.description })],
-                borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } }
-              }),
-              new TableCell({
-                children: [new Paragraph({ text: item.amount })],
-                borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } }
-              })
-            ]
-          })
-        );
-        
-        // Create the document
-        const doc = new Document({
-          sections: [{
-            properties: {},
-            children: [
-              // Header
-              new Paragraph({
-                text: "KIWI TRADE",
-                heading: "Heading1",
-                alignment: AlignmentType.CENTER
-              }),
-              new Paragraph({
-                text: "QUOTE",
-                heading: "Heading2",
-                alignment: AlignmentType.CENTER
-              }),
-              new Paragraph({
-                text: `Quote Number: ${quoteData.quoteNumber}`,
-                alignment: AlignmentType.CENTER
-              }),
-              new Paragraph({
-                text: `Date: ${new Date().toLocaleDateString('en-GB')}`,
-                alignment: AlignmentType.CENTER
-              }),
-              new Paragraph({
-                text: `Valid Until: ${formatDate(quoteData.validUntil)}`,
-                alignment: AlignmentType.CENTER
-              }),
-              
-              // Divider
-              new Paragraph({ text: "_________________________________________________________________" }),
-              
-              // Customer Details
-              new Paragraph({ text: "Customer Details", heading: "Heading3" }),
-              new Paragraph({ text: `Name: ${quoteData.customerName || 'Not specified'}` }),
-              new Paragraph({ text: `Email: ${quoteData.customerEmail || 'Not specified'}` }),
-              new Paragraph({ text: `Phone: ${quoteData.customerPhone || 'Not specified'}` }),
-              new Paragraph({ text: `Address: ${quoteData.location || 'Auckland'}` }),
-              
-              // Tradesman Details
-              new Paragraph({ text: "Tradesman Details", heading: "Heading3" }),
-              new Paragraph({ text: `Company: ${quoteData.tradesmanName}` }),
-              new Paragraph({ text: `Email: ${quoteData.tradesmanEmail}` }),
-              new Paragraph({ text: `Phone: ${quoteData.tradesmanPhone || 'Not specified'}` }),
-              new Paragraph({ text: `Service: ${quoteData.serviceType || 'Underfloor Heating'}` }),
-              
-              // Divider
-              new Paragraph({ text: "_________________________________________________________________" }),
-              
-              // Quote Breakdown
-              new Paragraph({ text: "Quote Breakdown", heading: "Heading3" }),
-              
-              // Breakdown Table
-              new Table({
-                width: { size: 100, type: WidthType.PERCENTAGE },
-                rows: [
-                  new TableRow({
-                    children: [
-                      new TableCell({ children: [new Paragraph({ text: "Item" })] }),
-                      new TableCell({ children: [new Paragraph({ text: "Description" })] }),
-                      new TableCell({ children: [new Paragraph({ text: "Amount" })] })
-                    ]
-                  }),
-                  ...breakdownRows
-                ]
-              }),
-              
-              // Total Amount
-              new Paragraph({
-                text: `Total Amount: $${quoteData.totalAmount}`,
-                alignment: AlignmentType.RIGHT
-              }),
-              
-              // Additional Notes
-              ...(quoteData.additionalNotes ? [
-                new Paragraph({ text: "Additional Notes", heading: "Heading3" }),
-                new Paragraph({ text: quoteData.additionalNotes })
-              ] : []),
-              
-              // Footer
-              new Paragraph({ text: "Kiwi Trade", alignment: AlignmentType.CENTER }),
-              new Paragraph({ text: "Professional underfloor heating solutions for your home", alignment: AlignmentType.CENTER }),
-              new Paragraph({ text: "This quote was generated using our automated system", alignment: AlignmentType.CENTER }),
-              new Paragraph({ text: "Thank you for choosing Kiwi Trade!", alignment: AlignmentType.CENTER })
-            ]
-          }]
+        // Convert HTML to DOCX with proper options
+        const docxBuffer = await htmlToDocx.default(htmlContent, {
+          table: { row: { cantSplit: true } },
+          header: false,
+          footer: false,
+          pageNumber: false,
+          margins: {
+            top: 1440,
+            right: 1440,
+            bottom: 1440,
+            left: 1440
+          }
         });
         
-        return await Packer.toBuffer(doc);
+        return docxBuffer;
       };
 
       // Create HTML content for PDF

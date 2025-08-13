@@ -244,7 +244,6 @@ export default async function handler(req, res) {
               <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0;">
                 <h3 style="color: #27ae60; margin-top: 0;">What happens next:</h3>
                 <ul style="margin: 10px 0; padding-left: 20px;">
-                  <li>✅ Quote saved to Google Sheets</li>
                   <li>📄 Professional PDF being generated</li>
                   <li>📧 Customer will receive quote email with PDF attachment</li>
                   <li>📧 You will receive a copy of the customer email</li>
@@ -309,11 +308,14 @@ export default async function handler(req, res) {
           return rows.join('');
         };
 
-        // Function to create DOCX document
+        // Function to create DOCX document that matches PDF format exactly
         const createDocxQuote = async (quoteData) => {
+          const { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, AlignmentType, BorderStyle, WidthType } = await import('docx');
+          
+          // Create breakdown rows
           const breakdownRows = [];
           
-          // Add breakdown rows
+          // Labour row
           if (quoteData.labourSubtotal && parseFloat(quoteData.labourSubtotal) > 0) {
             const labourRate = parseFloat(quoteData.labourRate) || 0;
             const labourHours = parseFloat(quoteData.labourHours) || 0;
@@ -321,14 +323,15 @@ export default async function handler(req, res) {
             breakdownRows.push(
               new TableRow({
                 children: [
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Labour' })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${labourRate.toFixed(2)}/hour × ${labourHours} hours` })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${labourSubtotal.toFixed(2)}` })] })] })
+                  new TableCell({ children: [new Paragraph({ text: 'Labour' })] }),
+                  new TableCell({ children: [new Paragraph({ text: `$${labourRate.toFixed(2)}/hour × ${labourHours} hours` })] }),
+                  new TableCell({ children: [new Paragraph({ text: `$${labourSubtotal.toFixed(2)}` })] })
                 ]
               })
             );
           }
           
+          // Materials row
           if (quoteData.materialSubtotal && parseFloat(quoteData.materialSubtotal) > 0) {
             const materialRate = parseFloat(quoteData.materialRate) || 0;
             const materialSQM = parseFloat(quoteData.materialSQM) || 0;
@@ -336,26 +339,194 @@ export default async function handler(req, res) {
             breakdownRows.push(
               new TableRow({
                 children: [
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Materials' })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${materialRate.toFixed(2)}/sqm × ${materialSQM} sqm` })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${materialSubtotal.toFixed(2)}` })] })] })
+                  new TableCell({ children: [new Paragraph({ text: 'Materials' })] }),
+                  new TableCell({ children: [new Paragraph({ text: `$${materialRate.toFixed(2)}/sqm × ${materialSQM} sqm` })] }),
+                  new TableCell({ children: [new Paragraph({ text: `$${materialSubtotal.toFixed(2)}` })] })
                 ]
               })
             );
           }
           
+          // Installation row
           if (quoteData.installationSubtotal && parseFloat(quoteData.installationSubtotal) > 0) {
             const installationSubtotal = parseFloat(quoteData.installationSubtotal) || 0;
             breakdownRows.push(
               new TableRow({
                 children: [
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Installation' })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Installation services' })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${installationSubtotal.toFixed(2)}` })] })] })
+                  new TableCell({ children: [new Paragraph({ text: 'Installation' })] }),
+                  new TableCell({ children: [new Paragraph({ text: 'Installation services' })] }),
+                  new TableCell({ children: [new Paragraph({ text: `$${installationSubtotal.toFixed(2)}` })] })
                 ]
               })
             );
           }
+          
+          // Create the document with the same structure as the PDF
+          const doc = new Document({
+            sections: [{
+              properties: {},
+              children: [
+                // Header
+                new Paragraph({
+                  text: "KIWI TRADE",
+                  heading: HeadingLevel.HEADING_1,
+                  alignment: AlignmentType.CENTER,
+                  spacing: { after: 200 }
+                }),
+                new Paragraph({
+                  text: "QUOTE",
+                  heading: HeadingLevel.HEADING_2,
+                  alignment: AlignmentType.CENTER,
+                  spacing: { after: 200 }
+                }),
+                new Paragraph({
+                  text: `Quote Number: ${quoteData.quoteNumber}`,
+                  alignment: AlignmentType.CENTER,
+                  spacing: { after: 100 }
+                }),
+                new Paragraph({
+                  text: `Date: ${new Date().toLocaleDateString('en-GB')}`,
+                  alignment: AlignmentType.CENTER,
+                  spacing: { after: 100 }
+                }),
+                new Paragraph({
+                  text: `Valid Until: ${formatDate(quoteData.validUntil)}`,
+                  alignment: AlignmentType.CENTER,
+                  spacing: { after: 400 }
+                }),
+                
+                // Divider
+                new Paragraph({
+                  text: "_________________________________________________________________",
+                  alignment: AlignmentType.CENTER,
+                  spacing: { after: 400 }
+                }),
+                
+                // Customer and Tradesman Details
+                new Paragraph({
+                  text: "Customer Details",
+                  heading: HeadingLevel.HEADING_3,
+                  spacing: { after: 200 }
+                }),
+                new Paragraph({
+                  text: `Name: ${quoteData.customerName || 'Not specified'}`,
+                  spacing: { after: 100 }
+                }),
+                new Paragraph({
+                  text: `Email: ${quoteData.customerEmail || 'Not specified'}`,
+                  spacing: { after: 100 }
+                }),
+                new Paragraph({
+                  text: `Phone: ${quoteData.customerPhone || 'Not specified'}`,
+                  spacing: { after: 100 }
+                }),
+                new Paragraph({
+                  text: `Address: ${quoteData.location || 'Auckland'}`,
+                  spacing: { after: 400 }
+                }),
+                
+                new Paragraph({
+                  text: "Tradesman Details",
+                  heading: HeadingLevel.HEADING_3,
+                  spacing: { after: 200 }
+                }),
+                new Paragraph({
+                  text: `Company: ${quoteData.tradesmanName}`,
+                  spacing: { after: 100 }
+                }),
+                new Paragraph({
+                  text: `Email: ${quoteData.tradesmanEmail}`,
+                  spacing: { after: 100 }
+                }),
+                new Paragraph({
+                  text: `Phone: ${quoteData.tradesmanPhone || 'Not specified'}`,
+                  spacing: { after: 100 }
+                }),
+                new Paragraph({
+                  text: `Service: ${quoteData.serviceType || 'Underfloor Heating'}`,
+                  spacing: { after: 400 }
+                }),
+                
+                // Divider
+                new Paragraph({
+                  text: "_________________________________________________________________",
+                  alignment: AlignmentType.CENTER,
+                  spacing: { after: 400 }
+                }),
+                
+                // Quote Breakdown
+                new Paragraph({
+                  text: "Quote Breakdown",
+                  heading: HeadingLevel.HEADING_3,
+                  spacing: { after: 200 }
+                }),
+                
+                // Create breakdown table
+                new Table({
+                  width: { size: 100, type: WidthType.PERCENTAGE },
+                  rows: [
+                    // Header row
+                    new TableRow({
+                      children: [
+                        new TableCell({ children: [new Paragraph({ text: "Item" })] }),
+                        new TableCell({ children: [new Paragraph({ text: "Description" })] }),
+                        new TableCell({ children: [new Paragraph({ text: "Amount" })] })
+                      ]
+                    }),
+                    // Breakdown rows
+                    ...breakdownRows
+                  ]
+                }),
+                
+                // Total Amount
+                new Paragraph({
+                  text: `Total Amount: $${quoteData.totalAmount}`,
+                  heading: HeadingLevel.HEADING_3,
+                  alignment: AlignmentType.RIGHT,
+                  spacing: { after: 400 }
+                }),
+                
+                // Additional Notes
+                ...(quoteData.additionalNotes ? [
+                  new Paragraph({
+                    text: "Additional Notes",
+                    heading: HeadingLevel.HEADING_3,
+                    spacing: { after: 200 }
+                  }),
+                  new Paragraph({
+                    text: quoteData.additionalNotes,
+                    spacing: { after: 400 }
+                  })
+                ] : []),
+                
+                // Footer
+                new Paragraph({
+                  text: "Kiwi Trade",
+                  heading: HeadingLevel.HEADING_3,
+                  alignment: AlignmentType.CENTER,
+                  spacing: { after: 200 }
+                }),
+                new Paragraph({
+                  text: "Professional underfloor heating solutions for your home",
+                  alignment: AlignmentType.CENTER,
+                  spacing: { after: 100 }
+                }),
+                new Paragraph({
+                  text: "This quote was generated using our automated system",
+                  alignment: AlignmentType.CENTER,
+                  spacing: { after: 100 }
+                }),
+                new Paragraph({
+                  text: "Thank you for choosing Kiwi Trade!",
+                  alignment: AlignmentType.CENTER,
+                  spacing: { after: 200 }
+                })
+              ]
+            }]
+          });
+          
+          return await Packer.toBuffer(doc);
+        };
 
           const doc = new Document({
             sections: [{
@@ -886,11 +1057,30 @@ export default async function handler(req, res) {
 
   } catch (error) {
       console.error('❌ Error processing quote:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to process quote',
-        details: error.message
-      });
+      
+      // Check if we have partial success (quote saved but email failed)
+      if (sheetsUpdated || tradesmanEmailSent) {
+        res.json({
+          success: true,
+          message: 'Quote submitted successfully! Some notifications may be delayed.',
+          data: quoteData,
+          quoteNumber: quoteData.quoteNumber,
+          timestamp: new Date().toISOString(),
+          status: {
+            sheetsUpdated,
+            tradesmanEmailSent,
+            customerEmailSent: false,
+            pdfCreated: false,
+            error: error.message
+          }
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: 'Failed to process quote',
+          details: error.message
+        });
+      }
     }
   }
 } 

@@ -35,7 +35,7 @@ export default async function handler(req, res) {
           // Fetch quote data from Google Sheets
           const response = await sheets.spreadsheets.values.get({
             spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-            range: 'Quotes!A:K',
+            range: 'Quotes!A:Z',
           });
 
           const rows = response.data.values || [];
@@ -56,7 +56,16 @@ export default async function handler(req, res) {
               itemBreakdown: quoteRow[7],
               validUntil: quoteRow[8],
               additionalNotes: quoteRow[9],
-              status: quoteRow[10]
+              status: quoteRow[10],
+              customerName: quoteRow[11],
+              customerEmail: quoteRow[12],
+              customerPhone: quoteRow[13],
+              serviceType: quoteRow[14],
+              location: quoteRow[15],
+              projectDetails: quoteRow[16],
+              projectSize: quoteRow[17],
+              budget: quoteRow[18],
+              timeline: quoteRow[19]
             };
             console.log('✅ Found quote data:', quoteData);
           }
@@ -354,7 +363,7 @@ export default async function handler(req, res) {
                             <p><strong>Kiwi Trade</strong></p>
             <p>Professional underfloor heating solutions for your home</p>
             <p>This quote was generated using our automated system</p>
-            <p>Thank you for choosing Kiwi Underfloor Heating!</p>
+            <p>Thank you for choosing Kiwi Trade!</p>
           </div>
 
           <div class="actions">

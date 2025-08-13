@@ -74,16 +74,18 @@ export default async function handler(req, res) {
         
         // Customer details
         '{{CUSTOMER_NAME}}': quoteData.customerName || 'Customer Name',
-        '{{CUSTOMER_ADDRESS}}': quoteData.customerAddress || 'Customer Address',
+        '{{CUSTOMER_EMAIL}}': quoteData.customerEmail || 'Not specified',
+        '{{CUSTOMER_PHONE}}': quoteData.customerPhone || 'Not specified',
+        '{{CUSTOMER_ADDRESS}}': quoteData.location || 'Auckland',
         
         // Service details
-        '{{SERVICE_TYPE}}': quoteData.serviceType || 'Underfloor Heating Installation',
+        '{{SERVICE_TYPE}}': quoteData.serviceType || 'Underfloor Heating',
         '{{PROJECT_DETAILS}}': quoteData.projectDetails || 'Project Details',
         
         // Tradesman details
-        '{{TRADESMAN_NAME}}': quoteData.tradesmanName || 'Heat NZ',
-        '{{TRADESMAN_PHONE}}': quoteData.tradesmanPhone || '+64 9 123 4567',
-        '{{TRADESMAN_EMAIL}}': quoteData.tradesmanEmail || 'info@heatnz.co.nz',
+        '{{TRADESMAN_NAME}}': quoteData.tradesmanName || 'Kiwi Trade',
+        '{{TRADESMAN_PHONE}}': quoteData.tradesmanPhone || 'Not specified',
+        '{{TRADESMAN_EMAIL}}': quoteData.tradesmanEmail || 'info@kiwitrade.co.nz',
         
         // Pricing details
         '{{TOTAL_AMOUNT}}': quoteData.totalAmount || '0.00',
@@ -91,10 +93,10 @@ export default async function handler(req, res) {
         '{{ADDITIONAL_NOTES}}': quoteData.additionalNotes || '',
         
         // Company details (from your template)
-        '{{COMPANY_NAME}}': 'Heat NZ',
-        '{{COMPANY_ADDRESS}}': '673 South Titirangi Rd, Auckland 0604, NEW ZEALAND',
+        '{{COMPANY_NAME}}': 'Kiwi Trade',
+        '{{COMPANY_ADDRESS}}': 'Auckland, New Zealand',
         '{{GST_NUMBER}}': '120-681-729',
-        '{{REFERENCE}}': quoteData.customerAddress || 'Customer Address'
+        '{{REFERENCE}}': quoteData.location || 'Auckland'
       };
 
       // 3. Get the document content
@@ -180,7 +182,7 @@ export default async function handler(req, res) {
         });
 
         const adminMailOptions = {
-          from: `Kiwi Underfloor Heating <${process.env.GMAIL_USER || 'danbricks18@gmail.com'}>`,
+          from: `Kiwi Trade <${process.env.GMAIL_USER || 'danbricks18@gmail.com'}>`,
           to: 'danbricks18@gmail.com',
           subject: `Quote ${quoteData.quoteNumber} Document Created - ${quoteData.tradesmanName}`,
           html: `

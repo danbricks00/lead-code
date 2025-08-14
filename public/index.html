@@ -1432,8 +1432,7 @@
         <span id="chat-unread" class="chat__badge" hidden>0</span>
     </button>
     
-    <!-- Debug button for testing -->
-    <button id="debug-start-chat" style="position: fixed; top: 10px; right: 10px; z-index: 10000; background: red; color: white; padding: 10px;" onclick="startChat()">Start Chat</button>
+
 
     <script>
         // Chat state management
@@ -1472,6 +1471,10 @@
                 // Reset any chat variables
                 window.chatStep = 0;
                 window.chatData = {};
+                // Also reset the main chatState if it exists
+                if (window.chatState) {
+                    window.chatState.step = 'welcome';
+                }
             }
 
             function applyState(state, opts = { teardown: true }) {
@@ -1607,6 +1610,7 @@
         };
 
         function resetChatState() {
+            console.log('Resetting chat state...');
             chatState = {
                 step: 'welcome',
                 selectedService: 'underfloor_heating',
@@ -1624,7 +1628,9 @@
             };
             
             const messagesContainer = document.getElementById('chatMessages');
-            messagesContainer.innerHTML = '<div class="message bot-message">👋 Welcome to Kiwi Trade! We\'ll ask a couple of quick questions to prepare your underfloor heating quote.</div>';
+            if (messagesContainer) {
+                messagesContainer.innerHTML = '<div class="message bot-message">👋 Welcome to Kiwi Trade! We\'ll ask a couple of quick questions to prepare your underfloor heating quote.</div>';
+            }
         }
 
         function startChat() {
@@ -1636,36 +1642,17 @@
         }
 
         function openChat() {
+            console.log('openChat called');
             // Use the state management system to open the chat
             const root = document.getElementById('chat-root');
-            if (root && root.dataset.bound === '1') {
-                // If the chat system is initialized, use its state management
-                const event = new Event('click');
-                const bubble = document.getElementById('chat-bubble');
-                if (bubble) {
-                    bubble.dispatchEvent(event);
-                }
+            const bubble = document.getElementById('chat-bubble');
+            
+            if (root && bubble) {
+                console.log('Chat elements found, triggering bubble click');
+                // Trigger the bubble click to use the proper state management
+                bubble.click();
             } else {
-                // Fallback for when state management isn't ready
-                if (root) {
-                    root.dataset.state = 'open';
-                    root.classList.remove('chat--minimized', 'chat--closed');
-                    root.classList.add('chat--open');
-                    root.hidden = false;
-                    
-                    // Hide bubble
-                    const bubble = document.getElementById('chat-bubble');
-                    if (bubble) {
-                        bubble.hidden = true;
-                        bubble.style.display = 'none';
-                    }
-                    
-                    // Start chat if not already started
-                    const messagesContainer = document.getElementById('chatMessages');
-                    if (messagesContainer.children.length <= 1) {
-                        startChat();
-                    }
-                }
+                console.error('Chat elements not found:', { root: !!root, bubble: !!bubble });
             }
         }
         window.openChat = openChat; // Make openChat globally accessible

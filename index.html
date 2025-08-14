@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --header-h: 4rem;
+        }
+        
         * { 
             margin: 0; 
             padding: 0; 
@@ -25,44 +29,38 @@
             padding: 0 20px; 
         }
         
-        /* Header & Navigation */
+        /* Fixed header with translucent bg + blur compatible with iOS */
         header { 
-            background: rgba(255, 255, 255, 0.95); 
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px); /* iOS Safari support */
-            color: #1a1a1a; 
-            padding: 0; 
-            position: fixed; 
-            width: 100%; 
+            position: fixed;
             top: 0; 
-            z-index: 1000; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+            left: 0; 
+            right: 0;
+            height: var(--header-h);
+            z-index: 40;
+            background: rgba(255, 255, 255, 0.8);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
             border-bottom: 1px solid #f0f0f0;
-            height: 80px; /* Fixed height to prevent iOS overlap */
-            display: flex;
-            align-items: center;
         }
         
-        /* iOS Safari specific backdrop-filter fallback */
-        @supports not (backdrop-filter: blur(10px)) {
-            header {
-                background: rgba(255, 255, 255, 0.98);
-            }
-        }
-        
-        /* Prevent background scroll when mobile menu is open */
-        body.menu-open {
-            overflow: hidden;
-        }
-        
+        /* Header content row */
         .navbar { 
-            padding: 1rem 0; 
-            width: 100%;
             height: 100%;
             display: flex;
             align-items: center;
+            justify-content: space-between;
+            padding-inline: 1rem;
         }
         
+        /* Page offset so content is not hidden behind header */
+        main { 
+            padding-top: var(--header-h); 
+            padding: 2rem 0; 
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+        
+        /* Header & Navigation */
         .nav-container { 
             max-width: 1200px; 
             margin: 0 auto; 
@@ -70,8 +68,8 @@
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            flex-wrap: wrap; /* Allow wrapping on smaller screens */
-            gap: 10px; /* Add gap between elements */
+            flex-wrap: wrap;
+            gap: 10px;
             width: 100%;
         }
         
@@ -79,7 +77,7 @@
             display: flex; 
             align-items: center; 
             gap: 0.5rem; 
-            flex-shrink: 0; /* Prevent logo from shrinking */
+            flex-shrink: 0;
         }
         
         .nav-logo h2 { 
@@ -94,15 +92,16 @@
             color: #667eea;
         }
         
-        .nav-menu { 
-            display: flex; 
+        /* Desktop navigation */
+        .nav-desktop { 
+            display: none;
             list-style: none; 
             margin: 0; 
             padding: 0; 
-            gap: 1rem; /* Reduced gap to prevent overlap */
+            gap: 1rem;
             align-items: center;
-            flex-wrap: wrap; /* Allow menu items to wrap */
-            justify-content: flex-end; /* Align to the right */
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
         
         .nav-link { 
@@ -110,10 +109,10 @@
             text-decoration: none; 
             font-weight: 500; 
             transition: all 0.3s; 
-            padding: 0.5rem 0.8rem; /* Reduced padding to prevent overlap */
+            padding: 0.5rem 0.8rem;
             border-radius: 8px;
-            white-space: nowrap; /* Prevent text wrapping within buttons */
-            font-size: 14px; /* Smaller font size to prevent overlap */
+            white-space: nowrap;
+            font-size: 14px;
         }
         
         .nav-link:hover { 
@@ -129,12 +128,12 @@
         .nav-link.login-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 0.6rem 1.2rem; /* Reduced padding */
+            padding: 0.6rem 1.2rem;
             border-radius: 25px;
             font-weight: 600;
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-            flex-shrink: 0; /* Prevent login button from shrinking */
-            font-size: 13px; /* Smaller font size */
+            flex-shrink: 0;
+            font-size: 13px;
         }
         
         .nav-link.login-btn:hover {
@@ -142,48 +141,64 @@
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
         }
         
-        .hamburger {
-            display: none;
-            flex-direction: column;
-            cursor: pointer;
-            padding: 0.5rem;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
+        /* Mobile menu toggle button */
+        .menu-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px; 
+            height: 44px;
+            border: none;
             background: transparent;
-            border: 0;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color 0.3s;
         }
         
-        .bar {
-            width: 25px;
-            height: 3px;
-            background-color: #1a1a1a;
-            margin: 3px 0;
-            transition: 0.3s;
-            border-radius: 2px;
-        }
-        /* Ensure taps on bars trigger the hamburger parent */
-        .hamburger .bar { pointer-events: none; }
-        
-        .hamburger.active .bar:nth-child(2) {
-            opacity: 0;
+        .menu-toggle:hover {
+            background: rgba(0, 0, 0, 0.05);
         }
         
-        .hamburger.active .bar:nth-child(1) {
-            transform: translateY(8px) rotate(45deg);
-        }
-        
-        .hamburger.active .bar:nth-child(3) {
-            transform: translateY(-8px) rotate(-45deg);
-        }
-        
-        .bar { 
+        .menu-toggle .bar {
             width: 25px; 
             height: 3px; 
             background: #1a1a1a; 
             margin: 3px 0; 
             transition: 0.3s; 
             border-radius: 2px;
+        }
+        
+        .menu-toggle[aria-expanded="true"] .bar:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .menu-toggle[aria-expanded="true"] .bar:nth-child(1) {
+            transform: translateY(8px) rotate(45deg);
+        }
+        
+        .menu-toggle[aria-expanded="true"] .bar:nth-child(3) {
+            transform: translateY(-8px) rotate(-45deg);
+        }
+        
+        /* Desktop vs mobile/tablet visibility */
+        @media (min-width: 1200px) {
+            .nav-desktop { 
+                display: flex; 
+                gap: 1.5rem; 
+            }
+            .menu-toggle { 
+                display: none; 
+            }
+        }
+        
+        /* Mobile Navigation - Universal Mobile Styles */
+        @media (max-width: 768px) {
+            .nav-desktop { 
+                display: none; 
+            }
+            .menu-toggle { 
+                display: inline-flex !important; 
+            }
         }
         
         /* Large laptops / small desktops (ThinkPad) */
@@ -239,246 +254,6 @@
             }
         }
         
-        /* Mobile Navigation - Universal Mobile Styles */
-        @media (max-width: 768px) {
-            .hamburger { 
-                display: flex !important; 
-                position: relative;
-                z-index: 3001;
-                margin-left: auto;
-                margin-right: 10px;
-                padding: 12px;
-                background: rgba(255, 255, 255, 0.3);
-                border-radius: 8px;
-                border: 2px solid rgba(0, 0, 0, 0.1);
-                min-width: 44px;
-                min-height: 44px;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            }
-            .nav-menu { 
-                position: fixed; 
-                left: -100%; 
-                top: 0; 
-                flex-direction: column; 
-                background: rgba(255, 255, 255, 0.98); 
-                backdrop-filter: blur(10px);
-                width: 100vw; 
-                text-align: center; 
-                transition: left 0.3s ease; 
-                padding: 2rem 0; 
-                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-                z-index: 2000;
-                height: 100vh;
-                padding-top: var(--header-height, 70px);
-                overflow-y: auto;
-                -webkit-overflow-scrolling: touch;
-                overscroll-behavior: contain;
-                pointer-events: none;
-            }
-            .nav-menu.active { left: 0; pointer-events: auto; }
-            .nav-item { 
-                margin: 1rem 0; 
-                padding: 0.5rem 0;
-            }
-            .nav-link {
-                padding: 1rem 2rem;
-                font-size: 1.1rem;
-                display: block;
-                width: 100%;
-            }
-            .nav-link.login-btn {
-                margin: 1rem auto;
-                max-width: 200px;
-            }
-        }
-        
-        /* Small Mobile Devices (iPhone SE, older iPhones, small Android) */
-        @media (max-width: 480px) {
-            .hamburger { 
-                display: flex !important; 
-                margin-left: auto;
-                margin-right: 5px;
-                padding: 10px;
-                background: rgba(255, 255, 255, 0.3);
-                border-radius: 8px;
-            }
-            .nav-container {
-                padding: 0 15px;
-            }
-            .nav-menu {
-                padding-top: var(--header-height, 60px);
-            }
-            .nav-link {
-                padding: 1.2rem 1rem;
-                font-size: 1rem;
-            }
-        }
-        
-        /* iPhone 16 Plus and similar modern phones (430px width) */
-        @media (max-width: 430px) {
-            .hamburger { 
-                display: flex !important; 
-                margin-left: auto;
-                margin-right: 0;
-                padding: 12px;
-                background: rgba(255, 255, 255, 0.4);
-                border-radius: 8px;
-            }
-            .nav-container {
-                padding: 0 10px;
-            }
-        }
-        
-        /* Very small screens (iPhone SE, small Android) */
-        @media (max-width: 375px) {
-            .hamburger { 
-                padding: 10px;
-                margin-right: 5px;
-            }
-            .nav-container {
-                padding: 0 8px;
-            }
-            .nav-logo h2 {
-                font-size: 1.5rem;
-            }
-            .nav-logo .logo-icon {
-                font-size: 1.5rem;
-            }
-        }
-        
-        /* Extra small screens (iPhone SE 1st gen, very small Android) */
-        @media (max-width: 320px) {
-            .hamburger { 
-                padding: 8px;
-                margin-right: 3px;
-            }
-            .nav-container {
-                padding: 0 5px;
-            }
-            .nav-logo h2 {
-                font-size: 1.3rem;
-            }
-            .nav-logo .logo-icon {
-                font-size: 1.3rem;
-            }
-        }
-        
-        /* Tablet Portrait Mode */
-        @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
-            .hamburger { 
-                display: flex !important; 
-                margin-left: auto;
-                margin-right: 15px;
-                padding: 12px;
-                background: rgba(255, 255, 255, 0.2);
-                border-radius: 8px;
-            }
-            .nav-container {
-                padding: 0 20px;
-            }
-            /* Use full-screen overlay menu on tablet portrait as well */
-            .nav-menu {
-                position: fixed;
-                left: -100%;
-                top: 0;
-                flex-direction: column;
-                background: rgba(255, 255, 255, 0.98);
-                backdrop-filter: blur(10px);
-                width: 100vw;
-                text-align: center;
-                transition: left 0.3s ease;
-                padding: 2rem 0;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-                z-index: 2000;
-                height: 100vh;
-                padding-top: var(--header-height, 80px);
-                overflow-y: auto;
-                -webkit-overflow-scrolling: touch;
-                overscroll-behavior: contain;
-            }
-            .nav-menu.active { left: 0; }
-            .nav-link { display: block; width: 100%; }
-            .nav-link {
-                padding: 1.5rem 2rem;
-                font-size: 1.2rem;
-            }
-        }
-        
-        /* Tablet Landscape Mode */
-        @media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
-            .hamburger { 
-                display: flex !important; 
-                margin-left: auto;
-                margin-right: 20px;
-                padding: 15px;
-                background: rgba(255, 255, 255, 0.2);
-                border-radius: 10px;
-            }
-            .nav-container {
-                padding: 0 25px;
-            }
-            .nav-menu {
-                padding-top: var(--header-height, 90px);
-            }
-            .nav-link {
-                padding: 1.8rem 2.5rem;
-                font-size: 1.3rem;
-            }
-        }
-        
-        /* Large Tablets (iPad Pro, etc.) */
-        @media (min-width: 1024px) and (max-width: 1366px) {
-            .hamburger { 
-                display: flex !important; 
-                margin-left: auto;
-                margin-right: 25px;
-                padding: 18px;
-                background: rgba(255, 255, 255, 0.2);
-                border-radius: 12px;
-            }
-            .nav-container {
-                padding: 0 30px;
-            }
-            .nav-menu {
-                padding-top: var(--header-height, 100px);
-            }
-            .nav-link {
-                padding: 2rem 3rem;
-                font-size: 1.4rem;
-            }
-        }
-        
-        /* Android-specific optimizations for common aspect ratios */
-        @media (max-width: 768px) and (min-aspect-ratio: 16/9) {
-            .hamburger {
-                padding: 10px;
-                margin-right: 8px;
-            }
-        }
-        
-        @media (max-width: 768px) and (min-aspect-ratio: 18/9) {
-            .hamburger {
-                padding: 12px;
-                margin-right: 10px;
-            }
-        }
-        
-        @media (max-width: 768px) and (min-aspect-ratio: 19/9) {
-            .hamburger {
-                padding: 12px;
-                margin-right: 12px;
-            }
-        }
-        
-        @media (max-width: 768px) and (min-aspect-ratio: 21/9) {
-            .hamburger {
-                padding: 14px;
-                margin-right: 15px;
-            }
-        }
-        
         /* Mobile login button styles */
         @media (max-width: 768px) {
             .hero-buttons {
@@ -500,13 +275,6 @@
                 font-size: 1rem;
                 min-width: 180px;
             }
-        }
-        
-        main { 
-            margin-top: 80px; /* Match header height exactly */
-            padding: 2rem 0; 
-            padding-left: 15px; /* Add left padding to prevent edge overlap */
-            padding-right: 15px; /* Add right padding to prevent edge overlap */
         }
         
         /* Hero Section */
@@ -1327,6 +1095,79 @@
                 min-height: calc(100vh - 80px);
             }
         }
+
+        /* Mobile menu panel under header (phones + tablets) */
+        .nav-mobile {
+            position: fixed;
+            left: 0; 
+            right: 0;
+            top: calc(env(safe-area-inset-top, 0px) + var(--header-h));
+            max-height: calc(100dvh - var(--header-h) - env(safe-area-inset-top, 0px));
+            overflow-y: auto;
+            background: #fff;
+            border-top: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            border-bottom-left-radius: 16px;
+            border-bottom-right-radius: 16px;
+            padding: 16px;
+            z-index: 50;
+            display: none; /* toggled via JS */
+        }
+        
+        /* Use svh if supported to avoid iOS address bar jumps */
+        @supports (height: 100svh) {
+            .nav-mobile {
+                max-height: calc(100svh - var(--header-h) - env(safe-area-inset-top, 0px));
+            }
+        }
+        
+        /* Menu items: ≥44×44pt tap targets */
+        .nav-mobile a, 
+        .nav-mobile button {
+            display: block;
+            padding: 12px 16px; /* ~44px height with text */
+            border-radius: 10px;
+            font-size: 16px;
+            text-decoration: none;
+            color: #1a1a1a;
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .nav-mobile a:hover,
+        .nav-mobile a:focus-visible,
+        .nav-mobile button:hover,
+        .nav-mobile button:focus-visible { 
+            background: #f6f7fb; 
+            outline: 0; 
+        }
+        
+        /* Hero/full-height sections: replace 100vh/min-height:100vh */
+        .hero {
+            min-height: 100svh;
+            display: flex; 
+            align-items: center;
+        }
+        
+        @supports (min-height: 100dvh) {
+            .hero { 
+                min-height: 100dvh; 
+            }
+        }
+        
+        /* Lock scroll when menu open */
+        .no-scroll { 
+            overflow: hidden; 
+        }
+        
+        /* Don't let any parent break sticky/z-index */
+        .no-overflow { 
+            overflow: visible !important; 
+        }
     </style>
 </head>
 <body>
@@ -1337,7 +1178,7 @@
                     <span class="logo-icon">🔧</span>
                     <h2>Kiwi Trade</h2>
                 </div>
-                <ul class="nav-menu">
+                <ul class="nav-desktop">
                     <li class="nav-item">
                         <a href="/" class="nav-link active">Home</a>
                     </li>
@@ -1351,14 +1192,22 @@
                         <a href="/login.html" class="nav-link login-btn">Tradesman Login</a>
                     </li>
                 </ul>
-                <div class="hamburger">
+                <button class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">
                     <span class="bar"></span>
                     <span class="bar"></span>
                     <span class="bar"></span>
-                </div>
+                </button>
             </div>
         </nav>
     </header>
+
+    <!-- Mobile menu panel -->
+    <nav class="nav-mobile" id="mobile-menu" aria-label="Mobile navigation">
+        <a href="/" class="nav-link active">Home</a>
+        <a href="/about.html" class="nav-link">About Us</a>
+        <a href="/contact.html" class="nav-link">Contact</a>
+        <a href="/login.html" class="nav-link login-btn">Tradesman Login</a>
+    </nav>
 
     <main>
         <div class="container">
@@ -1876,74 +1725,51 @@
         }
 
         // Mobile menu functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const header = document.querySelector('header');
-            const hamburger = document.querySelector('.hamburger');
-            const navMenu = document.querySelector('.nav-menu');
-            
-            // Measure header height and expose as CSS var to align menu
-            const setHeaderHeightVar = () => {
-                const headerHeight = header ? header.getBoundingClientRect().height : 70;
-                document.documentElement.style.setProperty('--header-height', `${Math.round(headerHeight)}px`);
-            };
-            setHeaderHeightVar();
-            window.addEventListener('resize', setHeaderHeightVar);
+        (function () {
+            const btn = document.querySelector('.menu-toggle');
+            const menu = document.getElementById('mobile-menu');
+            if (!btn || !menu) return;
 
-            if (hamburger && navMenu) {
-                const openMenu = () => {
-                    hamburger.classList.add('active');
-                    navMenu.classList.add('active');
-                    document.body.classList.add('menu-open');
-                };
-                const closeMenu = () => {
-                    hamburger.classList.remove('active');
-                    navMenu.classList.remove('active');
-                    document.body.classList.remove('menu-open');
-                };
-                const toggleMenu = (e) => {
-                    if (e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }
-                    if (navMenu.classList.contains('active')) {
-                        closeMenu();
-                    } else {
-                        openMenu();
-                    }
-                };
-
-                // Single primary handler to avoid double-toggles on touch
-                hamburger.addEventListener('click', toggleMenu, { passive: false });
-                // iOS Safari sometimes sends touchend without click when passive scrolling
-                hamburger.addEventListener('touchend', (e) => { e.preventDefault(); toggleMenu(e); }, { passive: false });
-
-                // Close when clicking a link
-                document.querySelectorAll('.nav-link').forEach(link => {
-                    link.addEventListener('click', () => closeMenu());
-                });
-                // Close when clicking outside
-                document.addEventListener('click', (e) => {
-                    if (!hamburger.contains(e.target) && !navMenu.contains(e.target)) {
-                        closeMenu();
-                    }
-                });
-                // Close on Escape
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape') closeMenu();
-                });
-                // Prevent body from scrolling while touching inside menu on iOS
-                navMenu.addEventListener('touchmove', (e) => { e.stopPropagation(); }, { passive: false });
+            function setOpen(open) {
+                menu.style.display = open ? 'block' : 'none';
+                btn.setAttribute('aria-expanded', String(open));
+                document.documentElement.classList.toggle('no-scroll', open);
+                document.body.classList.toggle('no-scroll', open);
             }
 
-            // Auto-open chat on mobile for better UX
-            if (window.innerWidth <= 768) {
-                setTimeout(() => {
-                    if (typeof openChat === 'function') {
-                        openChat();
-                    }
-                }, 1200);
-            }
-        });
+            let open = false;
+            btn.addEventListener('click', () => {
+                open = !open;
+                setOpen(open);
+            });
+
+            // Close on resize to desktop
+            const mq = window.matchMedia('(min-width: 1200px)');
+            mq.addEventListener?.('change', (e) => { 
+                if (e.matches) setOpen(false); 
+            });
+
+            // Close when clicking a link
+            menu.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => setOpen(false));
+            });
+
+            // Close when clicking outside
+            document.addEventListener('click', (e) => {
+                if (open && !btn.contains(e.target) && !menu.contains(e.target)) {
+                    setOpen(false);
+                    open = false;
+                }
+            });
+
+            // Close on Escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && open) {
+                    setOpen(false);
+                    open = false;
+                }
+            });
+        })();
     </script>
 </body>
 </html> 

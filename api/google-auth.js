@@ -1,4 +1,4 @@
-import googleAuthHandler from '../../src/server/integrations/google/google-auth.js';
+import googleAuthHandler from '../src/server/integrations/google/google-auth.js';
 
 export default async (req, res) => {
     try {

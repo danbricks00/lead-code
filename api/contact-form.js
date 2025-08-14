@@ -1,4 +1,4 @@
-import { sendEmailViaGmailAPI } from '../src/server/emails/gmail-api-helper.js';
+import { sendEmailViaGmailAPI } from '../src/server/integrations/google/gmail-api-helper.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {

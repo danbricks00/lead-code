@@ -1,4 +1,4 @@
-import { sendLeadNotification } from '../../src/server/emails/lead-notification.js';
+import { sendLeadNotification } from '../src/server/emails/lead-notification.js';
 
 export default async (req, res) => {
     try {

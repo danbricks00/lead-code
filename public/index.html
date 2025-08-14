@@ -504,8 +504,12 @@
                         break;
                     case 'area_sizes':
                         chatState.areaSizes = message;
-                        chatState.step = 'customer_name';
-                        addMessage("What's your name?");
+                        chatState.step = 'collect_details_intro';
+                        addMessage("Before we ask for your details, can you please enter your personal details so we can find a tradie who can service your area and your needs.");
+                        setTimeout(() => {
+                            chatState.step = 'customer_name';
+                            addMessage("What's your name?");
+                        }, 2000);
                         break;
                     case 'customer_name':
                         chatState.customerName = message;

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiwi Trade - Installer Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .google-btn {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: 1rem;
+            transition: background 0.3s;
+        }
+
+        .google-btn:hover {
+            background: #3367d6;
+        }
+
+        .google-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .divider {
+            margin: 1.5rem 0;
+            display: flex;
+            align-items: center;
+            color: #666;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #ddd;
+        }
+
+        .divider span {
+            padding: 0 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4285f4;
+        }
+
+        .register-btn {
+            background: #34a853;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 1rem;
+            transition: background 0.3s;
+        }
+
+        .register-btn:hover {
+            background: #2d8f47;
+        }
+
+        .back-btn {
+            background: #666;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: background 0.3s;
+        }
+
+        .back-btn:hover {
+            background: #555;
+        }
+
+        /* Back to Home links */
+        .home-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: none;
+            margin-bottom: 1rem;
+        }
+        .home-link:hover { text-decoration: underline; }
+        .home-link-inline { color: #667eea; font-weight: 600; text-decoration: none; }
+        .home-link-inline:hover { text-decoration: underline; }
+
+        .hidden {
+            display: none;
+        }
+
+        .error {
+            color: #d32f2f;
+            background: #ffebee;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .success {
+            color: #2e7d32;
+            background: #e8f5e8;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .user-info {
+            background: #f5f5f5;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .logout-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+
+        .logout-btn:hover {
+            background: #d32f2f;
+        }
+
+        /* Google Sign-In Button Styling */
+        #g_id_onload {
+            margin-bottom: 1rem;
+        }
+
+        .g_id_signin {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <a href="/" class="home-link" aria-label="Back to Home">⬅ Back to Home</a>
+                    <div class="logo">🔧 Kiwi Trade</div>
+        <p class="subtitle">Tradesman Portal</p>
+
+        <!-- Login Section -->
+        <div id="loginSection">
+            <h3>Sign in with Google to continue</h3>
+            <p style="color: #666; margin-bottom: 1rem;">If you're already registered, you'll be logged in. If not, you'll be prompted to complete registration.</p>
+            
+            <div id="g_id_onload"
+                 data-client_id="715560457951-4ti03g5176854alkdku3slr1sufbue0l.apps.googleusercontent.com"
+                 data-callback="handleCredentialResponse"
+                 data-auto_prompt="false">
+            </div>
+            <div class="g_id_signin"
+                 data-type="standard"
+                 data-size="large"
+                 data-theme="outline"
+                 data-text="sign_in_with"
+                 data-shape="rectangular"
+                 data-logo_alignment="left">
+            </div>
+        </div>
+
+        <!-- Registration Section -->
+        <div id="registrationSection" class="hidden">
+            <h3>Complete Your Registration</h3>
+            <p style="color: #666; margin-bottom: 1rem;">You're signed in with Google. Please provide your trade details to complete registration.</p>
+            <form id="registrationForm">
+                <div class="form-group">
+                    <label for="tradeType">Trade Type</label>
+                    <select id="tradeType" required>
+                        <option value="">Select your trade</option>
+                        <option value="builder">Builder</option>
+                        <option value="electrician">Electrician</option>
+                        <option value="plumber">Plumber</option>
+                        <option value="carpenter">Carpenter</option>
+                        <option value="painter">Painter</option>
+                        <option value="roofer">Roofer</option>
+                        <option value="landscaper">Landscaper</option>
+                        <option value="heating">Heating Engineer</option>
+                        <option value="underfloor_heating">Underfloor Heating</option>
+                        <option value="decorator">Decorator</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="businessName">Business Name</label>
+                    <input type="text" id="businessName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="location">Service Area</label>
+                    <input type="text" id="location" placeholder="e.g., Auckland,New Zealand" required>
+                </div>
+
+                <button type="submit" class="register-btn">Complete Registration</button>
+            </form>
+            <button class="back-btn" onclick="showLogin()">Back to Login</button>
+        </div>
+
+        <!-- User Dashboard -->
+        <div id="userDashboard" class="hidden">
+            <div class="user-info">
+                <h3>Welcome, <span id="userName"></span>!</h3>
+                <p>Trade: <span id="userTrade"></span></p>
+                <p>Business: <span id="userBusiness"></span></p>
+                <p>Status: <span id="userStatus"></span></p>
+            </div>
+            <button class="logout-btn" onclick="signOut()">Sign Out</button>
+        </div>
+
+        <div id="message" style="margin-top:1rem;"></div>
+        <p style="margin-top:1rem; color:#666;">
+            Not ready to sign in? <a class="home-link-inline" href="/">Return to Home</a>
+        </p>
+    </div>
+
+    <!-- Google Sign-In API -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        let currentUser = null;
+
+        // Handle Google Sign-In response
+        async function handleCredentialResponse(response) {
+            try {
+                console.log('Google sign-in response received');
+                
+                const result = await fetch('/api/google-auth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        credential: response.credential
+                    })
+                });
+
+                const data = await result.json();
+                console.log('API response:', JSON.stringify(data, null, 2));
+                
+                if (data.success) {
+                    console.log('✅ Login successful! User data:', JSON.stringify(data.user, null, 2));
+                    currentUser = data.user;
+                    
+                    // Store user data in localStorage for persistence
+                    localStorage.setItem('leadbot_user', JSON.stringify(data.user));
+                    
+                    // Redirect to dashboard instead of showing simple dashboard
+                    window.location.href = '/dashboard.html';
+                } else if (data.needsRegistration) {
+                    console.log('⚠️ User needs registration. Email:', data.email, 'Name:', data.name);
+                    showMessage('Welcome! Please complete your registration to continue.', 'success');
+                    // Store the email for registration
+                    window.registrationEmail = data.email;
+                    window.registrationName = data.name;
+                    console.log('📝 Storing registration data:', JSON.stringify({ email: data.email, name: data.name }, null, 2));
+                    showRegistration();
+                } else {
+                    console.log('❌ Login failed:', data.error);
+                    showMessage(data.error || 'Sign-in failed', 'error');
+                }
+            } catch (error) {
+                console.error('Sign-in error:', error);
+                showMessage('Sign-in error: ' + error.message, 'error');
+            }
+        }
+
+        // Show registration form
+        function showRegistration() {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('registrationSection').classList.remove('hidden');
+            document.getElementById('userDashboard').classList.add('hidden');
+        }
+
+        // Show login form
+        function showLogin() {
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('registrationSection').classList.add('hidden');
+            document.getElementById('userDashboard').classList.add('hidden');
+        }
+
+        // Show user dashboard
+        function showUserDashboard() {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('registrationSection').classList.add('hidden');
+            document.getElementById('userDashboard').classList.remove('hidden');
+            
+            if (currentUser) {
+                document.getElementById('userName').textContent = currentUser.name;
+                document.getElementById('userTrade').textContent = currentUser.tradeType || 'Not set';
+                document.getElementById('userBusiness').textContent = currentUser.businessName || 'Not set';
+                document.getElementById('userStatus').textContent = currentUser.status || 'Pending';
+            }
+        }
+
+        // Handle registration form submission
+        document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                email: window.registrationEmail || 'test@example.com',
+                tradeType: document.getElementById('tradeType').value,
+                businessName: document.getElementById('businessName').value,
+                phone: document.getElementById('phone').value,
+                location: document.getElementById('location').value
+            };
+
+            console.log('Submitting registration with data:', JSON.stringify(formData, null, 2));
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                console.log('Registration response:', JSON.stringify(data, null, 2));
+                
+                if (data.success) {
+                    console.log('✅ Registration successful! User data:', JSON.stringify(data.user, null, 2));
+                    currentUser = data.user;
+                    
+                    // Store user data in localStorage for persistence
+                    localStorage.setItem('leadbot_user', JSON.stringify(data.user));
+                    
+                    // Redirect to dashboard instead of showing simple dashboard
+                    window.location.href = '/dashboard.html';
+                } else {
+                    console.log('❌ Registration failed:', data.error);
+                    if (data.alreadyRegistered) {
+                        showMessage('You are already registered! Please sign in with Google.', 'error');
+                        setTimeout(() => showLogin(), 2000);
+                    } else {
+                        showMessage(data.error || 'Registration failed', 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showMessage('Registration error: ' + error.message, 'error');
+            }
+        });
+
+        // Sign out
+        async function signOut() {
+            try {
+                localStorage.removeItem('leadbot_user');
+                currentUser = null;
+                showLogin();
+                showMessage('Signed out successfully', 'success');
+            } catch (error) {
+                showMessage('Sign out error: ' + error.message, 'error');
+            }
+        }
+
+        // Show message
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = type;
+            messageDiv.classList.remove('hidden');
+            
+            setTimeout(() => {
+                messageDiv.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            // Check if user is already logged in
+            checkAuthStatus();
+        });
+
+        // Check authentication status
+        async function checkAuthStatus() {
+            // For now, just check if we're on the right page
+            console.log('Login page loaded successfully');
+        }
+    </script>
+</body>
+</html> 

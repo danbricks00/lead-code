@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>About Us - Kiwi Trade</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            line-height: 1.6; 
+            color: #1a1a1a; 
+            background-color: #ffffff; 
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 0 20px; 
+        }
+        
+        /* Header & Navigation */
+        header { 
+            background: rgba(255, 255, 255, 0.95); 
+            backdrop-filter: blur(10px);
+            color: #1a1a1a; 
+            padding: 0; 
+            position: fixed; 
+            width: 100%; 
+            top: 0; 
+            z-index: 1000; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .navbar { 
+            padding: 1rem 0; 
+        }
+        
+        .nav-container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 0 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        
+        .nav-logo { 
+            display: flex; 
+            align-items: center; 
+            gap: 0.5rem; 
+        }
+        
+        .nav-logo h2 { 
+            margin: 0; 
+            font-size: 1.8rem; 
+            font-weight: 700; 
+            color: #1a1a1a; 
+        }
+        
+        .nav-logo .logo-icon {
+            font-size: 2rem;
+            color: #667eea;
+        }
+        
+        .nav-menu { 
+            display: flex; 
+            list-style: none; 
+            margin: 0; 
+            padding: 0; 
+            gap: 2rem; 
+            align-items: center;
+        }
+        
+        .nav-link { 
+            color: #1a1a1a; 
+            text-decoration: none; 
+            font-weight: 500; 
+            transition: all 0.3s; 
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+        }
+        
+        .nav-link:hover { 
+            background: #f8f9fa; 
+            color: #667eea; 
+        }
+        
+        .nav-link.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .nav-link.login-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .nav-link.login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .hamburger { 
+            display: none; 
+            flex-direction: column; 
+            cursor: pointer; 
+        }
+        
+        .bar { 
+            width: 25px; 
+            height: 3px; 
+            background: #1a1a1a; 
+            margin: 3px 0; 
+            transition: 0.3s; 
+        }
+        
+        @media (max-width: 768px) {
+            .hamburger { display: flex; }
+            .nav-menu { 
+                position: fixed; 
+                left: -100%; 
+                top: 70px; 
+                flex-direction: column; 
+                background: rgba(255, 255, 255, 0.98); 
+                backdrop-filter: blur(10px);
+                width: 100%; 
+                text-align: center; 
+                transition: 0.3s; 
+                padding: 2rem 0; 
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            }
+            .nav-menu.active { left: 0; }
+            .nav-item { margin: 1rem 0; }
+        }
+        
+        main { 
+            margin-top: 80px; 
+            padding: 2rem 0; 
+        }
+        
+        /* Hero Section */
+        .hero { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            padding: 6rem 2rem; 
+            text-align: center; 
+            border-radius: 20px; 
+            margin-bottom: 4rem; 
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            pointer-events: none;
+        }
+        
+        .hero-content { 
+            position: relative; 
+            z-index: 1; 
+        }
+        
+        .hero-content h1 { 
+            font-size: 3.5rem; 
+            font-weight: 700;
+            margin-bottom: 1.5rem; 
+            line-height: 1.2;
+        }
+        
+        .hero-content p { 
+            font-size: 1.3rem; 
+            margin-bottom: 2.5rem; 
+            opacity: 0.95; 
+            font-weight: 400;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* Content Sections */
+        .section {
+            margin: 4rem 0;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .section-header h2 { 
+            font-size: 2.5rem; 
+            font-weight: 700;
+            margin-bottom: 1rem; 
+            color: #1a1a1a; 
+        }
+        
+        .section-header p {
+            font-size: 1.1rem;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .content-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border: 1px solid #f0f0f0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .content-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .content-card h3 {
+            color: #1a1a1a;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .content-card p {
+            color: #666;
+            line-height: 1.7;
+            font-size: 1rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 2rem;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .hero-content h1 { font-size: 2.5rem; }
+            .hero-content p { font-size: 1.1rem; }
+            .content-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <span class="logo-icon">🔧</span>
+                    <h2>Kiwi Trade</h2>
+                </div>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="/" class="nav-link">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/about.html" class="nav-link active">About Us</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/contact.html" class="nav-link">Contact</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/login.html" class="nav-link login-btn">Tradesman Login</a>
+                    </li>
+                    <li class="nav-item" id="dashboardNavItem" style="display: none;">
+                        <a href="/dashboard.html" class="nav-link dashboard-btn">Dashboard</a>
+                    </li>
+                </ul>
+                <div class="hamburger">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="container">
+            <!-- Hero Section -->
+            <section class="hero">
+                <div class="hero-content">
+                    <h1>About Kiwi Trade</h1>
+                    <p>We use AI to connect Auckland homeowners with the right installer faster and more efficiently. Lower overheads for us translate into more competitive pricing for you.</p>
+                </div>
+            </section>
+
+            <!-- Mission Section -->
+            <section class="section">
+                <div class="section-header">
+                    <h2>Our Mission</h2>
+                    <p>Make underfloor heating effortless for Auckland homeowners by combining smart technology with trusted local tradespeople. We're building the foundation to expand across New Zealand.</p>
+                </div>
+                <div class="content-grid">
+                    <div class="content-card">
+                        <h3>🤝 Smart Connections</h3>
+                        <p>Our AI matching connects you with the best installer for your specific job, reducing time and hassle.</p>
+                    </div>
+                    <div class="content-card">
+                        <h3>⚡ Lower Overheads</h3>
+                        <p>Automation cuts admin and marketing costs. Those savings help us offer more competitive quotes.</p>
+                    </div>
+                    <div class="content-card">
+                        <h3>📊 Data‑Driven Matching</h3>
+                        <p>Our chatbot asks only what’s needed—areas, sizes, and contact details—so installers get the right info to quote accurately.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Stats Section -->
+            <section class="section">
+                <div class="section-header">
+                    <h2>Our Impact in Auckland</h2>
+                    <p>See how Kiwi Trade is improving the way Auckland homeowners hire installers</p>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">1000+</div>
+                        <div class="stat-label">Projects Completed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">500+</div>
+                        <div class="stat-label">Qualified Tradesmen</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">98%</div>
+                        <div class="stat-label">Customer Satisfaction</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">24hrs</div>
+                        <div class="stat-label">Average Response Time</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- How We Work Section -->
+            <section class="section">
+                <div class="section-header">
+                    <h2>How We Work</h2>
+                    <p>Our innovative approach combines technology with human expertise to deliver exceptional results for Auckland homeowners and tradespeople</p>
+                </div>
+                <div class="content-grid">
+                    <div class="content-card">
+                        <h3>🔍 Smart Lead Qualification</h3>
+                        <p>Our AI-powered chatbot asks the right questions to understand project requirements, budget, timeline, and location, ensuring only qualified leads reach our tradesmen.</p>
+                    </div>
+                    <div class="content-card">
+                        <h3>📱 Instant Notifications</h3>
+                        <p>Tradesmen receive immediate notifications when new leads match their criteria, allowing them to respond quickly and secure more business opportunities.</p>
+                    </div>
+                    <div class="content-card">
+                        <h3>📊 Automated Organization</h3>
+                        <p>All lead data is automatically organized in the dashboard, making it easy for tradesmen to track, manage, and follow up on potential projects.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Service Area Section -->
+            <section class="section">
+                <div class="section-header">
+                    <h2>Our Service Area</h2>
+                    <p>Currently serving Auckland with plans to expand across New Zealand</p>
+                </div>
+                <div class="content-grid">
+                    <div class="content-card">
+                        <h3>📍 Auckland Focus</h3>
+                        <p>We're currently focused on serving the greater Auckland region, connecting local homeowners with qualified tradespeople for their underfloor heating needs.</p>
+                    </div>
+                    <div class="content-card">
+                        <h3>🚀 Future Expansion</h3>
+                        <p>We're actively working to expand our services to other major cities and regions across New Zealand, including Wellington, Christchurch, and Hamilton.</p>
+                    </div>
+                    <div class="content-card">
+                        <h3>🤝 Local Partnerships</h3>
+                        <p>We're building strong relationships with Auckland tradespeople to ensure the highest quality service for our local community.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        // Check login status and update navigation
+        function checkLoginStatus() {
+            const userData = localStorage.getItem('leadbot_user');
+            const dashboardNavItem = document.getElementById('dashboardNavItem');
+            
+            if (userData) {
+                // User is logged in, show dashboard link
+                dashboardNavItem.style.display = 'block';
+            } else {
+                // User is not logged in, hide dashboard link
+                dashboardNavItem.style.display = 'none';
+            }
+        }
+
+        // Mobile menu functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburger = document.querySelector('.hamburger');
+            const navMenu = document.querySelector('.nav-menu');
+            
+            hamburger.addEventListener('click', () => {
+                hamburger.classList.toggle('active');
+                navMenu.classList.toggle('active');
+            });
+            
+            // Close menu when clicking on a link
+            document.querySelectorAll('.nav-link').forEach(n => n.addEventListener('click', () => {
+                hamburger.classList.remove('active');
+                navMenu.classList.remove('active');
+            }));
+            
+            // Check login status on page load
+            checkLoginStatus();
+        });
+    </script>
+</body>
+</html>

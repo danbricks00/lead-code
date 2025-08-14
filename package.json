@@ -12,6 +12,7 @@
     "smoke": "node scripts/smoke-test.js",
     "lint": "eslint .",
     "format": "prettier --write .",
+    "build": "mkdir -p public && cp -r src/web/pages/* public/ && (test -f src/web/pages/frontend.html && cp src/web/pages/frontend.html public/index.html || true)",
     "deploy": "node scripts/deploy-and-commit.js",
     "deploy:git-only": "node scripts/deploy-and-commit.js git-only",
     "deploy:vercel-only": "node scripts/deploy-and-commit.js vercel-only",

@@ -8,13 +8,17 @@
   "scripts": {
     "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy": "node deploy-and-commit.js",
-    "deploy:git-only": "node deploy-and-commit.js git-only",
-    "deploy:vercel-only": "node deploy-and-commit.js vercel-only",
-    "deploy:both": "node deploy-and-commit.js both",
+    "dev": "vercel dev",
+    "smoke": "node scripts/smoke-test.js",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "deploy": "node scripts/deploy-and-commit.js",
+    "deploy:git-only": "node scripts/deploy-and-commit.js git-only",
+    "deploy:vercel-only": "node scripts/deploy-and-commit.js vercel-only",
+    "deploy:both": "node scripts/deploy-and-commit.js both",
     "deploy:simple": "npx vercel --prod",
     "commit": "git add . && git commit -m \"Update: $(date)\" && git push",
-    "auto-save": "node auto-save.js"
+    "auto-save": "node scripts/auto-save.js"
   },
   "dependencies": {
     "docx": "^8.5.0",

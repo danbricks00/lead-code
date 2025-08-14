@@ -1447,6 +1447,7 @@
             }
 
             function applyState(state, opts = { teardown: true }) {
+                console.log('Applying state:', state, opts);
                 root.dataset.state = state;
                 root.classList.remove('chat--open', 'chat--minimized', 'chat--closed');
 
@@ -1459,7 +1460,10 @@
                     bubble?.setAttribute('aria-expanded', 'true');
                     hideBubble();                           // bubble hidden while open
                     // Start chat if not already started
-                    if (document.getElementById('chatMessages').children.length <= 1) {
+                    const messagesContainer = document.getElementById('chatMessages');
+                    console.log('Messages container children:', messagesContainer.children.length);
+                    if (messagesContainer.children.length <= 1) {
+                        console.log('Starting chat from applyState...');
                         startChat();
                     }
                 } else if (state === 'minimized') {
@@ -1535,6 +1539,7 @@
             const saved = localStorage.getItem(LS_KEY);
             const isSmallScreen = window.matchMedia('(max-width: 1024px)').matches;
             const initial = saved ? saved : (isSmallScreen ? 'closed' : 'open');
+            console.log('Initial chat state:', { saved, isSmallScreen, initial });
             applyState(initial, { teardown: false });
 
             root.dataset.bound = '1'; // mark bound to prevent duplicate listeners
@@ -1579,9 +1584,11 @@
         }
 
         function startChat() {
+            console.log('Starting chat...');
             // Simplified UFH decision tree
             chatState.step = 'areas_count';
             addMessage('How many areas are you planning to install underfloor heating in?');
+            console.log('Chat started, step:', chatState.step);
         }
 
         function openChat() {
@@ -1944,37 +1951,7 @@
             }
         }
 
-        // Chat header button wiring
-        document.addEventListener('DOMContentLoaded', function() {
-            // ... keep existing code ...
 
-            // Chat header button wiring
-            const chatWindow = document.getElementById('chat-root');
-            const chatMinimize = document.getElementById('chat-minimize');
-            const chatClose = document.getElementById('chat-close');
-            const chatToggleBtn = document.getElementById('chat-bubble');
-
-            if (chatMinimize) {
-                chatMinimize.addEventListener('click', () => {
-                    chatWindow.style.display = 'none'; // hide, keep session alive
-                });
-            }
-            if (chatClose) {
-                chatClose.addEventListener('click', () => {
-                    chatWindow.style.display = 'none'; // hide; use existing bubble to reopen
-                });
-            }
-            if (chatToggleBtn) {
-                chatToggleBtn.addEventListener('click', () => {
-                    chatWindow.style.display = 'block'; // show chat window
-                });
-            }
-
-            // Optional: do not auto-open chat on mobile
-            // if (window.innerWidth <= 768) {
-            // setTimeout(() => { openChat(); }, 1200);
-            // }
-        });
 
         // Mobile menu functionality
         (function () {

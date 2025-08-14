@@ -50,8 +50,6 @@ Location: [location]
 Project Details: [details]
 Project Size: [size]
 Specific Requirements: [requirements]
-Budget: [budget]
-Timeline: [timeline]
 Date: [date]
 
 Please contact the customer directly to discuss this project.
@@ -74,8 +72,7 @@ Project Details:
 - Project: [details]
 - Size/Scope: [size]
 - Specific Requirements: [requirements]
-- Budget: [budget]
-- Timeline: [timeline]
+
 
 Qualified tradesmen will contact you within 24 hours to discuss your project and provide quotes.
 

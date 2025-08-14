@@ -29,6 +29,7 @@
         header { 
             background: rgba(255, 255, 255, 0.95); 
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px); /* iOS Safari support */
             color: #1a1a1a; 
             padding: 0; 
             position: fixed; 
@@ -37,6 +38,16 @@
             z-index: 1000; 
             box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
             border-bottom: 1px solid #f0f0f0;
+            height: 80px; /* Fixed height to prevent iOS overlap */
+            display: flex;
+            align-items: center;
+        }
+        
+        /* iOS Safari specific backdrop-filter fallback */
+        @supports not (backdrop-filter: blur(10px)) {
+            header {
+                background: rgba(255, 255, 255, 0.98);
+            }
         }
         
         /* Prevent background scroll when mobile menu is open */
@@ -46,6 +57,10 @@
         
         .navbar { 
             padding: 1rem 0; 
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
         }
         
         .nav-container { 
@@ -57,6 +72,7 @@
             align-items: center; 
             flex-wrap: wrap; /* Allow wrapping on smaller screens */
             gap: 10px; /* Add gap between elements */
+            width: 100%;
         }
         
         .nav-logo { 
@@ -83,7 +99,7 @@
             list-style: none; 
             margin: 0; 
             padding: 0; 
-            gap: 1.5rem; /* Reduced gap to prevent overlap */
+            gap: 1rem; /* Reduced gap to prevent overlap */
             align-items: center;
             flex-wrap: wrap; /* Allow menu items to wrap */
             justify-content: flex-end; /* Align to the right */
@@ -94,9 +110,10 @@
             text-decoration: none; 
             font-weight: 500; 
             transition: all 0.3s; 
-            padding: 0.5rem 1rem;
+            padding: 0.5rem 0.8rem; /* Reduced padding to prevent overlap */
             border-radius: 8px;
             white-space: nowrap; /* Prevent text wrapping within buttons */
+            font-size: 14px; /* Smaller font size to prevent overlap */
         }
         
         .nav-link:hover { 
@@ -112,11 +129,12 @@
         .nav-link.login-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 0.75rem 1.5rem;
+            padding: 0.6rem 1.2rem; /* Reduced padding */
             border-radius: 25px;
             font-weight: 600;
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
             flex-shrink: 0; /* Prevent login button from shrinking */
+            font-size: 13px; /* Smaller font size */
         }
         
         .nav-link.login-btn:hover {
@@ -485,7 +503,7 @@
         }
         
         main { 
-            margin-top: 100px; /* Increased from 80px to account for header height + padding */
+            margin-top: 80px; /* Match header height exactly */
             padding: 2rem 0; 
             padding-left: 15px; /* Add left padding to prevent edge overlap */
             padding-right: 15px; /* Add right padding to prevent edge overlap */
@@ -1133,16 +1151,16 @@
                 gap: 0.5rem;
             }
             .nav-link {
-                padding: 0.4rem 0.7rem;
-                font-size: 14px;
+                padding: 0.4rem 0.6rem;
+                font-size: 13px;
             }
             .nav-link.login-btn {
-                padding: 0.6rem 1.1rem;
-                font-size: 13px;
+                padding: 0.5rem 1rem;
+                font-size: 12px;
             }
             /* Ensure proper content spacing */
             main {
-                margin-top: 90px; /* Adjusted for tablet header height */
+                margin-top: 80px; /* Keep consistent with header height */
                 padding-left: 20px;
                 padding-right: 20px;
             }
@@ -1181,16 +1199,16 @@
                 gap: 0.8rem;
             }
             .nav-link {
-                padding: 0.5rem 0.9rem;
-                font-size: 15px;
+                padding: 0.5rem 0.8rem;
+                font-size: 14px;
             }
             .nav-link.login-btn {
-                padding: 0.7rem 1.3rem;
-                font-size: 14px;
+                padding: 0.6rem 1.2rem;
+                font-size: 13px;
             }
             /* Ensure proper content spacing */
             main {
-                margin-top: 95px; /* Adjusted for large tablet header height */
+                margin-top: 80px; /* Keep consistent with header height */
                 padding-left: 25px;
                 padding-right: 25px;
             }
@@ -1226,7 +1244,7 @@
             }
             /* Ensure proper content spacing */
             main {
-                margin-top: 100px; /* Standard header height for laptops */
+                margin-top: 80px; /* Keep consistent with header height */
                 padding-left: 30px;
                 padding-right: 30px;
             }
@@ -1250,7 +1268,7 @@
         @media (min-width: 1601px) {
             /* Ensure proper content spacing */
             main {
-                margin-top: 100px; /* Standard header height for large desktops */
+                margin-top: 80px; /* Keep consistent with header height */
             }
             /* Fix button positioning on large desktops */
             .hero-buttons {
@@ -1285,6 +1303,29 @@
         
         .status-message .check-icon {
             font-size: 1.2rem;
+        }
+        
+        /* iOS Safari specific fixes */
+        @supports (-webkit-touch-callout: none) {
+            /* iOS Safari specific viewport handling */
+            header {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 80px;
+                z-index: 1000;
+            }
+            
+            main {
+                margin-top: 80px;
+                padding-top: 1rem;
+            }
+            
+            /* Ensure proper spacing on iOS */
+            .hero {
+                min-height: calc(100vh - 80px);
+            }
         }
     </style>
 </head>

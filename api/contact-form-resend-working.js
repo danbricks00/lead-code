@@ -51,13 +51,18 @@ export default async function handler(req, res) {
         // To use your own domain: Set RESEND_FROM_EMAIL="Kiwi Trade <hello@yourdomain.com>"
         const fromEmail = process.env.RESEND_FROM_EMAIL || 'Kiwi Trade <onboarding@resend.dev>';
 
-        console.log('📧 Attempting to send customer email to:', email);
+        // For Resend free tier: only send to verified email addresses
+        // Customer email will go to admin Gmail for now (until domain is verified)
+        const customerEmailTo = process.env.ADMIN_EMAIL || 'danbricks18@gmail.com';
+        
+        console.log('📧 Attempting to send customer email to:', customerEmailTo);
+        console.log('📧 Original customer email was:', email);
         console.log('📧 From email address:', fromEmail);
 
-        // Send customer confirmation email
+        // Send customer confirmation email (to admin for testing)
         const customerEmailResult = await resend.emails.send({
             from: fromEmail,
-            to: [email],
+            to: [customerEmailTo],
             subject: 'Thank you for contacting Kiwi Trade',
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -71,6 +76,11 @@ export default async function handler(req, res) {
                     </ul>
                     <p>If you have any urgent questions, please don't hesitate to call us at +64 9 123 4567.</p>
                     <p>Best regards,<br>The Kiwi Trade Team</p>
+                    <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+                    <p style="font-size: 12px; color: #666;">
+                        <strong>Note:</strong> This email was sent to admin for testing. 
+                        Original customer email: ${email}
+                    </p>
                 </div>
             `
         });
@@ -120,7 +130,8 @@ export default async function handler(req, res) {
             success: true,
             message: 'Thank you for your message! We\'ll get back to you within 24 hours.',
             customerEmailSent: !customerError,
-            adminEmailSent: !adminError
+            adminEmailSent: !adminError,
+            note: 'Customer email sent to admin for testing. To send to actual customers, verify a domain at resend.com/domains'
         });
 
     } catch (error) {

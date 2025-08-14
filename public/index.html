@@ -1407,7 +1407,7 @@
     </main>
 
     <!-- Chatbot Container -->
-    <div id="chat-root" class="chat" data-state="open">
+    <div id="chat-root" class="chat" data-state="closed">
         <div class="chat__header">
             <div class="chat__title">Kiwi Trade</div>
             <div class="chat__actions">
@@ -1590,6 +1590,11 @@
             }, 1000);
 
             root.dataset.bound = '1'; // mark bound to prevent duplicate listeners
+            
+            // Initialize chat state from localStorage or default to closed
+            const savedState = localStorage.getItem(LS_KEY) || 'closed';
+            console.log('Initializing chat with saved state:', savedState);
+            applyState(savedState, { teardown: false });
         })();
 
         // Chat functionality
@@ -1635,10 +1640,16 @@
 
         function startChat() {
             console.log('Starting chat...');
-            // Simplified UFH decision tree
-            chatState.step = 'areas_count';
-            addMessage('How many areas are you planning to install underfloor heating in?');
-            console.log('Chat started, step:', chatState.step);
+            // Check if chat is already started
+            const messagesContainer = document.getElementById('chatMessages');
+            if (messagesContainer && messagesContainer.children.length <= 1) {
+                // Only start if we're at the welcome message
+                chatState.step = 'areas_count';
+                addMessage('How many areas are you planning to install underfloor heating in?');
+                console.log('Chat started, step:', chatState.step);
+            } else {
+                console.log('Chat already started, not restarting');
+            }
         }
 
         function openChat() {
@@ -1651,6 +1662,14 @@
                 console.log('Chat elements found, triggering bubble click');
                 // Trigger the bubble click to use the proper state management
                 bubble.click();
+                
+                // Ensure chat starts after a short delay
+                setTimeout(() => {
+                    if (root.dataset.state === 'open') {
+                        console.log('Chat opened, starting conversation...');
+                        startChat();
+                    }
+                }, 100);
             } else {
                 console.error('Chat elements not found:', { root: !!root, bubble: !!bubble });
             }

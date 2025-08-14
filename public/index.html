@@ -725,6 +725,8 @@
             background: white;
             display: flex;
             gap: 0.5rem;
+            position: relative;
+            z-index: 10001; /* Higher than bubble */
         }
         
         .chat-input {
@@ -798,8 +800,16 @@
             border: none;
             cursor: pointer;
             font-size: 1.5rem;
-            transition: transform 0.3s;
+            transition: transform 0.3s, opacity 0.3s;
             pointer-events: auto;
+        }
+        
+        /* Hide bubble when chat is open */
+        .chat--open ~ .chat__bubble,
+        .chat__bubble[hidden] {
+            display: none !important;
+            opacity: 0;
+            pointer-events: none;
         }
         
         .chat__bubble:hover {
@@ -1442,11 +1452,26 @@
                 if (!bubble) return;
                 bubble.hidden = true;
                 bubble.style.display = 'none';
+                bubble.style.opacity = '0';
+                bubble.style.pointerEvents = 'none';
             }
             function showBubble() {
                 if (!bubble) return;
                 bubble.hidden = false;
                 bubble.style.display = 'inline-flex';
+                bubble.style.opacity = '1';
+                bubble.style.pointerEvents = 'auto';
+            }
+            
+            function resetChatState() {
+                console.log('Resetting chat state...');
+                const messagesContainer = document.getElementById('chatMessages');
+                if (messagesContainer) {
+                    messagesContainer.innerHTML = '<div class="message bot-message">👋 Welcome to Kiwi Trade! We\'ll ask a couple of quick questions to prepare your underfloor heating quote.</div>';
+                }
+                // Reset any chat variables
+                window.chatStep = 0;
+                window.chatData = {};
             }
 
             function applyState(state, opts = { teardown: true }) {
@@ -1495,27 +1520,27 @@
             
             if (btnMin) {
                 console.log('Minimize button found, adding listener');
-                btnMin.onclick = function(e) {
+                btnMin.addEventListener('click', function(e) {
                     console.log('Minimize button clicked');
                     e.preventDefault(); 
                     e.stopPropagation();
                     const next = root.classList.contains('chat--minimized') ? 'open' : 'minimized';
                     console.log('Switching to state:', next);
                     applyState(next, { teardown: false });    // keep session alive on minimize
-                };
+                });
             } else {
                 console.error('Minimize button not found!');
             }
 
             if (btnClose) {
                 console.log('Close button found, adding listener');
-                btnClose.onclick = function(e) {
+                btnClose.addEventListener('click', function(e) {
                     console.log('Close button clicked');
                     e.preventDefault(); 
                     e.stopPropagation();
                     console.log('Closing chat');
                     applyState('closed', { teardown: true });
-                };
+                });
             } else {
                 console.error('Close button not found!');
             }

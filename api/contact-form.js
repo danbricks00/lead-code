@@ -1,4 +1,4 @@
-import { sendEmailViaGmailAPI } from '../src/server/integrations/google/gmail-api-helper.js';
+import { google } from 'googleapis';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -100,6 +100,32 @@ async function sendContactEmails(contactData) {
     }
 
     return results;
+}
+
+async function getGmailService() {
+    try {
+        console.log('🔐 Initializing Gmail API with service account...');
+        
+        // Check if we have the required environment variables
+        if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY) {
+            throw new Error('Missing Gmail API credentials in environment variables');
+        }
+
+        const auth = new google.auth.GoogleAuth({
+            credentials: {
+                client_email: process.env.GOOGLE_CLIENT_EMAIL,
+                private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+            },
+            scopes: ['https://www.googleapis.com/auth/gmail.send'],
+        });
+
+        const gmail = google.gmail({ version: 'v1', auth });
+        console.log('✅ Gmail API service initialized successfully');
+        return gmail;
+    } catch (error) {
+        console.error('❌ Failed to initialize Gmail API:', error.message);
+        throw error;
+    }
 }
 
 async function sendCustomerConfirmationEmail(contactData) {
@@ -204,5 +230,72 @@ async function sendAdminNotificationEmail(contactData) {
     } catch (error) {
         console.error('❌ Failed to send admin notification email:', error);
         return { success: false, error: error.message };
+    }
+}
+
+async function sendEmailViaGmailAPI(to, subject, htmlContent) {
+    try {
+        console.log(`📧 Attempting to send email via Gmail API...`);
+        console.log(`📧 To: ${to}`);
+        console.log(`📧 Subject: ${subject}`);
+        console.log(`📧 From: danbricks18@gmail.com`);
+
+        const gmail = await getGmailService();
+        
+        // Create email message
+        const message = [
+            'From: Kiwi Trade <danbricks18@gmail.com>',
+            `To: ${to}`,
+            `Subject: ${subject}`,
+            'MIME-Version: 1.0',
+            'Content-Type: text/html; charset=utf-8',
+            '',
+            htmlContent
+        ].join('\n');
+
+        // Encode message in base64
+        const encodedMessage = Buffer.from(message).toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
+
+        console.log('📧 Raw Base64 Message (first 200 chars):', encodedMessage.substring(0, 200) + '...');
+        console.log('📧 Full Base64 Message Length:', encodedMessage.length, 'characters');
+
+        // Send email
+        const response = await gmail.users.messages.send({
+            userId: 'me',
+            requestBody: {
+                raw: encodedMessage
+            }
+        });
+
+        console.log(`✅ Email sent successfully via Gmail API`);
+        console.log(`📧 Message ID: ${response.data.id}`);
+        console.log(`📧 Thread ID: ${response.data.threadId}`);
+        
+        return {
+            success: true,
+            messageId: response.data.id,
+            threadId: response.data.threadId
+        };
+
+    } catch (error) {
+        console.error(`❌ Failed to send email via Gmail API:`, error.message);
+        console.error(`❌ Error details:`, {
+            code: error.code,
+            status: error.status,
+            message: error.message,
+            stack: error.stack
+        });
+        
+        // Check for specific Gmail API errors
+        if (error.code === 403) {
+            console.error(`❌ Gmail API quota exceeded or insufficient permissions`);
+        } else if (error.code === 429) {
+            console.error(`❌ Gmail API rate limit exceeded`);
+        } else if (error.code === 400 && error.message.includes('Precondition check failed')) {
+            console.error(`❌ Service account may not have permission to send emails on behalf of the Gmail account`);
+            console.error(`❌ Check domain-wide delegation settings in Google Workspace Admin Console`);
+        }
+        
+        throw error;
     }
 }

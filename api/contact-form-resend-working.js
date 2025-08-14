@@ -34,7 +34,7 @@ export default async function handler(req, res) {
             console.log('📝 Contact form data logged successfully');
             console.log('📧 Customer would receive confirmation email');
             console.log('📧 Admin would receive notification email');
-            console.log('📧 From email would be: "Kiwi Trade <kiwitrade33@gmail.com>"');
+            console.log('📧 From email would be: "Kiwi Trade <onboarding@resend.dev>"');
             
             return res.status(200).json({ 
                 success: true,
@@ -47,9 +47,13 @@ export default async function handler(req, res) {
         const { Resend } = await import('resend');
         const resend = new Resend(resendApiKey);
 
+        // Use environment variable for from email or fallback to Resend's default domain
+        // To use your own domain: Set RESEND_FROM_EMAIL="Kiwi Trade <hello@yourdomain.com>"
+        const fromEmail = process.env.RESEND_FROM_EMAIL || 'Kiwi Trade <onboarding@resend.dev>';
+
         // Send customer confirmation email
         const customerEmailResult = await resend.emails.send({
-            from: 'Kiwi Trade <kiwitrade33@gmail.com>',
+            from: fromEmail,
             to: [email],
             subject: 'Thank you for contacting Kiwi Trade',
             html: `
@@ -70,7 +74,7 @@ export default async function handler(req, res) {
 
         // Send admin notification email
         const adminEmailResult = await resend.emails.send({
-            from: 'Kiwi Trade <kiwitrade33@gmail.com>',
+            from: fromEmail,
             to: ['danbricks18@gmail.com'],
             subject: `New Contact Form Submission: ${subject}`,
             html: `
@@ -101,7 +105,7 @@ export default async function handler(req, res) {
         
         // Log the error but still return success to user
         console.log('📝 Contact form data logged despite email error');
-        console.log('📧 From email would be: "Kiwi Trade <kiwitrade33@gmail.com>"');
+        console.log('📧 From email would be: "Kiwi Trade <onboarding@resend.dev>"');
         
         return res.status(200).json({ 
             success: true,

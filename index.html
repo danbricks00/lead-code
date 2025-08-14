@@ -1678,8 +1678,16 @@
                         break;
                     case 'area_sizes':
                         chatState.areaSizes = message;
-                        chatState.step = 'customer_name';
-                        addMessage("What's your name?");
+                        chatState.step = 'collect_details_intro';
+                        addMessage("Before we proceed, we need to collect some of your details to allocate a tradesman that services your area.");
+                        setTimeout(() => {
+                            addTypingIndicator();
+                            setTimeout(() => {
+                                removeTypingIndicator();
+                                chatState.step = 'customer_name';
+                                addMessage("What's your name?");
+                            }, 800);
+                        }, 1500);
                         break;
                     case 'customer_name':
                         chatState.customerName = message;

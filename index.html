@@ -55,12 +55,15 @@
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            gap: 10px; /* Add gap between elements */
         }
         
         .nav-logo { 
             display: flex; 
             align-items: center; 
             gap: 0.5rem; 
+            flex-shrink: 0; /* Prevent logo from shrinking */
         }
         
         .nav-logo h2 { 
@@ -80,8 +83,10 @@
             list-style: none; 
             margin: 0; 
             padding: 0; 
-            gap: 2rem; 
+            gap: 1.5rem; /* Reduced gap to prevent overlap */
             align-items: center;
+            flex-wrap: wrap; /* Allow menu items to wrap */
+            justify-content: flex-end; /* Align to the right */
         }
         
         .nav-link { 
@@ -91,6 +96,7 @@
             transition: all 0.3s; 
             padding: 0.5rem 1rem;
             border-radius: 8px;
+            white-space: nowrap; /* Prevent text wrapping within buttons */
         }
         
         .nav-link:hover { 
@@ -101,6 +107,21 @@
         .nav-link.active {
             background: #667eea;
             color: white;
+        }
+        
+        .nav-link.login-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            flex-shrink: 0; /* Prevent login button from shrinking */
+        }
+        
+        .nav-link.login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
         }
         
         .hamburger {
@@ -138,20 +159,6 @@
             transform: translateY(-8px) rotate(-45deg);
         }
         
-        .nav-link.login-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 25px;
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
-        
-        .nav-link.login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-        
         .bar { 
             width: 25px; 
             height: 3px; 
@@ -159,6 +166,59 @@
             margin: 3px 0; 
             transition: 0.3s; 
             border-radius: 2px;
+        }
+        
+        /* Large laptops / small desktops (ThinkPad) */
+        @media (max-width: 1024px) {
+            .nav-container {
+                padding: 0 15px;
+            }
+            .nav-menu {
+                gap: 1rem;
+            }
+            .nav-link {
+                font-size: 15px;
+                padding: 0.4rem 0.8rem;
+            }
+            .nav-link.login-btn {
+                padding: 0.6rem 1.2rem;
+                font-size: 14px;
+            }
+        }
+        
+        /* Medium tablets and small laptops */
+        @media (max-width: 900px) and (min-width: 769px) {
+            .nav-menu {
+                gap: 0.5rem;
+            }
+            .nav-link {
+                padding: 0.4rem 0.7rem;
+                font-size: 14px;
+            }
+            .nav-link.login-btn {
+                padding: 0.6rem 1.1rem;
+                font-size: 13px;
+            }
+        }
+        
+        /* Tablets (iPad landscape / smaller screens) */
+        @media (max-width: 768px) {
+            .nav-container {
+                padding: 0 10px;
+                justify-content: space-between;
+            }
+            .nav-menu {
+                gap: 0.8rem;
+                justify-content: center;
+            }
+            .nav-link {
+                font-size: 14px;
+                padding: 0.3rem 0.6rem;
+            }
+            .nav-link.login-btn {
+                padding: 0.5rem 1rem;
+                font-size: 13px;
+            }
         }
         
         /* Mobile Navigation - Universal Mobile Styles */
@@ -427,6 +487,8 @@
         main { 
             margin-top: 80px; 
             padding: 2rem 0; 
+            padding-left: 15px; /* Add left padding to prevent edge overlap */
+            padding-right: 15px; /* Add right padding to prevent edge overlap */
         }
         
         /* Hero Section */
@@ -488,6 +550,7 @@
             cursor: pointer; 
             transition: all 0.3s; 
             box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            margin-top: 20px; /* Add top margin to prevent edge overlap */
         }
         
         .cta-button:hover { 
@@ -713,10 +776,10 @@
         /* Chatbot Styles */
         .chatbot-container { 
             position: fixed; 
-            bottom: 20px; 
-            right: 20px; 
+            bottom: 15px; /* Increased from 20px to 15px for better spacing */
+            right: 15px; /* Increased from 20px to 15px for better spacing */
             z-index: 1000; 
-            max-width: calc(100vw - 40px);
+            max-width: calc(100vw - 30px); /* Adjusted for new spacing */
         }
         
         .chat-toggle { 
@@ -1047,6 +1110,26 @@
                 right: 30px;
                 left: 30px;
             }
+            /* Fix navigation overlap on tablets */
+            .nav-menu {
+                gap: 0.5rem;
+            }
+            .nav-link {
+                padding: 0.4rem 0.7rem;
+                font-size: 14px;
+            }
+            .nav-link.login-btn {
+                padding: 0.6rem 1.1rem;
+                font-size: 13px;
+            }
+            /* Ensure proper content spacing */
+            main {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+            .cta-button {
+                margin-top: 25px;
+            }
         }
         
         /* Large tablet optimizations */
@@ -1062,6 +1145,50 @@
             .chatbot-container {
                 right: 40px;
                 left: 40px;
+            }
+            /* Fix navigation overlap on large tablets */
+            .nav-menu {
+                gap: 0.8rem;
+            }
+            .nav-link {
+                padding: 0.5rem 0.9rem;
+                font-size: 15px;
+            }
+            .nav-link.login-btn {
+                padding: 0.7rem 1.3rem;
+                font-size: 14px;
+            }
+            /* Ensure proper content spacing */
+            main {
+                padding-left: 25px;
+                padding-right: 25px;
+            }
+            .cta-button {
+                margin-top: 30px;
+            }
+        }
+        
+        /* Medium laptops and small desktops */
+        @media (min-width: 1367px) and (max-width: 1600px) {
+            /* Fix navigation overlap on medium laptops */
+            .nav-menu {
+                gap: 1rem;
+            }
+            .nav-link {
+                padding: 0.5rem 1rem;
+                font-size: 15px;
+            }
+            .nav-link.login-btn {
+                padding: 0.7rem 1.4rem;
+                font-size: 14px;
+            }
+            /* Ensure proper content spacing */
+            main {
+                padding-left: 30px;
+                padding-right: 30px;
+            }
+            .cta-button {
+                margin-top: 25px;
             }
         }
         

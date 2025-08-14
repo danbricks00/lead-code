@@ -181,7 +181,7 @@
         }
         
         /* Desktop vs mobile/tablet visibility */
-        @media (min-width: 1200px) {
+        @media (min-width: 768px) {
             .nav-desktop { 
                 display: flex; 
                 gap: 1.5rem; 
@@ -1552,6 +1552,11 @@
             bubble?.addEventListener('click', (e) => {
                 e.preventDefault(); e.stopPropagation();
                 applyState('open', { teardown: false });
+                // Start chat after opening
+                setTimeout(() => {
+                    console.log('Bubble clicked, starting chat...');
+                    startChat();
+                }, 100);
             });
 
             // ESC minimizes when open
@@ -1572,29 +1577,12 @@
                 }
             };
 
-            // Initial state: do NOT auto-open on phones/tablets
-            const saved = localStorage.getItem(LS_KEY);
-            const isSmallScreen = window.matchMedia('(max-width: 1024px)').matches;
-            const initial = saved ? saved : (isSmallScreen ? 'closed' : 'open');
-            console.log('Initial chat state:', { saved, isSmallScreen, initial });
-            applyState(initial, { teardown: false });
-            
-            // Force start chat after a short delay to ensure everything is loaded
-            setTimeout(() => {
-                console.log('Forcing chat start...');
-                const messagesContainer = document.getElementById('chatMessages');
-                if (messagesContainer && messagesContainer.children.length <= 1) {
-                    console.log('Starting chat manually...');
-                    startChat();
-                }
-            }, 1000);
-
-            root.dataset.bound = '1'; // mark bound to prevent duplicate listeners
-            
             // Initialize chat state from localStorage or default to closed
             const savedState = localStorage.getItem(LS_KEY) || 'closed';
             console.log('Initializing chat with saved state:', savedState);
             applyState(savedState, { teardown: false });
+            
+            root.dataset.bound = '1'; // mark bound to prevent duplicate listeners
         })();
 
         // Chat functionality
@@ -1654,22 +1642,24 @@
 
         function openChat() {
             console.log('openChat called');
-            // Use the state management system to open the chat
             const root = document.getElementById('chat-root');
             const bubble = document.getElementById('chat-bubble');
             
             if (root && bubble) {
-                console.log('Chat elements found, triggering bubble click');
-                // Trigger the bubble click to use the proper state management
-                bubble.click();
+                console.log('Opening chat directly...');
+                // Open chat directly
+                root.dataset.state = 'open';
+                root.classList.remove('chat--minimized', 'chat--closed');
+                root.classList.add('chat--open');
+                root.hidden = false;
                 
-                // Ensure chat starts after a short delay
-                setTimeout(() => {
-                    if (root.dataset.state === 'open') {
-                        console.log('Chat opened, starting conversation...');
-                        startChat();
-                    }
-                }, 100);
+                // Hide bubble
+                bubble.hidden = true;
+                bubble.style.display = 'none';
+                
+                // Start chat immediately
+                console.log('Starting chat conversation...');
+                startChat();
             } else {
                 console.error('Chat elements not found:', { root: !!root, bubble: !!bubble });
             }

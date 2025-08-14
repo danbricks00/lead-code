@@ -1,4 +1,4 @@
-import getLeadsHandler from '../../src/server/lib/get-leads.js';
+import getLeadsHandler from '../src/server/lib/get-leads.js';
 
 export default async (req, res) => {
     try {

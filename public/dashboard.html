@@ -606,19 +606,26 @@
             const leadsContent = document.getElementById('leadsContent');
             leadsContent.innerHTML = '<div class="loading">Loading leads...</div>';
 
+            console.log('Loading leads for user:', currentUser);
+            
             try {
+                const requestBody = {
+                    email: currentUser.email,
+                    tradeType: currentUser.tradeType
+                };
+                console.log('Sending request to /api/get-leads:', requestBody);
+                
                 const response = await fetch('/api/get-leads', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        email: currentUser.email,
-                        tradeType: currentUser.tradeType
-                    })
+                    body: JSON.stringify(requestBody)
                 });
 
+                console.log('Response status:', response.status);
                 const data = await response.json();
+                console.log('Response data:', data);
                 
                 if (data.success) {
                     displayLeads(data.leads);

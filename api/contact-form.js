@@ -29,6 +29,17 @@ export default async function handler(req, res) {
             messageLength: message.length
         });
 
+        // Get Gmail configuration from environment variables
+        const gmailUser = process.env.GMAIL_USER || 'danbricks18@gmail.com';
+        const mailForm = process.env.MAIL_FORM || 'danbricks18@gmail.com';
+        const mailReplyTo = process.env.MAIL_REPLY_TO || 'danbricks18@gmail.com';
+
+        console.log('📧 Gmail configuration:', {
+            gmailUser,
+            mailForm,
+            mailReplyTo
+        });
+
         // Prepare email data
         const contactData = {
             name,
@@ -36,7 +47,10 @@ export default async function handler(req, res) {
             phone: phone || 'Not provided',
             subject,
             message,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            gmailUser,
+            mailForm,
+            mailReplyTo
         };
 
         // Send emails
@@ -85,7 +99,7 @@ async function sendContactEmails(contactData) {
         const adminEmailResult = await sendAdminNotificationEmail(contactData);
         results.push({
             type: 'admin_notification',
-            email: 'danbricks18@gmail.com', // Admin email
+            email: contactData.gmailUser, // Admin email from environment variable
             success: adminEmailResult.success,
             error: adminEmailResult.error
         });
@@ -168,7 +182,9 @@ async function sendCustomerConfirmationEmail(contactData) {
         const result = await sendEmailViaGmailAPI(
             contactData.email,
             subject,
-            htmlContent
+            htmlContent,
+            contactData.mailForm,
+            contactData.mailReplyTo
         );
 
         console.log('✅ Customer confirmation email sent successfully');
@@ -219,9 +235,11 @@ async function sendAdminNotificationEmail(contactData) {
         `;
 
         const result = await sendEmailViaGmailAPI(
-            'danbricks18@gmail.com', // Admin email
+            contactData.gmailUser, // Admin email from environment variable
             subject,
-            htmlContent
+            htmlContent,
+            contactData.mailForm,
+            contactData.mailReplyTo
         );
 
         console.log('✅ Admin notification email sent successfully');
@@ -233,25 +251,29 @@ async function sendAdminNotificationEmail(contactData) {
     }
 }
 
-async function sendEmailViaGmailAPI(to, subject, htmlContent) {
+async function sendEmailViaGmailAPI(to, subject, htmlContent, from = null, replyTo = null) {
     try {
         console.log(`📧 Attempting to send email via Gmail API...`);
         console.log(`📧 To: ${to}`);
         console.log(`📧 Subject: ${subject}`);
-        console.log(`📧 From: danbricks18@gmail.com`);
+        console.log(`📧 From: ${from || 'danbricks18@gmail.com'}`);
+        console.log(`📧 Reply-To: ${replyTo || 'danbricks18@gmail.com'}`);
 
         const gmail = await getGmailService();
         
-        // Create email message
-        const message = [
-            'From: Kiwi Trade <danbricks18@gmail.com>',
+        // Create email message with proper headers
+        const messageLines = [
+            `From: Kiwi Trade <${from || 'danbricks18@gmail.com'}>`,
             `To: ${to}`,
             `Subject: ${subject}`,
+            `Reply-To: ${replyTo || 'danbricks18@gmail.com'}`,
             'MIME-Version: 1.0',
             'Content-Type: text/html; charset=utf-8',
             '',
             htmlContent
-        ].join('\n');
+        ];
+
+        const message = messageLines.join('\n');
 
         // Encode message in base64
         const encodedMessage = Buffer.from(message).toString('base64').replace(/\+/g, '-').replace(/\//g, '_');

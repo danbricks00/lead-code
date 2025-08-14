@@ -51,6 +51,9 @@ export default async function handler(req, res) {
         // To use your own domain: Set RESEND_FROM_EMAIL="Kiwi Trade <hello@yourdomain.com>"
         const fromEmail = process.env.RESEND_FROM_EMAIL || 'Kiwi Trade <onboarding@resend.dev>';
 
+        console.log('📧 Attempting to send customer email to:', email);
+        console.log('📧 From email address:', fromEmail);
+
         // Send customer confirmation email
         const customerEmailResult = await resend.emails.send({
             from: fromEmail,
@@ -72,7 +75,10 @@ export default async function handler(req, res) {
             `
         });
 
+        console.log('📧 Customer email result:', JSON.stringify(customerEmailResult, null, 2));
+
         // Send admin notification email
+        console.log('📧 Attempting to send admin email to: danbricks18@gmail.com');
         const adminEmailResult = await resend.emails.send({
             from: fromEmail,
             to: ['danbricks18@gmail.com'],
@@ -92,12 +98,29 @@ export default async function handler(req, res) {
             `
         });
 
-        console.log('✅ Customer email sent:', customerEmailResult);
-        console.log('✅ Admin email sent:', adminEmailResult);
+        console.log('📧 Admin email result:', JSON.stringify(adminEmailResult, null, 2));
+
+        // Check for errors in both emails
+        const customerError = customerEmailResult.error;
+        const adminError = adminEmailResult.error;
+
+        if (customerError) {
+            console.error('❌ Customer email failed:', customerError);
+        } else {
+            console.log('✅ Customer email sent successfully:', customerEmailResult.data?.id);
+        }
+
+        if (adminError) {
+            console.error('❌ Admin email failed:', adminError);
+        } else {
+            console.log('✅ Admin email sent successfully:', adminEmailResult.data?.id);
+        }
 
         return res.status(200).json({ 
             success: true,
-            message: 'Thank you for your message! We\'ll get back to you within 24 hours.'
+            message: 'Thank you for your message! We\'ll get back to you within 24 hours.',
+            customerEmailSent: !customerError,
+            adminEmailSent: !adminError
         });
 
     } catch (error) {

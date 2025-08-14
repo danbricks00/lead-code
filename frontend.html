@@ -448,6 +448,50 @@
             background: white;
         }
         
+        /* Ensure hidden actually hides */
+        #chatWindow[hidden] { display: none !important; }
+        .chat-toggle[hidden] { display: none !important; }
+
+        /* Make sure chat is above anything else */
+        .chat-window { z-index: 10000; }
+
+        /* Header layout and buttons */
+        .chat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .chat-header-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .chat-header-actions button {
+            width: 32px;
+            height: 32px;
+            border: 0;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.25);
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .chat-header-actions button:hover {
+            background: rgba(255,255,255,0.35);
+        }
+
+        /* Minimized state */
+        .chat-window.minimized {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .chat-window.minimized .chat-header,
+        .chat-window.minimized .chat-messages,
+        .chat-window.minimized .chat-input-container {
+            display: none;
+        }
+        
         .chat-input { 
             flex: 1; 
             padding: 1rem; 
@@ -675,7 +719,11 @@
         <button class="chat-toggle" onclick="toggleChat()">💬</button>
         <div class="chat-window" id="chatWindow">
             <div class="chat-header">
-                LeadBot Assistant
+                <span>LeadBot Assistant</span>
+                <div class="chat-header-actions">
+                    <button id="chat-minimize" type="button" aria-label="Minimize">−</button>
+                    <button id="chat-close" type="button" aria-label="Close">×</button>
+                </div>
             </div>
             <div class="chat-messages" id="chatMessages">
                 <div class="message bot-message">
@@ -704,25 +752,56 @@
             customerPhone: ''
         };
 
-        function toggleChat() {
-            const chatWindow = document.getElementById('chatWindow');
-            if (chatWindow.style.display === 'flex') {
-                chatWindow.style.display = 'none';
-            } else {
-                chatWindow.style.display = 'flex';
-                if (document.getElementById('chatMessages').children.length === 0) {
-                    startChat();
-                }
-            }
+        function getBubble() {
+            return document.querySelector('.chat-toggle');
+        }
+        function getWindowEl() {
+            return document.getElementById('chatWindow');
         }
 
+        // Open: show chat, hide bubble
         function openChat() {
-            document.getElementById('chatWindow').style.display = 'flex';
+            const chatWindow = getWindowEl();
+            const bubble = getBubble();
+            chatWindow.hidden = false;
+            chatWindow.style.display = 'flex';
+            chatWindow.classList.remove('minimized');
+            if (bubble) { bubble.hidden = true; bubble.style.display = 'none'; }
             if (document.getElementById('chatMessages').children.length === 0) {
                 startChat();
             }
         }
-        window.openChat = openChat; // Make openChat globally accessible
+        window.openChat = openChat;
+
+        // Close: hide chat, show bubble
+        function closeChat() {
+            const chatWindow = getWindowEl();
+            const bubble = getBubble();
+            chatWindow.hidden = true;
+            chatWindow.style.display = 'none';
+            chatWindow.classList.remove('minimized');
+            if (bubble) { bubble.hidden = false; bubble.style.display = 'inline-flex'; }
+        }
+
+        // Minimize: keep session alive, bubble hidden
+        function minimizeChat() {
+            const chatWindow = getWindowEl();
+            const bubble = getBubble();
+            chatWindow.hidden = false;
+            chatWindow.style.display = 'flex';
+            chatWindow.classList.add('minimized');
+            if (bubble) { bubble.hidden = true; bubble.style.display = 'none'; }
+        }
+
+        // Bubble click toggles open/close
+        function toggleChat() {
+            const chatWindow = getWindowEl();
+            if (chatWindow.hidden || chatWindow.style.display !== 'flex') {
+                openChat();
+            } else {
+                closeChat();
+            }
+        }
 
         function startChat() {
             addMessage("Hi! 👋 What type of service do you need?", false);
@@ -1008,11 +1087,31 @@
             // Check login status on page load
             checkLoginStatus();
             
-            // Auto-open chat on mobile for better UX
-            if (window.innerWidth <= 768) {
-                setTimeout(() => {
-                    openChat();
-                }, 1200);
+            // Start closed: bubble visible, chat hidden
+            closeChat();
+        });
+
+        // Header button actions
+        document.addEventListener('click', (e) => {
+            const t = e.target;
+            if (!t) return;
+            if (t.id === 'chat-close') {
+                e.preventDefault(); e.stopPropagation();
+                closeChat();
+            }
+            if (t.id === 'chat-minimize') {
+                e.preventDefault(); e.stopPropagation();
+                minimizeChat();
+            }
+        });
+
+        // ESC minimizes when open
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const chatWindow = getWindowEl();
+                if (!chatWindow.hidden && chatWindow.style.display === 'flex' && !chatWindow.classList.contains('minimized')) {
+                    minimizeChat();
+                }
             }
         });
     </script>

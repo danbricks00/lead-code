@@ -1,6 +1,6 @@
-const { getLeads } = require('../../src/server/lib/get-leads');
+import { getLeads } from '../../src/server/lib/get-leads.js';
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
     try {
         const leads = await getLeads();
         res.json({ success: true, leads });

@@ -1,6 +1,6 @@
-const { register } = require('../../src/server/lib/register');
+import { register } from '../../src/server/lib/register.js';
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
     try {
         const result = await register(req.body);
         res.json(result);

@@ -1,6 +1,6 @@
-const { getTradesmen } = require('../../../src/server/lib/get-tradesmen');
+import { getTradesmen } from '../../../src/server/lib/get-tradesmen.js';
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
     try {
         const tradesmen = await getTradesmen();
         res.json({ success: true, tradesmen });

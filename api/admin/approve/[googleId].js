@@ -1,6 +1,6 @@
-const { approveTradesman } = require('../../../../src/server/lib/approve-tradesman');
+import { approveTradesman } from '../../../../src/server/lib/approve-tradesman.js';
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
     try {
         const { googleId } = req.query;
         const result = await approveTradesman(googleId);

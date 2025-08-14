@@ -1,6 +1,6 @@
-const { googleAuth } = require('../../src/server/integrations/google/google-auth');
+import { googleAuth } from '../../src/server/integrations/google/google-auth.js';
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
     try {
         const result = await googleAuth(req.body);
         res.json(result);

@@ -1,6 +1,6 @@
-const { suspendTradesman } = require('../../../../src/server/lib/suspend-tradesman');
+import { suspendTradesman } from '../../../../src/server/lib/suspend-tradesman.js';
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
     try {
         const { googleId } = req.query;
         const result = await suspendTradesman(googleId);

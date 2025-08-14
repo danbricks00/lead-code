@@ -1,6 +1,6 @@
-const { sendContactForm } = require('../../src/server/emails/contact-form');
+import { sendContactForm } from '../../src/server/emails/contact-form.js';
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
     try {
         const result = await sendContactForm(req.body);
         res.json(result);

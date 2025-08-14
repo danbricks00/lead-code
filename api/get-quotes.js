@@ -1,6 +1,6 @@
-const { getQuotes } = require('../../src/server/lib/get-quotes');
+import { getQuotes } from '../../src/server/lib/get-quotes.js';
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
     try {
         const quotes = await getQuotes();
         res.json({ success: true, quotes });

@@ -1,6 +1,6 @@
-const { sendToSheets } = require('../../src/server/integrations/google/send-to-sheets-helper');
+import { sendToSheets } from '../../src/server/integrations/google/send-to-sheets-helper.js';
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
     try {
         const result = await sendToSheets(req.body);
         res.json(result);

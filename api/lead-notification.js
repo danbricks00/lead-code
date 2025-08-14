@@ -1,6 +1,6 @@
-const { sendLeadNotification } = require('../../src/server/emails/lead-notification');
+import { sendLeadNotification } from '../../src/server/emails/lead-notification.js';
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
     try {
         const result = await sendLeadNotification(req.body);
         res.json(result);

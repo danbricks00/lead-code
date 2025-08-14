@@ -1,6 +1,6 @@
-const { updateLeadStatus } = require('../../src/server/lib/update-lead-status');
+import { updateLeadStatus } from '../../src/server/lib/update-lead-status.js';
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
     try {
         const result = await updateLeadStatus(req.body);
         res.json(result);

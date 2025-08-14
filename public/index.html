@@ -1390,8 +1390,8 @@
         <div class="chat__header">
             <div class="chat__title">Kiwi Trade</div>
             <div class="chat__actions">
-                <button id="chat-minimize" type="button" class="chat__btn" aria-controls="chat-root" aria-expanded="true" aria-label="Minimize">−</button>
-                <button id="chat-close" type="button" class="chat__btn" aria-label="Close">×</button>
+                <button id="chat-minimize" type="button" class="chat__btn" aria-controls="chat-root" aria-expanded="true" aria-label="Minimize" title="Minimize Chat">−</button>
+                <button id="chat-close" type="button" class="chat__btn" aria-label="Close" title="Close Chat">×</button>
             </div>
         </div>
         <div class="chat__body" role="region" aria-label="Chat conversation">
@@ -1443,6 +1443,8 @@
                     root.hidden = false;
                     root.classList.add('chat--open');
                     btnMin?.setAttribute('aria-expanded', 'true');
+                    btnMin?.textContent = '−'; // Show minus for minimize
+                    btnMin?.setAttribute('title', 'Minimize Chat');
                     bubble?.setAttribute('aria-expanded', 'true');
                     hideBubble();                           // bubble hidden while open
                     // Start chat if not already started
@@ -1453,6 +1455,8 @@
                     root.hidden = false;                    // keep mounted and alive
                     root.classList.add('chat--minimized');
                     btnMin?.setAttribute('aria-expanded', 'false');
+                    btnMin?.textContent = '□'; // Show square for restore
+                    btnMin?.setAttribute('title', 'Restore Chat');
                     bubble?.setAttribute('aria-expanded', 'false');
                     hideBubble();                           // bubble hidden while minimized
                 } else if (state === 'closed') {

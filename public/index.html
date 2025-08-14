@@ -853,9 +853,11 @@
                 bottom: 80px;
             }
             .chatbot-container {
-                right: 20px;
-                left: 20px;
+                position: fixed;
                 bottom: 20px;
+                right: 20px;
+                z-index: 2000; /* must be higher than the header */
+                pointer-events: auto;
             }
             .chat-toggle {
                 width: 50px;
@@ -902,9 +904,11 @@
                 bottom: 70px;
             }
             .chatbot-container {
-                right: 10px;
-                left: 10px;
+                position: fixed;
                 bottom: 15px;
+                right: 10px;
+                z-index: 2000; /* must be higher than the header */
+                pointer-events: auto;
             }
             .chat-toggle {
                 width: 45px;
@@ -944,8 +948,11 @@
                 height: 380px;
             }
             .chatbot-container {
+                position: fixed;
+                bottom: 20px;
                 right: 8px;
-                left: 8px;
+                z-index: 2000; /* must be higher than the header */
+                pointer-events: auto;
             }
             .container {
                 padding: 0 0.8rem;
@@ -1822,20 +1829,26 @@
                 return;
             }
 
-            fetch('/api/lead-notification', {
+            fetch('/api/lead-intake', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(leadData)
+                body: JSON.stringify({
+                    customerName: chatState.customerName,
+                    customerEmail: chatState.customerEmail,
+                    customerPhone: chatState.customerPhone,
+                    selectedService: chatState.selectedService,
+                    projectDetails: chatState.projectDetails,
+                    projectSize: chatState.projectSize,
+                    specificDetails: chatState.specificDetails,
+                    location: chatState.location,
+                    budget: chatState.budget,
+                    timeline: chatState.timeline
+                })
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                console.log('Success:', data);
-                if (data.success) {
+                if (!data.ok) throw new Error('lead-intake failed');
+                console.log('Lead saved:', data);
                     addMessage("✅ Lead submitted successfully! Check your email for confirmation.");
                     
                     // Reset chat state
@@ -1930,6 +1943,38 @@
                 resetChatState();
             }
         }
+
+        // Chat header button wiring
+        document.addEventListener('DOMContentLoaded', function() {
+            // ... keep existing code ...
+
+            // Chat header button wiring
+            const chatWindow = document.getElementById('chat-root');
+            const chatMinimize = document.getElementById('chat-minimize');
+            const chatClose = document.getElementById('chat-close');
+            const chatToggleBtn = document.getElementById('chat-bubble');
+
+            if (chatMinimize) {
+                chatMinimize.addEventListener('click', () => {
+                    chatWindow.style.display = 'none'; // hide, keep session alive
+                });
+            }
+            if (chatClose) {
+                chatClose.addEventListener('click', () => {
+                    chatWindow.style.display = 'none'; // hide; use existing bubble to reopen
+                });
+            }
+            if (chatToggleBtn) {
+                chatToggleBtn.addEventListener('click', () => {
+                    chatWindow.style.display = 'block'; // show chat window
+                });
+            }
+
+            // Optional: do not auto-open chat on mobile
+            // if (window.innerWidth <= 768) {
+            // setTimeout(() => { openChat(); }, 1200);
+            // }
+        });
 
         // Mobile menu functionality
         (function () {

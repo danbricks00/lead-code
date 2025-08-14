@@ -1469,13 +1469,17 @@
             }
 
             // Button handlers (prevent default and stop bubbling)
+            console.log('Setting up chat buttons:', { btnMin, btnClose });
+            
             btnMin?.addEventListener('click', (e) => {
+                console.log('Minimize button clicked');
                 e.preventDefault(); e.stopPropagation();
                 const next = root.classList.contains('chat--minimized') ? 'open' : 'minimized';
                 applyState(next, { teardown: false });    // keep session alive on minimize
             });
 
             btnClose?.addEventListener('click', (e) => {
+                console.log('Close button clicked');
                 e.preventDefault(); e.stopPropagation();
                 applyState('closed', { teardown: true });
             });

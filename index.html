@@ -1235,6 +1235,31 @@
         .no-overflow { 
             overflow: visible !important; 
         }
+        /* Force hidden attribute to actually hide elements */
+        .chat__bubble[hidden] { 
+            display: none !important; 
+        }
+        .chat[hidden] { 
+            display: none !important; 
+        }
+        
+        /* Enforce hidden behavior and layering */
+        .chat__bubble[hidden] { display: none !important; }
+        #chat-root[hidden] { display: none !important; }
+        .chat { z-index: 9999; }
+
+        /* Minimized style (keep widget visible, body hidden) */
+        .chat--minimized { 
+            width: 56px; 
+            height: 56px; 
+            border-radius: 28px; 
+            padding: 0; 
+            overflow: hidden; 
+        }
+        .chat--minimized .chat__header,
+        .chat--minimized .chat__body { 
+            display: none; 
+        }
     </style>
 </head>
 <body>
@@ -1361,12 +1386,12 @@
     </main>
 
     <!-- Chatbot Container -->
-    <div id="chat-root" class="chat chat--open" data-state="open" aria-live="polite">
+    <div id="chat-root" class="chat" data-state="open">
         <div class="chat__header">
             <div class="chat__title">Kiwi Trade</div>
             <div class="chat__actions">
-                <button id="chat-minimize" class="chat__btn" aria-controls="chat-root" aria-expanded="true" aria-label="Minimize chat">−</button>
-                <button id="chat-close" class="chat__btn" aria-label="Close chat">×</button>
+                <button id="chat-minimize" type="button" class="chat__btn" aria-controls="chat-root" aria-expanded="true" aria-label="Minimize">−</button>
+                <button id="chat-close" type="button" class="chat__btn" aria-label="Close">×</button>
             </div>
         </div>
         <div class="chat__body" role="region" aria-label="Chat conversation">
@@ -1380,7 +1405,8 @@
         </div>
     </div>
 
-    <button id="chat-bubble" class="chat__bubble" aria-controls="chat-root" aria-expanded="false" aria-label="Open chat" hidden>
+    <!-- Use the existing bubble only -->
+    <button id="chat-bubble" type="button" class="chat__bubble" aria-controls="chat-root" aria-expanded="false" aria-label="Open chat">
         <span class="chat__bubble-dot">💬</span>
         <span id="chat-unread" class="chat__badge" hidden>0</span>
     </button>
@@ -1389,64 +1415,74 @@
         // Chat state management
         (function () {
             const root = document.getElementById('chat-root');
-            const btnMin = document.getElementById('chat-minimize');
-            const btnClose = document.getElementById('chat-close');
+            if (!root || root.dataset.bound === '1') return; // avoid duplicate bindings
+
+            const btnMin = root.querySelector('#chat-minimize');
+            const btnClose = root.querySelector('#chat-close');
             const bubble = document.getElementById('chat-bubble');
             const badge = document.getElementById('chat-unread');
 
-            if (!root || !btnMin || !btnClose || !bubble) return;
-
             const LS_KEY = 'chat_state'; // 'open' | 'minimized' | 'closed'
+
+            function hideBubble() {
+                if (!bubble) return;
+                bubble.hidden = true;
+                bubble.style.display = 'none';
+            }
+            function showBubble() {
+                if (!bubble) return;
+                bubble.hidden = false;
+                bubble.style.display = 'inline-flex';
+            }
 
             function applyState(state, opts = { teardown: true }) {
                 root.dataset.state = state;
                 root.classList.remove('chat--open', 'chat--minimized', 'chat--closed');
-                bubble.hidden = true;
 
-                switch (state) {
-                    case 'open':
-                        root.classList.add('chat--open');
-                        root.hidden = false;
-                        btnMin.setAttribute('aria-expanded', 'true');
-                        bubble.setAttribute('aria-expanded', 'true');
-                        // Start chat if not already started
-                        if (document.getElementById('chatMessages').children.length <= 1) {
-                            startChat();
-                        }
-                        break;
-                    case 'minimized':
-                        root.classList.add('chat--minimized');
-                        root.hidden = false; // stays visible as a small circle
-                        btnMin.setAttribute('aria-expanded', 'false');
-                        bubble.setAttribute('aria-expanded', 'false');
-                        break;
-                    case 'closed':
-                        root.classList.add('chat--closed');
-                        root.hidden = true;  // fully hidden
-                        bubble.hidden = false;  // show launcher bubble
-                        bubble.setAttribute('aria-expanded', 'false');
-                        if (opts.teardown) {
-                            // Reset chat state when fully closing
-                            resetChatState();
-                        }
-                        break;
+                if (state === 'open') {
+                    root.hidden = false;
+                    root.classList.add('chat--open');
+                    btnMin?.setAttribute('aria-expanded', 'true');
+                    bubble?.setAttribute('aria-expanded', 'true');
+                    hideBubble();                           // bubble hidden while open
+                    // Start chat if not already started
+                    if (document.getElementById('chatMessages').children.length <= 1) {
+                        startChat();
+                    }
+                } else if (state === 'minimized') {
+                    root.hidden = false;                    // keep mounted and alive
+                    root.classList.add('chat--minimized');
+                    btnMin?.setAttribute('aria-expanded', 'false');
+                    bubble?.setAttribute('aria-expanded', 'false');
+                    hideBubble();                           // bubble hidden while minimized
+                } else if (state === 'closed') {
+                    root.classList.add('chat--closed');
+                    root.hidden = true;                     // fully hidden window
+                    showBubble();                           // bubble visible to reopen
+                    bubble?.setAttribute('aria-expanded', 'false');
+                    if (opts.teardown) {
+                        // Reset chat state when fully closing
+                        resetChatState();
+                    }
                 }
                 localStorage.setItem(LS_KEY, state);
             }
 
-            // Button handlers
-            btnMin.addEventListener('click', () => {
+            // Button handlers (prevent default and stop bubbling)
+            btnMin?.addEventListener('click', (e) => {
+                e.preventDefault(); e.stopPropagation();
                 const next = root.classList.contains('chat--minimized') ? 'open' : 'minimized';
-                applyState(next, { teardown: false });
-                // Keep session alive when minimizing
+                applyState(next, { teardown: false });    // keep session alive on minimize
             });
 
-            btnClose.addEventListener('click', () => {
+            btnClose?.addEventListener('click', (e) => {
+                e.preventDefault(); e.stopPropagation();
                 applyState('closed', { teardown: true });
             });
 
-            // Bubble restores
-            bubble.addEventListener('click', () => {
+            // Existing bubble re-opens chat
+            bubble?.addEventListener('click', (e) => {
+                e.preventDefault(); e.stopPropagation();
                 applyState('open', { teardown: false });
             });
 
@@ -1457,25 +1493,24 @@
                 }
             });
 
-            // Unread badge API
+            // Optional unread badge API
             window.chatSetUnread = function (count) {
                 if (!badge) return;
-                if (count > 0) {
-                    badge.textContent = String(count);
-                    badge.hidden = false;
-                } else {
-                    badge.hidden = true;
+                if (count > 0) { 
+                    badge.textContent = String(count); 
+                    badge.hidden = false; 
+                } else { 
+                    badge.hidden = true; 
                 }
             };
 
-            // Initial state: respect saved state; otherwise default to CLOSED on small screens so it does not auto-open
+            // Initial state: do NOT auto-open on phones/tablets
             const saved = localStorage.getItem(LS_KEY);
-            const isSmallScreen = window.matchMedia('(max-width: 1024px)').matches; // phones + tablets
-            const initial = saved
-                ? saved
-                : (isSmallScreen ? 'closed' : 'open'); // Do NOT auto-open on mobile/tablet
-
+            const isSmallScreen = window.matchMedia('(max-width: 1024px)').matches;
+            const initial = saved ? saved : (isSmallScreen ? 'closed' : 'open');
             applyState(initial, { teardown: false });
+
+            root.dataset.bound = '1'; // mark bound to prevent duplicate listeners
         })();
 
         // Chat functionality
@@ -1523,17 +1558,35 @@
         }
 
         function openChat() {
+            // Use the state management system to open the chat
             const root = document.getElementById('chat-root');
-            if (root) {
-                root.dataset.state = 'open';
-                root.classList.remove('chat--minimized', 'chat--closed');
-                root.classList.add('chat--open');
-                root.hidden = false;
-                
-                // Start chat if not already started
-                const messagesContainer = document.getElementById('chatMessages');
-                if (messagesContainer.children.length <= 1) {
-                    startChat();
+            if (root && root.dataset.bound === '1') {
+                // If the chat system is initialized, use its state management
+                const event = new Event('click');
+                const bubble = document.getElementById('chat-bubble');
+                if (bubble) {
+                    bubble.dispatchEvent(event);
+                }
+            } else {
+                // Fallback for when state management isn't ready
+                if (root) {
+                    root.dataset.state = 'open';
+                    root.classList.remove('chat--minimized', 'chat--closed');
+                    root.classList.add('chat--open');
+                    root.hidden = false;
+                    
+                    // Hide bubble
+                    const bubble = document.getElementById('chat-bubble');
+                    if (bubble) {
+                        bubble.hidden = true;
+                        bubble.style.display = 'none';
+                    }
+                    
+                    // Start chat if not already started
+                    const messagesContainer = document.getElementById('chatMessages');
+                    if (messagesContainer.children.length <= 1) {
+                        startChat();
+                    }
                 }
             }
         }

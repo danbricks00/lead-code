@@ -113,6 +113,7 @@
     <form id="quoteForm">
         <!-- Hidden fields for lead data -->
         <input type="hidden" id="leadId" name="leadId">
+        <input type="hidden" id="token" name="token">
         <input type="hidden" id="customerName" name="customerName">
         <input type="hidden" id="customerEmail" name="customerEmail">
         <input type="hidden" id="customerPhone" name="customerPhone">
@@ -224,18 +225,7 @@
             <textarea id="additionalNotes" name="additionalNotes" rows="4"></textarea>
         </div>
 
-        <!-- Hidden fields for customer data -->
-        <input type="hidden" id="customerName" name="customerName" value="">
-        <input type="hidden" id="customerEmail" name="customerEmail" value="">
-        <input type="hidden" id="customerPhone" name="customerPhone" value="">
-        <input type="hidden" id="serviceType" name="serviceType" value="Underfloor Heating">
-        <input type="hidden" id="projectDetails" name="projectDetails" value="">
-        <input type="hidden" id="projectSize" name="projectSize" value="">
-        <input type="hidden" id="budget" name="budget" value="">
-        <input type="hidden" id="timeline" name="timeline" value="">
-        <input type="hidden" id="location" name="location" value="Auckland">
-        <input type="hidden" id="leadId" name="leadId" value="">
-
+        <button type="button" id="downloadPdf">Download PDF</button>
         <button type="submit">Submit Quote</button>
     </form>
     
@@ -367,11 +357,42 @@
                 manualCalcBtn.addEventListener('click', calculateTotals);
             }
             
-            if (checkElementsBtn) {
-                checkElementsBtn.addEventListener('click', function() {
-                    console.log('Form elements:', document.getElementById('labourRate'), document.getElementById('labourSubtotal'));
-                });
-            }
+                         if (checkElementsBtn) {
+                 checkElementsBtn.addEventListener('click', function() {
+                     console.log('Form elements:', document.getElementById('labourRate'), document.getElementById('labourSubtotal'));
+                 });
+             }
+             
+             // Wire the PDF button
+             const downloadPdfBtn = document.getElementById('downloadPdf');
+             if (downloadPdfBtn) {
+                 downloadPdfBtn.addEventListener('click', async () => {
+                     try {
+                         const leadId = document.getElementById('leadId')?.value || '';
+                         const token = document.getElementById('token')?.value || '';
+                         if (!leadId || !token) {
+                             alert('Missing leadId or token for PDF generation.');
+                             return;
+                         }
+                         // If the server composes the PDF from saved Sheets, we just send leadId+token.
+                         const res = await fetch(`/api/quote-pdf?leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&download=1`, {
+                             method: 'POST',
+                             headers: { 'Content-Type': 'application/json' }
+                         });
+                         if (!res.ok) throw new Error('PDF generation failed');
+                         const blob = await res.blob();
+                         const url = URL.createObjectURL(blob);
+                         const a = document.createElement('a');
+                         a.href = url;
+                         a.download = `quote-${leadId}.pdf`;
+                         a.click();
+                         URL.revokeObjectURL(url);
+                     } catch (e) {
+                         console.error(e);
+                         alert('Failed to generate PDF.');
+                     }
+                 });
+             }
         }
         
         // Test function for debugging
@@ -421,16 +442,21 @@
             const validUntil = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
             document.getElementById('validUntil').value = validUntil.toISOString().split('T')[0];
             
-            // Load URL parameters and fetch lead data
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('leadId')) {
-                const leadId = urlParams.get('leadId');
-                document.getElementById('leadId').value = leadId;
-                document.getElementById('leadIdDisplay').textContent = leadId;
-                
-                // Fetch lead data from API
-                loadLeadData(leadId);
-            }
+                         // Load URL parameters and fetch lead data
+             const urlParams = new URLSearchParams(window.location.search);
+             if (urlParams.has('leadId')) {
+                 const leadId = urlParams.get('leadId');
+                 document.getElementById('leadId').value = leadId;
+                 document.getElementById('leadIdDisplay').textContent = leadId;
+                 
+                 // Fetch lead data from API
+                 loadLeadData(leadId);
+             }
+             
+             // Populate token from URL
+             const token = urlParams.get('token') || '';
+             const tokenEl = document.getElementById('token');
+             if (tokenEl) tokenEl.value = token;
             
             addEventListeners();
             calculateTotals(); // Initial calculation
@@ -493,6 +519,14 @@
          document.getElementById('quoteForm').addEventListener('submit', async (e) => {
              e.preventDefault();
              
+             // Ensure totals are freshly calculated before reading form
+             calculateTotals();
+
+             const toNum = (v) => {
+                 const n = parseFloat((v || '').toString().replace(/[^0-9.]/g, ''));
+                 return isNaN(n) ? 0 : +n.toFixed(2);
+             };
+             
              const formData = new FormData(e.target);
              const data = Object.fromEntries(formData.entries());
              
@@ -505,8 +539,20 @@
                  data.tradesmanPhone = data.tradesmanPhone.trim();
              }
              
-             // Map totalAmount to quoteAmount for API compatibility
-             data.quoteAmount = data.totalAmount;
+             // Coerce numeric fields to numbers
+             data.labourRate = toNum(data.labourRate);
+             data.labourHours = toNum(data.labourHours);
+             data.labourSubtotal = toNum(data.labourSubtotal);
+
+             data.materialRate = toNum(data.materialRate);
+             data.materialSQM = toNum(data.materialSQM);
+             data.materialSubtotal = toNum(data.materialSubtotal);
+
+             data.installationAmount = toNum(data.installationAmount);
+             data.installationSubtotal = toNum(data.installationSubtotal);
+
+             data.totalAmount = toNum(data.totalAmount);
+             data.quoteAmount = data.totalAmount; // keep your mapping
              
              // Create breakdown text from subtotals
              const breakdown = [];

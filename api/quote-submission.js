@@ -1,5 +1,8 @@
 import { google } from 'googleapis';
 import nodemailer from 'nodemailer';
+import { generateQuotePdfBuffer } from './quote-pdf';
+
+const SITE_URL = process.env.SITE_URL; // e.g. https://yourdomain.com
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -47,6 +50,33 @@ export default async function handler(req, res) {
     let adminEmailSent = false;
     let sheetsUpdated = false;
 
+    // Generate PDF and prepare links
+    const quoteId = req.body.quoteNumber || leadId; // keep your current id scheme
+    const token = req.body.token || ''; // whichever you already pass/validate
+
+    // Build PDF buffer for attachment
+    let pdfBuffer = null;
+    try {
+      pdfBuffer = await generateQuotePdfBuffer({ leadId, token });
+      console.log('✅ PDF generated successfully');
+    } catch (e) {
+      console.error('PDF generation failed: ', e);
+      // continue; still send email without attachment if needed
+    }
+
+    // Compute links
+    const origin = SITE_URL || `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}`;
+    const onlineQuoteUrl = `${origin}/quote.html?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}`;
+    const acceptUrl = `${origin}/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=accept`;
+    const declineUrl = `${origin}/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=decline`;
+
+    // Attachments array
+    const attachments = pdfBuffer ? [{
+      filename: `quote-${quoteId}.pdf`,
+      content: pdfBuffer,
+      contentType: 'application/pdf'
+    }] : [];
+
     // 1. Send customer email with quote
     try {
       const transporter = nodemailer.createTransport({
@@ -57,38 +87,35 @@ export default async function handler(req, res) {
         }
       });
 
+      // Email HTML (customer) — professional, with a real button (anchor styled as button)
+      const customerHtml = `
+        <div style="font-family: Arial, sans-serif; color:#1f2937;">
+          <h2>Your Quote from Kiwi Trade</h2>
+          <p>Hi ${customerName || ''},</p>
+          <p>Thank you for your interest in our services. Your professional quote is attached as a PDF.</p>
+          <h3 style="background:#f3f4f6;padding:10px;border-radius:6px;">Quote Summary</h3>
+          <p><strong>Service:</strong> ${serviceType || 'Underfloor Heating'}</p>
+          <p><strong>Location:</strong> ${location || ''}</p>
+          <p><strong>Quote Amount:</strong> $${Number(quoteAmount || 0).toFixed(2)}</p>
+          <p><strong>Breakdown:</strong> Labour: $${Number(req.body.labourSubtotal||0).toFixed(2)}, Materials: $${Number(req.body.materialSubtotal||0).toFixed(2)}, Installation: $${Number(req.body.installationSubtotal||0).toFixed(2)}</p>
+          <p style="margin-top:16px;">You can view and respond online here:</p>
+          <p>
+            <a href="${onlineQuoteUrl}" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;">View Quote Online</a>
+          </p>
+          <p style="margin-top:10px;">
+            <a href="${acceptUrl}" style="display:inline-block;background:#16a34a;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none;margin-right:10px;">Accept Quote</a>
+            <a href="${declineUrl}" style="display:inline-block;background:#dc2626;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none;">Decline Quote</a>
+          </p>
+          <p style="margin-top:16px;color:#6b7280;">This quote was generated automatically by our system.</p>
+        </div>
+      `;
+
       const customerMailOptions = {
         from: 'Kiwi Trade <danbricks18@gmail.com>',
         to: customerEmail,
-        subject: `Quote for ${serviceType} - ${customerName}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #2c3e50;">Your Quote from Kiwi Trade</h2>
-            <p>Hi ${customerName},</p>
-            <p>Thank you for your interest in our services. Here is your quote:</p>
-            
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
-              <p><strong>Service:</strong> ${serviceType}</p>
-              <p><strong>Project:</strong> ${projectDetails || 'Not specified'}</p>
-              <p><strong>Location:</strong> ${location || 'Not specified'}</p>
-              <p><strong>Quote Amount:</strong> $${quoteAmount}</p>
-              ${breakdown ? `<p><strong>Breakdown:</strong> ${breakdown}</p>` : ''}
-              ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ''}
-            </div>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="#" style="background: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-right: 10px;">Accept Quote</a>
-              <a href="#" style="background: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px;">Decline Quote</a>
-            </div>
-            
-            <p><strong>Tradesman:</strong> ${tradesmanName}</p>
-            <p><strong>Phone:</strong> ${tradesmanPhone || 'Contact via email'}</p>
-            
-            <p>If you have any questions, please don't hesitate to contact us.</p>
-            <p>Best regards,<br>The Kiwi Trade Team</p>
-          </div>
-        `
+        subject: `Your Quote from Kiwi Trade - ${quoteId}`,
+        html: customerHtml,
+        attachments
       };
 
       await transporter.sendMail(customerMailOptions);
@@ -149,29 +176,19 @@ export default async function handler(req, res) {
         }
       });
 
+      // Send admin email (you may already have this)
       const adminMailOptions = {
         from: 'Kiwi Trade <danbricks18@gmail.com>',
         to: 'danbricks18@gmail.com',
-        subject: 'New Quote Submitted',
+        subject: `New Quote Submitted - ${quoteId}`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #2c3e50;">New Quote Submitted</h2>
-            <p>A new quote has been submitted by a tradesman.</p>
-            
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
-              <p><strong>Tradesman:</strong> ${tradesmanName} (${tradesmanEmail})</p>
-              <p><strong>Customer:</strong> ${customerName} (${customerEmail})</p>
-              <p><strong>Service:</strong> ${serviceType}</p>
-              <p><strong>Quote Amount:</strong> $${quoteAmount}</p>
-              <p><strong>Lead ID:</strong> ${leadId}</p>
-              ${breakdown ? `<p><strong>Breakdown:</strong> ${breakdown}</p>` : ''}
-              ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ''}
-            </div>
-            
-            <p><em>This quote was automatically generated from the quote submission system.</em></p>
-          </div>
-        `
+          <h2>New Quote Submitted</h2>
+          <p>A new quote has been submitted by ${tradesmanName || 'Unknown'}.</p>
+          <p><strong>Lead ID:</strong> ${leadId}</p>
+          <p><strong>Amount:</strong> $${Number(quoteAmount || 0).toFixed(2)}</p>
+          <p><a href="${onlineQuoteUrl}">Open Online Quote</a></p>
+        `,
+        attachments
       };
 
       await transporter.sendMail(adminMailOptions);

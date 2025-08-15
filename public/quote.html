@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quote</title>
+  <style>
+    body { font-family: Arial, sans-serif; color:#1f2937; padding: 16px; max-width: 800px; margin: 0 auto; }
+    .card { background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:16px; margin:16px 0; }
+    .row { display:flex; gap:16px; flex-wrap: wrap; }
+    .btn { display:inline-block; text-decoration:none; padding:10px 16px; border-radius:6px; color:#fff; margin-right:10px; }
+    .btn-accept { background:#16a34a; }
+    .btn-decline { background:#dc2626; }
+    .btn-secondary { background:#374151; }
+    .totals { font-weight:600; }
+  </style>
+</head>
+<body>
+  <h2>Your Quote</h2>
+  <div id="content" class="card">Loading…</div>
+  <script>
+    (async function() {
+      const qs = new URLSearchParams(location.search);
+      const quoteId = qs.get('quoteId');
+      const leadId = qs.get('leadId');
+      const token = qs.get('token');
+
+      function fmt(n){ return '$' + Number(n || 0).toFixed(2); }
+
+      try {
+        const res = await fetch(`/api/quote-by-id?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}`);
+        const d = await res.json();
+        if (!res.ok || !d.ok) throw new Error(d.error || 'Failed to load quote');
+
+        const acceptUrl = `/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=accept`;
+        const declineUrl = `/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=decline`;
+        const pdfUrl = `/api/quote-pdf?leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&download=1`;
+
+        document.getElementById('content').innerHTML = `
+          <div><strong>Quote #</strong> ${d.quoteNumber || d.quoteId}</div>
+          <div class="row">
+            <div style="flex:1;">
+              <h3>Customer</h3>
+              <div>${d.customerName || ''}</div>
+              <div>${d.customerEmail || ''}</div>
+              <div>${d.location || ''}</div>
+            </div>
+            <div style="flex:1;">
+              <h3>Details</h3>
+              <div><strong>Service:</strong> ${d.serviceType || ''}</div>
+              <div><strong>Valid Until:</strong> ${d.validUntil || ''}</div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Breakdown</h3>
+            <div>Labour: ${fmt(d.totals?.labour)}</div>
+            <div>Materials: ${fmt(d.totals?.materials)}</div>
+            <div>Installation: ${fmt(d.totals?.installation)}</div>
+            <div class="totals">Total: ${fmt(d.totals?.total)}</div>
+          </div>
+          <div style="margin-top:10px;">
+            <a class="btn btn-accept" href="${acceptUrl}">Accept Quote</a>
+            <a class="btn btn-decline" href="${declineUrl}">Decline Quote</a>
+            <a class="btn btn-secondary" href="${pdfUrl}">Download PDF</a>
+          </div>
+        `;
+      } catch(e) {
+        console.error(e);
+        document.getElementById('content').textContent = 'Failed to load quote.';
+      }
+    })();
+  </script>
+</body>
+</html>

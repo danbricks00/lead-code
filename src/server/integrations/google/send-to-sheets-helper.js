@@ -225,17 +225,17 @@ export async function sendToSheets(leadData) {
 
       const values = [
         [
-          new Date().toISOString(),
-          leadData.customerName || '',
-          leadData.customerEmail || '',
-          leadData.customerPhone || '',
-          leadData.selectedService || '',
-          leadData.projectDetails || '',
-          leadData.projectSize || '',
-          leadData.budget || '',
-          leadData.timeline || '',
-          leadData.location || '',
-          leadData.specificDetails || '',
+          new Date().toISOString(), // lead (timestamp)
+          leadData.customerName || '', // Customer Name
+          leadData.customerEmail || '', // Customer Email
+          leadData.customerPhone || '', // Customer Phone
+          leadData.selectedService || '', // Service type
+          leadData.projectDetails || '', // Project details
+          leadData.projectSize || '', // Project size
+          leadData.budget || '', // Budget
+          leadData.timeline || '', // Timelione (Timeline)
+          leadData.location || '', // Location
+          leadData.specificDetails || '', // Specifc details
           customerEmailSent ? 'Sent' : 'Failed',
           tradesmanNotified ? 'Sent' : 'Failed',
           'New'

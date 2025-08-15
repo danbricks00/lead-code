@@ -144,10 +144,11 @@ export default async function handler(req, res) {
       console.log('✅ Added headers:', headers);
     }
 
-    // Find the index of the selectedService column
+    // Find the index of the service column (could be "Service type", "SelectedService", etc.)
     const serviceIndex = headers.findIndex(h => 
       h.toLowerCase().includes('service') || 
-      h.toLowerCase().includes('selected')
+      h.toLowerCase().includes('selected') ||
+      h.toLowerCase().includes('type')
     );
 
     if (serviceIndex === -1) {
@@ -159,6 +160,8 @@ export default async function handler(req, res) {
     }
 
     console.log(`🔍 Service column found at index ${serviceIndex}: ${headers[serviceIndex]}`);
+    console.log(`🔍 Looking for tradesman service type: "${tradeType}"`);
+    console.log(`📊 Total rows to filter: ${dataRows.length}`);
 
     // Filter leads for this tradesman's service type
     const filteredLeads = [];

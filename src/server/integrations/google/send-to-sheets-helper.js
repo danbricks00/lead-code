@@ -81,6 +81,9 @@ export async function sendToSheets(leadData) {
       }
     });
 
+    // Generate unique lead ID for tracking
+    const leadId = `LEAD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
     // Get current URL for quote links
     const currentUrl = process.env.VERCEL_URL ? 
       `https://${process.env.VERCEL_URL}` : 
@@ -228,7 +231,8 @@ export async function sendToSheets(leadData) {
       
       const values = [
         [
-          timestamp, // lead (timestamp) - when chatbot responses completed
+          timestamp, // Timestamp - when chatbot responses completed
+          leadId, // Lead ID - unique identifier for tracking
           leadData.customerName || '', // Customer Name
           leadData.customerEmail || '', // Customer Email
           leadData.customerPhone || '', // Customer Phone
@@ -236,9 +240,9 @@ export async function sendToSheets(leadData) {
           leadData.projectDetails || '', // Project details
           leadData.projectSize || '', // Project size
           leadData.budget || '', // Budget
-          leadData.timeline || '', // Timelione (Timeline)
+          leadData.timeline || '', // Timeline
           leadData.location || '', // Location
-          leadData.specificDetails || '', // Specifc details
+          leadData.specificDetails || '', // Specific details
           customerEmailSent ? 'Sent' : 'Failed',
           tradesmanNotified ? 'Sent' : 'Failed',
           'New'

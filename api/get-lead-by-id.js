@@ -99,17 +99,18 @@ export default async function handler(req, res) {
         // Found the lead, map it to the expected structure
         foundLead = {
           timestamp: row[0] || '', // Timestamp
-          customerName: row[1] || '', // Customer Name
-          customerEmail: row[2] || '', // Customer Email
-          customerPhone: row[3] || '', // Customer Phone
-          selectedService: row[4] || '', // Service type
-          projectDetails: row[5] || '', // Project details
-          projectSize: row[6] || '', // Project size
-          budget: row[7] || '', // Budget
-          timeline: row[8] || '', // Timeline
-          location: row[9] || '', // Location
-          specificDetails: row[10] || '', // Specific details
-          status: row[13] || 'New' // Status (column 14)
+          leadId: row[1] || '', // Lead ID
+          customerName: row[2] || '', // Customer Name
+          customerEmail: row[3] || '', // Customer Email
+          customerPhone: row[4] || '', // Customer Phone
+          selectedService: row[5] || '', // Service type
+          projectDetails: row[6] || '', // Project details
+          projectSize: row[7] || '', // Project size
+          budget: row[8] || '', // Budget
+          timeline: row[9] || '', // Timeline
+          location: row[10] || '', // Location
+          specificDetails: row[11] || '', // Specific details
+          status: row[14] || 'New' // Status (column 15)
         };
         break;
       }

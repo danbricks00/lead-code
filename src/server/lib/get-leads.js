@@ -144,10 +144,10 @@ export default async function handler(req, res) {
       console.log('✅ Added headers:', headers);
     }
 
-    // Service type is always at index 4 (column E) based on send-to-sheets-helper.js
-    const serviceIndex = 4;
+    // Service type is always at index 5 (column F) based on send-to-sheets-helper.js (after adding leadId)
+    const serviceIndex = 5;
     
-    console.log(`🔍 Service column is at index ${serviceIndex} (column E)`);
+    console.log(`🔍 Service column is at index ${serviceIndex} (column F)`);
     console.log(`🔍 Looking for tradesman service type: "${tradeType}"`);
     console.log(`📊 Total rows to filter: ${dataRows.length}`);
 
@@ -165,19 +165,20 @@ export default async function handler(req, res) {
         const lead = {};
         
         // Map columns based on the exact order from send-to-sheets-helper.js
-        // Column order: timestamp, customerName, customerEmail, customerPhone, selectedService, projectDetails, projectSize, budget, timeline, location, specificDetails, customerEmailSent, tradesmanNotified, status
+        // Column order: timestamp, leadId, customerName, customerEmail, customerPhone, selectedService, projectDetails, projectSize, budget, timeline, location, specificDetails, customerEmailSent, tradesmanNotified, status
         lead.timestamp = row[0] || ''; // Timestamp
-        lead.customerName = row[1] || ''; // Customer Name
-        lead.customerEmail = row[2] || ''; // Customer Email
-        lead.customerPhone = row[3] || ''; // Customer Phone
-        lead.selectedService = row[4] || ''; // Service type
-        lead.projectDetails = row[5] || ''; // Project details
-        lead.projectSize = row[6] || ''; // Project size
-        lead.budget = row[7] || ''; // Budget
-        lead.timeline = row[8] || ''; // Timeline
-        lead.location = row[9] || ''; // Location
-        lead.specificDetails = row[10] || ''; // Specific details
-        lead.status = row[13] || 'New'; // Status (column 14)
+        lead.leadId = row[1] || ''; // Lead ID
+        lead.customerName = row[2] || ''; // Customer Name
+        lead.customerEmail = row[3] || ''; // Customer Email
+        lead.customerPhone = row[4] || ''; // Customer Phone
+        lead.selectedService = row[5] || ''; // Service type
+        lead.projectDetails = row[6] || ''; // Project details
+        lead.projectSize = row[7] || ''; // Project size
+        lead.budget = row[8] || ''; // Budget
+        lead.timeline = row[9] || ''; // Timeline
+        lead.location = row[10] || ''; // Location
+        lead.specificDetails = row[11] || ''; // Specific details
+        lead.status = row[14] || 'New'; // Status (column 15)
         
         console.log(`📋 Lead data mapped:`, {
           customerName: lead.customerName,

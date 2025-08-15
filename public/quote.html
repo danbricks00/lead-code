@@ -331,8 +331,8 @@
           ` : ''}
           
           <div class="action-buttons">
-            <a class="btn btn-accept" href="${acceptUrl}">Accept Quote</a>
-            <a class="btn btn-decline" href="${declineUrl}">Decline Quote</a>
+            <button class="btn btn-accept" onclick="handleQuoteDecision('accept', '${acceptUrl}')">Accept Quote</button>
+            <button class="btn btn-decline" onclick="handleQuoteDecision('decline', '${declineUrl}')">Decline Quote</button>
             <a class="btn btn-secondary" href="${pdfUrl}">Download Quote</a>
           </div>
           
@@ -361,6 +361,37 @@
          `;
        }
     })();
+    
+    // Function to handle quote decision with confirmation
+    async function handleQuoteDecision(action, url) {
+      const actionText = action === 'accept' ? 'accept' : 'decline';
+      const actionTitle = action === 'accept' ? 'Accept' : 'Decline';
+      
+      // Show confirmation dialog
+      const confirmed = confirm(`Are you sure you want to ${actionText} this quote? This action will:\n\n• Send a confirmation email to you\n• Notify the tradesman of your decision\n• Update the quote status\n\nClick OK to ${actionText} the quote.`);
+      
+      if (!confirmed) {
+        return;
+      }
+      
+      // Show loading state
+      const button = event.target;
+      const originalText = button.textContent;
+      button.textContent = 'Processing...';
+      button.disabled = true;
+      
+      try {
+        // Navigate to the decision URL (same as email buttons)
+        window.location.href = url;
+      } catch (error) {
+        console.error('Error processing quote decision:', error);
+        alert('There was an error processing your decision. Please try again.');
+        
+        // Reset button state
+        button.textContent = originalText;
+        button.disabled = false;
+      }
+    }
   </script>
 </body>
 </html>

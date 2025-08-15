@@ -3,6 +3,11 @@ import { google } from 'googleapis';
 export async function sendToSheets(leadData) {
   console.log('🔍 sendToSheets function called');
   console.log('✅ Lead received:', leadData);
+  
+  // Create timestamp when chatbot responses are completed
+  const timestamp = new Date().toISOString();
+  console.log('📅 Chatbot completion timestamp:', timestamp);
+  
   console.log('📧 Customer email check:', {
     customerEmail: leadData.customerEmail,
     customerName: leadData.customerName,
@@ -222,10 +227,6 @@ export async function sendToSheets(leadData) {
       
       console.log('🎯 Using sheet for lead data:', targetSheet);
       const range = `${targetSheet}!A:Z`;
-
-      // Create timestamp when chatbot responses are completed
-      const timestamp = new Date().toISOString();
-      console.log('📅 Chatbot completion timestamp:', timestamp);
       
       const values = [
         [

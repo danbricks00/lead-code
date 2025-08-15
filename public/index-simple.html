@@ -505,12 +505,12 @@
                     case 'area_sizes':
                         chatState.areaSizes = message;
                         chatState.step = 'customer_name';
-                        addMessage("What's your name?");
+                        addMessage("Firstly , what's your name?");
                         break;
                     case 'customer_name':
                         chatState.customerName = message;
                         chatState.step = 'customer_phone';
-                        addMessage("What's your phone number?");
+                        addMessage("Secondly, what's your phone number?");
                         break;
                     case 'customer_phone':
                         chatState.customerPhone = message;

@@ -84,17 +84,19 @@
       border-collapse: collapse;
       margin-bottom: 20px;
     }
-    .breakdown-table th {
-      background-color: #34495e;
-      color: white;
-      padding: 12px;
-      text-align: left;
-      font-weight: bold;
-    }
-    .breakdown-table td {
-      padding: 12px;
-      border-bottom: 1px solid #ddd;
-    }
+                    .breakdown-table th {
+                  background-color: #34495e;
+                  color: white;
+                  padding: 8px;
+                  text-align: left;
+                  font-weight: bold;
+                  font-size: 14px;
+                }
+                .breakdown-table td {
+                  padding: 8px;
+                  border-bottom: 1px solid #ddd;
+                  font-size: 14px;
+                }
     .breakdown-table tr:nth-child(even) {
       background-color: #f8f9fa;
     }
@@ -186,24 +188,25 @@
       }
 
       try {
-        const res = await fetch(`/api/quote-by-id?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}`);
+        const res = await fetch(`/api/get-quote-by-id?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}`);
         const d = await res.json();
-        if (!res.ok || !d.ok) throw new Error(d.error || 'Failed to load quote');
+        if (!res.ok || !d.success) throw new Error(d.error || 'Failed to load quote');
 
-        const acceptUrl = `/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=accept`;
-        const declineUrl = `/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=decline`;
+        const quote = d.quote;
+        const acceptUrl = quote.acceptUrl || `/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=accept`;
+        const declineUrl = quote.declineUrl || `/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=decline`;
         const pdfUrl = `/api/quote-pdf?leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&download=1`;
 
         // Update header info
-        document.getElementById('quoteNumber').textContent = d.quoteNumber || d.quoteId;
-        document.getElementById('quoteDate').textContent = formatDate(new Date());
-        document.getElementById('validUntil').textContent = formatDate(d.validUntil);
+        document.getElementById('quoteNumber').textContent = quote.quoteId || quoteId;
+        document.getElementById('quoteDate').textContent = formatDate(quote.timestamp);
+        document.getElementById('validUntil').textContent = formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
 
-        // Calculate totals based on budget
-        const budget = parseFloat(d.budget) || 5000;
-        const materials = Math.round(budget * 0.6);
-        const labor = Math.round(budget * 0.3);
-        const installation = Math.round(budget * 0.1);
+        // Use actual quote data
+        const materials = parseFloat(quote.materialSubtotal) || 0;
+        const labor = parseFloat(quote.labourSubtotal) || 0;
+        const installation = parseFloat(quote.installationSubtotal) || 0;
+        const total = parseFloat(quote.quoteAmount) || 0;
 
         document.getElementById('quoteContent').innerHTML = `
           <div class="quote-info">
@@ -211,19 +214,19 @@
               <div class="details-title">Customer Details</div>
               <div class="detail-row">
                 <span class="detail-label">Name:</span>
-                <span class="detail-value">${d.customerName || 'Not provided'}</span>
+                <span class="detail-value">${quote.customerName || 'Not provided'}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Email:</span>
-                <span class="detail-value">${d.customerEmail || 'Not provided'}</span>
+                <span class="detail-value">${quote.customerEmail || 'Not provided'}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Phone:</span>
-                <span class="detail-value">${d.customerPhone || 'Not provided'}</span>
+                <span class="detail-value">${quote.customerPhone || 'Not provided'}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Address:</span>
-                <span class="detail-value">${d.location || 'Not provided'}</span>
+                <span class="detail-value">${quote.location || 'Not provided'}</span>
               </div>
             </div>
             
@@ -231,61 +234,75 @@
               <div class="details-title">Tradesman Details</div>
               <div class="detail-row">
                 <span class="detail-label">Company:</span>
-                <span class="detail-value">Kiwi Underfloor Heating</span>
+                <span class="detail-value">${quote.tradesmanName || 'Kiwi Underfloor Heating'}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Email:</span>
-                <span class="detail-value">info@kiwitrade.co.nz</span>
+                <span class="detail-value">${quote.tradesmanEmail || 'info@kiwitrade.co.nz'}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Phone:</span>
-                <span class="detail-value">021 123 456</span>
+                <span class="detail-value">${quote.tradesmanPhone || '021 123 456'}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Service:</span>
-                <span class="detail-value">${d.serviceType || 'Underfloor Heating'}</span>
+                <span class="detail-value">${quote.serviceType || 'Underfloor Heating'}</span>
               </div>
             </div>
           </div>
           
-          <div class="breakdown-section">
-            <div class="breakdown-title">Quote Breakdown</div>
-            <table class="breakdown-table">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Description</th>
-                  <th>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Materials</td>
-                  <td>Underfloor heating materials and components</td>
-                  <td>$${materials}</td>
-                </tr>
-                <tr>
-                  <td>Labor</td>
-                  <td>Professional installation services</td>
-                  <td>$${labor}</td>
-                </tr>
-                <tr>
-                  <td>Installation</td>
-                  <td>System setup and configuration</td>
-                  <td>$${installation}</td>
-                </tr>
-              </tbody>
-            </table>
+                     <div class="breakdown-section">
+             <div class="breakdown-title">Quote Breakdown</div>
+             <table class="breakdown-table">
+               <thead>
+                 <tr>
+                   <th>Item</th>
+                   <th>Description</th>
+                   <th>Rate per Hour/Unit</th>
+                   <th>Amount of Hours/Unit</th>
+                   <th>Amount</th>
+                 </tr>
+               </thead>
+               <tbody>
+                 ${materials > 0 ? `
+                 <tr>
+                   <td>Materials</td>
+                   <td>Underfloor heating materials and components</td>
+                   <td>$${parseFloat(quote.materialRate || 0).toFixed(2)} per SQM</td>
+                   <td>${parseFloat(quote.materialSQM || 0).toFixed(1)} SQM</td>
+                   <td>$${materials.toFixed(2)}</td>
+                 </tr>
+                 ` : ''}
+                 ${labor > 0 ? `
+                 <tr>
+                   <td>Labor</td>
+                   <td>Professional installation services</td>
+                   <td>$${parseFloat(quote.labourRate || 0).toFixed(2)} per hour</td>
+                   <td>${parseFloat(quote.labourHours || 0).toFixed(1)} hours</td>
+                   <td>$${labor.toFixed(2)}</td>
+                 </tr>
+                 ` : ''}
+                 ${installation > 0 ? `
+                 <tr>
+                   <td>Installation</td>
+                   <td>System setup and configuration</td>
+                   <td>Fixed cost</td>
+                   <td>-</td>
+                   <td>$${installation.toFixed(2)}</td>
+                 </tr>
+                 ` : ''}
+               </tbody>
+             </table>
             
             <div class="total-section">
-              <div class="total-amount">Total Amount: $${budget}</div>
+              <div class="total-amount">Total Amount: $${total.toFixed(2)}</div>
             </div>
           </div>
           
-          ${d.specificDetails ? `
+          ${quote.notes ? `
           <div style="margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e5e7eb;">
             <div style="font-size: 18px; font-weight: bold; color: #2c3e50; margin-bottom: 10px;">Additional Notes</div>
-            <p>${d.specificDetails}</p>
+            <p>${quote.notes}</p>
           </div>
           ` : ''}
           
@@ -300,7 +317,7 @@
             <div class="footer-text">Professional underfloor heating solutions for your home</div>
             <div class="footer-text">This quote was generated using our automated system</div>
             <div class="footer-text">Thank you for choosing Kiwi Underfloor Heating!</div>
-            <div class="footer-text" style="margin-top: 15px; font-size: 12px;">Lead ID: ${d.leadId}</div>
+            <div class="footer-text" style="margin-top: 15px; font-size: 12px;">Quote ID: ${quote.quoteId}</div>
           </div>
         `;
       } catch(e) {

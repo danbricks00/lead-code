@@ -64,7 +64,7 @@ export default async function handler(req, res) {
     try {
       // Try to generate PDF
       try {
-        pdfBuffer = await generateQuotePdfBuffer({ leadId, token });
+                            pdfBuffer = await generateQuotePdfBuffer({ leadId, token, quoteId });
         console.log('✅ PDF generated successfully');
       } catch (e) {
         console.error('PDF generation failed: ', e);
@@ -179,7 +179,102 @@ export default async function handler(req, res) {
       console.error('❌ Tradesman email error:', emailError.message);
     }
 
-    // 3. Send admin notification email
+    // 3. Save quote data to Google Sheets
+    try {
+      const serviceAccountEmail = process.env.GOOGLE_CLIENT_EMAIL;
+      const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+      const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
+
+      if (serviceAccountEmail && privateKey && spreadsheetId) {
+        const auth = new google.auth.GoogleAuth({
+          credentials: {
+            type: 'service_account',
+            project_id: process.env.GOOGLE_PROJECT_ID,
+            private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
+            private_key: privateKey.replace(/\\n/g, '\n'),
+            client_email: serviceAccountEmail,
+            client_id: process.env.GOOGLE_CLIENT_ID,
+            auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+            token_uri: 'https://oauth2.googleapis.com/token',
+            auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
+            client_x509_cert_url: process.env.GOOGLE_CLIENT_CER_URL
+          },
+          scopes: ['https://www.googleapis.com/auth/spreadsheets']
+        });
+
+        const sheets = google.sheets({ version: 'v4', auth });
+
+        // Get available sheets to find the correct one to use
+        const metadata = await sheets.spreadsheets.get({
+          spreadsheetId: spreadsheetId
+        });
+        
+        const availableSheets = metadata.data.sheets.map(s => s.properties.title);
+        
+        // Find the correct sheet to use (prefer 'Quotes', fallback to 'Sheet1', then first sheet)
+        let targetSheet = 'Sheet1'; // Default fallback
+        if (availableSheets.includes('Quotes')) {
+          targetSheet = 'Quotes';
+        } else if (availableSheets.includes('Sheet1')) {
+          targetSheet = 'Sheet1';
+        } else if (availableSheets.length > 0) {
+          targetSheet = availableSheets[0];
+        }
+
+        // Prepare quote data for Google Sheets
+        const quoteData = [
+          [
+            new Date().toISOString(), // Timestamp
+            quoteId, // Quote ID
+            leadId, // Lead ID
+            customerName, // Customer Name
+            customerEmail, // Customer Email
+            customerPhone, // Customer Phone
+            tradesmanName, // Tradesman Name
+            tradesmanEmail, // Tradesman Email
+            tradesmanPhone, // Tradesman Phone
+            serviceType, // Service Type
+            projectDetails, // Project Details
+            projectSize, // Project Size
+            location, // Location
+            budget, // Budget
+            timeline, // Timeline
+            specificDetails, // Specific Details
+            quoteAmount, // Quote Amount
+            req.body.labourRate || '', // Labour Rate
+            req.body.labourHours || '', // Labour Hours
+            req.body.labourSubtotal || '', // Labour Subtotal
+            req.body.materialRate || '', // Material Rate
+            req.body.materialSQM || '', // Material SQM
+            req.body.materialSubtotal || '', // Material Subtotal
+            req.body.installationAmount || '', // Installation Amount
+            req.body.installationSubtotal || '', // Installation Subtotal
+            breakdown, // Breakdown
+            notes || '', // Notes
+            'Pending', // Status
+            onlineQuoteUrl, // Online Quote URL
+            acceptUrl, // Accept URL
+            declineUrl // Decline URL
+          ]
+        ];
+
+        // Append quote data to the sheet
+        await sheets.spreadsheets.values.append({
+          spreadsheetId: spreadsheetId,
+          range: `${targetSheet}!A:Z`,
+          valueInputOption: 'USER_ENTERED',
+          insertDataOption: 'INSERT_ROWS',
+          resource: { values: quoteData }
+        });
+
+        console.log('✅ Quote data saved to Google Sheets');
+        sheetsUpdated = true;
+      }
+    } catch (sheetsError) {
+      console.error('❌ Google Sheets error:', sheetsError.message);
+    }
+
+    // 4. Send admin notification email
     try {
       const transporter = nodemailer.createTransport({
         service: 'gmail',

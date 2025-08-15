@@ -568,35 +568,43 @@
                     case 'area_sizes':
                         chatState.areaSizes = message;
                         chatState.step = 'collect_details_intro';
-                        addMessage("Before we ask for your details, can you please enter your personal details so we can find a tradie who can service your area and your needs.");
+                        addMessage("Before we notify a tradie about your project enquiry, can you please enter your personal details so we can find a tradie who can service your area and your needs.");
                         setTimeout(() => {
                             chatState.step = 'customer_name';
                             addMessage("What's your name?");
-                        }, 2000);
+                        }, 4000); // Increased from 2000ms to 4000ms (4 seconds)
                         break;
                     case 'customer_name':
                         chatState.customerName = message;
                         chatState.step = 'customer_phone';
-                        addMessage("What's your phone number?");
+                        setTimeout(() => {
+                            addMessage("What's your phone number?");
+                        }, 1500); // Added 1.5 second delay
                         break;
                     case 'customer_phone':
                         chatState.customerPhone = message;
                         chatState.step = 'location';
-                        addMessage("What's the address of the job?");
+                        setTimeout(() => {
+                            addMessage("What's the address of the job?");
+                        }, 1500); // Added 1.5 second delay
                         break;
                     case 'location':
                         chatState.location = message;
                         chatState.step = 'customer_email';
-                        addMessage("Finally, what's your email address?");
+                        setTimeout(() => {
+                            addMessage("Finally, what's your email address?");
+                        }, 1500); // Added 1.5 second delay
                         break;
                     case 'customer_email':
                         chatState.customerEmail = message;
-                        generateLead();
+                        setTimeout(() => {
+                            generateLead();
+                        }, 1000); // Added 1 second delay before generating lead
                         break;
                     default:
                         addMessage("I'm not sure I understand. Could you please clarify?");
                 }
-            }, 500);
+            }, 800); // Increased from 500ms to 800ms for initial response
         }
 
         function generateLead() {

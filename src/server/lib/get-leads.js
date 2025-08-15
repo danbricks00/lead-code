@@ -57,7 +57,7 @@ export default async function handler(req, res) {
     // Read all data from the sheet
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: spreadsheetId,
-      range: 'Sheet1!A:Z', // Read all columns
+      range: 'Leads!A:Z', // Read all columns
     });
 
     const rows = response.data.values;

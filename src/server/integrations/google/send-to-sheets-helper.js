@@ -145,7 +145,7 @@ export async function sendToSheets(leadData) {
       });
 
       const sheets = google.sheets({ version: 'v4', auth });
-      const range = 'Sheet1!A:Z';
+      const range = 'Leads!A:Z';
 
       const values = [
         [

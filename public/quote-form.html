@@ -111,6 +111,19 @@
     </div>
 
     <form id="quoteForm">
+        <!-- Hidden fields for lead data -->
+        <input type="hidden" id="leadId" name="leadId">
+        <input type="hidden" id="customerName" name="customerName">
+        <input type="hidden" id="customerEmail" name="customerEmail">
+        <input type="hidden" id="customerPhone" name="customerPhone">
+        <input type="hidden" id="serviceType" name="serviceType">
+        <input type="hidden" id="projectDetails" name="projectDetails">
+        <input type="hidden" id="projectSize" name="projectSize">
+        <input type="hidden" id="budget" name="budget">
+        <input type="hidden" id="timeline" name="timeline">
+        <input type="hidden" id="location" name="location">
+        <input type="hidden" id="specificDetails" name="specificDetails">
+
         <div class="form-group">
             <label for="tradesmanName">Your Name/Company:</label>
             <input type="text" id="tradesmanName" name="tradesmanName" required>
@@ -443,16 +456,18 @@
                 if (data.success && data.lead) {
                     const lead = data.lead;
                     
-                    // Populate form fields with lead data
-                    document.getElementById('customerName').value = lead.customerName || '';
-                    document.getElementById('customerEmail').value = lead.customerEmail || '';
-                    document.getElementById('customerPhone').value = lead.customerPhone || '';
-                    document.getElementById('serviceType').value = lead.selectedService || 'Underfloor Heating';
-                    document.getElementById('projectDetails').value = lead.projectDetails || '';
-                    document.getElementById('projectSize').value = lead.projectSize || '';
-                    document.getElementById('budget').value = lead.budget || '';
-                    document.getElementById('timeline').value = lead.timeline || '';
-                    document.getElementById('location').value = lead.location || 'Auckland';
+                                                // Populate hidden fields with lead data
+                            document.getElementById('leadId').value = lead.leadId || '';
+                            document.getElementById('customerName').value = lead.customerName || '';
+                            document.getElementById('customerEmail').value = lead.customerEmail || '';
+                            document.getElementById('customerPhone').value = lead.customerPhone || '';
+                            document.getElementById('serviceType').value = lead.selectedService || 'Underfloor Heating';
+                            document.getElementById('projectDetails').value = lead.projectDetails || '';
+                            document.getElementById('projectSize').value = lead.projectSize || '';
+                            document.getElementById('budget').value = lead.budget || '';
+                            document.getElementById('timeline').value = lead.timeline || '';
+                            document.getElementById('location').value = lead.location || 'Auckland';
+                            document.getElementById('specificDetails').value = lead.specificDetails || '';
                     
                     // Show customer info section
                     document.getElementById('customerInfo').style.display = 'block';
@@ -481,12 +496,6 @@
              const formData = new FormData(e.target);
              const data = Object.fromEntries(formData.entries());
              
-             // Add quoteId from URL parameters if available
-             const urlParams = new URLSearchParams(window.location.search);
-             if (urlParams.has('leadId')) {
-                 data.quoteId = urlParams.get('leadId');
-             }
-             
              // Clean and validate data
              if (data.totalAmount) {
                  data.totalAmount = data.totalAmount.replace(/[^0-9.]/g, '');
@@ -496,9 +505,25 @@
                  data.tradesmanPhone = data.tradesmanPhone.trim();
              }
              
+             // Map totalAmount to quoteAmount for API compatibility
+             data.quoteAmount = data.totalAmount;
+             
+             // Create breakdown text from subtotals
+             const breakdown = [];
+             if (data.labourSubtotal && parseFloat(data.labourSubtotal) > 0) {
+                 breakdown.push(`Labour: $${data.labourSubtotal}`);
+             }
+             if (data.materialSubtotal && parseFloat(data.materialSubtotal) > 0) {
+                 breakdown.push(`Materials: $${data.materialSubtotal}`);
+             }
+             if (data.installationSubtotal && parseFloat(data.installationSubtotal) > 0) {
+                 breakdown.push(`Installation: $${data.installationSubtotal}`);
+             }
+             data.breakdown = breakdown.join(', ');
+             
              // Ensure required fields are present
-             if (!data.tradesmanName || !data.tradesmanEmail || !data.totalAmount) {
-                 alert('Please fill in all required fields: Name, Email, and Total Amount');
+             if (!data.tradesmanName || !data.tradesmanEmail || !data.quoteAmount || !data.customerName || !data.customerEmail) {
+                 alert('Please fill in all required fields: Your Name, Email, and ensure lead data is loaded');
                  return;
              }
              

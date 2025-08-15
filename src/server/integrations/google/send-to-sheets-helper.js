@@ -201,7 +201,27 @@ export async function sendToSheets(leadData) {
       });
 
       const sheets = google.sheets({ version: 'v4', auth });
-      const range = 'Leads!A:Z';
+      
+      // Get available sheets to find the correct one to use
+      const metadata = await sheets.spreadsheets.get({
+        spreadsheetId: spreadsheetId
+      });
+      
+      const availableSheets = metadata.data.sheets.map(s => s.properties.title);
+      console.log('📋 Available sheets:', availableSheets);
+      
+      // Find the correct sheet to use (prefer 'Leads', fallback to 'Sheet1', then first sheet)
+      let targetSheet = 'Sheet1'; // Default fallback
+      if (availableSheets.includes('Leads')) {
+        targetSheet = 'Leads';
+      } else if (availableSheets.includes('Sheet1')) {
+        targetSheet = 'Sheet1';
+      } else if (availableSheets.length > 0) {
+        targetSheet = availableSheets[0];
+      }
+      
+      console.log('🎯 Using sheet for lead data:', targetSheet);
+      const range = `${targetSheet}!A:Z`;
 
       const values = [
         [

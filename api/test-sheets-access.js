@@ -61,15 +61,31 @@ export default async function handler(req, res) {
       sheets: metadata.data.sheets.map(s => s.properties.title)
     });
 
-    // Test 2: Try to read from the Leads sheet
-    console.log('📋 Testing Leads sheet read...');
+    // Get available sheet names
+    const availableSheets = metadata.data.sheets.map(s => s.properties.title);
+    console.log('📋 Available sheets:', availableSheets);
+
+    // Find the correct sheet to use (prefer 'Leads', fallback to 'Sheet1', then first sheet)
+    let targetSheet = 'Sheet1'; // Default fallback
+    if (availableSheets.includes('Leads')) {
+      targetSheet = 'Leads';
+    } else if (availableSheets.includes('Sheet1')) {
+      targetSheet = 'Sheet1';
+    } else if (availableSheets.length > 0) {
+      targetSheet = availableSheets[0];
+    }
+
+    console.log('🎯 Using sheet:', targetSheet);
+
+    // Test 2: Try to read from the target sheet
+    console.log(`📋 Testing ${targetSheet} sheet read...`);
     const readResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: spreadsheetId,
-      range: 'Leads!A:Z'
+      range: `${targetSheet}!A:Z`
     });
 
-    console.log('✅ Leads sheet read successful');
-    console.log('📊 Current rows in Leads sheet:', readResponse.data.values?.length || 0);
+    console.log('✅ Sheet read successful');
+    console.log(`📊 Current rows in ${targetSheet} sheet:`, readResponse.data.values?.length || 0);
 
     // Test 3: Try to write a test row
     console.log('✍️ Testing write access...');
@@ -92,7 +108,7 @@ export default async function handler(req, res) {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: spreadsheetId,
-      range: 'Leads!A:Z',
+      range: `${targetSheet}!A:Z`,
       valueInputOption: 'USER_ENTERED',
       insertDataOption: 'INSERT_ROWS',
       resource: { values: [testRow] }
@@ -105,8 +121,10 @@ export default async function handler(req, res) {
       message: 'All Google Sheets tests passed!',
       serviceAccountEmail: process.env.GOOGLE_CLIENT_EMAIL,
       spreadsheetTitle: metadata.data.properties.title,
-      availableSheets: metadata.data.sheets.map(s => s.properties.title),
-      currentLeadsCount: readResponse.data.values?.length || 0
+      availableSheets: availableSheets,
+      targetSheet: targetSheet,
+      currentLeadsCount: readResponse.data.values?.length || 0,
+      note: availableSheets.includes('Leads') ? 'Using Leads sheet' : `Using ${targetSheet} sheet (Leads sheet not found)`
     });
 
   } catch (error) {

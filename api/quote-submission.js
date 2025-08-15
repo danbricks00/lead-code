@@ -77,12 +77,12 @@ export default async function handler(req, res) {
       acceptUrl = `${origin}/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=accept`;
       declineUrl = `${origin}/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=decline`;
 
-      // Attachments array
-      attachments = pdfBuffer ? [{
-        filename: `quote-${quoteId}.pdf`,
-        content: pdfBuffer,
-        contentType: 'application/pdf'
-      }] : [];
+          // Attachments array
+    attachments = pdfBuffer ? [{
+      filename: `quote-${quoteId}.html`,
+      content: pdfBuffer,
+      contentType: 'text/html'
+    }] : [];
     } catch (e) {
       console.error('Error in PDF/link generation: ', e);
       // Continue without PDF and links
@@ -100,28 +100,28 @@ export default async function handler(req, res) {
         }
       });
 
-      // Email HTML (customer) — professional, with a real button (anchor styled as button)
-      const customerHtml = `
-        <div style="font-family: Arial, sans-serif; color:#1f2937;">
-          <h2>Your Quote from Kiwi Trade</h2>
-          <p>Hi ${customerName || ''},</p>
-          <p>Thank you for your interest in our services. Your professional quote is attached as a PDF.</p>
-          <h3 style="background:#f3f4f6;padding:10px;border-radius:6px;">Quote Summary</h3>
-          <p><strong>Service:</strong> ${serviceType || 'Underfloor Heating'}</p>
-          <p><strong>Location:</strong> ${location || ''}</p>
-          <p><strong>Quote Amount:</strong> $${Number(quoteAmount || 0).toFixed(2)}</p>
-          <p><strong>Breakdown:</strong> Labour: $${Number(req.body.labourSubtotal||0).toFixed(2)}, Materials: $${Number(req.body.materialSubtotal||0).toFixed(2)}, Installation: $${Number(req.body.installationSubtotal||0).toFixed(2)}</p>
-          <p style="margin-top:16px;">You can view and respond online here:</p>
-          <p>
-            <a href="${onlineQuoteUrl}" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;">View Quote Online</a>
-          </p>
-          <p style="margin-top:10px;">
-            <a href="${acceptUrl}" style="display:inline-block;background:#16a34a;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none;margin-right:10px;">Accept Quote</a>
-            <a href="${declineUrl}" style="display:inline-block;background:#dc2626;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none;">Decline Quote</a>
-          </p>
-          <p style="margin-top:16px;color:#6b7280;">This quote was generated automatically by our system.</p>
-        </div>
-      `;
+                        // Email HTML (customer) — professional, with a real button (anchor styled as button)
+                  const customerHtml = `
+                    <div style="font-family: Arial, sans-serif; color:#1f2937;">
+                      <h2>Your Quote from Kiwi Trade</h2>
+                      <p>Hi ${customerName || ''},</p>
+                      <p>Thank you for your interest in our services. Your professional quote is attached as an HTML document.</p>
+                      <h3 style="background:#f3f4f6;padding:10px;border-radius:6px;">Quote Summary</h3>
+                      <p><strong>Service:</strong> ${serviceType || 'Underfloor Heating'}</p>
+                      <p><strong>Location:</strong> ${location || ''}</p>
+                      <p><strong>Quote Amount:</strong> $${Number(quoteAmount || 0).toFixed(2)}</p>
+                      <p><strong>Breakdown:</strong> Labour: $${Number(req.body.labourSubtotal||0).toFixed(2)}, Materials: $${Number(req.body.materialSubtotal||0).toFixed(2)}, Installation: $${Number(req.body.installationSubtotal||0).toFixed(2)}</p>
+                      <p style="margin-top:16px;">You can view and respond online here:</p>
+                      <p>
+                        <a href="${onlineQuoteUrl}" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;">View Quote Online</a>
+                      </p>
+                      <p style="margin-top:10px;">
+                        <a href="${acceptUrl}" style="display:inline-block;background:#16a34a;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none;margin-right:10px;">Accept Quote</a>
+                        <a href="${declineUrl}" style="display:inline-block;background:#dc2626;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none;">Decline Quote</a>
+                      </p>
+                      <p style="margin-top:16px;color:#6b7280;">This quote was generated automatically by our system.</p>
+                    </div>
+                  `;
 
       const customerMailOptions = {
         from: 'Kiwi Trade <danbricks18@gmail.com>',

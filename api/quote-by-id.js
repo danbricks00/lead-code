@@ -18,16 +18,20 @@ export default async function handler(req, res) {
       return res.status(404).json({ ok: false, error: 'Quote not found' });
     }
 
-    // Temporary structure (replace with real lookups)
+    // Structure with real lead data
     const data = {
       ok: true,
       quoteId,
       leadId,
       customerName: leadData.customerName || '',
       customerEmail: leadData.customerEmail || '',
-      serviceType: leadData.selectedService || 'underfloor_heating',
+      serviceType: leadData.selectedService || 'Underfloor Heating',
       location: leadData.location || '',
       projectDetails: leadData.projectDetails || '',
+      projectSize: leadData.projectSize || '',
+      budget: leadData.budget || '',
+      timeline: leadData.timeline || '',
+      specificDetails: leadData.specificDetails || '',
       totals: {
         labour: Number(req.query.labour || 0),
         materials: Number(req.query.materials || 0),
@@ -35,11 +39,11 @@ export default async function handler(req, res) {
         total: Number(req.query.total || 0)
       },
       tradesman: {
-        name: req.query.tradesmanName || '',
+        name: req.query.tradesmanName || 'Kiwi Trade',
         phone: req.query.tradesmanPhone || '',
-        email: req.query.tradesmanEmail || ''
+        email: req.query.tradesmanEmail || 'info@kiwitrade.co.nz'
       },
-      validUntil: req.query.validUntil || '',
+      validUntil: req.query.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       quoteNumber: quoteId
     };
 

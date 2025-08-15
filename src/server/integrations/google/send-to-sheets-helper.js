@@ -124,7 +124,54 @@ export async function sendToSheets(leadData) {
     console.error('❌ Tradesman email error:', emailError.message);
   }
 
-  // 3. Save to Google Sheets (if configured)
+  // 3. Send admin notification email
+  let adminNotified = false;
+  try {
+    const nodemailer = await import('nodemailer');
+    const transporter = nodemailer.default.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'danbricks18@gmail.com',
+        pass: 'ptmcojqgthvjbqom'
+      }
+    });
+
+    const adminMailOptions = {
+      from: 'Kiwi Trade <danbricks18@gmail.com>',
+      to: 'danbricks18@gmail.com',
+      subject: 'New Lead captured',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2c3e50;">New Lead Captured from Chatbot</h2>
+          <p>A new lead has been submitted through the chatbot system.</p>
+          
+          <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #34495e; margin-top: 0;">Lead Details:</h3>
+            <p><strong>Customer:</strong> ${leadData.customerName || 'Not provided'}</p>
+            <p><strong>Email:</strong> ${leadData.customerEmail || 'Not provided'}</p>
+            <p><strong>Phone:</strong> ${leadData.customerPhone || 'Not provided'}</p>
+            <p><strong>Location:</strong> ${leadData.location || 'Not provided'}</p>
+            <p><strong>Service:</strong> ${leadData.selectedService || 'Not specified'}</p>
+            <p><strong>Project:</strong> ${leadData.projectDetails || 'Not specified'}</p>
+            <p><strong>Size/Scope:</strong> ${leadData.projectSize || 'Not specified'}</p>
+            <p><strong>Budget:</strong> ${leadData.budget || 'Not specified'}</p>
+            <p><strong>Timeline:</strong> ${leadData.timeline || 'Not specified'}</p>
+            ${leadData.specificDetails ? `<p><strong>Specific Details:</strong> ${leadData.specificDetails}</p>` : ''}
+          </div>
+          
+          <p><em>This lead was automatically captured from the chatbot system.</em></p>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(adminMailOptions);
+    console.log('✅ Admin notification email sent successfully');
+    adminNotified = true;
+  } catch (emailError) {
+    console.error('❌ Admin email error:', emailError.message);
+  }
+
+  // 4. Save to Google Sheets (if configured)
   let sheetsUpdated = false;
   try {
     // Check if we have the required environment variables
@@ -187,6 +234,7 @@ export async function sendToSheets(leadData) {
     details: {
       customerEmailSent,
       tradesmanNotified,
+      adminNotified,
       sheetsUpdated,
       leadId: `LEAD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     }

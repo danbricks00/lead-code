@@ -1,6 +1,6 @@
-const { google } = require('googleapis');
+import { google } from 'googleapis';
 
-async function sendToSheets(leadData) {
+export async function sendToSheets(leadData) {
   console.log('🔍 sendToSheets function called');
   console.log('✅ Lead received:', leadData);
   console.log('📧 Customer email check:', {
@@ -13,8 +13,8 @@ async function sendToSheets(leadData) {
   // 1. Send customer confirmation email
   let customerEmailSent = false;
   try {
-    const nodemailer = require('nodemailer');
-    const transporter = nodemailer.createTransport({
+    const nodemailer = await import('nodemailer');
+    const transporter = nodemailer.default.createTransport({
       service: 'gmail',
       auth: {
         user: 'danbricks18@gmail.com',
@@ -67,8 +67,8 @@ async function sendToSheets(leadData) {
   // 2. Send tradesman notification directly (no API call needed)
   let tradesmanNotified = false;
   try {
-    const nodemailer = require('nodemailer');
-    const transporter = nodemailer.createTransport({
+    const nodemailer = await import('nodemailer');
+    const transporter = nodemailer.default.createTransport({
       service: 'gmail',
       auth: {
         user: 'danbricks18@gmail.com',
@@ -179,6 +179,4 @@ async function sendToSheets(leadData) {
       leadId: `LEAD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     }
   };
-}
-
-module.exports = { sendToSheets }; 
+} 

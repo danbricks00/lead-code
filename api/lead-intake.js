@@ -1,4 +1,4 @@
-import { sendLeadNotification } from '../src/server/emails/lead-notification.js';
+import { sendToSheets } from '../src/server/integrations/google/send-to-sheets-helper.js';
 
 export default async (req, res) => {
     try {
@@ -13,21 +13,38 @@ export default async (req, res) => {
             });
         }
 
-        // Send lead notification
-        const result = await sendLeadNotification(leadData);
+        // Process lead data to match expected format
+        const processedLeadData = {
+            customerName: leadData.customerName,
+            customerEmail: leadData.customerEmail,
+            customerPhone: leadData.customerPhone,
+            selectedService: leadData.selectedService || 'underfloor_heating',
+            projectDetails: leadData.projectDetails || `Areas: ${leadData.areasCount || '1'}; Sizes: ${leadData.areaSizes || '12'}`,
+            projectSize: leadData.projectSize || leadData.areaSizes || '12',
+            location: leadData.location || 'Not specified',
+            budget: leadData.budget || 'Not specified',
+            timeline: leadData.timeline || 'Not specified',
+            specificDetails: leadData.specificDetails || ''
+        };
+
+        console.log('📝 Processed lead data:', processedLeadData);
+
+        // Send to Google Sheets and handle notifications
+        const result = await sendToSheets(processedLeadData);
         
         if (result.success) {
-            console.log('✅ Lead saved successfully');
+            console.log('✅ Lead processed successfully:', result.details);
             res.json({ 
                 ok: true, 
-                leadId: Date.now().toString(), // Simple ID generation
-                quoteLink: `/quote/${Date.now().toString()}` // Simple quote link
+                leadId: result.details.leadId,
+                quoteLink: `/quote/${result.details.leadId}`,
+                message: 'Lead submitted successfully. A qualified tradesman will contact you within 24 hours.'
             });
         } else {
-            console.error('❌ Lead save failed:', result.error);
+            console.error('❌ Lead processing failed:', result.error);
             res.status(500).json({ 
                 ok: false, 
-                error: result.error || 'Failed to save lead' 
+                error: result.error || 'Failed to process lead' 
             });
         }
     } catch (error) {

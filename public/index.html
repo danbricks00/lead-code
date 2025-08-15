@@ -608,9 +608,14 @@
                 customerEmail: chatState.customerEmail,
                 customerPhone: chatState.customerPhone,
                 selectedService: 'underfloor_heating',
+                projectDetails: `Underfloor heating installation - Areas: ${chatState.areasCount || '1'}; Sizes: ${chatState.areaSizes || '12'}m²`,
+                projectSize: chatState.areaSizes || '12',
                 location: chatState.location,
                 areasCount: chatState.areasCount,
-                areaSizes: chatState.areaSizes
+                areaSizes: chatState.areaSizes,
+                budget: 'To be quoted',
+                timeline: 'Flexible',
+                specificDetails: `Customer requires underfloor heating installation for ${chatState.areasCount || '1'} area(s) with total size of ${chatState.areaSizes || '12'}m²`
             };
 
             fetch('/api/lead-intake', {
@@ -620,10 +625,12 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    console.log('Lead submitted successfully');
+                if (data.ok) {
+                    console.log('Lead submitted successfully:', data.message);
+                    addMessage(data.message || 'Lead submitted successfully. A qualified tradesman will contact you within 24 hours.');
                 } else {
                     console.error('Error submitting lead:', data.error);
+                    addMessage('Sorry, there was an error submitting your lead. Please try again or contact us directly.');
                 }
             })
             .catch(error => {

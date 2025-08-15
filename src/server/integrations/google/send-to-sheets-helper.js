@@ -8,6 +8,10 @@ export async function sendToSheets(leadData) {
   const timestamp = new Date().toISOString();
   console.log('📅 Chatbot completion timestamp:', timestamp);
   
+  // Generate unique lead ID for tracking (moved to top for scope)
+  const leadId = `LEAD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  console.log('📧 Generated lead ID:', leadId);
+  
   console.log('📧 Customer email check:', {
     customerEmail: leadData.customerEmail,
     customerName: leadData.customerName,
@@ -84,18 +88,14 @@ export async function sendToSheets(leadData) {
       }
     });
 
-    // Generate unique lead ID for tracking
-    const leadId = `LEAD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    console.log('📧 Generated lead ID:', leadId);
-    
     // Get current URL for quote links
     const currentUrl = process.env.VERCEL_URL ? 
       `https://${process.env.VERCEL_URL}` : 
       'http://localhost:3000';
     console.log('📧 Current URL for quote link:', currentUrl);
     
-    // Use timestamp as leadId for the quote link
-    const quoteLink = `${currentUrl}/quote-form.html?leadId=${timestamp}`;
+    // Use leadId for the quote link
+    const quoteLink = `${currentUrl}/quote-form.html?leadId=${leadId}`;
     console.log('📧 Quote link generated:', quoteLink);
 
     console.log('📧 Creating tradesman email options...');
@@ -287,7 +287,7 @@ export async function sendToSheets(leadData) {
       tradesmanNotified,
       adminNotified,
       sheetsUpdated,
-      leadId: `LEAD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      leadId: leadId,
       timestamp: timestamp
     }
   };

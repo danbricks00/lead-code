@@ -86,16 +86,16 @@ export default async function handler(req, res) {
     const headers = rows[0];
     console.log('📋 Headers:', headers);
 
-    // Find the timestamp column (first column)
-    const timestampIndex = 0; // Timestamp is always the first column
+    // Find the leadId column (second column)
+    const leadIdIndex = 1; // Lead ID is the second column (B)
 
-    // Search for the lead with matching timestamp
+    // Search for the lead with matching leadId
     let foundLead = null;
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      const rowTimestamp = row[timestampIndex];
+      const rowLeadId = row[leadIdIndex];
       
-      if (rowTimestamp === leadId) {
+      if (rowLeadId === leadId) {
         // Found the lead, map it to the expected structure
         foundLead = {
           timestamp: row[0] || '', // Timestamp

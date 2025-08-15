@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API Endpoints</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success { border-left: 4px solid #28a745; }
+        .error { border-left: 4px solid #dc3545; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>API Endpoints Test</h1>
+    <button onclick="testAllEndpoints()">Test All Endpoints</button>
+    <div id="results"></div>
+
+    <script>
+        async function testEndpoint(name, url, method = 'POST', body = null) {
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+                
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+                
+                const response = await fetch(url, options);
+                const data = await response.json();
+                
+                const resultClass = response.ok ? 'success' : 'error';
+                const status = response.ok ? '✅' : '❌';
+                
+                resultsDiv.innerHTML += `
+                    <div class="result ${resultClass}">
+                        ${status} ${name}: ${response.status} ${response.statusText}
+                        ${response.ok ? 'Success' : 'Failed'}
+                        ${body ? `\nBody: ${JSON.stringify(body)}` : ''}
+                        ${data ? `\nResponse: ${JSON.stringify(data, null, 2)}` : ''}
+                    </div>
+                `;
+                
+                return response.ok;
+            } catch (error) {
+                resultsDiv.innerHTML += `
+                    <div class="result error">
+                        ❌ ${name}: Network Error
+                        ${error.message}
+                    </div>
+                `;
+                return false;
+            }
+        }
+        
+        async function testAllEndpoints() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="result">🔄 Testing all endpoints...</div>';
+            
+            // Test 1: Sheets structure (should work)
+            await testEndpoint('Sheets Structure', '/api/test-sheets-structure', 'POST');
+            
+            // Test 2: Get leads (should work)
+            await testEndpoint('Get Leads', '/api/get-leads', 'POST', { tradeType: 'Underfloor Heating' });
+            
+            // Test 3: Get lead by ID (this is the one failing)
+            await testEndpoint('Get Lead by ID', '/api/get-lead-by-id', 'POST', { 
+                leadId: '2025-08-15T05:36:22.759Z' 
+            });
+            
+            // Test 4: Quote submission (should work)
+            await testEndpoint('Quote Submission', '/api/quote-submission', 'POST', {
+                leadId: 'test-lead-id',
+                customerName: 'Test Customer',
+                customerEmail: 'test@example.com',
+                quoteNumber: 'QU123',
+                totalAmount: 5000,
+                validUntil: '2025-09-15'
+            });
+            
+            resultsDiv.innerHTML += '<div class="result success">✅ All endpoint tests completed!</div>';
+        }
+    </script>
+</body>
+</html>

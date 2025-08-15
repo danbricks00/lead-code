@@ -144,22 +144,10 @@ export default async function handler(req, res) {
       console.log('✅ Added headers:', headers);
     }
 
-    // Find the index of the service column (could be "Service type", "SelectedService", etc.)
-    const serviceIndex = headers.findIndex(h => 
-      h.toLowerCase().includes('service') || 
-      h.toLowerCase().includes('selected') ||
-      h.toLowerCase().includes('type')
-    );
-
-    if (serviceIndex === -1) {
-      console.log('❌ Could not find service column in headers:', headers);
-      return res.status(500).json({
-        success: false,
-        error: 'Service column not found in spreadsheet headers'
-      });
-    }
-
-    console.log(`🔍 Service column found at index ${serviceIndex}: ${headers[serviceIndex]}`);
+    // Service type is always at index 4 (column E) based on send-to-sheets-helper.js
+    const serviceIndex = 4;
+    
+    console.log(`🔍 Service column is at index ${serviceIndex} (column E)`);
     console.log(`🔍 Looking for tradesman service type: "${tradeType}"`);
     console.log(`📊 Total rows to filter: ${dataRows.length}`);
 
@@ -176,40 +164,28 @@ export default async function handler(req, res) {
       if (service && service.includes(tradeType.toLowerCase())) {
         const lead = {};
         
-        // Map all columns to lead object with normalized property names
-        headers.forEach((header, index) => {
-          if (row[index]) {
-            // Map to lowercase property names for dashboard compatibility
-            const headerLower = header.toLowerCase();
-            if (headerLower.includes('customer') && headerLower.includes('name')) {
-              lead.customerName = row[index];
-            } else if (headerLower.includes('customer') && headerLower.includes('email')) {
-              lead.customerEmail = row[index];
-            } else if (headerLower.includes('customer') && headerLower.includes('phone')) {
-              lead.customerPhone = row[index];
-            } else if (headerLower.includes('selected') && headerLower.includes('service')) {
-              lead.selectedService = row[index];
-            } else if (headerLower.includes('project') && headerLower.includes('details')) {
-              lead.projectDetails = row[index];
-            } else if (headerLower.includes('project') && headerLower.includes('size')) {
-              lead.projectSize = row[index];
-            } else if (headerLower.includes('specific') && headerLower.includes('details')) {
-              lead.specificDetails = row[index];
-            } else if (headerLower.includes('location')) {
-              lead.location = row[index];
-            } else if (headerLower.includes('budget')) {
-              lead.budget = row[index];
-            } else if (headerLower.includes('timeline')) {
-              lead.timeline = row[index];
-            } else if (headerLower.includes('timestamp')) {
-              lead.timestamp = row[index];
-            } else if (headerLower.includes('status')) {
-              lead.status = row[index];
-              console.log(`📋 Found status for lead: "${row[index]}"`);
-            }
-            // Also keep original header for backward compatibility
-            lead[header] = row[index];
-          }
+        // Map columns based on the exact order from send-to-sheets-helper.js
+        // Column order: timestamp, customerName, customerEmail, customerPhone, selectedService, projectDetails, projectSize, budget, timeline, location, specificDetails, customerEmailSent, tradesmanNotified, status
+        lead.timestamp = row[0] || ''; // Timestamp
+        lead.customerName = row[1] || ''; // Customer Name
+        lead.customerEmail = row[2] || ''; // Customer Email
+        lead.customerPhone = row[3] || ''; // Customer Phone
+        lead.selectedService = row[4] || ''; // Service type
+        lead.projectDetails = row[5] || ''; // Project details
+        lead.projectSize = row[6] || ''; // Project size
+        lead.budget = row[7] || ''; // Budget
+        lead.timeline = row[8] || ''; // Timeline
+        lead.location = row[9] || ''; // Location
+        lead.specificDetails = row[10] || ''; // Specific details
+        lead.status = row[13] || 'New'; // Status (column 14)
+        
+        console.log(`📋 Lead data mapped:`, {
+          customerName: lead.customerName,
+          customerEmail: lead.customerEmail,
+          location: lead.location,
+          budget: lead.budget,
+          selectedService: lead.selectedService,
+          projectDetails: lead.projectDetails
         });
         
         // Add timestamp if not present

@@ -175,20 +175,29 @@ export async function sendToSheets(leadData) {
   let sheetsUpdated = false;
   try {
     // Check if we have the required environment variables
-    const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+    const serviceAccountEmail = process.env.GOOGLE_CLIENT_EMAIL;
     const privateKey = process.env.GOOGLE_PRIVATE_KEY;
     const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID || '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms';
 
-    if (!serviceAccountEmail || !privateKey) {
+    if (!serviceAccountEmail || !privateKey || !process.env.GOOGLE_PROJECT_ID || !process.env.GOOGLE_PRIVATE_KEY_ID || !process.env.GOOGLE_CLIENT_ID) {
       console.log('⚠️ Google Sheets credentials not found in environment variables');
+      console.log('📝 Required variables: GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, GOOGLE_PROJECT_ID, GOOGLE_PRIVATE_KEY_ID, GOOGLE_CLIENT_ID');
       console.log('📝 Skipping Google Sheets update - emails still sent successfully');
     } else {
       const auth = new google.auth.GoogleAuth({
         credentials: {
-          client_email: serviceAccountEmail,
+          type: 'service_account',
+          project_id: process.env.GOOGLE_PROJECT_ID,
+          private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
           private_key: privateKey.replace(/\\n/g, '\n'),
+          client_email: serviceAccountEmail,
+          client_id: process.env.GOOGLE_CLIENT_ID,
+          auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+          token_uri: 'https://oauth2.googleapis.com/token',
+          auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
+          client_x509_cert_url: process.env.GOOGLE_CLIENT_CER_URL
         },
-        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+        scopes: ['https://www.googleapis.com/auth/spreadsheets']
       });
 
       const sheets = google.sheets({ version: 'v4', auth });

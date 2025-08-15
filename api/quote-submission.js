@@ -116,9 +116,15 @@ export default async function handler(req, res) {
         'x-forwarded-host': req.headers['x-forwarded-host']
       });
       
+      // Update URLs to use the correct format for Vercel
       onlineQuoteUrl = `${origin}/quote.html?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}`;
       acceptUrl = `${origin}/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=accept`;
       declineUrl = `${origin}/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=decline`;
+      
+      // Also update the quoteData object with the correct URLs
+      quoteData.onlineQuoteUrl = onlineQuoteUrl;
+      quoteData.acceptUrl = acceptUrl;
+      quoteData.declineUrl = declineUrl;
       
       console.log('🔗 Generated URLs:', {
         onlineQuoteUrl,

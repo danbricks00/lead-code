@@ -113,6 +113,13 @@
         <div id="submissionResult"></div>
     </div>
 
+    <div class="container">
+        <h2>2.6. Test Quote Submission</h2>
+        <p>Test if quotes can be saved to Google Sheets:</p>
+        <button class="button" onclick="testQuoteSubmission()">Test Quote Submission</button>
+        <div id="testSubmissionResult"></div>
+    </div>
+
     <script>
         async function testUrlGeneration() {
             const resultDiv = document.getElementById('urlResult');
@@ -304,6 +311,29 @@
                     `;
                 } else {
                     resultDiv.innerHTML = `<p class="error">❌ Error: ${result.error || 'Unknown error'}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network error: ${error.message}</p>`;
+            }
+        }
+
+        async function testQuoteSubmission() {
+            const resultDiv = document.getElementById('testSubmissionResult');
+            resultDiv.innerHTML = '<p class="info">🔄 Testing quote submission...</p>';
+
+            try {
+                const response = await fetch('/api/test-quote-submission');
+                const data = await response.json();
+
+                if (data.success) {
+                    let html = `
+                        <p class="success">✅ Test quote submission successful!</p>
+                        <h3>Test Results:</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error}</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
                 }
             } catch (error) {
                 resultDiv.innerHTML = `<p class="error">❌ Network error: ${error.message}</p>`;

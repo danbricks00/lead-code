@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Get Lead API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Get Lead API</h1>
+    
+    <div>
+        <label for="leadId">Lead ID (timestamp):</label><br>
+        <input type="text" id="leadId" placeholder="e.g., 2025-08-15T05:36:22.759Z" value="2025-08-15T05:36:22.759Z">
+        <button onclick="testGetLead()">Test Get Lead</button>
+        <button onclick="testAPIHealth()">Test API Health</button>
+    </div>
+    
+    <div id="result"></div>
+
+    <script>
+        async function testGetLead() {
+            const resultDiv = document.getElementById('result');
+            const leadId = document.getElementById('leadId').value;
+            
+            resultDiv.innerHTML = '<div class="loading">Testing get-lead-by-id API...</div>';
+            
+            try {
+                console.log('🔍 Testing get-lead-by-id with leadId:', leadId);
+                
+                const response = await fetch('/api/get-lead-by-id', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ leadId: leadId })
+                });
+                
+                console.log('📥 Response status:', response.status);
+                
+                const data = await response.json();
+                console.log('📥 Response data:', data);
+                
+                if (response.ok && data.success) {
+                    resultDiv.innerHTML = '<div class="result">✅ Success: ' + JSON.stringify(data, null, 2) + '</div>';
+                } else {
+                    resultDiv.innerHTML = '<div class="result">❌ Error: ' + JSON.stringify(data, null, 2) + '</div>';
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                resultDiv.innerHTML = '<div class="result">❌ Network Error: ' + error.message + '</div>';
+            }
+        }
+        
+        async function testAPIHealth() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="loading">Testing API health...</div>';
+            
+            try {
+                const response = await fetch('/api/test-sheets-structure', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    resultDiv.innerHTML = '<div class="result">✅ API Health Check: ' + JSON.stringify(data.analysis, null, 2) + '</div>';
+                } else {
+                    resultDiv.innerHTML = '<div class="result">❌ API Health Error: ' + JSON.stringify(data, null, 2) + '</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="result">❌ API Health Network Error: ' + error.message + '</div>';
+            }
+        }
+    </script>
+</body>
+</html>

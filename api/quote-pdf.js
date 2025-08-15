@@ -267,127 +267,159 @@ async function fetchLeadData(leadId) {
 <head>
     <meta charset="utf-8">
     <title>Quote - ${leadData.customerName}</title>
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 40px; 
-            line-height: 1.6;
-            color: #333;
-        }
-        .header { 
-            text-align: center; 
-            border-bottom: 3px solid #2c3e50; 
-            padding-bottom: 20px; 
-            margin-bottom: 30px; 
-        }
-        .company-name {
-            font-size: 28px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 5px;
-        }
-        .quote-title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #34495e;
-            margin-bottom: 15px;
-        }
-        .quote-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-        .customer-details, .tradesman-details {
-            flex: 1;
-            min-width: 300px;
-            margin-bottom: 20px;
-        }
-        .details-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 5px;
-            margin-bottom: 15px;
-        }
-        .detail-row {
-            margin: 8px 0;
-            display: flex;
-        }
-        .detail-label {
-            font-weight: bold;
-            width: 120px;
-            flex-shrink: 0;
-        }
-        .detail-value {
-            flex: 1;
-        }
-        .breakdown-section {
-            margin: 30px 0;
-        }
-        .breakdown-title {
-            font-size: 20px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 15px;
-        }
-        .breakdown-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-                            .breakdown-table th {
-                        background-color: #34495e;
-                        color: white;
-                        padding: 8px;
-                        text-align: left;
-                        font-weight: bold;
-                        font-size: 14px;
-                    }
-                    .breakdown-table td {
-                        padding: 8px;
-                        border-bottom: 1px solid #ddd;
-                        font-size: 14px;
-                    }
-        .breakdown-table tr:nth-child(even) {
-            background-color: #f8f9fa;
-        }
-        .total-section {
-            text-align: right;
-            margin: 20px 0;
-        }
-        .total-amount {
-            font-size: 24px;
-            font-weight: bold;
-            color: #27ae60;
-        }
-        .notes-section {
-            margin: 30px 0;
-        }
-        .notes-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-        .footer {
-            margin-top: 50px;
-            text-align: center;
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-        }
-        .footer-text {
-            font-size: 14px;
-            color: #666;
-            margin: 5px 0;
-        }
-        @media print {
-            body { margin: 20px; }
-            .footer { background-color: #f8f9fa !important; }
-        }
-    </style>
+         <style>
+         body { 
+             font-family: Arial, sans-serif; 
+             margin: 15px; 
+             line-height: 1.4;
+             color: #333;
+             font-size: 12px;
+         }
+         .header { 
+             text-align: center; 
+             border-bottom: 2px solid #2c3e50; 
+             padding-bottom: 10px; 
+             margin-bottom: 15px; 
+         }
+         .company-name {
+             font-size: 20px;
+             font-weight: bold;
+             color: #2c3e50;
+             margin-bottom: 3px;
+         }
+         .quote-title {
+             font-size: 18px;
+             font-weight: bold;
+             color: #34495e;
+             margin-bottom: 8px;
+         }
+         .quote-info {
+             display: flex;
+             justify-content: space-between;
+             margin-bottom: 15px;
+             flex-wrap: wrap;
+             gap: 10px;
+         }
+         .customer-details, .tradesman-details {
+             flex: 1;
+             min-width: 250px;
+             margin-bottom: 10px;
+         }
+         .details-title {
+             font-size: 14px;
+             font-weight: bold;
+             color: #2c3e50;
+             border-bottom: 1px solid #3498db;
+             padding-bottom: 3px;
+             margin-bottom: 8px;
+         }
+         .detail-row {
+             margin: 4px 0;
+             display: flex;
+             font-size: 11px;
+         }
+         .detail-label {
+             font-weight: bold;
+             width: 80px;
+             flex-shrink: 0;
+         }
+         .detail-value {
+             flex: 1;
+         }
+         .breakdown-section {
+             margin: 15px 0;
+         }
+         .breakdown-title {
+             font-size: 16px;
+             font-weight: bold;
+             color: #2c3e50;
+             margin-bottom: 8px;
+         }
+         .breakdown-table {
+             width: 100%;
+             border-collapse: collapse;
+             margin-bottom: 10px;
+             font-size: 11px;
+         }
+         .breakdown-table th {
+             background-color: #34495e;
+             color: white;
+             padding: 6px;
+             text-align: left;
+             font-weight: bold;
+             font-size: 11px;
+         }
+         .breakdown-table td {
+             padding: 6px;
+             border-bottom: 1px solid #ddd;
+             font-size: 11px;
+         }
+         .breakdown-table tr:nth-child(even) {
+             background-color: #f8f9fa;
+         }
+         .total-section {
+             text-align: right;
+             margin: 10px 0;
+         }
+         .total-amount {
+             font-size: 18px;
+             font-weight: bold;
+             color: #27ae60;
+         }
+         .notes-section {
+             margin: 15px 0;
+         }
+         .notes-title {
+             font-size: 14px;
+             font-weight: bold;
+             color: #2c3e50;
+             margin-bottom: 5px;
+         }
+         .footer {
+             margin-top: 20px;
+             text-align: center;
+             padding: 10px;
+             background-color: #f8f9fa;
+             border-radius: 4px;
+             font-size: 10px;
+         }
+         .footer-text {
+             font-size: 10px;
+             color: #666;
+             margin: 2px 0;
+         }
+         @media print {
+             body { 
+                 margin: 10px; 
+                 font-size: 11px;
+             }
+             .header { 
+                 margin-bottom: 10px; 
+                 padding-bottom: 8px;
+             }
+             .company-name { font-size: 18px; }
+             .quote-title { font-size: 16px; }
+             .quote-info { margin-bottom: 10px; }
+             .details-title { font-size: 12px; margin-bottom: 5px; }
+             .detail-row { margin: 2px 0; font-size: 10px; }
+             .breakdown-section { margin: 10px 0; }
+             .breakdown-title { font-size: 14px; margin-bottom: 5px; }
+             .breakdown-table { margin-bottom: 8px; }
+             .breakdown-table th, .breakdown-table td { 
+                 padding: 4px; 
+                 font-size: 10px; 
+             }
+             .total-amount { font-size: 16px; }
+             .notes-section { margin: 10px 0; }
+             .notes-title { font-size: 12px; margin-bottom: 3px; }
+             .footer { 
+                 margin-top: 15px; 
+                 padding: 8px; 
+                 font-size: 9px; 
+             }
+             .footer-text { font-size: 9px; margin: 1px 0; }
+         }
+     </style>
 </head>
 <body>
     <div class="header">

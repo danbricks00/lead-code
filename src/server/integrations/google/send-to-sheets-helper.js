@@ -71,8 +71,11 @@ export async function sendToSheets(leadData) {
 
   // 2. Send tradesman notification directly (no API call needed)
   let tradesmanNotified = false;
+  console.log('📧 Starting tradesman email process...');
   try {
+    console.log('📧 Importing nodemailer for tradesman email...');
     const nodemailer = await import('nodemailer');
+    console.log('📧 Creating transporter for tradesman email...');
     const transporter = nodemailer.default.createTransport({
       service: 'gmail',
       auth: {
@@ -83,15 +86,19 @@ export async function sendToSheets(leadData) {
 
     // Generate unique lead ID for tracking
     const leadId = `LEAD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    console.log('📧 Generated lead ID:', leadId);
     
     // Get current URL for quote links
     const currentUrl = process.env.VERCEL_URL ? 
       `https://${process.env.VERCEL_URL}` : 
       'http://localhost:3000';
+    console.log('📧 Current URL for quote link:', currentUrl);
     
     // Use timestamp as leadId for the quote link
     const quoteLink = `${currentUrl}/quote-form.html?leadId=${timestamp}`;
+    console.log('📧 Quote link generated:', quoteLink);
 
+    console.log('📧 Creating tradesman email options...');
     const tradesmanMailOptions = {
       from: 'Kiwi Trade <danbricks18@gmail.com>',
       to: 'quangbui0600@gmail.com',
@@ -123,11 +130,19 @@ export async function sendToSheets(leadData) {
       `
     };
 
+    console.log('📧 Sending tradesman email...');
+    console.log('📧 Email options:', {
+      from: tradesmanMailOptions.from,
+      to: tradesmanMailOptions.to,
+      subject: tradesmanMailOptions.subject
+    });
+    
     await transporter.sendMail(tradesmanMailOptions);
     console.log('✅ Tradesman notification email sent successfully');
     tradesmanNotified = true;
   } catch (emailError) {
     console.error('❌ Tradesman email error:', emailError.message);
+    console.error('❌ Tradesman email error stack:', emailError.stack);
   }
 
   // 3. Send admin notification email

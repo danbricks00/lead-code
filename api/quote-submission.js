@@ -106,8 +106,8 @@ export default async function handler(req, res) {
         pdfBuffer = null;
       }
 
-      // Compute links - use the actual domain, not Vercel's internal URLs
-      const origin = SITE_URL || `https://${req.headers.host}`;
+      // Compute links - use Vercel's default domain
+      const origin = SITE_URL || `https://${req.headers['x-forwarded-host'] || req.headers.host}`;
       console.log('🌐 Origin URL:', origin);
       console.log('🔗 Headers:', {
         host: req.headers.host,

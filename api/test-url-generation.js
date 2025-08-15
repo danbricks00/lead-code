@@ -14,10 +14,10 @@ export default async function handler(req, res) {
     const leadId = 'LEAD-1234567890-abc123';
     const token = 'test-token';
 
-    // Test different URL generation methods
-    const origin1 = SITE_URL || `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}`;
-    const origin2 = SITE_URL || `https://${req.headers.host}`;
-    const origin3 = SITE_URL || `http://${req.headers.host}`;
+         // Test different URL generation methods for Vercel
+     const origin1 = SITE_URL || `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers['x-forwarded-host'] || req.headers.host}`;
+     const origin2 = SITE_URL || `https://${req.headers['x-forwarded-host'] || req.headers.host}`;
+     const origin3 = SITE_URL || `http://${req.headers['x-forwarded-host'] || req.headers.host}`;
 
     const testUrls = {
       headers: {

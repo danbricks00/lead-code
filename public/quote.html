@@ -188,11 +188,33 @@
       }
 
       try {
+        console.log('🔍 Loading quote with:', { quoteId, leadId, token });
         const res = await fetch(`/api/get-quote-by-id?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}`);
         const d = await res.json();
-        if (!res.ok || !d.success) throw new Error(d.error || 'Failed to load quote');
+        console.log('📥 Quote API response:', d);
+        
+        if (!res.ok || !d.success) {
+          console.error('❌ Quote API error:', d.error || 'Failed to load quote');
+          throw new Error(d.error || 'Failed to load quote');
+        }
 
         const quote = d.quote;
+        
+        // If quote data is missing, try to load lead data as fallback
+        if (!quote || !quote.customerName) {
+          console.log('⚠️ Quote data incomplete, trying to load lead data...');
+          try {
+            const leadRes = await fetch(`/api/get-lead-by-id?leadId=${encodeURIComponent(leadId)}`);
+            const leadData = await leadRes.json();
+            if (leadData.success && leadData.lead) {
+              console.log('✅ Lead data loaded as fallback');
+              // Merge lead data with quote data
+              Object.assign(quote, leadData.lead);
+            }
+          } catch (leadError) {
+            console.error('❌ Failed to load lead data:', leadError);
+          }
+        }
         const acceptUrl = quote.acceptUrl || `/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=accept`;
         const declineUrl = quote.declineUrl || `/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=decline`;
         const pdfUrl = `/api/quote-pdf?leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&download=1`;

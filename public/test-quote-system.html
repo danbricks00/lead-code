@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Quote System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 20px;
+        }
+        .button {
+            background: #2563eb;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .button:hover {
+            background: #1d4ed8;
+        }
+        .success {
+            color: #16a34a;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc2626;
+            font-weight: bold;
+        }
+        .info {
+            color: #2563eb;
+            font-weight: bold;
+        }
+        pre {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Quote System</h1>
+        <p>This page helps you test the quote system and debug issues.</p>
+        
+        <h2>1. Setup Quotes Sheet</h2>
+        <button class="button" onclick="setupQuotesSheet()">Setup Quotes Sheet</button>
+        <button class="button" onclick="checkSheets()">Check Available Sheets</button>
+        
+        <div id="setupResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>2. Test Quote Submission</h2>
+        <p>Fill in the form below to test quote submission:</p>
+        
+        <form id="testQuoteForm">
+            <h3>Lead Data (from chatbot)</h3>
+            <input type="text" id="leadId" placeholder="Lead ID (e.g., LEAD-1234567890-abc123)" value="LEAD-1234567890-abc123">
+            <input type="text" id="customerName" placeholder="Customer Name" value="John Doe">
+            <input type="email" id="customerEmail" placeholder="Customer Email" value="john@example.com">
+            <input type="text" id="customerPhone" placeholder="Customer Phone" value="021 123 456">
+            <input type="text" id="location" placeholder="Location" value="Auckland, NZ">
+            
+            <h3>Tradesman Data</h3>
+            <input type="text" id="tradesmanName" placeholder="Tradesman Name" value="Kiwi Underfloor Heating">
+            <input type="email" id="tradesmanEmail" placeholder="Tradesman Email" value="info@kiwitrade.co.nz">
+            <input type="text" id="tradesmanPhone" placeholder="Tradesman Phone" value="021 987 654">
+            
+            <h3>Quote Details</h3>
+            <input type="number" id="labourRate" placeholder="Labour Rate per Hour" value="75">
+            <input type="number" id="labourHours" placeholder="Labour Hours" value="8">
+            <input type="number" id="materialRate" placeholder="Material Rate per SQM" value="120">
+            <input type="number" id="materialSQM" placeholder="Material SQM" value="25">
+            <input type="number" id="installationAmount" placeholder="Installation Amount" value="500">
+            <textarea id="notes" placeholder="Additional Notes" rows="3">Professional installation with warranty included.</textarea>
+            
+            <button type="submit" class="button">Submit Test Quote</button>
+        </form>
+        
+        <div id="testResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>3. Test Quote Links</h2>
+        <p>Enter a quote ID to test the quote viewing page:</p>
+        <input type="text" id="testQuoteId" placeholder="Quote ID (e.g., QUOTE-1234567890-abc123)">
+        <button class="button" onclick="testQuoteLink()">Test Quote Link</button>
+        <button class="button" onclick="testQuoteAPI()">Test Quote API</button>
+        
+        <div id="linkResult"></div>
+    </div>
+
+    <script>
+        async function setupQuotesSheet() {
+            const resultDiv = document.getElementById('setupResult');
+            resultDiv.innerHTML = '<p class="info">🔄 Setting up Quotes sheet...</p>';
+            
+            try {
+                const response = await fetch('/api/setup-quotes-sheet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ ${data.message}</p>
+                        <h3>Available Sheets:</h3>
+                        <ul>${data.availableSheets.map(sheet => `<li>${sheet}</li>`).join('')}</ul>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network error: ${error.message}</p>`;
+            }
+        }
+        
+        async function checkSheets() {
+            const resultDiv = document.getElementById('setupResult');
+            resultDiv.innerHTML = '<p class="info">🔄 Checking available sheets...</p>';
+            
+            try {
+                const response = await fetch('/api/setup-quotes-sheet', { method: 'GET' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ ${data.message}</p>
+                        <h3>Available Sheets:</h3>
+                        <ul>${data.availableSheets.map(sheet => `<li>${sheet}</li>`).join('')}</ul>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network error: ${error.message}</p>`;
+            }
+        }
+        
+        document.getElementById('testQuoteForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.innerHTML = '<p class="info">🔄 Submitting test quote...</p>';
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Calculate subtotals
+            data.labourSubtotal = (parseFloat(data.labourRate) * parseFloat(data.labourHours)).toFixed(2);
+            data.materialSubtotal = (parseFloat(data.materialRate) * parseFloat(data.materialSQM)).toFixed(2);
+            data.installationSubtotal = parseFloat(data.installationAmount).toFixed(2);
+            data.totalAmount = (parseFloat(data.labourSubtotal) + parseFloat(data.materialSubtotal) + parseFloat(data.installationSubtotal)).toFixed(2);
+            data.quoteAmount = data.totalAmount;
+            
+            // Add missing fields
+            data.serviceType = 'Underfloor Heating';
+            data.projectDetails = 'Test project';
+            data.projectSize = data.materialSQM;
+            data.budget = 'To be quoted';
+            data.timeline = 'Flexible';
+            data.specificDetails = 'Test quote for system validation';
+            data.breakdown = `Labour: $${data.labourSubtotal}, Materials: $${data.materialSubtotal}, Installation: $${data.installationSubtotal}`;
+            data.token = 'test-token';
+            
+            try {
+                console.log('📤 Submitting test quote data:', data);
+                
+                const response = await fetch('/api/quote-submission', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                console.log('📥 Test quote response:', result);
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Test quote submitted successfully!</p>
+                        <p><strong>Quote ID:</strong> ${result.quoteId || 'Generated'}</p>
+                        <p><strong>Customer Email Sent:</strong> ${result.customerEmailSent ? 'Yes' : 'No'}</p>
+                        <p><strong>Sheets Updated:</strong> ${result.sheetsUpdated ? 'Yes' : 'No'}</p>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${result.error || 'Unknown error'}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network error: ${error.message}</p>`;
+            }
+        });
+        
+        async function testQuoteLink() {
+            const quoteId = document.getElementById('testQuoteId').value;
+            const resultDiv = document.getElementById('linkResult');
+            
+            if (!quoteId) {
+                resultDiv.innerHTML = '<p class="error">❌ Please enter a Quote ID</p>';
+                return;
+            }
+            
+            const url = `/quote.html?quoteId=${encodeURIComponent(quoteId)}&leadId=LEAD-1234567890-abc123&token=test-token`;
+            resultDiv.innerHTML = `
+                <p class="info">🔗 Testing quote link:</p>
+                <p><a href="${url}" target="_blank">${url}</a></p>
+                <button class="button" onclick="window.open('${url}', '_blank')">Open Quote Page</button>
+            `;
+        }
+        
+        async function testQuoteAPI() {
+            const quoteId = document.getElementById('testQuoteId').value;
+            const resultDiv = document.getElementById('linkResult');
+            
+            if (!quoteId) {
+                resultDiv.innerHTML = '<p class="error">❌ Please enter a Quote ID</p>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p class="info">🔄 Testing quote API...</p>';
+            
+            try {
+                const response = await fetch(`/api/get-quote-by-id?quoteId=${encodeURIComponent(quoteId)}&leadId=LEAD-1234567890-abc123&token=test-token`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Quote API working!</p>
+                        <pre>${JSON.stringify(data.quote, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Quote API error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

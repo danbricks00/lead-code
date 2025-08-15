@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     let sheetsUpdated = false;
 
     // Generate PDF and prepare links
-    const quoteId = req.body.quoteNumber || leadId; // keep your current id scheme
+    const quoteId = `QUOTE-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const token = req.body.token || ''; // whichever you already pass/validate
 
     // Build PDF buffer for attachment
@@ -64,8 +64,43 @@ export default async function handler(req, res) {
     try {
       // Try to generate PDF
       try {
-                            pdfBuffer = await generateQuotePdfBuffer({ leadId, token, quoteId });
-        console.log('✅ PDF generated successfully');
+        // Pass the actual quote data to the PDF generator
+        const quoteData = {
+          timestamp: new Date().toISOString(),
+          quoteId: quoteId,
+          leadId: leadId,
+          customerName: customerName,
+          customerEmail: customerEmail,
+          customerPhone: customerPhone,
+          tradesmanName: tradesmanName,
+          tradesmanEmail: tradesmanEmail,
+          tradesmanPhone: tradesmanPhone,
+          serviceType: serviceType,
+          projectDetails: projectDetails,
+          projectSize: projectSize,
+          location: location,
+          budget: budget,
+          timeline: timeline,
+          specificDetails: specificDetails,
+          quoteAmount: quoteAmount,
+          labourRate: req.body.labourRate || '',
+          labourHours: req.body.labourHours || '',
+          labourSubtotal: req.body.labourSubtotal || '',
+          materialRate: req.body.materialRate || '',
+          materialSQM: req.body.materialSQM || '',
+          materialSubtotal: req.body.materialSubtotal || '',
+          installationAmount: req.body.installationAmount || '',
+          installationSubtotal: req.body.installationSubtotal || '',
+          breakdown: breakdown,
+          notes: notes,
+          status: 'Pending',
+          onlineQuoteUrl: onlineQuoteUrl,
+          acceptUrl: acceptUrl,
+          declineUrl: declineUrl
+        };
+        
+        pdfBuffer = await generateQuotePdfBuffer({ leadId, token, quoteId, quoteData });
+        console.log('✅ PDF generated successfully with quote data');
       } catch (e) {
         console.error('PDF generation failed: ', e);
         pdfBuffer = null;
@@ -73,9 +108,16 @@ export default async function handler(req, res) {
 
       // Compute links
       const origin = SITE_URL || `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}`;
+      console.log('🌐 Origin URL:', origin);
       onlineQuoteUrl = `${origin}/quote.html?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}`;
       acceptUrl = `${origin}/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=accept`;
       declineUrl = `${origin}/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=decline`;
+      
+      console.log('🔗 Generated URLs:', {
+        onlineQuoteUrl,
+        acceptUrl,
+        declineUrl
+      });
 
           // Attachments array
     attachments = pdfBuffer ? [{
@@ -151,29 +193,44 @@ export default async function handler(req, res) {
       const tradesmanMailOptions = {
         from: 'Kiwi Trade <danbricks18@gmail.com>',
         to: tradesmanEmail,
-        subject: 'Quote Submitted Successfully',
+        subject: `Quote Submitted - ${customerName} - $${Number(quoteAmount || 0).toFixed(2)}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #2c3e50;">Quote Submitted Successfully</h2>
             <p>Hi ${tradesmanName},</p>
-            <p>Your quote has been submitted and sent to the customer.</p>
+            <p>Your quote has been submitted and sent to the customer. A copy of the quote is attached for your records.</p>
             
             <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3 style="color: #34495e; margin-top: 0;">Quote Summary:</h3>
               <p><strong>Customer:</strong> ${customerName}</p>
+              <p><strong>Customer Email:</strong> ${customerEmail}</p>
+              <p><strong>Customer Phone:</strong> ${customerPhone || 'Not provided'}</p>
               <p><strong>Service:</strong> ${serviceType}</p>
-              <p><strong>Quote Amount:</strong> $${quoteAmount}</p>
+              <p><strong>Location:</strong> ${location || 'Not provided'}</p>
+              <p><strong>Quote Amount:</strong> $${Number(quoteAmount || 0).toFixed(2)}</p>
+              <p><strong>Breakdown:</strong> Labour: $${Number(req.body.labourSubtotal||0).toFixed(2)}, Materials: $${Number(req.body.materialSubtotal||0).toFixed(2)}, Installation: $${Number(req.body.installationSubtotal||0).toFixed(2)}</p>
               <p><strong>Lead ID:</strong> ${leadId}</p>
+              <p><strong>Quote ID:</strong> ${quoteId}</p>
             </div>
             
-            <p>The customer will receive an email with your quote and can accept or decline it.</p>
+            <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+              <h4 style="color: #155724; margin-top: 0;">Customer Actions:</h4>
+              <p>The customer can view and respond to your quote online:</p>
+              <p><a href="${onlineQuoteUrl}" style="color: #2563eb;">View Quote Online</a></p>
+              <p><a href="${acceptUrl}" style="color: #16a34a;">Customer Accept Link</a></p>
+              <p><a href="${declineUrl}" style="color: #dc2626;">Customer Decline Link</a></p>
+            </div>
+            
+            <p><strong>Notes:</strong> ${notes || 'No additional notes'}</p>
             <p>Best regards,<br>The Kiwi Trade Team</p>
           </div>
-        `
+        `,
+        attachments
       };
 
+      console.log('📧 Sending tradesman email to:', tradesmanEmail);
       await transporter.sendMail(tradesmanMailOptions);
-      console.log('✅ Tradesman confirmation email sent successfully');
+      console.log('✅ Tradesman confirmation email sent successfully with quote attachment');
       tradesmanEmailSent = true;
     } catch (emailError) {
       console.error('❌ Tradesman email error:', emailError.message);
@@ -268,6 +325,16 @@ export default async function handler(req, res) {
             declineUrl // Decline URL
           ]
         ];
+        
+        console.log('📊 Quote data for Google Sheets:', {
+          quoteId,
+          leadId,
+          customerName,
+          quoteAmount,
+          targetSheet,
+          dataLength: quoteData[0].length,
+          onlineQuoteUrl
+        });
         
         console.log('📊 Quote data prepared:', {
           quoteId,
@@ -370,28 +437,37 @@ export default async function handler(req, res) {
 
       const values = [
         [
-          new Date().toISOString(),
-          leadId,
-      tradesmanName,
-          tradesmanEmail,
-          tradesmanPhone,
-          customerName,
-          customerEmail,
-          customerPhone,
-          serviceType,
-          projectDetails,
-          projectSize,
-          location,
-          budget,
-          timeline,
-          specificDetails,
-          quoteAmount,
-          breakdown,
-          notes,
-          customerEmailSent ? 'Sent' : 'Failed',
-          tradesmanEmailSent ? 'Sent' : 'Failed',
-          adminEmailSent ? 'Sent' : 'Failed',
-          'Submitted'
+          new Date().toISOString(), // Timestamp
+          quoteId, // Quote ID
+          leadId, // Lead ID
+          customerName, // Customer Name
+          customerEmail, // Customer Email
+          customerPhone, // Customer Phone
+          tradesmanName, // Tradesman Name
+          tradesmanEmail, // Tradesman Email
+          tradesmanPhone, // Tradesman Phone
+          serviceType, // Service Type
+          projectDetails, // Project Details
+          projectSize, // Project Size
+          location, // Location
+          budget, // Budget
+          timeline, // Timeline
+          specificDetails, // Specific Details
+          quoteAmount, // Quote Amount
+          req.body.labourRate || '', // Labour Rate
+          req.body.labourHours || '', // Labour Hours
+          req.body.labourSubtotal || '', // Labour Subtotal
+          req.body.materialRate || '', // Material Rate
+          req.body.materialSQM || '', // Material SQM
+          req.body.materialSubtotal || '', // Material Subtotal
+          req.body.installationAmount || '', // Installation Amount
+          req.body.installationSubtotal || '', // Installation Subtotal
+          breakdown, // Breakdown
+          notes || '', // Notes
+          'Pending', // Status
+          onlineQuoteUrl, // Online Quote URL
+          acceptUrl, // Accept URL
+          declineUrl // Decline URL
         ]
       ];
 
@@ -417,7 +493,7 @@ export default async function handler(req, res) {
         tradesmanEmailSent,
         adminEmailSent,
         sheetsUpdated,
-        quoteId: `QUOTE-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        quoteId: quoteId
       }
     });
 

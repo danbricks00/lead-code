@@ -1,11 +1,11 @@
 import { google } from 'googleapis';
 
 // Add this named export without changing your existing default handler
-export async function generateQuotePdfBuffer({ leadId, token, quoteId }) {
+export async function generateQuotePdfBuffer({ leadId, token, quoteId, quoteData: passedQuoteData }) {
   try {
-    // Try to fetch quote data first (if quoteId is provided)
-    let quoteData = null;
-    if (quoteId) {
+    // Use passed quote data if available, otherwise try to fetch it
+    let quoteData = passedQuoteData;
+    if (!quoteData && quoteId) {
       quoteData = await fetchQuoteData(quoteId);
     }
     

@@ -52,7 +52,6 @@ export default async function handler(req, res) {
 
     // Generate PDF and prepare links
     const quoteId = `QUOTE-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const leadId = req.body.leadId;
     const token = req.body.token || req.body.hmac || '';
 
     // Build PDF buffer for attachment

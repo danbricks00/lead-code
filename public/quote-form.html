@@ -408,34 +408,71 @@
             const validUntil = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
             document.getElementById('validUntil').value = validUntil.toISOString().split('T')[0];
             
-            // Load URL parameters
+            // Load URL parameters and fetch lead data
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has('leadId')) {
-                document.getElementById('leadId').value = urlParams.get('leadId');
-                document.getElementById('customerName').value = urlParams.get('customerName') || '';
-                document.getElementById('customerEmail').value = urlParams.get('customerEmail') || '';
-                document.getElementById('customerPhone').value = urlParams.get('customerPhone') || '';
-                document.getElementById('serviceType').value = urlParams.get('serviceType') || 'Underfloor Heating';
-                document.getElementById('projectDetails').value = urlParams.get('projectDetails') || '';
-                document.getElementById('projectSize').value = urlParams.get('projectSize') || '';
-                document.getElementById('budget').value = urlParams.get('budget') || '';
-                document.getElementById('timeline').value = urlParams.get('timeline') || '';
-                document.getElementById('location').value = urlParams.get('location') || 'Auckland';
+                const leadId = urlParams.get('leadId');
+                document.getElementById('leadId').value = leadId;
+                document.getElementById('leadIdDisplay').textContent = leadId;
                 
-                // Show customer info
-                document.getElementById('customerInfo').style.display = 'block';
-                document.getElementById('leadIdDisplay').textContent = urlParams.get('leadId');
-                document.getElementById('customerNameDisplay').textContent = urlParams.get('customerName') || 'Not provided';
-                document.getElementById('serviceTypeDisplay').textContent = urlParams.get('serviceType') || 'Not specified';
-                document.getElementById('locationDisplay').textContent = urlParams.get('location') || 'Not specified';
-                document.getElementById('projectSizeDisplay').textContent = urlParams.get('projectSize') || 'Not specified';
-                document.getElementById('budgetDisplay').textContent = urlParams.get('budget') || 'Not specified';
-                document.getElementById('timelineDisplay').textContent = urlParams.get('timeline') || 'Not specified';
+                // Fetch lead data from API
+                loadLeadData(leadId);
             }
             
             addEventListeners();
             calculateTotals(); // Initial calculation
         });
+        
+        // Function to load lead data from API
+        async function loadLeadData(leadId) {
+            try {
+                console.log('🔍 Fetching lead data for ID:', leadId);
+                
+                const response = await fetch('/api/get-lead-by-id', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ leadId: leadId })
+                });
+                
+                console.log('📥 Response status:', response.status);
+                const data = await response.json();
+                console.log('📥 Response data:', data);
+                
+                if (data.success && data.lead) {
+                    const lead = data.lead;
+                    
+                    // Populate form fields with lead data
+                    document.getElementById('customerName').value = lead.customerName || '';
+                    document.getElementById('customerEmail').value = lead.customerEmail || '';
+                    document.getElementById('customerPhone').value = lead.customerPhone || '';
+                    document.getElementById('serviceType').value = lead.selectedService || 'Underfloor Heating';
+                    document.getElementById('projectDetails').value = lead.projectDetails || '';
+                    document.getElementById('projectSize').value = lead.projectSize || '';
+                    document.getElementById('budget').value = lead.budget || '';
+                    document.getElementById('timeline').value = lead.timeline || '';
+                    document.getElementById('location').value = lead.location || 'Auckland';
+                    
+                    // Show customer info section
+                    document.getElementById('customerInfo').style.display = 'block';
+                    document.getElementById('customerNameDisplay').textContent = lead.customerName || 'Not provided';
+                    document.getElementById('serviceTypeDisplay').textContent = lead.selectedService || 'Not specified';
+                    document.getElementById('locationDisplay').textContent = lead.location || 'Not specified';
+                    document.getElementById('projectSizeDisplay').textContent = lead.projectSize || 'Not specified';
+                    document.getElementById('budgetDisplay').textContent = lead.budget || 'Not specified';
+                    document.getElementById('timelineDisplay').textContent = lead.timeline || 'Not specified';
+                    
+                    console.log('✅ Lead data loaded successfully');
+                } else {
+                    console.error('❌ Failed to load lead data:', data.error);
+                    alert('Failed to load lead data. Please check the lead ID and try again.');
+                }
+            } catch (error) {
+                console.error('❌ Error loading lead data:', error);
+                alert('Error loading lead data. Please try again.');
+            }
+        }
         
                  // Form submission
          document.getElementById('quoteForm').addEventListener('submit', async (e) => {

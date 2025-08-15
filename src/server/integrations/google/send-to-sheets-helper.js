@@ -81,15 +81,13 @@ export async function sendToSheets(leadData) {
       }
     });
 
-    // Generate unique lead ID
-    const leadId = `LEAD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
     // Get current URL for quote links
     const currentUrl = process.env.VERCEL_URL ? 
       `https://${process.env.VERCEL_URL}` : 
       'http://localhost:3000';
     
-          const quoteLink = `${currentUrl}/quote-form.html?leadId=${leadId}`;
+    // Use timestamp as leadId for the quote link
+    const quoteLink = `${currentUrl}/quote-form.html?leadId=${timestamp}`;
 
     const tradesmanMailOptions = {
       from: 'Kiwi Trade <danbricks18@gmail.com>',

@@ -127,44 +127,56 @@ export async function sendToSheets(leadData) {
   // 3. Save to Google Sheets (if configured)
   let sheetsUpdated = false;
   try {
-    const auth = new google.auth.GoogleAuth({
-      keyFile: './service_account_key.json',
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-    });
+    // Check if we have the required environment variables
+    const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+    const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+    const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID || '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms';
 
-    const sheets = google.sheets({ version: 'v4', auth });
-    const spreadsheetId = '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms';
-    const range = 'Leads!A:Z';
+    if (!serviceAccountEmail || !privateKey) {
+      console.log('⚠️ Google Sheets credentials not found in environment variables');
+      console.log('📝 Skipping Google Sheets update - emails still sent successfully');
+    } else {
+      const auth = new google.auth.GoogleAuth({
+        credentials: {
+          client_email: serviceAccountEmail,
+          private_key: privateKey.replace(/\\n/g, '\n'),
+        },
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      });
 
-    const values = [
-      [
-        new Date().toISOString(),
-        leadData.customerName || '',
-        leadData.customerEmail || '',
-        leadData.customerPhone || '',
-        leadData.selectedService || '',
-        leadData.projectDetails || '',
-        leadData.projectSize || '',
-        leadData.location || '',
-        leadData.budget || '',
-        leadData.timeline || '',
-        leadData.specificDetails || '',
-        customerEmailSent ? 'Sent' : 'Failed',
-        tradesmanNotified ? 'Sent' : 'Failed',
-        'New'
-      ]
-    ];
+      const sheets = google.sheets({ version: 'v4', auth });
+      const range = 'Sheet1!A:Z';
 
-    await sheets.spreadsheets.values.append({
-      spreadsheetId,
-      range,
-      valueInputOption: 'USER_ENTERED',
-      insertDataOption: 'INSERT_ROWS',
-      resource: { values }
-    });
+      const values = [
+        [
+          new Date().toISOString(),
+          leadData.customerName || '',
+          leadData.customerEmail || '',
+          leadData.customerPhone || '',
+          leadData.selectedService || '',
+          leadData.projectDetails || '',
+          leadData.projectSize || '',
+          leadData.location || '',
+          leadData.budget || '',
+          leadData.timeline || '',
+          leadData.specificDetails || '',
+          customerEmailSent ? 'Sent' : 'Failed',
+          tradesmanNotified ? 'Sent' : 'Failed',
+          'New'
+        ]
+      ];
 
-    console.log('✅ Lead data saved to Google Sheets');
-    sheetsUpdated = true;
+      await sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range,
+        valueInputOption: 'USER_ENTERED',
+        insertDataOption: 'INSERT_ROWS',
+        resource: { values }
+      });
+
+      console.log('✅ Lead data saved to Google Sheets');
+      sheetsUpdated = true;
+    }
   } catch (sheetsError) {
     console.error('❌ Google Sheets error:', sheetsError.message);
   }

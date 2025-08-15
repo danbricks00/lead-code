@@ -223,9 +223,13 @@ export async function sendToSheets(leadData) {
       console.log('🎯 Using sheet for lead data:', targetSheet);
       const range = `${targetSheet}!A:Z`;
 
+      // Create timestamp when chatbot responses are completed
+      const timestamp = new Date().toISOString();
+      console.log('📅 Chatbot completion timestamp:', timestamp);
+      
       const values = [
         [
-          new Date().toISOString(), // lead (timestamp)
+          timestamp, // lead (timestamp) - when chatbot responses completed
           leadData.customerName || '', // Customer Name
           leadData.customerEmail || '', // Customer Email
           leadData.customerPhone || '', // Customer Phone
@@ -265,7 +269,8 @@ export async function sendToSheets(leadData) {
       tradesmanNotified,
       adminNotified,
       sheetsUpdated,
-      leadId: `LEAD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      leadId: `LEAD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: timestamp
     }
   };
 } 

@@ -84,7 +84,7 @@ export async function sendToSheets(leadData) {
       `https://${process.env.VERCEL_URL}` : 
       'http://localhost:3000';
     
-    const quoteLink = `${currentUrl}/src/web/pages/quote-form.html?leadId=${leadId}`;
+          const quoteLink = `${currentUrl}/quote-form.html?leadId=${leadId}`;
 
     const tradesmanMailOptions = {
       from: 'Kiwi Trade <danbricks18@gmail.com>',

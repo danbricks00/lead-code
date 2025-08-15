@@ -181,9 +181,17 @@ export default async function handler(req, res) {
 
     // 3. Save quote data to Google Sheets
     try {
+      console.log('📊 Starting Google Sheets save process...');
       const serviceAccountEmail = process.env.GOOGLE_CLIENT_EMAIL;
       const privateKey = process.env.GOOGLE_PRIVATE_KEY;
       const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
+
+      console.log('🔑 Credentials check:', {
+        hasServiceAccountEmail: !!serviceAccountEmail,
+        hasPrivateKey: !!privateKey,
+        hasSpreadsheetId: !!spreadsheetId,
+        spreadsheetId: spreadsheetId
+      });
 
       if (serviceAccountEmail && privateKey && spreadsheetId) {
         const auth = new google.auth.GoogleAuth({
@@ -210,6 +218,7 @@ export default async function handler(req, res) {
         });
         
         const availableSheets = metadata.data.sheets.map(s => s.properties.title);
+        console.log('📋 Available sheets in spreadsheet:', availableSheets);
         
         // Find the correct sheet to use (prefer 'Quotes', fallback to 'Sheet1', then first sheet)
         let targetSheet = 'Sheet1'; // Default fallback
@@ -220,6 +229,8 @@ export default async function handler(req, res) {
         } else if (availableSheets.length > 0) {
           targetSheet = availableSheets[0];
         }
+        
+        console.log('📝 Target sheet selected:', targetSheet);
 
         // Prepare quote data for Google Sheets
         const quoteData = [
@@ -257,6 +268,15 @@ export default async function handler(req, res) {
             declineUrl // Decline URL
           ]
         ];
+        
+        console.log('📊 Quote data prepared:', {
+          quoteId,
+          leadId,
+          customerName,
+          quoteAmount,
+          targetSheet,
+          dataLength: quoteData[0].length
+        });
 
         // Append quote data to the sheet
         await sheets.spreadsheets.values.append({

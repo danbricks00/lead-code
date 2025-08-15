@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Quotes Sheet</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        .button {
+            background: #2563eb;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .button:hover {
+            background: #1d4ed8;
+        }
+        .success {
+            color: #16a34a;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc2626;
+            font-weight: bold;
+        }
+        .info {
+            color: #2563eb;
+            font-weight: bold;
+        }
+        pre {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Setup Quotes Sheet</h1>
+        <p>This page will help you set up the "Quotes" sheet in your Google Sheets if it doesn't exist.</p>
+        
+        <div>
+            <button class="button" onclick="setupQuotesSheet()">Setup Quotes Sheet</button>
+            <button class="button" onclick="checkSheets()">Check Available Sheets</button>
+        </div>
+        
+        <div id="result" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        async function setupQuotesSheet() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p class="info">🔄 Setting up Quotes sheet...</p>';
+            
+            try {
+                const response = await fetch('/api/setup-quotes-sheet', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ ${data.message}</p>
+                        <h3>Available Sheets:</h3>
+                        <ul>
+                            ${data.availableSheets.map(sheet => `<li>${sheet}</li>`).join('')}
+                        </ul>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network error: ${error.message}</p>`;
+            }
+        }
+        
+        async function checkSheets() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p class="info">🔄 Checking available sheets...</p>';
+            
+            try {
+                const response = await fetch('/api/setup-quotes-sheet', {
+                    method: 'GET'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ ${data.message}</p>
+                        <h3>Available Sheets:</h3>
+                        <ul>
+                            ${data.availableSheets.map(sheet => `<li>${sheet}</li>`).join('')}
+                        </ul>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

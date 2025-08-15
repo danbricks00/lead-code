@@ -69,6 +69,31 @@
       border-radius: 6px;
       border: 1px solid #ffeaa7;
     }
+    .status-message {
+      display: none;
+      background: #d1fae5;
+      color: #065f46;
+      padding: 15px;
+      margin: 20px;
+      border-radius: 6px;
+      border: 1px solid #10b981;
+      text-align: center;
+      font-weight: bold;
+    }
+    .status-declined {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #ef4444;
+    }
+    .btn-disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .loading {
+      opacity: 0.7;
+      cursor: wait;
+    }
   </style>
 </head>
 <body>
@@ -79,6 +104,7 @@
     </div>
     
     <div class="warning" id="warn"></div>
+    <div class="status-message" id="statusMessage"></div>
     
     <iframe class="pdf-container" id="pdf" src=""></iframe>
     
@@ -89,7 +115,7 @@
   </div>
 
   <script>
-    (function() {
+    (async function() {
       const urlParams = new URLSearchParams(window.location.search);
       const quoteId = urlParams.get('quoteId');
       const leadId = urlParams.get('leadId');
@@ -108,6 +134,55 @@
         const w = document.getElementById('warn');
         w.textContent = 'Missing leadId. Please open this link from your email again.';
         w.style.display = 'block';
+        return;
+      }
+
+      // Check quote status to see if decision has already been made
+      try {
+        // Show loading state briefly
+        const acceptBtn = document.getElementById('accept');
+        const declineBtn = document.getElementById('decline');
+        acceptBtn.classList.add('loading');
+        declineBtn.classList.add('loading');
+        
+        const response = await fetch(`/api/get-quote-by-id?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}`);
+        const data = await response.json();
+        
+        // Remove loading state
+        acceptBtn.classList.remove('loading');
+        declineBtn.classList.remove('loading');
+        
+        if (data.success && data.quote) {
+          const status = data.quote.status || 'Pending';
+          
+          if (status === 'Accepted' || status === 'Declined') {
+            // Decision already made - show status and disable buttons
+            const statusMessage = document.getElementById('statusMessage');
+            
+            if (status === 'Accepted') {
+              statusMessage.textContent = '✅ This quote has already been ACCEPTED. Decisions are final.';
+              statusMessage.className = 'status-message';
+            } else {
+              statusMessage.textContent = '❌ This quote has already been DECLINED. Decisions are final.';
+              statusMessage.className = 'status-message status-declined';
+            }
+            
+            statusMessage.style.display = 'block';
+            acceptBtn.classList.add('btn-disabled');
+            declineBtn.classList.add('btn-disabled');
+            
+            // Update button text to show they're disabled
+            acceptBtn.textContent = 'Already Accepted';
+            declineBtn.textContent = 'Already Declined';
+          }
+        }
+      } catch (error) {
+        console.log('Could not check quote status:', error);
+        // Remove loading state and continue normally if we can't check status
+        const acceptBtn = document.getElementById('accept');
+        const declineBtn = document.getElementById('decline');
+        acceptBtn.classList.remove('loading');
+        declineBtn.classList.remove('loading');
       }
     })();
   </script>

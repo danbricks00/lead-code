@@ -33,6 +33,58 @@ export default async function handler(req, res) {
       return res.status(404).send('Quote not found');
     }
 
+    // Check if a decision has already been made
+    const currentStatus = quoteData.status || 'Pending';
+    if (currentStatus === 'Accepted' || currentStatus === 'Declined') {
+      console.log(`⚠️ Quote ${quoteId} already has a decision: ${currentStatus}`);
+      
+      const originalDecision = currentStatus === 'Accepted' ? 'accept' : 'decline';
+      const title = currentStatus === 'Accepted' ? 'Quote Already Accepted' : 'Quote Already Declined';
+      const msg = currentStatus === 'Accepted' 
+        ? 'This quote has already been accepted. No further action is needed.'
+        : 'This quote has already been declined. No further action is needed.';
+
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.status(200).send(`
+        <!doctype html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <title>${title}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto; line-height: 1.6; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .company-name { font-size: 24px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; }
+            .message { background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #${originalDecision === 'accept' ? '#10b981' : '#ef4444'}; }
+            .status { text-align: center; margin-top: 20px; padding: 15px; background: #${originalDecision === 'accept' ? 'd1fae5' : 'fee2e2'}; border-radius: 6px; color: #${originalDecision === 'accept' ? '065f46' : '991b1b'}; }
+            .warning { background: #fef3c7; border: 1px solid #f59e0b; color: #92400e; padding: 15px; border-radius: 6px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="company-name">KIWI UNDERFLOOR HEATING</div>
+          </div>
+          <div class="warning">
+            <strong>⚠️ Decision Already Made</strong><br>
+            This quote has already been ${currentStatus.toLowerCase()}. Decisions are final and cannot be changed.
+          </div>
+          <div class="message">
+            <h2>${title}</h2>
+            <p>${msg}</p>
+          </div>
+          <div class="status">
+            <strong>Status:</strong> ${currentStatus === 'Accepted' ? '✅ Already Accepted' : '❌ Already Declined'}
+          </div>
+          <p style="text-align: center; margin-top: 30px; color: #6b7280; font-size: 14px;">
+            Thank you for using Kiwi Trade services.
+          </p>
+        </body>
+        </html>
+      `);
+      return;
+    }
+
     let customerEmailSent = false;
     let tradesmanEmailSent = false;
     let adminEmailSent = false;

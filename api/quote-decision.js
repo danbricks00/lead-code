@@ -1,6 +1,16 @@
 import nodemailer from 'nodemailer';
+import { google } from 'googleapis';
 
 export default async function handler(req, res) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   try {
     const { quoteId, leadId, token, action } = req.query;
     if (!quoteId || !leadId || !token || !['accept','decline'].includes(action)) {
@@ -9,18 +19,28 @@ export default async function handler(req, res) {
 
     console.log(`🔍 Quote decision received: ${action} for quote ${quoteId}, lead ${leadId}`);
 
-    // TODO: verify token (HMAC) for leadId/quoteId here
-    // await verifyToken({ leadId, token });
-
-    // TODO: Update status in your storage (Sheet/DB)
-    // await setQuoteStatus({ quoteId, leadId, status: action === 'accept' ? 'ACCEPTED' : 'DECLINED' });
-
-    // Fetch lead data to get customer and project details
+    // Fetch quote data to get tradesman email and other details
+    const quoteData = await fetchQuoteData(quoteId);
     const leadData = await fetchLeadData(leadId);
     
+    if (!quoteData) {
+      console.error('❌ Quote not found:', quoteId);
+      return res.status(404).send('Quote not found');
+    }
+
     let customerEmailSent = false;
     let tradesmanEmailSent = false;
     let adminEmailSent = false;
+    let statusUpdated = false;
+
+    // Update quote status in Google Sheets
+    try {
+      await updateQuoteStatus(quoteId, action === 'accept' ? 'Accepted' : 'Declined');
+      statusUpdated = true;
+      console.log('✅ Quote status updated in Google Sheets');
+    } catch (updateError) {
+      console.error('❌ Failed to update quote status:', updateError.message);
+    }
 
     // Send emails based on the decision
     try {
@@ -51,8 +71,9 @@ export default async function handler(req, res) {
             <div style="background:#f3f4f6;padding:15px;border-radius:6px;margin:20px 0;">
               <h3 style="margin-top:0;">Quote Details</h3>
               <p><strong>Quote ID:</strong> ${quoteId}</p>
-              <p><strong>Service:</strong> ${leadData.selectedService || 'Underfloor Heating'}</p>
-              <p><strong>Location:</strong> ${leadData.location || 'Not specified'}</p>
+              <p><strong>Service:</strong> ${quoteData.serviceType || leadData.selectedService || 'Underfloor Heating'}</p>
+              <p><strong>Location:</strong> ${quoteData.location || leadData.location || 'Not specified'}</p>
+              <p><strong>Quote Amount:</strong> $${Number(quoteData.quoteAmount || 0).toFixed(2)}</p>
               <p><strong>Decision:</strong> ${action === 'accept' ? 'Accepted' : 'Declined'}</p>
             </div>
             
@@ -79,6 +100,7 @@ export default async function handler(req, res) {
       }
 
       // 2. Send tradesman notification email
+      const tradesmanEmail = quoteData.tradesmanEmail || 'quangbui0600@gmail.com';
       const tradesmanSubject = action === 'accept' 
         ? 'Great News! Customer Accepted Your Quote' 
         : 'Customer Decision: Quote Declined';
@@ -90,16 +112,17 @@ export default async function handler(req, res) {
       const tradesmanHtml = `
         <div style="font-family: Arial, sans-serif; color:#1f2937;">
           <h2>${tradesmanSubject}</h2>
-          <p>Hi there,</p>
+          <p>Hi ${quoteData.tradesmanName || 'there'},</p>
           <p>${tradesmanMessage}</p>
           
           <div style="background:#f3f4f6;padding:15px;border-radius:6px;margin:20px 0;">
             <h3 style="margin-top:0;">Project Details</h3>
-            <p><strong>Customer:</strong> ${leadData?.customerName || 'Not provided'}</p>
-            <p><strong>Customer Email:</strong> ${leadData?.customerEmail || 'Not provided'}</p>
-            <p><strong>Customer Phone:</strong> ${leadData?.customerPhone || 'Not provided'}</p>
-            <p><strong>Service:</strong> ${leadData?.selectedService || 'Underfloor Heating'}</p>
-            <p><strong>Location:</strong> ${leadData?.location || 'Not specified'}</p>
+            <p><strong>Customer:</strong> ${quoteData.customerName || leadData?.customerName || 'Not provided'}</p>
+            <p><strong>Customer Email:</strong> ${quoteData.customerEmail || leadData?.customerEmail || 'Not provided'}</p>
+            <p><strong>Customer Phone:</strong> ${quoteData.customerPhone || leadData?.customerPhone || 'Not provided'}</p>
+            <p><strong>Service:</strong> ${quoteData.serviceType || leadData?.selectedService || 'Underfloor Heating'}</p>
+            <p><strong>Location:</strong> ${quoteData.location || leadData?.location || 'Not specified'}</p>
+            <p><strong>Quote Amount:</strong> $${Number(quoteData.quoteAmount || 0).toFixed(2)}</p>
             <p><strong>Quote ID:</strong> ${quoteId}</p>
             <p><strong>Lead ID:</strong> ${leadId}</p>
             <p><strong>Customer Decision:</strong> ${action === 'accept' ? 'Accepted' : 'Declined'}</p>
@@ -126,7 +149,7 @@ export default async function handler(req, res) {
 
       await transporter.sendMail({
         from: 'Kiwi Trade <danbricks18@gmail.com>',
-        to: 'quangbui0600@gmail.com', // Tradesman email
+        to: tradesmanEmail,
         subject: tradesmanSubject,
         html: tradesmanHtml
       });
@@ -135,7 +158,7 @@ export default async function handler(req, res) {
       tradesmanEmailSent = true;
 
       // 3. Send admin notification email
-      const adminSubject = `Quote ${action === 'accept' ? 'Accepted' : 'Declined'} - ${leadData?.customerName || 'Unknown Customer'}`;
+      const adminSubject = `Quote ${action === 'accept' ? 'Accepted' : 'Declined'} - ${quoteData.customerName || leadData?.customerName || 'Unknown Customer'}`;
       
       const adminHtml = `
         <div style="font-family: Arial, sans-serif; color:#1f2937;">
@@ -144,11 +167,14 @@ export default async function handler(req, res) {
           
           <div style="background:#f3f4f6;padding:15px;border-radius:6px;margin:20px 0;">
             <h3 style="margin-top:0;">Decision Summary</h3>
-            <p><strong>Customer:</strong> ${leadData?.customerName || 'Not provided'}</p>
-            <p><strong>Customer Email:</strong> ${leadData?.customerEmail || 'Not provided'}</p>
-            <p><strong>Customer Phone:</strong> ${leadData?.customerPhone || 'Not provided'}</p>
-            <p><strong>Service:</strong> ${leadData?.selectedService || 'Underfloor Heating'}</p>
-            <p><strong>Location:</strong> ${leadData?.location || 'Not specified'}</p>
+            <p><strong>Customer:</strong> ${quoteData.customerName || leadData?.customerName || 'Not provided'}</p>
+            <p><strong>Customer Email:</strong> ${quoteData.customerEmail || leadData?.customerEmail || 'Not provided'}</p>
+            <p><strong>Customer Phone:</strong> ${quoteData.customerPhone || leadData?.customerPhone || 'Not provided'}</p>
+            <p><strong>Tradesman:</strong> ${quoteData.tradesmanName || 'Not provided'}</p>
+            <p><strong>Tradesman Email:</strong> ${quoteData.tradesmanEmail || 'Not provided'}</p>
+            <p><strong>Service:</strong> ${quoteData.serviceType || leadData?.selectedService || 'Underfloor Heating'}</p>
+            <p><strong>Location:</strong> ${quoteData.location || leadData?.location || 'Not specified'}</p>
+            <p><strong>Quote Amount:</strong> $${Number(quoteData.quoteAmount || 0).toFixed(2)}</p>
             <p><strong>Quote ID:</strong> ${quoteId}</p>
             <p><strong>Lead ID:</strong> ${leadId}</p>
             <p><strong>Decision:</strong> <span style="color:${action === 'accept' ? '#10b981' : '#ef4444'};font-weight:bold;">${action === 'accept' ? 'ACCEPTED' : 'DECLINED'}</span></p>
@@ -241,7 +267,6 @@ async function fetchLeadData(leadId) {
       return null;
     }
 
-    const { google } = await import('googleapis');
     const auth = new google.auth.GoogleAuth({
       credentials: {
         type: 'service_account',
@@ -320,5 +345,216 @@ async function fetchLeadData(leadId) {
   } catch (error) {
     console.error('Error fetching lead data:', error);
     return null;
+  }
+}
+
+async function fetchQuoteData(quoteId) {
+  try {
+    // Check if we have the required environment variables
+    const serviceAccountEmail = process.env.GOOGLE_CLIENT_EMAIL;
+    const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+    const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
+
+    if (!serviceAccountEmail || !privateKey || !spreadsheetId) {
+      console.log('⚠️ Google Sheets credentials not found');
+      return null;
+    }
+
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        type: 'service_account',
+        project_id: process.env.GOOGLE_PROJECT_ID,
+        private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
+        private_key: privateKey.replace(/\\n/g, '\n'),
+        client_email: serviceAccountEmail,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+        token_uri: 'https://oauth2.googleapis.com/token',
+        auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
+        client_x509_cert_url: process.env.GOOGLE_CLIENT_CER_URL
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets']
+    });
+
+    const sheets = google.sheets({ version: 'v4', auth });
+
+    // Get available sheets to find the correct one to use
+    const metadata = await sheets.spreadsheets.get({
+      spreadsheetId: spreadsheetId
+    });
+    
+    const availableSheets = metadata.data.sheets.map(s => s.properties.title);
+    
+    // Find the correct sheet to use (prefer 'Quotes', fallback to 'Sheet1', then first sheet)
+    let targetSheet = 'Sheet1'; // Default fallback
+    if (availableSheets.includes('Quotes')) {
+      targetSheet = 'Quotes';
+    } else if (availableSheets.includes('Sheet1')) {
+      targetSheet = 'Sheet1';
+    } else if (availableSheets.length > 0) {
+      targetSheet = availableSheets[0];
+    }
+
+    // Read all data from the sheet
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: spreadsheetId,
+      range: `${targetSheet}!A:Z`,
+    });
+
+    const rows = response.data.values;
+    if (!rows || rows.length === 0) {
+      return null;
+    }
+
+    // Find the quoteId column (second column)
+    const quoteIdIndex = 1; // Quote ID is the second column (B)
+
+    // Search for the quote with matching quoteId
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      const rowQuoteId = row[quoteIdIndex];
+      
+      if (rowQuoteId === quoteId) {
+        // Found the quote, map it to the expected structure
+        return {
+          timestamp: row[0] || '', // Timestamp
+          quoteId: row[1] || '', // Quote ID
+          leadId: row[2] || '', // Lead ID
+          customerName: row[3] || '', // Customer Name
+          customerEmail: row[4] || '', // Customer Email
+          customerPhone: row[5] || '', // Customer Phone
+          tradesmanName: row[6] || '', // Tradesman Name
+          tradesmanEmail: row[7] || '', // Tradesman Email
+          tradesmanPhone: row[8] || '', // Tradesman Phone
+          serviceType: row[9] || '', // Service Type
+          projectDetails: row[10] || '', // Project Details
+          projectSize: row[11] || '', // Project Size
+          location: row[12] || '', // Location
+          budget: row[13] || '', // Budget
+          timeline: row[14] || '', // Timeline
+          specificDetails: row[15] || '', // Specific Details
+          quoteAmount: row[16] || '', // Quote Amount
+          labourRate: row[17] || '', // Labour Rate
+          labourHours: row[18] || '', // Labour Hours
+          labourSubtotal: row[19] || '', // Labour Subtotal
+          materialRate: row[20] || '', // Material Rate
+          materialSQM: row[21] || '', // Material SQM
+          materialSubtotal: row[22] || '', // Material Subtotal
+          installationAmount: row[23] || '', // Installation Amount
+          installationSubtotal: row[24] || '', // Installation Subtotal
+          breakdown: row[25] || '', // Breakdown
+          notes: row[26] || '', // Notes
+          validUntil: row[27] || '', // Valid Until
+          status: row[28] || 'Pending', // Status
+          onlineQuoteUrl: row[29] || '', // Online Quote URL
+          acceptUrl: row[30] || '', // Accept URL
+          declineUrl: row[31] || '' // Decline URL
+        };
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error fetching quote data:', error);
+    return null;
+  }
+}
+
+async function updateQuoteStatus(quoteId, status) {
+  try {
+    // Check if we have the required environment variables
+    const serviceAccountEmail = process.env.GOOGLE_CLIENT_EMAIL;
+    const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+    const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
+
+    if (!serviceAccountEmail || !privateKey || !spreadsheetId) {
+      console.log('⚠️ Google Sheets credentials not found');
+      return;
+    }
+
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        type: 'service_account',
+        project_id: process.env.GOOGLE_PROJECT_ID,
+        private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
+        private_key: privateKey.replace(/\\n/g, '\n'),
+        client_email: serviceAccountEmail,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+        token_uri: 'https://oauth2.googleapis.com/token',
+        auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
+        client_x509_cert_url: process.env.GOOGLE_CLIENT_CER_URL
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets']
+    });
+
+    const sheets = google.sheets({ version: 'v4', auth });
+
+    // Get available sheets to find the correct one to use
+    const metadata = await sheets.spreadsheets.get({
+      spreadsheetId: spreadsheetId
+    });
+    
+    const availableSheets = metadata.data.sheets.map(s => s.properties.title);
+    
+    // Find the correct sheet to use (prefer 'Quotes', fallback to 'Sheet1', then first sheet)
+    let targetSheet = 'Sheet1'; // Default fallback
+    if (availableSheets.includes('Quotes')) {
+      targetSheet = 'Quotes';
+    } else if (availableSheets.includes('Sheet1')) {
+      targetSheet = 'Sheet1';
+    } else if (availableSheets.length > 0) {
+      targetSheet = availableSheets[0];
+    }
+
+    // Read all data to find the row with the matching quoteId
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: spreadsheetId,
+      range: `${targetSheet}!A:Z`,
+    });
+
+    const rows = response.data.values;
+    if (!rows || rows.length === 0) {
+      console.log('No data found in sheet');
+      return;
+    }
+
+    // Find the row with the matching quoteId (second column)
+    const quoteIdIndex = 1; // Quote ID is the second column (B)
+    let targetRow = -1;
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      const rowQuoteId = row[quoteIdIndex];
+      
+      if (rowQuoteId === quoteId) {
+        targetRow = i + 1; // +1 because sheets are 1-indexed
+        break;
+      }
+    }
+
+    if (targetRow === -1) {
+      console.log(`Quote ID ${quoteId} not found in sheet`);
+      return;
+    }
+
+    // Status is in column 29 (AC) - 0-indexed is 28
+    const statusColumn = 29; // Column AC
+
+    // Update the status in the sheet
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: spreadsheetId,
+      range: `${targetSheet}!${String.fromCharCode(64 + statusColumn)}${targetRow}`, // Convert to column letter
+      valueInputOption: 'USER_ENTERED',
+      resource: {
+        values: [[status]]
+      }
+    });
+
+    console.log(`✅ Updated quote status to "${status}" for quote ${quoteId} at row ${targetRow}`);
+
+  } catch (error) {
+    console.error('Error updating quote status:', error);
+    throw error; // Re-throw to be caught by the caller
   }
 }

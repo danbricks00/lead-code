@@ -123,10 +123,11 @@ async function fetchQuoteData(quoteId) {
           installationSubtotal: row[24] || '', // Installation Subtotal
           breakdown: row[25] || '', // Breakdown
           notes: row[26] || '', // Notes
-          status: row[27] || 'Pending', // Status
-          onlineQuoteUrl: row[28] || '', // Online Quote URL
-          acceptUrl: row[29] || '', // Accept URL
-          declineUrl: row[30] || '' // Decline URL
+          validUntil: row[27] || '', // Valid Until
+          status: row[28] || 'Pending', // Status
+          onlineQuoteUrl: row[29] || '', // Online Quote URL
+          acceptUrl: row[30] || '', // Accept URL
+          declineUrl: row[31] || '' // Decline URL
         };
       }
     }

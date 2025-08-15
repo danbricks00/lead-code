@@ -326,6 +326,7 @@ export default async function handler(req, res) {
             req.body.installationSubtotal || '', // Installation Subtotal
             breakdown, // Breakdown
             notes || '', // Notes
+            req.body.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Valid Until
             'Pending', // Status
             onlineQuoteUrl, // Online Quote URL
             acceptUrl, // Accept URL

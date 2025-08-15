@@ -88,6 +88,15 @@
     </div>
 
     <div class="container">
+        <h2>2.5. Debug Quote Lookup</h2>
+        <p>Debug why a quote is not found in Google Sheets:</p>
+        <input type="text" id="debugQuoteId" placeholder="Quote ID to debug">
+        <input type="text" id="debugLeadId" placeholder="Lead ID (optional)">
+        <button class="button" onclick="debugQuoteLookup()">Debug Quote Lookup</button>
+        <div id="debugResult"></div>
+    </div>
+
+    <div class="container">
         <h2>3. Test Quote Page</h2>
         <p>Test the quote viewing page:</p>
         <input type="text" id="testQuoteId2" placeholder="Quote ID">
@@ -160,6 +169,58 @@
                     `;
                 } else {
                     resultDiv.innerHTML = `<p class="error">❌ Quote API error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network error: ${error.message}</p>`;
+            }
+        }
+        
+        async function debugQuoteLookup() {
+            const quoteId = document.getElementById('debugQuoteId').value;
+            const leadId = document.getElementById('debugLeadId').value;
+            const resultDiv = document.getElementById('debugResult');
+            
+            if (!quoteId) {
+                resultDiv.innerHTML = '<p class="error">❌ Please enter a Quote ID</p>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p class="info">🔄 Debugging quote lookup...</p>';
+            
+            try {
+                const response = await fetch(`/api/debug-quote-lookup?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId || '')}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const debug = data.debug;
+                    let html = `
+                        <p class="success">✅ Debug completed!</p>
+                        <h3>Search Criteria:</h3>
+                        <pre>${JSON.stringify(debug.searchCriteria, null, 2)}</pre>
+                        
+                        <h3>Sheet Info:</h3>
+                        <pre>${JSON.stringify(debug.sheetInfo, null, 2)}</pre>
+                        
+                        <h3>Search Results:</h3>
+                        <pre>${JSON.stringify(debug.searchResults, null, 2)}</pre>
+                    `;
+                    
+                    if (debug.foundQuote) {
+                        html += `
+                            <h3>✅ Found Quote:</h3>
+                            <pre>${JSON.stringify(debug.foundQuote, null, 2)}</pre>
+                        `;
+                    } else {
+                        html += `
+                            <h3>❌ Quote Not Found</h3>
+                            <p>Sample data from sheet:</p>
+                            <pre>${JSON.stringify(debug.sampleData, null, 2)}</pre>
+                        `;
+                    }
+                    
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error}</p>`;
                 }
             } catch (error) {
                 resultDiv.innerHTML = `<p class="error">❌ Network error: ${error.message}</p>`;

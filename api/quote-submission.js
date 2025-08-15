@@ -65,39 +65,40 @@ export default async function handler(req, res) {
       // Try to generate PDF
       try {
         // Pass the actual quote data to the PDF generator
-        const quoteData = {
-          timestamp: new Date().toISOString(),
-          quoteId: quoteId,
-          leadId: leadId,
-          customerName: customerName,
-          customerEmail: customerEmail,
-          customerPhone: customerPhone,
-          tradesmanName: tradesmanName,
-          tradesmanEmail: tradesmanEmail,
-          tradesmanPhone: tradesmanPhone,
-          serviceType: serviceType,
-          projectDetails: projectDetails,
-          projectSize: projectSize,
-          location: location,
-          budget: budget,
-          timeline: timeline,
-          specificDetails: specificDetails,
-          quoteAmount: quoteAmount,
-          labourRate: req.body.labourRate || '',
-          labourHours: req.body.labourHours || '',
-          labourSubtotal: req.body.labourSubtotal || '',
-          materialRate: req.body.materialRate || '',
-          materialSQM: req.body.materialSQM || '',
-          materialSubtotal: req.body.materialSubtotal || '',
-          installationAmount: req.body.installationAmount || '',
-          installationSubtotal: req.body.installationSubtotal || '',
-          breakdown: breakdown,
-          notes: notes,
-          status: 'Pending',
-          onlineQuoteUrl: onlineQuoteUrl,
-          acceptUrl: acceptUrl,
-          declineUrl: declineUrl
-        };
+              const quoteData = {
+        timestamp: new Date().toISOString(),
+        quoteId: quoteId,
+        leadId: leadId,
+        customerName: customerName,
+        customerEmail: customerEmail,
+        customerPhone: customerPhone,
+        tradesmanName: tradesmanName,
+        tradesmanEmail: tradesmanEmail,
+        tradesmanPhone: tradesmanPhone,
+        serviceType: serviceType,
+        projectDetails: projectDetails,
+        projectSize: projectSize,
+        location: location,
+        budget: budget,
+        timeline: timeline,
+        specificDetails: specificDetails,
+        quoteAmount: quoteAmount,
+        labourRate: req.body.labourRate || '',
+        labourHours: req.body.labourHours || '',
+        labourSubtotal: req.body.labourSubtotal || '',
+        materialRate: req.body.materialRate || '',
+        materialSQM: req.body.materialSQM || '',
+        materialSubtotal: req.body.materialSubtotal || '',
+        installationAmount: req.body.installationAmount || '',
+        installationSubtotal: req.body.installationSubtotal || '',
+        breakdown: breakdown,
+        notes: notes,
+        validUntil: req.body.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        status: 'Pending',
+        onlineQuoteUrl: onlineQuoteUrl,
+        acceptUrl: acceptUrl,
+        declineUrl: declineUrl
+      };
         
         pdfBuffer = await generateQuotePdfBuffer({ leadId, token, quoteId, quoteData });
         console.log('✅ PDF generated successfully with quote data');
@@ -441,41 +442,42 @@ export default async function handler(req, res) {
       console.log('🎯 Using sheet for quote data:', targetSheet);
       const range = `${targetSheet}!A:Z`;
 
-      const values = [
-        [
-          new Date().toISOString(), // Timestamp
-          quoteId, // Quote ID
-          leadId, // Lead ID
-          customerName, // Customer Name
-          customerEmail, // Customer Email
-          customerPhone, // Customer Phone
-          tradesmanName, // Tradesman Name
-          tradesmanEmail, // Tradesman Email
-          tradesmanPhone, // Tradesman Phone
-          serviceType, // Service Type
-          projectDetails, // Project Details
-          projectSize, // Project Size
-          location, // Location
-          budget, // Budget
-          timeline, // Timeline
-          specificDetails, // Specific Details
-          quoteAmount, // Quote Amount
-          req.body.labourRate || '', // Labour Rate
-          req.body.labourHours || '', // Labour Hours
-          req.body.labourSubtotal || '', // Labour Subtotal
-          req.body.materialRate || '', // Material Rate
-          req.body.materialSQM || '', // Material SQM
-          req.body.materialSubtotal || '', // Material Subtotal
-          req.body.installationAmount || '', // Installation Amount
-          req.body.installationSubtotal || '', // Installation Subtotal
-          breakdown, // Breakdown
-          notes || '', // Notes
-          'Pending', // Status
-          onlineQuoteUrl, // Online Quote URL
-          acceptUrl, // Accept URL
-          declineUrl // Decline URL
-        ]
-      ];
+             const values = [
+         [
+           new Date().toISOString(), // Timestamp
+           quoteId, // Quote ID
+           leadId, // Lead ID
+           customerName, // Customer Name
+           customerEmail, // Customer Email
+           customerPhone, // Customer Phone
+           tradesmanName, // Tradesman Name
+           tradesmanEmail, // Tradesman Email
+           tradesmanPhone, // Tradesman Phone
+           serviceType, // Service Type
+           projectDetails, // Project Details
+           projectSize, // Project Size
+           location, // Location
+           budget, // Budget
+           timeline, // Timeline
+           specificDetails, // Specific Details
+           quoteAmount, // Quote Amount
+           req.body.labourRate || '', // Labour Rate
+           req.body.labourHours || '', // Labour Hours
+           req.body.labourSubtotal || '', // Labour Subtotal
+           req.body.materialRate || '', // Material Rate
+           req.body.materialSQM || '', // Material SQM
+           req.body.materialSubtotal || '', // Material Subtotal
+           req.body.installationAmount || '', // Installation Amount
+           req.body.installationSubtotal || '', // Installation Subtotal
+           breakdown, // Breakdown
+           notes || '', // Notes
+           req.body.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Valid Until
+           'Pending', // Status
+           onlineQuoteUrl, // Online Quote URL
+           acceptUrl, // Accept URL
+           declineUrl // Decline URL
+         ]
+       ];
 
       await sheets.spreadsheets.values.append({
         spreadsheetId,

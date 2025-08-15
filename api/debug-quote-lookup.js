@@ -172,10 +172,11 @@ export default async function handler(req, res) {
           installationSubtotal: foundQuote[24] || '',
           breakdown: foundQuote[25] || '',
           notes: foundQuote[26] || '',
-          status: foundQuote[27] || 'Pending',
-          onlineQuoteUrl: foundQuote[28] || '',
-          acceptUrl: foundQuote[29] || '',
-          declineUrl: foundQuote[30] || ''
+          validUntil: foundQuote[27] || '',
+          status: foundQuote[28] || 'Pending',
+          onlineQuoteUrl: foundQuote[29] || '',
+          acceptUrl: foundQuote[30] || '',
+          declineUrl: foundQuote[31] || ''
         }
       };
     }

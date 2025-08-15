@@ -235,7 +235,14 @@ async function fetchLeadData(leadId) {
                // Generate professional quote HTML matching the sample format
                const quoteNumber = quoteData?.quoteId || `QUOTE${Date.now()}`;
                const currentDate = new Date().toLocaleDateString('en-GB');
-               const validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB');
+               
+               // Use custom valid until date if provided, otherwise default to 30 days
+               let validUntil;
+               if (quoteData?.validUntil) {
+                 validUntil = new Date(quoteData.validUntil).toLocaleDateString('en-GB');
+               } else {
+                 validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB');
+               }
                
                // Use quote data if available, otherwise fallback to budget calculations
                let materials, labor, installation, total;

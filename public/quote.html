@@ -222,7 +222,9 @@
         // Update header info
         document.getElementById('quoteNumber').textContent = quote.quoteId || quoteId;
         document.getElementById('quoteDate').textContent = formatDate(quote.timestamp);
-        document.getElementById('validUntil').textContent = formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
+                 // Use custom valid until date if available, otherwise default to 30 days
+         const validUntilDate = quote.validUntil ? new Date(quote.validUntil) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+         document.getElementById('validUntil').textContent = formatDate(validUntilDate);
 
         // Use actual quote data
         const materials = parseFloat(quote.materialSubtotal) || 0;

@@ -105,6 +105,7 @@ export default async function handler(req, res) {
       'Installation Subtotal',
       'Breakdown',
       'Notes',
+      'Valid Until',
       'Status',
       'Online Quote URL',
       'Accept URL',

@@ -1,6 +1,6 @@
 import { google } from 'googleapis';
 import nodemailer from 'nodemailer';
-import { generateQuotePdfBuffer } from './quote-pdf';
+import { generateQuotePdfBuffer } from './quote-pdf.js';
 
 const SITE_URL = process.env.SITE_URL; // e.g. https://yourdomain.com
 
@@ -56,26 +56,39 @@ export default async function handler(req, res) {
 
     // Build PDF buffer for attachment
     let pdfBuffer = null;
+    let onlineQuoteUrl = '';
+    let acceptUrl = '';
+    let declineUrl = '';
+    let attachments = [];
+
     try {
-      pdfBuffer = await generateQuotePdfBuffer({ leadId, token });
-      console.log('✅ PDF generated successfully');
+      // Try to generate PDF
+      try {
+        pdfBuffer = await generateQuotePdfBuffer({ leadId, token });
+        console.log('✅ PDF generated successfully');
+      } catch (e) {
+        console.error('PDF generation failed: ', e);
+        pdfBuffer = null;
+      }
+
+      // Compute links
+      const origin = SITE_URL || `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}`;
+      onlineQuoteUrl = `${origin}/quote.html?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}`;
+      acceptUrl = `${origin}/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=accept`;
+      declineUrl = `${origin}/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=decline`;
+
+      // Attachments array
+      attachments = pdfBuffer ? [{
+        filename: `quote-${quoteId}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf'
+      }] : [];
     } catch (e) {
-      console.error('PDF generation failed: ', e);
-      // continue; still send email without attachment if needed
+      console.error('Error in PDF/link generation: ', e);
+      // Continue without PDF and links
+      pdfBuffer = null;
+      attachments = [];
     }
-
-    // Compute links
-    const origin = SITE_URL || `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}`;
-    const onlineQuoteUrl = `${origin}/quote.html?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}`;
-    const acceptUrl = `${origin}/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=accept`;
-    const declineUrl = `${origin}/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=decline`;
-
-    // Attachments array
-    const attachments = pdfBuffer ? [{
-      filename: `quote-${quoteId}.pdf`,
-      content: pdfBuffer,
-      contentType: 'application/pdf'
-    }] : [];
 
     // 1. Send customer email with quote
     try {
@@ -244,7 +257,7 @@ export default async function handler(req, res) {
         [
           new Date().toISOString(),
           leadId,
-          tradesmanName,
+      tradesmanName,
           tradesmanEmail,
           tradesmanPhone,
           customerName,

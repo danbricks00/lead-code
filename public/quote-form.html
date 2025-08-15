@@ -334,10 +334,8 @@
             elements.forEach(id => {
                 const element = document.getElementById(id);
                 if (element) {
-                    // Add event listeners
+                    // Add only input event listener to avoid excessive calls
                     element.addEventListener('input', calculateTotals);
-                    element.addEventListener('change', calculateTotals);
-                    element.addEventListener('keyup', calculateTotals);
                     console.log('✅ Added event listener to:', id);
                 } else {
                     console.error('❌ Element not found:', id);

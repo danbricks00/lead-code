@@ -19,7 +19,7 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Invalid email format' });
         }
 
-        console.log('📧 Contact form submission received (Resend):', {
+        console.log('📧 Contact form submission received:', {
             name,
             email,
             phone: phone || 'Not provided',
@@ -27,119 +27,94 @@ export default async function handler(req, res) {
             messageLength: message.length
         });
 
-        // Check if Resend API key is available
-        const resendApiKey = process.env.RESEND_API_KEY;
-        if (!resendApiKey) {
-            console.log('⚠️ RESEND_API_KEY not found in environment variables');
-            console.log('📝 Contact form data logged successfully');
-            console.log('📧 Customer would receive confirmation email');
-            console.log('📧 Admin would receive notification email');
-            console.log('📧 From email would be: "Kiwi Trade <onboarding@resend.dev>"');
-            
-            return res.status(200).json({ 
-                success: true,
-                message: 'Thank you for your message! We\'ll get back to you within 24 hours.',
-                note: 'Email sending requires Resend API key setup. Your message has been received and logged.'
+        // Use the same working email system as the chatbot
+        let customerEmailSent = false;
+        let adminEmailSent = false;
+
+        try {
+            const nodemailer = await import('nodemailer');
+            const transporter = nodemailer.default.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: 'danbricks18@gmail.com',
+                    pass: 'ptmcojqgthvjbqom'
+                }
             });
-        }
 
-        // Import Resend dynamically
-        const { Resend } = await import('resend');
-        const resend = new Resend(resendApiKey);
-
-        // Use environment variable for from email or fallback to Resend's default domain
-        // To use your own domain: Set RESEND_FROM_EMAIL="Kiwi Trade <hello@yourdomain.com>"
-        const fromEmail = process.env.RESEND_FROM_EMAIL || 'Kiwi Trade <onboarding@resend.dev>';
-
-        // For Resend free tier: only send to verified email addresses
-        // Customer email will go to admin Gmail for now (until domain is verified)
-        const customerEmailTo = process.env.ADMIN_EMAIL || 'danbricks18@gmail.com';
-        
-        console.log('📧 Attempting to send customer email to:', customerEmailTo);
-        console.log('📧 Original customer email was:', email);
-        console.log('📧 From email address:', fromEmail);
-
-        // Send customer confirmation email (to admin for testing)
-        const customerEmailResult = await resend.emails.send({
-            from: fromEmail,
-            to: [customerEmailTo],
-            subject: 'Thank you for contacting Kiwi Trade',
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2 style="color: #667eea;">Thank you for contacting Kiwi Trade!</h2>
-                    <p>Hi ${name},</p>
-                    <p>We've received your message and will get back to you within 24 hours.</p>
-                    <p><strong>Your message details:</strong></p>
-                    <ul>
-                        <li><strong>Subject:</strong> ${subject}</li>
-                        <li><strong>Message:</strong> ${message}</li>
-                    </ul>
-                    <p>If you have any urgent questions, please don't hesitate to call us at +64 9 123 4567.</p>
-                    <p>Best regards,<br>The Kiwi Trade Team</p>
-                    <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
-                    <p style="font-size: 12px; color: #666;">
-                        <strong>Note:</strong> This email was sent to admin for testing. 
-                        Original customer email: ${email}
-                    </p>
-                </div>
-            `
-        });
-
-        console.log('📧 Customer email result:', JSON.stringify(customerEmailResult, null, 2));
-
-        // Send admin notification email
-        console.log('📧 Attempting to send admin email to: danbricks18@gmail.com');
-        const adminEmailResult = await resend.emails.send({
-            from: fromEmail,
-            to: ['danbricks18@gmail.com'],
-            subject: `New Contact Form Submission: ${subject}`,
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2 style="color: #667eea;">New Contact Form Submission</h2>
-                    <p><strong>From:</strong> ${name} (${email})</p>
-                    <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
-                    <p><strong>Subject:</strong> ${subject}</p>
-                    <p><strong>Message:</strong></p>
-                    <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0;">
-                        ${message.replace(/\n/g, '<br>')}
+            // Send customer confirmation email
+            const customerMailOptions = {
+                from: 'Kiwi Trade <danbricks18@gmail.com>',
+                to: email,
+                subject: 'Thank you for contacting Kiwi Trade',
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #667eea;">Thank you for contacting Kiwi Trade!</h2>
+                        <p>Hi ${name},</p>
+                        <p>We've received your message and will get back to you within 24 hours.</p>
+                        <p><strong>Your message details:</strong></p>
+                        <ul>
+                            <li><strong>Subject:</strong> ${subject}</li>
+                            <li><strong>Message:</strong> ${message}</li>
+                        </ul>
+                        <p>If you have any urgent questions, please don't hesitate to call us at +64 9 123 4567.</p>
+                        <p>Best regards,<br>The Kiwi Trade Team</p>
                     </div>
-                    <p><em>This message was sent from the Kiwi Trade contact form.</em></p>
-                </div>
-            `
-        });
+                `
+            };
 
-        console.log('📧 Admin email result:', JSON.stringify(adminEmailResult, null, 2));
-
-        // Check for errors in both emails
-        const customerError = customerEmailResult.error;
-        const adminError = adminEmailResult.error;
-
-        if (customerError) {
-            console.error('❌ Customer email failed:', customerError);
-        } else {
-            console.log('✅ Customer email sent successfully:', customerEmailResult.data?.id);
+            await transporter.sendMail(customerMailOptions);
+            console.log('✅ Customer confirmation email sent successfully');
+            customerEmailSent = true;
+        } catch (emailError) {
+            console.error('❌ Customer email error:', emailError.message);
         }
 
-        if (adminError) {
-            console.error('❌ Admin email failed:', adminError);
-        } else {
-            console.log('✅ Admin email sent successfully:', adminEmailResult.data?.id);
+        try {
+            const nodemailer = await import('nodemailer');
+            const transporter = nodemailer.default.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: 'danbricks18@gmail.com',
+                    pass: 'ptmcojqgthvjbqom'
+                }
+            });
+
+            // Send admin notification email
+            const adminMailOptions = {
+                from: 'Kiwi Trade <danbricks18@gmail.com>',
+                to: 'danbricks18@gmail.com',
+                subject: `New Contact Form Submission: ${subject}`,
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #667eea;">New Contact Form Submission</h2>
+                        <p><strong>From:</strong> ${name} (${email})</p>
+                        <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
+                        <p><strong>Subject:</strong> ${subject}</p>
+                        <p><strong>Message:</strong></p>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0;">
+                            ${message.replace(/\n/g, '<br>')}
+                        </div>
+                        <p><em>This message was sent from the Kiwi Trade contact form.</em></p>
+                    </div>
+                `
+            };
+
+            await transporter.sendMail(adminMailOptions);
+            console.log('✅ Admin notification email sent successfully');
+            adminEmailSent = true;
+        } catch (emailError) {
+            console.error('❌ Admin email error:', emailError.message);
         }
 
         return res.status(200).json({ 
             success: true,
             message: 'Thank you for your message! We\'ll get back to you within 24 hours.',
-            customerEmailSent: !customerError,
-            adminEmailSent: !adminError,
-            note: 'Customer email sent to admin for testing. To send to actual customers, verify a domain at resend.com/domains'
+            customerEmailSent,
+            adminEmailSent
         });
 
     } catch (error) {
-        console.error('❌ Contact form Resend error:', error);
-        
-        // Log the error but still return success to user
-        console.log('📝 Contact form data logged despite email error');
-        console.log('📧 From email would be: "Kiwi Trade <onboarding@resend.dev>"');
+        console.error('❌ Contact form error:', error);
         
         return res.status(200).json({ 
             success: true,

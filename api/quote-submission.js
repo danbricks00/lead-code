@@ -106,9 +106,15 @@ export default async function handler(req, res) {
         pdfBuffer = null;
       }
 
-      // Compute links
-      const origin = SITE_URL || `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}`;
+      // Compute links - use the actual domain, not Vercel's internal URLs
+      const origin = SITE_URL || `https://${req.headers.host}`;
       console.log('🌐 Origin URL:', origin);
+      console.log('🔗 Headers:', {
+        host: req.headers.host,
+        'x-forwarded-proto': req.headers['x-forwarded-proto'],
+        'x-forwarded-host': req.headers['x-forwarded-host']
+      });
+      
       onlineQuoteUrl = `${origin}/quote.html?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}`;
       acceptUrl = `${origin}/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=accept`;
       declineUrl = `${origin}/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=decline`;

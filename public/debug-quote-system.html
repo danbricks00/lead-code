@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Quote System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 20px;
+        }
+        .button {
+            background: #2563eb;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .button:hover {
+            background: #1d4ed8;
+        }
+        .success {
+            color: #16a34a;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc2626;
+            font-weight: bold;
+        }
+        .info {
+            color: #2563eb;
+            font-weight: bold;
+        }
+        pre {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .url-test {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Debug Quote System</h1>
+        <p>This page helps debug issues with the quote system.</p>
+    </div>
+
+    <div class="container">
+        <h2>1. Test URL Generation</h2>
+        <p>Check how URLs are being generated:</p>
+        <button class="button" onclick="testUrlGeneration()">Test URL Generation</button>
+        <div id="urlResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>2. Test Quote API</h2>
+        <p>Enter a quote ID to test the quote API:</p>
+        <input type="text" id="testQuoteId" placeholder="Quote ID (e.g., QUOTE-1234567890-abc123)">
+        <button class="button" onclick="testQuoteAPI()">Test Quote API</button>
+        <div id="quoteApiResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>3. Test Quote Page</h2>
+        <p>Test the quote viewing page:</p>
+        <input type="text" id="testQuoteId2" placeholder="Quote ID">
+        <input type="text" id="testLeadId" placeholder="Lead ID" value="LEAD-1234567890-abc123">
+        <input type="text" id="testToken" placeholder="Token" value="test-token">
+        <button class="button" onclick="testQuotePage()">Test Quote Page</button>
+        <div id="quotePageResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>4. Test Quote Submission</h2>
+        <p>Submit a test quote to check the full flow:</p>
+        <button class="button" onclick="submitTestQuote()">Submit Test Quote</button>
+        <div id="submissionResult"></div>
+    </div>
+
+    <script>
+        async function testUrlGeneration() {
+            const resultDiv = document.getElementById('urlResult');
+            resultDiv.innerHTML = '<p class="info">🔄 Testing URL generation...</p>';
+            
+            try {
+                const response = await fetch('/api/test-url-generation');
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ URL generation test completed</p>
+                        <h3>Headers:</h3>
+                        <pre>${JSON.stringify(data.data.headers, null, 2)}</pre>
+                        <h3>Environment:</h3>
+                        <pre>${JSON.stringify(data.data.environment, null, 2)}</pre>
+                        <h3>URL Generation Methods:</h3>
+                        <pre>${JSON.stringify(data.data.urlGeneration, null, 2)}</pre>
+                        <h3>Generated URLs:</h3>
+                        <div class="url-test">
+                            <p><strong>Method 1:</strong> <a href="${data.data.generatedUrls.onlineQuoteUrl1}" target="_blank">${data.data.generatedUrls.onlineQuoteUrl1}</a></p>
+                            <p><strong>Method 2:</strong> <a href="${data.data.generatedUrls.onlineQuoteUrl2}" target="_blank">${data.data.generatedUrls.onlineQuoteUrl2}</a></p>
+                            <p><strong>Method 3:</strong> <a href="${data.data.generatedUrls.onlineQuoteUrl3}" target="_blank">${data.data.generatedUrls.onlineQuoteUrl3}</a></p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network error: ${error.message}</p>`;
+            }
+        }
+        
+        async function testQuoteAPI() {
+            const quoteId = document.getElementById('testQuoteId').value;
+            const resultDiv = document.getElementById('quoteApiResult');
+            
+            if (!quoteId) {
+                resultDiv.innerHTML = '<p class="error">❌ Please enter a Quote ID</p>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p class="info">🔄 Testing quote API...</p>';
+            
+            try {
+                const response = await fetch(`/api/get-quote-by-id?quoteId=${encodeURIComponent(quoteId)}&leadId=LEAD-1234567890-abc123&token=test-token`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Quote API working!</p>
+                        <h3>Quote Data:</h3>
+                        <pre>${JSON.stringify(data.quote, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Quote API error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network error: ${error.message}</p>`;
+            }
+        }
+        
+        async function testQuotePage() {
+            const quoteId = document.getElementById('testQuoteId2').value;
+            const leadId = document.getElementById('testLeadId').value;
+            const token = document.getElementById('testToken').value;
+            const resultDiv = document.getElementById('quotePageResult');
+            
+            if (!quoteId) {
+                resultDiv.innerHTML = '<p class="error">❌ Please enter a Quote ID</p>';
+                return;
+            }
+            
+            const url = `/quote.html?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}`;
+            
+            resultDiv.innerHTML = `
+                <p class="info">🔗 Testing quote page:</p>
+                <p><a href="${url}" target="_blank">${url}</a></p>
+                <button class="button" onclick="window.open('${url}', '_blank')">Open Quote Page</button>
+            `;
+        }
+        
+        async function submitTestQuote() {
+            const resultDiv = document.getElementById('submissionResult');
+            resultDiv.innerHTML = '<p class="info">🔄 Submitting test quote...</p>';
+            
+            const testData = {
+                leadId: 'LEAD-1234567890-abc123',
+                customerName: 'Test Customer',
+                customerEmail: 'test@example.com',
+                customerPhone: '021 123 456',
+                location: 'Auckland, NZ',
+                tradesmanName: 'Test Tradesman',
+                tradesmanEmail: 'tradesman@example.com',
+                tradesmanPhone: '021 987 654',
+                serviceType: 'Underfloor Heating',
+                projectDetails: 'Test project',
+                projectSize: '25',
+                budget: 'To be quoted',
+                timeline: 'Flexible',
+                specificDetails: 'Test quote for debugging',
+                labourRate: '75',
+                labourHours: '8',
+                labourSubtotal: '600',
+                materialRate: '120',
+                materialSQM: '25',
+                materialSubtotal: '3000',
+                installationAmount: '500',
+                installationSubtotal: '500',
+                totalAmount: '4100',
+                quoteAmount: '4100',
+                breakdown: 'Labour: $600, Materials: $3000, Installation: $500',
+                notes: 'Test quote for debugging purposes',
+                token: 'test-token'
+            };
+            
+            try {
+                console.log('📤 Submitting test quote data:', testData);
+                
+                const response = await fetch('/api/quote-submission', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testData)
+                });
+                
+                const result = await response.json();
+                console.log('📥 Test quote response:', result);
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Test quote submitted successfully!</p>
+                        <p><strong>Quote ID:</strong> ${result.details.quoteId}</p>
+                        <p><strong>Customer Email Sent:</strong> ${result.details.customerEmailSent ? 'Yes' : 'No'}</p>
+                        <p><strong>Tradesman Email Sent:</strong> ${result.details.tradesmanEmailSent ? 'Yes' : 'No'}</p>
+                        <p><strong>Sheets Updated:</strong> ${result.details.sheetsUpdated ? 'Yes' : 'No'}</p>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${result.error || 'Unknown error'}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Network error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

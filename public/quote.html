@@ -342,15 +342,21 @@
             <div class="footer-text" style="margin-top: 15px; font-size: 12px;">Quote ID: ${quote.quoteId}</div>
           </div>
         `;
-      } catch(e) {
-        console.error(e);
-        document.getElementById('content').innerHTML = `
-          <div style="text-align: center; padding: 40px; color: #dc2626;">
-            <h2>Failed to load quote</h2>
-            <p>Please check the quote link and try again.</p>
-          </div>
-        `;
-      }
+             } catch(e) {
+         console.error('❌ Quote loading error:', e);
+         document.getElementById('content').innerHTML = `
+           <div style="text-align: center; padding: 40px; color: #dc2626;">
+             <h2>Failed to load quote</h2>
+             <p>Error: ${e.message}</p>
+             <p>Quote ID: ${quoteId}</p>
+             <p>Lead ID: ${leadId}</p>
+             <p>Please check the quote link and try again.</p>
+             <div style="margin-top: 20px;">
+               <button onclick="location.reload()" style="background: #2563eb; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">Retry</button>
+             </div>
+           </div>
+         `;
+       }
     })();
   </script>
 </body>

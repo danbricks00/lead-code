@@ -397,19 +397,19 @@ async function fetchLeadData(leadId) {
             <div class="details-title">Customer Details</div>
             <div class="detail-row">
                 <span class="detail-label">Name:</span>
-                <span class="detail-value">${leadData.customerName || 'Not provided'}</span>
+                <span class="detail-value">${quoteData?.customerName || leadData.customerName || 'Not provided'}</span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Email:</span>
-                <span class="detail-value">${leadData.customerEmail || 'Not provided'}</span>
+                <span class="detail-value">${quoteData?.customerEmail || leadData.customerEmail || 'Not provided'}</span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Phone:</span>
-                <span class="detail-value">${leadData.customerPhone || 'Not provided'}</span>
+                <span class="detail-value">${quoteData?.customerPhone || leadData.customerPhone || 'Not provided'}</span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Address:</span>
-                <span class="detail-value">${leadData.location || 'Not provided'}</span>
+                <span class="detail-value">${quoteData?.location || leadData.location || 'Not provided'}</span>
             </div>
         </div>
         
@@ -417,19 +417,19 @@ async function fetchLeadData(leadId) {
             <div class="details-title">Tradesman Details</div>
             <div class="detail-row">
                 <span class="detail-label">Company:</span>
-                <span class="detail-value">Kiwi Underfloor Heating</span>
+                <span class="detail-value">${quoteData?.tradesmanName || 'Kiwi Underfloor Heating'}</span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Email:</span>
-                <span class="detail-value">info@kiwitrade.co.nz</span>
+                <span class="detail-value">${quoteData?.tradesmanEmail || 'info@kiwitrade.co.nz'}</span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Phone:</span>
-                <span class="detail-value">021 123 456</span>
+                <span class="detail-value">${quoteData?.tradesmanPhone || '021 123 456'}</span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Service:</span>
-                <span class="detail-value">${leadData.selectedService || 'Underfloor Heating'}</span>
+                <span class="detail-value">${quoteData?.serviceType || leadData.selectedService || 'Underfloor Heating'}</span>
             </div>
         </div>
     </div>

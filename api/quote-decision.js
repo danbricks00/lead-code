@@ -25,12 +25,53 @@ export default async function handler(req, res) {
     console.log(`🔍 Quote decision received: ${action} for quote ${quoteId}, lead ${leadId}`);
 
     // Fetch quote data to get tradesman email and other details
+    console.log('🔍 Fetching quote data for:', quoteId);
     const quoteData = await fetchQuoteData(quoteId);
+    console.log('📋 Quote data result:', quoteData ? 'Found' : 'Not found');
+    
+    console.log('🔍 Fetching lead data for:', leadId);
     const leadData = await fetchLeadData(leadId);
+    console.log('📋 Lead data result:', leadData ? 'Found' : 'Not found');
     
     if (!quoteData) {
       console.error('❌ Quote not found:', quoteId);
-      return res.status(404).send('Quote not found');
+      return res.status(404).send(`
+        <!doctype html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <title>Quote Not Found</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto; line-height: 1.6; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .company-name { font-size: 24px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; }
+            .error { background: #fee2e2; padding: 20px; border-radius: 8px; border-left: 4px solid #ef4444; }
+            .debug { background: #f3f4f6; padding: 15px; border-radius: 6px; margin-top: 20px; font-family: monospace; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="company-name">KIWI UNDERFLOOR HEATING</div>
+          </div>
+          <div class="error">
+            <h2>Quote Not Found</h2>
+            <p>The quote you're trying to access could not be found in our system.</p>
+            <p><strong>Quote ID:</strong> ${quoteId}</p>
+            <p><strong>Lead ID:</strong> ${leadId}</p>
+            <p><strong>Action:</strong> ${action}</p>
+          </div>
+          <div class="debug">
+            <strong>Debug Information:</strong><br>
+            Quote ID: ${quoteId}<br>
+            Lead ID: ${leadId}<br>
+            Action: ${action}<br>
+            <br>
+            <a href="/debug-quote-decision.html" target="_blank">Click here to debug this issue</a>
+          </div>
+        </body>
+        </html>
+      `);
     }
 
     // Check if a decision has already been made

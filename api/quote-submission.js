@@ -52,7 +52,8 @@ export default async function handler(req, res) {
 
     // Generate PDF and prepare links
     const quoteId = `QUOTE-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const token = req.body.token || ''; // whichever you already pass/validate
+    const leadId = req.body.leadId;
+    const token = req.body.token || req.body.hmac || '';
 
     // Build PDF buffer for attachment
     let pdfBuffer = null;
@@ -63,7 +64,7 @@ export default async function handler(req, res) {
 
     try {
       // Compute links first - use Vercel's default domain
-      const origin = SITE_URL || `https://${req.headers['x-forwarded-host'] || req.headers.host}`;
+      const origin = process.env.SITE_URL || `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}`;
       console.log('🌐 Origin URL:', origin);
       console.log('🔗 Headers:', {
         host: req.headers.host,
@@ -156,6 +157,7 @@ export default async function handler(req, res) {
                       <h2>Your Quote from Kiwi Trade</h2>
                       <p>Hi ${customerName || ''},</p>
                       <p>Thank you for your interest in our services. Your professional quote is attached as an HTML document.</p>
+                      <p><strong>Important:</strong> The online version below is identical to the attached PDF.</p>
                       <h3 style="background:#f3f4f6;padding:10px;border-radius:6px;">Quote Summary</h3>
                       <p><strong>Service:</strong> ${serviceType || 'Underfloor Heating'}</p>
                       <p><strong>Location:</strong> ${location || ''}</p>

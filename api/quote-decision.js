@@ -13,8 +13,13 @@ export default async function handler(req, res) {
 
   try {
     const { quoteId, leadId, token, action } = req.query;
-    if (!quoteId || !leadId || !token || !['accept','decline'].includes(action)) {
+    if (!quoteId || !leadId || !['accept','decline'].includes(action)) {
       return res.status(400).send('Invalid request');
+    }
+
+    if (!token) {
+      console.warn('quote-decision: missing token', { quoteId, leadId, action });
+      // Optionally enforce token later when you're ready
     }
 
     console.log(`🔍 Quote decision received: ${action} for quote ${quoteId}, lead ${leadId}`);

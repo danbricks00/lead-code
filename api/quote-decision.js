@@ -24,7 +24,8 @@ export default async function handler(req, res) {
 
     if (!token) {
       console.warn('quote-decision: missing token', { quoteId, leadId, action });
-      // Optionally enforce token later when you're ready
+      // For now, we'll allow the request to continue but log the warning
+      // TODO: Implement proper token validation when ready
     }
 
     console.log(`🔍 Quote decision received: ${action} for quote ${quoteId}, lead ${leadId}`);

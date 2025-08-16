@@ -77,7 +77,7 @@ export default async function handler(req, res) {
 
     // Send emails to all parties
     try {
-      const transporter = nodemailer.createTransporter({
+      const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
           user: 'danbricks18@gmail.com',

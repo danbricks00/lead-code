@@ -330,6 +330,19 @@
                         <p class="success">✅ Test quote submission successful!</p>
                         <h3>Test Results:</h3>
                         <pre>${JSON.stringify(data, null, 2)}</pre>
+                        
+                        <h3>Key Findings:</h3>
+                        <ul>
+                            <li><strong>Target Sheet:</strong> ${data.targetSheet}</li>
+                            <li><strong>Current Headers:</strong> ${data.currentHeaders ? data.currentHeaders.length : 0} columns</li>
+                            <li><strong>Data Columns:</strong> ${data.dataColumns} columns</li>
+                            <li><strong>Verification:</strong> ${data.verification}</li>
+                        </ul>
+                        
+                        ${data.verification === 'FAILED' ? 
+                            '<p class="error">⚠️ MISMATCH DETECTED: The data structure doesn\'t match the sheet headers!</p>' : 
+                            '<p class="success">✅ Data structure matches sheet headers</p>'
+                        }
                     `;
                     resultDiv.innerHTML = html;
                 } else {

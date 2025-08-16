@@ -99,32 +99,38 @@ export default async function handler(req, res) {
     const headers = rows[0];
     console.log('📝 Headers:', headers);
 
-    // Search for the quote
-    const quoteIdIndex = 1; // Quote ID is the second column (B)
+    // Search for the quote across ALL columns
     let foundQuote = null;
     let foundRowIndex = -1;
+    let foundColumnIndex = -1;
 
-    console.log(`🔍 Searching for quote ID: "${quoteId}"`);
-    console.log(`🔍 Looking in column ${quoteIdIndex} (${String.fromCharCode(65 + quoteIdIndex)})`);
+    console.log(`🔍 Searching for quote ID: "${quoteId}" across ALL columns`);
 
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      const rowQuoteId = row[quoteIdIndex];
       
-      console.log(`Row ${i + 1}: "${rowQuoteId}"`);
-      
-      if (rowQuoteId === quoteId) {
-        foundQuote = row;
-        foundRowIndex = i;
-        console.log(`✅ Found quote in row ${i + 1}`);
-        break;
+      // Search for the quoteId in ANY column of this row
+      for (let colIndex = 0; colIndex < row.length; colIndex++) {
+        const cellValue = row[colIndex];
+        if (cellValue === quoteId) {
+          foundQuote = row;
+          foundRowIndex = i;
+          foundColumnIndex = colIndex;
+          console.log(`✅ Found quote in row ${i + 1}, column ${colIndex} (${String.fromCharCode(65 + colIndex)})`);
+          break;
+        }
       }
+      
+      if (foundQuote) break;
     }
     
     if (!foundQuote) {
-      console.log(`❌ Quote not found. Available quote IDs in first 10 rows:`);
+      console.log(`❌ Quote not found. Searching for any QUOTE- patterns in first 10 rows:`);
       rows.slice(1, 11).forEach((row, index) => {
-        console.log(`Row ${index + 2}: "${row[quoteIdIndex]}"`);
+        const quoteIds = row.filter(cell => cell && cell.startsWith('QUOTE-'));
+        if (quoteIds.length > 0) {
+          console.log(`Row ${index + 2}: Found quote IDs: ${quoteIds.join(', ')}`);
+        }
       });
     }
 
@@ -161,18 +167,20 @@ export default async function handler(req, res) {
       totalRows: rows.length,
       headers: headers,
       sampleData: sampleData,
-      searchResults: {
-        quoteFound: !!foundQuote,
-        quoteRowIndex: foundRowIndex,
-        quoteData: foundQuote ? {
-          quoteId: foundQuote[quoteIdIndex],
-          leadId: foundQuote[leadIdIndex],
-          customerName: foundQuote[3],
-          status: foundQuote[28] || 'Pending'
-        } : null,
-        leadFound: !!foundLead,
-        leadRowIndex: foundLeadRowIndex
-      }
+             searchResults: {
+         quoteFound: !!foundQuote,
+         quoteRowIndex: foundRowIndex,
+         quoteColumnIndex: foundColumnIndex,
+         quoteColumnLetter: foundColumnIndex >= 0 ? String.fromCharCode(65 + foundColumnIndex) : null,
+         quoteData: foundQuote ? {
+           quoteId: foundQuote[foundColumnIndex] || 'N/A',
+           leadId: foundQuote[foundColumnIndex + 1] || 'N/A', // Usually next to quoteId
+           customerName: foundQuote[foundColumnIndex + 2] || 'N/A',
+           status: 'Pending' // Default status
+         } : null,
+         leadFound: !!foundLead,
+         leadRowIndex: foundLeadRowIndex
+       }
     };
 
     console.log('🔍 Debug info:', debugInfo);

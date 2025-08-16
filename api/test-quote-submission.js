@@ -11,28 +11,23 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('🧪 Test quote submission started');
+    console.log('🧪 Testing quote submission to Google Sheets...');
 
     // Check environment variables
     const serviceAccountEmail = process.env.GOOGLE_CLIENT_EMAIL;
     const privateKey = process.env.GOOGLE_PRIVATE_KEY;
     const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
 
-    console.log('🔑 Environment check:', {
-      hasServiceAccountEmail: !!serviceAccountEmail,
-      hasPrivateKey: !!privateKey,
-      hasSpreadsheetId: !!spreadsheetId,
-      spreadsheetId: spreadsheetId
-    });
+    const envCheck = {
+      GOOGLE_CLIENT_EMAIL: !!serviceAccountEmail,
+      GOOGLE_PRIVATE_KEY: !!privateKey,
+      GOOGLE_SPREADSHEET_ID: !!spreadsheetId
+    };
 
     if (!serviceAccountEmail || !privateKey || !spreadsheetId) {
       return res.status(500).json({
         error: 'Missing Google Sheets credentials',
-        missing: {
-          GOOGLE_CLIENT_EMAIL: !serviceAccountEmail,
-          GOOGLE_PRIVATE_KEY: !privateKey,
-          GOOGLE_SPREADSHEET_ID: !spreadsheetId
-        }
+        envCheck
       });
     }
 
@@ -58,10 +53,10 @@ export default async function handler(req, res) {
     const metadata = await sheets.spreadsheets.get({
       spreadsheetId: spreadsheetId
     });
-    
+
     const availableSheets = metadata.data.sheets.map(s => s.properties.title);
     console.log('📋 Available sheets:', availableSheets);
-    
+
     // Find the correct sheet to use
     let targetSheet = 'Sheet1';
     if (availableSheets.includes('Quotes')) {
@@ -71,10 +66,10 @@ export default async function handler(req, res) {
     } else if (availableSheets.length > 0) {
       targetSheet = availableSheets[0];
     }
-    
+
     console.log('🎯 Using sheet:', targetSheet);
 
-    // Read existing data
+    // Read current data to see structure
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: spreadsheetId,
       range: `${targetSheet}!A:Z`,
@@ -83,43 +78,52 @@ export default async function handler(req, res) {
     const rows = response.data.values;
     console.log(`📊 Found ${rows ? rows.length : 0} rows in ${targetSheet}`);
 
-    if (rows && rows.length > 0) {
-      console.log('📝 Headers:', rows[0]);
-      console.log('📝 Sample data (first 3 rows):', rows.slice(1, 4));
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({
+        error: 'No data found in sheet',
+        targetSheet,
+        availableSheets
+      });
     }
 
-    // Test adding a sample quote
+    // Show headers
+    const headers = rows[0];
+    console.log('📝 Current headers:', headers);
+
+    // Create a test quote with the SAME structure as the actual submission
     const testQuoteId = `TEST-QUOTE-${Date.now()}`;
-    const testQuoteData = [
+    const testLeadId = `TEST-LEAD-${Date.now()}`;
+
+    const testValues = [
       [
         new Date().toISOString(), // Timestamp
         testQuoteId, // Quote ID
-        'TEST-LEAD-123', // Lead ID
+        testLeadId, // Lead ID
         'Test Customer', // Customer Name
         'test@example.com', // Customer Email
-        '021 123 456', // Customer Phone
+        '123456789', // Customer Phone
         'Test Tradesman', // Tradesman Name
         'tradesman@example.com', // Tradesman Email
-        '021 654 321', // Tradesman Phone
-        'Underfloor Heating', // Service Type
+        '987654321', // Tradesman Phone
+        'underfloor_heating', // Service Type
         'Test project details', // Project Details
-        '25', // Project Size
-        'Auckland', // Location
-        '5000', // Budget
+        '50m2', // Project Size
+        'Test Location', // Location
+        '$5000', // Budget
         '2 weeks', // Timeline
         'Test specific details', // Specific Details
-        '5000.00', // Quote Amount
-        '50.00', // Labour Rate
-        '8', // Labour Hours
-        '400.00', // Labour Subtotal
-        '120.00', // Material Rate
-        '25', // Material SQM
-        '3000.00', // Material Subtotal
-        '500.00', // Installation Amount
-        '500.00', // Installation Subtotal
-        'Labour: $400, Materials: $3000, Installation: $500', // Breakdown
+        '5000', // Quote Amount
+        '100', // Labour Rate
+        '10', // Labour Hours
+        '1000', // Labour Subtotal
+        '50', // Material Rate
+        '50', // Material SQM
+        '2500', // Material Subtotal
+        '500', // Installation Amount
+        '500', // Installation Subtotal
+        'Labour: $1000, Materials: $2500, Installation: $500', // Breakdown
         'Test notes', // Notes
-        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Valid Until
+        '2025-09-15', // Valid Until
         'Pending', // Status
         'https://example.com/quote', // Online Quote URL
         'https://example.com/accept', // Accept URL
@@ -127,10 +131,10 @@ export default async function handler(req, res) {
       ]
     ];
 
-    console.log('📊 Test quote data prepared:', {
-      quoteId: testQuoteId,
-      dataLength: testQuoteData[0].length,
-      columns: testQuoteData[0].length
+    console.log('📊 Test quote data structure:');
+    console.log('Number of columns:', testValues[0].length);
+    testValues[0].forEach((value, index) => {
+      console.log(`Column ${index}: ${value}`);
     });
 
     // Try to append the test quote
@@ -140,7 +144,7 @@ export default async function handler(req, res) {
         range: `${targetSheet}!A:Z`,
         valueInputOption: 'USER_ENTERED',
         insertDataOption: 'INSERT_ROWS',
-        resource: { values: testQuoteData }
+        resource: { values: testValues }
       });
 
       console.log('✅ Test quote saved successfully');
@@ -151,37 +155,39 @@ export default async function handler(req, res) {
         range: `${targetSheet}!A:Z`,
       });
 
-      const verifyRows = verifyResponse.data.values;
-      const savedQuote = verifyRows ? verifyRows.find(row => row[1] === testQuoteId) : null;
+      const newRows = verifyResponse.data.values;
+      const lastRow = newRows[newRows.length - 1];
+      
+      console.log('🔍 Last row in sheet:', lastRow);
+      console.log('🔍 Quote ID in last row:', lastRow[1]);
 
       return res.status(200).json({
         success: true,
-        message: 'Test quote submission successful',
-        testQuoteId: testQuoteId,
-        targetSheet: targetSheet,
-        availableSheets: availableSheets,
-        totalRows: verifyRows ? verifyRows.length : 0,
-        savedQuoteFound: !!savedQuote,
-        savedQuoteData: savedQuote ? {
-          quoteId: savedQuote[1],
-          customerName: savedQuote[3],
-          quoteAmount: savedQuote[16],
-          validUntil: savedQuote[27]
-        } : null
+        message: 'Test quote submitted successfully',
+        testQuoteId,
+        testLeadId,
+        targetSheet,
+        currentHeaders: headers,
+        dataColumns: testValues[0].length,
+        lastRowQuoteId: lastRow[1],
+        verification: lastRow[1] === testQuoteId ? 'PASSED' : 'FAILED'
       });
 
     } catch (appendError) {
-      console.error('❌ Error appending test quote:', appendError);
+      console.error('❌ Failed to save test quote:', appendError.message);
       return res.status(500).json({
-        error: 'Failed to append test quote',
-        details: appendError.message
+        error: 'Failed to save test quote',
+        details: appendError.message,
+        targetSheet,
+        currentHeaders: headers,
+        dataColumns: testValues[0].length
       });
     }
 
   } catch (error) {
-    console.error('❌ Test quote submission error:', error);
+    console.error('❌ Test error:', error);
     return res.status(500).json({
-      error: 'Test quote submission failed',
+      error: 'Test failed',
       details: error.message
     });
   }

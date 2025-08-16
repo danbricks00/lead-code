@@ -504,53 +504,109 @@ async function fetchQuoteData(quoteId) {
       return null;
     }
 
-    // Find the quoteId column (second column)
-    const quoteIdIndex = 1; // Quote ID is the second column (B)
+    // Search for the quote across ALL columns in each row
+    console.log(`🔍 Searching for quote ID: "${quoteId}" across all columns`);
 
-    // Search for the quote with matching quoteId
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      const rowQuoteId = row[quoteIdIndex];
       
-      console.log(`🔍 Checking row ${i + 1}: quoteId = "${rowQuoteId}" vs "${quoteId}"`);
+      // Search for the quoteId in ANY column of this row
+      let foundQuoteId = null;
+      let foundColumnIndex = -1;
       
-      if (rowQuoteId === quoteId) {
-        console.log(`✅ Found quote in row ${i + 1}`);
-        // Found the quote, map it to the expected structure
-        return {
-          timestamp: row[0] || '', // Timestamp
-          quoteId: row[1] || '', // Quote ID
-          leadId: row[2] || '', // Lead ID
-          customerName: row[3] || '', // Customer Name
-          customerEmail: row[4] || '', // Customer Email
-          customerPhone: row[5] || '', // Customer Phone
-          tradesmanName: row[6] || '', // Tradesman Name
-          tradesmanEmail: row[7] || '', // Tradesman Email
-          tradesmanPhone: row[8] || '', // Tradesman Phone
-          serviceType: row[9] || '', // Service Type
-          projectDetails: row[10] || '', // Project Details
-          projectSize: row[11] || '', // Project Size
-          location: row[12] || '', // Location
-          budget: row[13] || '', // Budget
-          timeline: row[14] || '', // Timeline
-          specificDetails: row[15] || '', // Specific Details
-          quoteAmount: row[16] || '', // Quote Amount
-          labourRate: row[17] || '', // Labour Rate
-          labourHours: row[18] || '', // Labour Hours
-          labourSubtotal: row[19] || '', // Labour Subtotal
-          materialRate: row[20] || '', // Material Rate
-          materialSQM: row[21] || '', // Material SQM
-          materialSubtotal: row[22] || '', // Material Subtotal
-          installationAmount: row[23] || '', // Installation Amount
-          installationSubtotal: row[24] || '', // Installation Subtotal
-          breakdown: row[25] || '', // Breakdown
-          notes: row[26] || '', // Notes
-          validUntil: row[27] || '', // Valid Until
-          status: row[28] || 'Pending', // Status
-          onlineQuoteUrl: row[29] || '', // Online Quote URL
-          acceptUrl: row[30] || '', // Accept URL
-          declineUrl: row[31] || '' // Decline URL
+      for (let colIndex = 0; colIndex < row.length; colIndex++) {
+        const cellValue = row[colIndex];
+        if (cellValue === quoteId) {
+          foundQuoteId = cellValue;
+          foundColumnIndex = colIndex;
+          break;
+        }
+      }
+      
+      console.log(`Row ${i + 1}: searched ${row.length} columns, found quoteId: "${foundQuoteId}"`);
+      
+      if (foundQuoteId === quoteId) {
+        console.log(`✅ Found quote in row ${i + 1}, column ${foundColumnIndex} (${String.fromCharCode(65 + foundColumnIndex)})`);
+        
+        // Found the quote! Now we need to map the data based on where we found it
+        // Since the data is scattered, we'll try to map what we can find
+        
+        const mappedData = {
+          timestamp: row[0] || '', // Timestamp (usually first column)
+          quoteId: foundQuoteId,
+          leadId: '', // We'll search for this
+          customerName: '',
+          customerEmail: '',
+          customerPhone: '',
+          tradesmanName: '',
+          tradesmanEmail: '',
+          tradesmanPhone: '',
+          serviceType: '',
+          projectDetails: '',
+          projectSize: '',
+          location: '',
+          budget: '',
+          timeline: '',
+          specificDetails: '',
+          quoteAmount: '',
+          labourRate: '',
+          labourHours: '',
+          labourSubtotal: '',
+          materialRate: '',
+          materialSQM: '',
+          materialSubtotal: '',
+          installationAmount: '',
+          installationSubtotal: '',
+          breakdown: '',
+          notes: '',
+          validUntil: '',
+          status: 'Pending',
+          onlineQuoteUrl: '',
+          acceptUrl: '',
+          declineUrl: ''
         };
+        
+        // Try to find leadId in the same row (usually next to quoteId)
+        for (let colIndex = 0; colIndex < row.length; colIndex++) {
+          const cellValue = row[colIndex];
+          if (cellValue && cellValue.startsWith('LEAD-')) {
+            mappedData.leadId = cellValue;
+            break;
+          }
+        }
+        
+        // Try to find other key data in the row
+        for (let colIndex = 0; colIndex < row.length; colIndex++) {
+          const cellValue = row[colIndex];
+          if (cellValue) {
+            // Look for email patterns
+            if (cellValue.includes('@') && !mappedData.customerEmail) {
+              mappedData.customerEmail = cellValue;
+            }
+            // Look for phone patterns
+            else if (cellValue.match(/^\d+$/) && cellValue.length >= 7 && !mappedData.customerPhone) {
+              mappedData.customerPhone = cellValue;
+            }
+            // Look for amount patterns
+            else if (cellValue.match(/^\d+(\.\d{2})?$/) && !mappedData.quoteAmount) {
+              mappedData.quoteAmount = cellValue;
+            }
+            // Look for names (no special characters, reasonable length)
+            else if (cellValue.match(/^[A-Za-z\s]+$/) && cellValue.length > 2 && cellValue.length < 50 && !mappedData.customerName) {
+              mappedData.customerName = cellValue;
+            }
+          }
+        }
+        
+        console.log(`📋 Mapped quote data:`, {
+          quoteId: mappedData.quoteId,
+          leadId: mappedData.leadId,
+          customerName: mappedData.customerName,
+          customerEmail: mappedData.customerEmail,
+          quoteAmount: mappedData.quoteAmount
+        });
+        
+        return mappedData;
       }
     }
     

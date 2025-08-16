@@ -104,15 +104,28 @@ export default async function handler(req, res) {
     let foundQuote = null;
     let foundRowIndex = -1;
 
+    console.log(`🔍 Searching for quote ID: "${quoteId}"`);
+    console.log(`🔍 Looking in column ${quoteIdIndex} (${String.fromCharCode(65 + quoteIdIndex)})`);
+
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
       const rowQuoteId = row[quoteIdIndex];
       
+      console.log(`Row ${i + 1}: "${rowQuoteId}"`);
+      
       if (rowQuoteId === quoteId) {
         foundQuote = row;
         foundRowIndex = i;
+        console.log(`✅ Found quote in row ${i + 1}`);
         break;
       }
+    }
+    
+    if (!foundQuote) {
+      console.log(`❌ Quote not found. Available quote IDs in first 10 rows:`);
+      rows.slice(1, 11).forEach((row, index) => {
+        console.log(`Row ${index + 2}: "${row[quoteIdIndex]}"`);
+      });
     }
 
     // Also search for the lead

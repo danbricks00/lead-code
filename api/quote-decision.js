@@ -512,7 +512,10 @@ async function fetchQuoteData(quoteId) {
       const row = rows[i];
       const rowQuoteId = row[quoteIdIndex];
       
+      console.log(`🔍 Checking row ${i + 1}: quoteId = "${rowQuoteId}" vs "${quoteId}"`);
+      
       if (rowQuoteId === quoteId) {
+        console.log(`✅ Found quote in row ${i + 1}`);
         // Found the quote, map it to the expected structure
         return {
           timestamp: row[0] || '', // Timestamp
@@ -550,6 +553,9 @@ async function fetchQuoteData(quoteId) {
         };
       }
     }
+    
+    console.log(`❌ Quote ID "${quoteId}" not found in any row`);
+    console.log('🔍 Available quote IDs in sheet:', rows.slice(1, 6).map(row => row[quoteIdIndex]).filter(id => id));
 
     return null;
   } catch (error) {

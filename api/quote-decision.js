@@ -1,5 +1,10 @@
 import nodemailer from 'nodemailer';
-import { google } from 'googleapis';
+import { 
+  fetchQuoteData, 
+  fetchLeadData, 
+  checkQuoteDecisionState, 
+  updateQuoteStatus 
+} from './quote-utils.js';
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -24,17 +29,13 @@ export default async function handler(req, res) {
 
     console.log(`🔍 Quote decision received: ${action} for quote ${quoteId}, lead ${leadId}`);
 
-    // Fetch quote data to get tradesman email and other details
-    console.log('🔍 Fetching quote data for:', quoteId);
-    const quoteData = await fetchQuoteData(quoteId);
-    console.log('📋 Quote data result:', quoteData ? 'Found' : 'Not found');
+    // Check quote decision state using unified function (keyed by quoteId + leadId)
+    console.log('🔍 Checking quote decision state...');
+    const decisionState = await checkQuoteDecisionState(quoteId, leadId);
+    console.log('📋 Decision state result:', decisionState);
     
-    console.log('🔍 Fetching lead data for:', leadId);
-    const leadData = await fetchLeadData(leadId);
-    console.log('📋 Lead data result:', leadData ? 'Found' : 'Not found');
-    
-    if (!quoteData) {
-      console.error('❌ Quote not found:', quoteId);
+    if (!decisionState.found) {
+      console.error('❌ Quote not found or does not match lead:', quoteId, leadId);
       return res.status(404).send(`
         <!doctype html>
         <html>
@@ -60,6 +61,7 @@ export default async function handler(req, res) {
             <p><strong>Quote ID:</strong> ${quoteId}</p>
             <p><strong>Lead ID:</strong> ${leadId}</p>
             <p><strong>Action:</strong> ${action}</p>
+            <p><strong>Error:</strong> ${decisionState.message}</p>
           </div>
           <div class="debug">
             <strong>Debug Information:</strong><br>
@@ -75,13 +77,12 @@ export default async function handler(req, res) {
     }
 
     // Check if a decision has already been made
-    const currentStatus = quoteData.status || 'Pending';
-    if (currentStatus === 'Accepted' || currentStatus === 'Declined') {
-      console.log(`⚠️ Quote ${quoteId} already has a decision: ${currentStatus}`);
+    if (decisionState.isDecided) {
+      console.log(`⚠️ Quote ${quoteId} already has a decision: ${decisionState.status}`);
       
-      const originalDecision = currentStatus === 'Accepted' ? 'accept' : 'decline';
-      const title = currentStatus === 'Accepted' ? 'Quote Already Accepted' : 'Quote Already Declined';
-      const msg = currentStatus === 'Accepted' 
+      const originalDecision = decisionState.status === 'Accepted' ? 'accept' : 'decline';
+      const title = decisionState.status === 'Accepted' ? 'Quote Already Accepted' : 'Quote Already Declined';
+      const msg = decisionState.status === 'Accepted' 
         ? 'This quote has already been accepted. No further action is needed.'
         : 'This quote has already been declined. No further action is needed.';
 
@@ -108,14 +109,14 @@ export default async function handler(req, res) {
           </div>
           <div class="warning">
             <strong>⚠️ Decision Already Made</strong><br>
-            This quote has already been ${currentStatus.toLowerCase()}. Decisions are final and cannot be changed.
+            This quote has already been ${decisionState.status.toLowerCase()}. Decisions are final and cannot be changed.
           </div>
           <div class="message">
             <h2>${title}</h2>
             <p>${msg}</p>
           </div>
           <div class="status">
-            <strong>Status:</strong> ${currentStatus === 'Accepted' ? '✅ Already Accepted' : '❌ Already Declined'}
+            <strong>Status:</strong> ${decisionState.status === 'Accepted' ? '✅ Already Accepted' : '❌ Already Declined'}
           </div>
           <p style="text-align: center; margin-top: 30px; color: #6b7280; font-size: 14px;">
             Thank you for using Kiwi Trade services.
@@ -126,16 +127,29 @@ export default async function handler(req, res) {
       return;
     }
 
+    // Fetch quote and lead data for email sending
+    console.log('🔍 Fetching quote data for:', quoteId);
+    const quoteData = await fetchQuoteData(quoteId);
+    console.log('📋 Quote data result:', quoteData ? 'Found' : 'Not found');
+    
+    console.log('🔍 Fetching lead data for:', leadId);
+    const leadData = await fetchLeadData(leadId);
+    console.log('📋 Lead data result:', leadData ? 'Found' : 'Not found');
+
     let customerEmailSent = false;
     let tradesmanEmailSent = false;
     let adminEmailSent = false;
     let statusUpdated = false;
 
-    // Update quote status in Google Sheets
+    // Update quote status in Google Sheets using unified function
     try {
-      await updateQuoteStatus(quoteId, action === 'accept' ? 'Accepted' : 'Declined');
-      statusUpdated = true;
-      console.log('✅ Quote status updated in Google Sheets');
+      const updateSuccess = await updateQuoteStatus(quoteId, action === 'accept' ? 'Accepted' : 'Declined');
+      if (updateSuccess) {
+        statusUpdated = true;
+        console.log('✅ Quote status updated in Google Sheets');
+      } else {
+        console.error('❌ Failed to update quote status');
+      }
     } catch (updateError) {
       console.error('❌ Failed to update quote status:', updateError.message);
     }
@@ -169,9 +183,9 @@ export default async function handler(req, res) {
             <div style="background:#f3f4f6;padding:15px;border-radius:6px;margin:20px 0;">
               <h3 style="margin-top:0;">Quote Details</h3>
               <p><strong>Quote ID:</strong> ${quoteId}</p>
-              <p><strong>Service:</strong> ${quoteData.serviceType || leadData.selectedService || 'Underfloor Heating'}</p>
-              <p><strong>Location:</strong> ${quoteData.location || leadData.location || 'Not specified'}</p>
-              <p><strong>Quote Amount:</strong> $${Number(quoteData.quoteAmount || 0).toFixed(2)}</p>
+              <p><strong>Service:</strong> ${quoteData?.serviceType || leadData.selectedService || 'Underfloor Heating'}</p>
+              <p><strong>Location:</strong> ${quoteData?.location || leadData.location || 'Not specified'}</p>
+              <p><strong>Quote Amount:</strong> $${Number(quoteData?.quoteAmount || 0).toFixed(2)}</p>
               <p><strong>Decision:</strong> ${action === 'accept' ? 'Accepted' : 'Declined'}</p>
             </div>
             
@@ -198,7 +212,7 @@ export default async function handler(req, res) {
       }
 
       // 2. Send tradesman notification email
-      const tradesmanEmail = quoteData.tradesmanEmail || 'quangbui0600@gmail.com';
+      const tradesmanEmail = quoteData?.tradesmanEmail || 'quangbui0600@gmail.com';
       const tradesmanSubject = action === 'accept' 
         ? 'Great News! Customer Accepted Your Quote' 
         : 'Customer Decision: Quote Declined';
@@ -210,17 +224,17 @@ export default async function handler(req, res) {
       const tradesmanHtml = `
         <div style="font-family: Arial, sans-serif; color:#1f2937;">
           <h2>${tradesmanSubject}</h2>
-          <p>Hi ${quoteData.tradesmanName || 'there'},</p>
+          <p>Hi ${quoteData?.tradesmanName || 'there'},</p>
           <p>${tradesmanMessage}</p>
           
           <div style="background:#f3f4f6;padding:15px;border-radius:6px;margin:20px 0;">
             <h3 style="margin-top:0;">Project Details</h3>
-            <p><strong>Customer:</strong> ${quoteData.customerName || leadData?.customerName || 'Not provided'}</p>
-            <p><strong>Customer Email:</strong> ${quoteData.customerEmail || leadData?.customerEmail || 'Not provided'}</p>
-            <p><strong>Customer Phone:</strong> ${quoteData.customerPhone || leadData?.customerPhone || 'Not provided'}</p>
-            <p><strong>Service:</strong> ${quoteData.serviceType || leadData?.selectedService || 'Underfloor Heating'}</p>
-            <p><strong>Location:</strong> ${quoteData.location || leadData?.location || 'Not specified'}</p>
-            <p><strong>Quote Amount:</strong> $${Number(quoteData.quoteAmount || 0).toFixed(2)}</p>
+            <p><strong>Customer:</strong> ${quoteData?.customerName || leadData?.customerName || 'Not provided'}</p>
+            <p><strong>Customer Email:</strong> ${quoteData?.customerEmail || leadData?.customerEmail || 'Not provided'}</p>
+            <p><strong>Customer Phone:</strong> ${quoteData?.customerPhone || leadData?.customerPhone || 'Not provided'}</p>
+            <p><strong>Service:</strong> ${quoteData?.serviceType || leadData?.selectedService || 'Underfloor Heating'}</p>
+            <p><strong>Location:</strong> ${quoteData?.location || leadData?.location || 'Not specified'}</p>
+            <p><strong>Quote Amount:</strong> $${Number(quoteData?.quoteAmount || 0).toFixed(2)}</p>
             <p><strong>Quote ID:</strong> ${quoteId}</p>
             <p><strong>Lead ID:</strong> ${leadId}</p>
             <p><strong>Customer Decision:</strong> ${action === 'accept' ? 'Accepted' : 'Declined'}</p>
@@ -270,7 +284,7 @@ export default async function handler(req, res) {
       tradesmanEmailSent = true;
 
       // 3. Send admin notification email
-      const adminSubject = `Quote ${action === 'accept' ? 'Accepted' : 'Declined'} - ${quoteData.customerName || leadData?.customerName || 'Unknown Customer'}`;
+      const adminSubject = `Quote ${action === 'accept' ? 'Accepted' : 'Declined'} - ${quoteData?.customerName || leadData?.customerName || 'Unknown Customer'}`;
       
       const adminHtml = `
         <div style="font-family: Arial, sans-serif; color:#1f2937;">
@@ -279,14 +293,14 @@ export default async function handler(req, res) {
           
           <div style="background:#f3f4f6;padding:15px;border-radius:6px;margin:20px 0;">
             <h3 style="margin-top:0;">Decision Summary</h3>
-            <p><strong>Customer:</strong> ${quoteData.customerName || leadData?.customerName || 'Not provided'}</p>
-            <p><strong>Customer Email:</strong> ${quoteData.customerEmail || leadData?.customerEmail || 'Not provided'}</p>
-            <p><strong>Customer Phone:</strong> ${quoteData.customerPhone || leadData?.customerPhone || 'Not provided'}</p>
-            <p><strong>Tradesman:</strong> ${quoteData.tradesmanName || 'Not provided'}</p>
-            <p><strong>Tradesman Email:</strong> ${quoteData.tradesmanEmail || 'Not provided'}</p>
-            <p><strong>Service:</strong> ${quoteData.serviceType || leadData?.selectedService || 'Underfloor Heating'}</p>
-            <p><strong>Location:</strong> ${quoteData.location || leadData?.location || 'Not specified'}</p>
-            <p><strong>Quote Amount:</strong> $${Number(quoteData.quoteAmount || 0).toFixed(2)}</p>
+            <p><strong>Customer:</strong> ${quoteData?.customerName || leadData?.customerName || 'Not provided'}</p>
+            <p><strong>Customer Email:</strong> ${quoteData?.customerEmail || leadData?.customerEmail || 'Not provided'}</p>
+            <p><strong>Customer Phone:</strong> ${quoteData?.customerPhone || leadData?.customerPhone || 'Not provided'}</p>
+            <p><strong>Tradesman:</strong> ${quoteData?.tradesmanName || 'Not provided'}</p>
+            <p><strong>Tradesman Email:</strong> ${quoteData?.tradesmanEmail || 'Not provided'}</p>
+            <p><strong>Service:</strong> ${quoteData?.serviceType || leadData?.selectedService || 'Underfloor Heating'}</p>
+            <p><strong>Location:</strong> ${quoteData?.location || leadData?.location || 'Not specified'}</p>
+            <p><strong>Quote Amount:</strong> $${Number(quoteData?.quoteAmount || 0).toFixed(2)}</p>
             <p><strong>Quote ID:</strong> ${quoteId}</p>
             <p><strong>Lead ID:</strong> ${leadId}</p>
             <p><strong>Decision:</strong> <span style="color:${action === 'accept' ? '#10b981' : '#ef4444'};font-weight:bold;">${action === 'accept' ? 'ACCEPTED' : 'DECLINED'}</span></p>
@@ -364,371 +378,5 @@ export default async function handler(req, res) {
   } catch (e) {
     console.error('❌ Quote decision error:', e);
     res.status(500).send('Server error');
-  }
-}
-
-async function fetchLeadData(leadId) {
-  try {
-    // Check if we have the required environment variables
-    const serviceAccountEmail = process.env.GOOGLE_CLIENT_EMAIL;
-    const privateKey = process.env.GOOGLE_PRIVATE_KEY;
-    const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
-
-    if (!serviceAccountEmail || !privateKey || !spreadsheetId) {
-      console.log('⚠️ Google Sheets credentials not found');
-      return null;
-    }
-
-    const auth = new google.auth.GoogleAuth({
-      credentials: {
-        type: 'service_account',
-        project_id: process.env.GOOGLE_PROJECT_ID,
-        private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-        private_key: privateKey.replace(/\\n/g, '\n'),
-        client_email: serviceAccountEmail,
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        auth_uri: 'https://accounts.google.com/o/oauth2/auth',
-        token_uri: 'https://oauth2.googleapis.com/token',
-        auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
-        client_x509_cert_url: process.env.GOOGLE_CLIENT_CER_URL
-      },
-      scopes: ['https://www.googleapis.com/auth/spreadsheets']
-    });
-
-    const sheets = google.sheets({ version: 'v4', auth });
-
-    // Get available sheets to find the correct one to use
-    const metadata = await sheets.spreadsheets.get({
-      spreadsheetId: spreadsheetId
-    });
-    
-    const availableSheets = metadata.data.sheets.map(s => s.properties.title);
-    
-    // Find the correct sheet to use (prefer 'Leads', fallback to 'Sheet1', then first sheet)
-    let targetSheet = 'Sheet1'; // Default fallback
-    if (availableSheets.includes('Leads')) {
-      targetSheet = 'Leads';
-    } else if (availableSheets.includes('Sheet1')) {
-      targetSheet = 'Sheet1';
-    } else if (availableSheets.length > 0) {
-      targetSheet = availableSheets[0];
-    }
-
-    // Read all data from the sheet
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: spreadsheetId,
-      range: `${targetSheet}!A:Z`,
-    });
-
-    const rows = response.data.values;
-    if (!rows || rows.length === 0) {
-      return null;
-    }
-
-    // Find the leadId column (second column)
-    const leadIdIndex = 1; // Lead ID is the second column (B)
-
-    // Search for the lead with matching leadId
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
-      const rowLeadId = row[leadIdIndex];
-      
-      if (rowLeadId === leadId) {
-        // Found the lead, map it to the expected structure
-        return {
-          timestamp: row[0] || '', // Timestamp
-          leadId: row[1] || '', // Lead ID
-          customerName: row[2] || '', // Customer Name
-          customerEmail: row[3] || '', // Customer Email
-          customerPhone: row[4] || '', // Customer Phone
-          selectedService: row[5] || '', // Service type
-          projectDetails: row[6] || '', // Project details
-          projectSize: row[7] || '', // Project size
-          budget: row[8] || '', // Budget
-          timeline: row[9] || '', // Timeline
-          location: row[10] || '', // Location
-          specificDetails: row[11] || '', // Specific details
-          status: row[14] || 'New' // Status (column 15)
-        };
-      }
-    }
-
-    return null;
-  } catch (error) {
-    console.error('Error fetching lead data:', error);
-    return null;
-  }
-}
-
-async function fetchQuoteData(quoteId) {
-  try {
-    // Check if we have the required environment variables
-    const serviceAccountEmail = process.env.GOOGLE_CLIENT_EMAIL;
-    const privateKey = process.env.GOOGLE_PRIVATE_KEY;
-    const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
-
-    if (!serviceAccountEmail || !privateKey || !spreadsheetId) {
-      console.log('⚠️ Google Sheets credentials not found');
-      return null;
-    }
-
-    const auth = new google.auth.GoogleAuth({
-      credentials: {
-        type: 'service_account',
-        project_id: process.env.GOOGLE_PROJECT_ID,
-        private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-        private_key: privateKey.replace(/\\n/g, '\n'),
-        client_email: serviceAccountEmail,
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        auth_uri: 'https://accounts.google.com/o/oauth2/auth',
-        token_uri: 'https://oauth2.googleapis.com/token',
-        auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
-        client_x509_cert_url: process.env.GOOGLE_CLIENT_CER_URL
-      },
-      scopes: ['https://www.googleapis.com/auth/spreadsheets']
-    });
-
-    const sheets = google.sheets({ version: 'v4', auth });
-
-    // Get available sheets to find the correct one to use
-    const metadata = await sheets.spreadsheets.get({
-      spreadsheetId: spreadsheetId
-    });
-    
-    const availableSheets = metadata.data.sheets.map(s => s.properties.title);
-    
-    // Find the correct sheet to use (prefer 'Quotes', fallback to 'Sheet1', then first sheet)
-    let targetSheet = 'Sheet1'; // Default fallback
-    if (availableSheets.includes('Quotes')) {
-      targetSheet = 'Quotes';
-    } else if (availableSheets.includes('Sheet1')) {
-      targetSheet = 'Sheet1';
-    } else if (availableSheets.length > 0) {
-      targetSheet = availableSheets[0];
-    }
-
-    // Read all data from the sheet
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: spreadsheetId,
-      range: `${targetSheet}!A:Z`,
-    });
-
-    const rows = response.data.values;
-    if (!rows || rows.length === 0) {
-      return null;
-    }
-
-    // Search for the quote across ALL columns in each row
-    console.log(`🔍 Searching for quote ID: "${quoteId}" across all columns`);
-
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
-      
-      // Search for the quoteId in ANY column of this row
-      let foundQuoteId = null;
-      let foundColumnIndex = -1;
-      
-      for (let colIndex = 0; colIndex < row.length; colIndex++) {
-        const cellValue = row[colIndex];
-        if (cellValue === quoteId) {
-          foundQuoteId = cellValue;
-          foundColumnIndex = colIndex;
-          break;
-        }
-      }
-      
-      console.log(`Row ${i + 1}: searched ${row.length} columns, found quoteId: "${foundQuoteId}"`);
-      
-      if (foundQuoteId === quoteId) {
-        console.log(`✅ Found quote in row ${i + 1}, column ${foundColumnIndex} (${String.fromCharCode(65 + foundColumnIndex)})`);
-        
-        // Found the quote! Now we need to map the data based on where we found it
-        // Since the data is scattered, we'll try to map what we can find
-        
-        const mappedData = {
-          timestamp: row[0] || '', // Timestamp (usually first column)
-          quoteId: foundQuoteId,
-          leadId: '', // We'll search for this
-          customerName: '',
-          customerEmail: '',
-          customerPhone: '',
-          tradesmanName: '',
-          tradesmanEmail: '',
-          tradesmanPhone: '',
-          serviceType: '',
-          projectDetails: '',
-          projectSize: '',
-          location: '',
-          budget: '',
-          timeline: '',
-          specificDetails: '',
-          quoteAmount: '',
-          labourRate: '',
-          labourHours: '',
-          labourSubtotal: '',
-          materialRate: '',
-          materialSQM: '',
-          materialSubtotal: '',
-          installationAmount: '',
-          installationSubtotal: '',
-          breakdown: '',
-          notes: '',
-          validUntil: '',
-          status: 'Pending',
-          onlineQuoteUrl: '',
-          acceptUrl: '',
-          declineUrl: ''
-        };
-        
-        // Try to find leadId in the same row (usually next to quoteId)
-        for (let colIndex = 0; colIndex < row.length; colIndex++) {
-          const cellValue = row[colIndex];
-          if (cellValue && cellValue.startsWith('LEAD-')) {
-            mappedData.leadId = cellValue;
-            break;
-          }
-        }
-        
-        // Try to find other key data in the row
-        for (let colIndex = 0; colIndex < row.length; colIndex++) {
-          const cellValue = row[colIndex];
-          if (cellValue) {
-            // Look for email patterns
-            if (cellValue.includes('@') && !mappedData.customerEmail) {
-              mappedData.customerEmail = cellValue;
-            }
-            // Look for phone patterns
-            else if (cellValue.match(/^\d+$/) && cellValue.length >= 7 && !mappedData.customerPhone) {
-              mappedData.customerPhone = cellValue;
-            }
-            // Look for amount patterns
-            else if (cellValue.match(/^\d+(\.\d{2})?$/) && !mappedData.quoteAmount) {
-              mappedData.quoteAmount = cellValue;
-            }
-            // Look for names (no special characters, reasonable length)
-            else if (cellValue.match(/^[A-Za-z\s]+$/) && cellValue.length > 2 && cellValue.length < 50 && !mappedData.customerName) {
-              mappedData.customerName = cellValue;
-            }
-          }
-        }
-        
-        console.log(`📋 Mapped quote data:`, {
-          quoteId: mappedData.quoteId,
-          leadId: mappedData.leadId,
-          customerName: mappedData.customerName,
-          customerEmail: mappedData.customerEmail,
-          quoteAmount: mappedData.quoteAmount
-        });
-        
-        return mappedData;
-      }
-    }
-    
-    console.log(`❌ Quote ID "${quoteId}" not found in any row`);
-    console.log('🔍 Available quote IDs in sheet:', rows.slice(1, 6).map(row => row[quoteIdIndex]).filter(id => id));
-
-    return null;
-  } catch (error) {
-    console.error('Error fetching quote data:', error);
-    return null;
-  }
-}
-
-async function updateQuoteStatus(quoteId, status) {
-  try {
-    // Check if we have the required environment variables
-    const serviceAccountEmail = process.env.GOOGLE_CLIENT_EMAIL;
-    const privateKey = process.env.GOOGLE_PRIVATE_KEY;
-    const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
-
-    if (!serviceAccountEmail || !privateKey || !spreadsheetId) {
-      console.log('⚠️ Google Sheets credentials not found');
-      return;
-    }
-
-    const auth = new google.auth.GoogleAuth({
-      credentials: {
-        type: 'service_account',
-        project_id: process.env.GOOGLE_PROJECT_ID,
-        private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-        private_key: privateKey.replace(/\\n/g, '\n'),
-        client_email: serviceAccountEmail,
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        auth_uri: 'https://accounts.google.com/o/oauth2/auth',
-        token_uri: 'https://oauth2.googleapis.com/token',
-        auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
-        client_x509_cert_url: process.env.GOOGLE_CLIENT_CER_URL
-      },
-      scopes: ['https://www.googleapis.com/auth/spreadsheets']
-    });
-
-    const sheets = google.sheets({ version: 'v4', auth });
-
-    // Get available sheets to find the correct one to use
-    const metadata = await sheets.spreadsheets.get({
-      spreadsheetId: spreadsheetId
-    });
-    
-    const availableSheets = metadata.data.sheets.map(s => s.properties.title);
-    
-    // Find the correct sheet to use (prefer 'Quotes', fallback to 'Sheet1', then first sheet)
-    let targetSheet = 'Sheet1'; // Default fallback
-    if (availableSheets.includes('Quotes')) {
-      targetSheet = 'Quotes';
-    } else if (availableSheets.includes('Sheet1')) {
-      targetSheet = 'Sheet1';
-    } else if (availableSheets.length > 0) {
-      targetSheet = availableSheets[0];
-    }
-
-    // Read all data to find the row with the matching quoteId
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: spreadsheetId,
-      range: `${targetSheet}!A:Z`,
-    });
-
-    const rows = response.data.values;
-    if (!rows || rows.length === 0) {
-      console.log('No data found in sheet');
-      return;
-    }
-
-    // Find the row with the matching quoteId (second column)
-    const quoteIdIndex = 1; // Quote ID is the second column (B)
-    let targetRow = -1;
-
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
-      const rowQuoteId = row[quoteIdIndex];
-      
-      if (rowQuoteId === quoteId) {
-        targetRow = i + 1; // +1 because sheets are 1-indexed
-        break;
-      }
-    }
-
-    if (targetRow === -1) {
-      console.log(`Quote ID ${quoteId} not found in sheet`);
-      return;
-    }
-
-    // Status is in column 29 (AC) - 0-indexed is 28
-    const statusColumn = 29; // Column AC
-
-    // Update the status in the sheet
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: spreadsheetId,
-      range: `${targetSheet}!${String.fromCharCode(64 + statusColumn)}${targetRow}`, // Convert to column letter
-      valueInputOption: 'USER_ENTERED',
-      resource: {
-        values: [[status]]
-      }
-    });
-
-    console.log(`✅ Updated quote status to "${status}" for quote ${quoteId} at row ${targetRow}`);
-
-  } catch (error) {
-    console.error('Error updating quote status:', error);
-    throw error; // Re-throw to be caught by the caller
   }
 }

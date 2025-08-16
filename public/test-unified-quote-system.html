@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Test Unified Quote System - Kiwi Trade</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    .header {
+      background: #1e40af;
+      color: white;
+      padding: 20px;
+      margin: -20px -20px 20px -20px;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+    }
+    .section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+    }
+    .section h3 {
+      margin-top: 0;
+      color: #374151;
+    }
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      margin: 5px;
+      background: #3b82f6;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn:hover {
+      background: #2563eb;
+    }
+    .btn-success {
+      background: #10b981;
+    }
+    .btn-success:hover {
+      background: #059669;
+    }
+    .btn-warning {
+      background: #f59e0b;
+    }
+    .btn-warning:hover {
+      background: #d97706;
+    }
+    .result {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .result.success {
+      background: #d1fae5;
+      border: 1px solid #10b981;
+      color: #065f46;
+    }
+    .result.error {
+      background: #fee2e2;
+      border: 1px solid #ef4444;
+      color: #991b1b;
+    }
+    .result.info {
+      background: #dbeafe;
+      border: 1px solid #3b82f6;
+      color: #1e40af;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .form-group {
+      margin: 10px 0;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #374151;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Test Unified Quote System</h1>
+      <p>Testing the unified data source and PDF builder for online quote view and email attachments</p>
+    </div>
+
+    <div class="section">
+      <h3>1. Test Quote PDF Generation</h3>
+      <p>Test the unified PDF generation with sample data:</p>
+      
+      <div class="form-group">
+        <label>Quote ID:</label>
+        <input type="text" id="testQuoteId" value="QUOTE-1234567890-test123" placeholder="Enter quote ID to test">
+      </div>
+      
+      <div class="form-group">
+        <label>Lead ID:</label>
+        <input type="text" id="testLeadId" value="LEAD-1234567890-test123" placeholder="Enter lead ID to test">
+      </div>
+      
+      <button class="btn" onclick="testQuotePdf()">Test Quote PDF Generation</button>
+      <button class="btn btn-success" onclick="testQuotePdfWithData()">Test with Sample Data</button>
+      
+      <div id="pdfResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="section">
+      <h3>2. Test Quote Decision State</h3>
+      <p>Test the unified quote decision state checking (keyed by quoteId + leadId):</p>
+      
+      <button class="btn" onclick="testQuoteDecisionState()">Test Quote Decision State</button>
+      <button class="btn btn-warning" onclick="testQuoteDecisionStateWithParams()">Test with Custom Parameters</button>
+      
+      <div id="decisionResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="section">
+      <h3>3. Test Quote Data Fetching</h3>
+      <p>Test fetching quote and lead data using unified utilities:</p>
+      
+      <button class="btn" onclick="testQuoteDataFetch()">Test Quote Data Fetch</button>
+      <button class="btn" onclick="testLeadDataFetch()">Test Lead Data Fetch</button>
+      
+      <div id="dataResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="section">
+      <h3>4. Test Online Quote View</h3>
+      <p>Test the online quote viewer with the unified system:</p>
+      
+      <div class="form-group">
+        <label>Quote ID for Online View:</label>
+        <input type="text" id="onlineQuoteId" value="QUOTE-1234567890-test123" placeholder="Enter quote ID">
+      </div>
+      
+      <div class="form-group">
+        <label>Lead ID for Online View:</label>
+        <input type="text" id="onlineLeadId" value="LEAD-1234567890-test123" placeholder="Enter lead ID">
+      </div>
+      
+      <a id="onlineQuoteLink" class="btn btn-success" href="#" target="_blank">Open Online Quote View</a>
+      <button class="btn" onclick="updateOnlineQuoteLink()">Update Link</button>
+    </div>
+
+    <div class="section">
+      <h3>5. System Information</h3>
+      <p>Current system status and configuration:</p>
+      
+      <div class="form-group">
+        <label>Site URL:</label>
+        <input type="text" id="siteUrl" readonly>
+      </div>
+      
+      <div class="form-group">
+        <label>API Endpoints:</label>
+        <div style="font-family: monospace; font-size: 12px; background: #f3f4f6; padding: 10px; border-radius: 4px;">
+          • /api/quote-pdf - Unified PDF generation<br>
+          • /api/quote-decision - Unified decision handling<br>
+          • /api/quote-submission - Quote submission with unified utilities<br>
+          • /api/quote-utils.js - Unified utility functions
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('siteUrl').value = window.location.origin;
+      updateOnlineQuoteLink();
+    });
+
+    // Test Quote PDF Generation
+    async function testQuotePdf() {
+      const quoteId = document.getElementById('testQuoteId').value;
+      const leadId = document.getElementById('testLeadId').value;
+      const resultDiv = document.getElementById('pdfResult');
+      
+      if (!quoteId || !leadId) {
+        showResult(resultDiv, 'Please enter both Quote ID and Lead ID', 'error');
+        return;
+      }
+
+      try {
+        showResult(resultDiv, 'Testing quote PDF generation...', 'info');
+        
+        const response = await fetch(`/api/quote-pdf?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=test`);
+        
+        if (response.ok) {
+          const html = await response.text();
+          showResult(resultDiv, `✅ PDF generation successful!\n\nResponse length: ${html.length} characters\n\nFirst 500 characters:\n${html.substring(0, 500)}...`, 'success');
+        } else {
+          const error = await response.text();
+          showResult(resultDiv, `❌ PDF generation failed:\n${error}`, 'error');
+        }
+      } catch (error) {
+        showResult(resultDiv, `❌ Error testing PDF generation:\n${error.message}`, 'error');
+      }
+    }
+
+    // Test Quote PDF with Sample Data
+    async function testQuotePdfWithData() {
+      const resultDiv = document.getElementById('pdfResult');
+      
+      try {
+        showResult(resultDiv, 'Testing quote PDF generation with sample data...', 'info');
+        
+        const response = await fetch(`/api/quote-pdf?quoteId=QUOTE-SAMPLE-123&leadId=LEAD-SAMPLE-123&token=test`);
+        
+        if (response.ok) {
+          const html = await response.text();
+          showResult(resultDiv, `✅ Sample PDF generation successful!\n\nResponse length: ${html.length} characters\n\nFirst 500 characters:\n${html.substring(0, 500)}...`, 'success');
+        } else {
+          const error = await response.text();
+          showResult(resultDiv, `❌ Sample PDF generation failed:\n${error}`, 'error');
+        }
+      } catch (error) {
+        showResult(resultDiv, `❌ Error testing sample PDF generation:\n${error.message}`, 'error');
+      }
+    }
+
+    // Test Quote Decision State
+    async function testQuoteDecisionState() {
+      const quoteId = document.getElementById('testQuoteId').value;
+      const leadId = document.getElementById('testLeadId').value;
+      const resultDiv = document.getElementById('decisionResult');
+      
+      if (!quoteId || !leadId) {
+        showResult(resultDiv, 'Please enter both Quote ID and Lead ID', 'error');
+        return;
+      }
+
+      try {
+        showResult(resultDiv, 'Testing quote decision state...', 'info');
+        
+        const response = await fetch(`/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=test&action=accept`);
+        
+        if (response.ok) {
+          const html = await response.text();
+          showResult(resultDiv, `✅ Decision state check successful!\n\nResponse length: ${html.length} characters\n\nFirst 500 characters:\n${html.substring(0, 500)}...`, 'success');
+        } else {
+          const error = await response.text();
+          showResult(resultDiv, `❌ Decision state check failed:\n${error}`, 'error');
+        }
+      } catch (error) {
+        showResult(resultDiv, `❌ Error testing decision state:\n${error.message}`, 'error');
+      }
+    }
+
+    // Test Quote Decision State with Custom Parameters
+    async function testQuoteDecisionStateWithParams() {
+      const resultDiv = document.getElementById('decisionResult');
+      
+      try {
+        showResult(resultDiv, 'Testing quote decision state with custom parameters...', 'info');
+        
+        const response = await fetch(`/api/quote-decision?quoteId=QUOTE-CUSTOM-123&leadId=LEAD-CUSTOM-123&token=test&action=decline`);
+        
+        if (response.ok) {
+          const html = await response.text();
+          showResult(resultDiv, `✅ Custom decision state check successful!\n\nResponse length: ${html.length} characters\n\nFirst 500 characters:\n${html.substring(0, 500)}...`, 'success');
+        } else {
+          const error = await response.text();
+          showResult(resultDiv, `❌ Custom decision state check failed:\n${error}`, 'error');
+        }
+      } catch (error) {
+        showResult(resultDiv, `❌ Error testing custom decision state:\n${error.message}`, 'error');
+      }
+    }
+
+    // Test Quote Data Fetch
+    async function testQuoteDataFetch() {
+      const quoteId = document.getElementById('testQuoteId').value;
+      const resultDiv = document.getElementById('dataResult');
+      
+      if (!quoteId) {
+        showResult(resultDiv, 'Please enter a Quote ID', 'error');
+        return;
+      }
+
+      try {
+        showResult(resultDiv, 'Testing quote data fetch...', 'info');
+        
+        const response = await fetch(`/api/get-quote-by-id?quoteId=${encodeURIComponent(quoteId)}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          showResult(resultDiv, `✅ Quote data fetch successful!\n\nResponse:\n${JSON.stringify(data, null, 2)}`, 'success');
+        } else {
+          const error = await response.text();
+          showResult(resultDiv, `❌ Quote data fetch failed:\n${error}`, 'error');
+        }
+      } catch (error) {
+        showResult(resultDiv, `❌ Error testing quote data fetch:\n${error.message}`, 'error');
+      }
+    }
+
+    // Test Lead Data Fetch
+    async function testLeadDataFetch() {
+      const leadId = document.getElementById('testLeadId').value;
+      const resultDiv = document.getElementById('dataResult');
+      
+      if (!leadId) {
+        showResult(resultDiv, 'Please enter a Lead ID', 'error');
+        return;
+      }
+
+      try {
+        showResult(resultDiv, 'Testing lead data fetch...', 'info');
+        
+        const response = await fetch(`/api/get-lead-by-id?leadId=${encodeURIComponent(leadId)}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          showResult(resultDiv, `✅ Lead data fetch successful!\n\nResponse:\n${JSON.stringify(data, null, 2)}`, 'success');
+        } else {
+          const error = await response.text();
+          showResult(resultDiv, `❌ Lead data fetch failed:\n${error}`, 'error');
+        }
+      } catch (error) {
+        showResult(resultDiv, `❌ Error testing lead data fetch:\n${error.message}`, 'error');
+      }
+    }
+
+    // Update Online Quote Link
+    function updateOnlineQuoteLink() {
+      const quoteId = document.getElementById('onlineQuoteId').value;
+      const leadId = document.getElementById('onlineLeadId').value;
+      const link = document.getElementById('onlineQuoteLink');
+      
+      if (quoteId && leadId) {
+        link.href = `/quote.html?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=test`;
+      } else {
+        link.href = '#';
+      }
+    }
+
+    // Helper function to show results
+    function showResult(element, message, type) {
+      element.textContent = message;
+      element.className = `result ${type}`;
+      element.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

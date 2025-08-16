@@ -1,6 +1,6 @@
 import { google } from 'googleapis';
 import nodemailer from 'nodemailer';
-import { generateQuotePdfBuffer } from './quote-pdf.js';
+import { generateQuotePdfBuffer, coerceNumeric } from './quote-utils.js';
 
 const SITE_URL = process.env.SITE_URL; // e.g. https://yourdomain.com
 
@@ -82,7 +82,7 @@ export default async function handler(req, res) {
         declineUrl
       });
 
-      // Now create quoteData with the correct URLs
+      // Now create quoteData with the correct URLs and coerced numeric fields
       const quoteData = {
         timestamp: new Date().toISOString(),
         quoteId: quoteId,
@@ -97,50 +97,160 @@ export default async function handler(req, res) {
         projectDetails: projectDetails,
         projectSize: projectSize,
         location: location,
-        budget: budget,
+        budget: coerceNumeric(budget),
         timeline: timeline,
         specificDetails: specificDetails,
-        quoteAmount: quoteAmount,
-        labourRate: req.body.labourRate || '',
-        labourHours: req.body.labourHours || '',
-        labourSubtotal: req.body.labourSubtotal || '',
-        materialRate: req.body.materialRate || '',
-        materialSQM: req.body.materialSQM || '',
-        materialSubtotal: req.body.materialSubtotal || '',
-        installationAmount: req.body.installationAmount || '',
-        installationSubtotal: req.body.installationSubtotal || '',
+        quoteAmount: coerceNumeric(quoteAmount),
+        labourRate: coerceNumeric(req.body.labourRate),
+        labourHours: coerceNumeric(req.body.labourHours),
+        labourSubtotal: coerceNumeric(req.body.labourSubtotal),
+        materialRate: coerceNumeric(req.body.materialRate),
+        materialSQM: coerceNumeric(req.body.materialSQM),
+        materialSubtotal: coerceNumeric(req.body.materialSubtotal),
+        installationAmount: coerceNumeric(req.body.installationAmount),
+        installationSubtotal: coerceNumeric(req.body.installationSubtotal),
         breakdown: breakdown,
         notes: notes,
-        validUntil: req.body.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        validUntil: req.body.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         status: 'Pending',
         onlineQuoteUrl: onlineQuoteUrl,
         acceptUrl: acceptUrl,
         declineUrl: declineUrl
       };
 
-      // Try to generate PDF with complete quote data
-      try {
-        pdfBuffer = await generateQuotePdfBuffer({ leadId, token, quoteId, quoteData });
-        console.log('✅ PDF generated successfully with quote data');
-      } catch (e) {
-        console.error('PDF generation failed: ', e);
-        pdfBuffer = null;
-      }
+      console.log('📋 Quote data prepared:', {
+        quoteId: quoteData.quoteId,
+        leadId: quoteData.leadId,
+        customerName: quoteData.customerName,
+        quoteAmount: quoteData.quoteAmount,
+        validUntil: quoteData.validUntil
+      });
 
-      // Attachments array
-      attachments = pdfBuffer ? [{
+      // Generate PDF buffer using unified function
+      pdfBuffer = await generateQuotePdfBuffer({
+        leadId: leadId,
+        token: token,
+        quoteId: quoteId,
+        quoteData: quoteData
+      });
+
+      console.log('✅ PDF buffer generated successfully');
+
+      // Prepare attachment
+      attachments = [{
         filename: `quote-${quoteId}.html`,
         content: pdfBuffer,
         contentType: 'text/html'
-      }] : [];
-    } catch (e) {
-      console.error('Error in PDF/link generation: ', e);
-      // Continue without PDF and links
-      pdfBuffer = null;
-      attachments = [];
+      }];
+
+      // Save to Google Sheets
+      try {
+        const serviceAccountEmail = process.env.GOOGLE_CLIENT_EMAIL;
+        const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+        const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
+
+        if (!serviceAccountEmail || !privateKey || !spreadsheetId) {
+          console.log('⚠️ Google Sheets credentials not found');
+        } else {
+          const auth = new google.auth.GoogleAuth({
+            credentials: {
+              type: 'service_account',
+              project_id: process.env.GOOGLE_PROJECT_ID,
+              private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
+              private_key: privateKey.replace(/\\n/g, '\n'),
+              client_email: serviceAccountEmail,
+              client_id: process.env.GOOGLE_CLIENT_ID,
+              auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+              token_uri: 'https://oauth2.googleapis.com/token',
+              auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
+              client_x509_cert_url: process.env.GOOGLE_CLIENT_CER_URL
+            },
+            scopes: ['https://www.googleapis.com/auth/spreadsheets']
+          });
+
+          const sheets = google.sheets({ version: 'v4', auth });
+
+          // Get available sheets to find the correct one to use
+          const metadata = await sheets.spreadsheets.get({
+            spreadsheetId: spreadsheetId
+          });
+          
+          const availableSheets = metadata.data.sheets.map(s => s.properties.title);
+          
+          // Find the correct sheet to use (prefer 'Quotes', fallback to 'Sheet1', then first sheet)
+          let targetSheet = 'Sheet1'; // Default fallback
+          if (availableSheets.includes('Quotes')) {
+            targetSheet = 'Quotes';
+          } else if (availableSheets.includes('Sheet1')) {
+            targetSheet = 'Sheet1';
+          } else if (availableSheets.length > 0) {
+            targetSheet = availableSheets[0];
+          }
+
+          // Prepare data for Google Sheets with all fields including Valid Until
+          const values = [
+            [
+              quoteData.timestamp,
+              quoteData.quoteId,
+              quoteData.leadId,
+              quoteData.customerName,
+              quoteData.customerEmail,
+              quoteData.customerPhone,
+              quoteData.tradesmanName,
+              quoteData.tradesmanEmail,
+              quoteData.tradesmanPhone,
+              quoteData.serviceType,
+              quoteData.projectDetails,
+              quoteData.projectSize,
+              quoteData.location,
+              quoteData.budget,
+              quoteData.timeline,
+              quoteData.specificDetails,
+              quoteData.quoteAmount,
+              quoteData.labourRate,
+              quoteData.labourHours,
+              quoteData.labourSubtotal,
+              quoteData.materialRate,
+              quoteData.materialSQM,
+              quoteData.materialSubtotal,
+              quoteData.installationAmount,
+              quoteData.installationSubtotal,
+              quoteData.breakdown,
+              quoteData.notes,
+              quoteData.validUntil,
+              quoteData.status,
+              quoteData.onlineQuoteUrl,
+              quoteData.acceptUrl,
+              quoteData.declineUrl
+            ]
+          ];
+
+          console.log('📊 Saving quote data to Google Sheets:', {
+            sheet: targetSheet,
+            rowCount: values.length,
+            columns: values[0].length
+          });
+
+          const response = await sheets.spreadsheets.values.append({
+            spreadsheetId: spreadsheetId,
+            range: `${targetSheet}!A:AE`,
+            valueInputOption: 'RAW',
+            insertDataOption: 'INSERT_ROWS',
+            resource: { values }
+          });
+
+          console.log('✅ Quote data saved to Google Sheets:', response.data);
+          sheetsUpdated = true;
+        }
+      } catch (sheetsError) {
+        console.error('❌ Google Sheets error:', sheetsError.message);
+      }
+
+    } catch (pdfError) {
+      console.error('❌ PDF generation error:', pdfError.message);
     }
 
-    // 1. Send customer email with quote
+    // Send emails
     try {
       const transporter = nodemailer.createTransport({
         service: 'gmail',
@@ -150,356 +260,162 @@ export default async function handler(req, res) {
         }
       });
 
-                        // Email HTML (customer) — professional, with a real button (anchor styled as button)
-                  const customerHtml = `
-                    <div style="font-family: Arial, sans-serif; color:#1f2937;">
-                      <h2>Your Quote from Kiwi Trade</h2>
-                      <p>Hi ${customerName || ''},</p>
-                      <p>Thank you for your interest in our services. Your professional quote is attached as an HTML document.</p>
-                      <p><strong>Important:</strong> The online version below is identical to the attached PDF.</p>
-                      <h3 style="background:#f3f4f6;padding:10px;border-radius:6px;">Quote Summary</h3>
-                      <p><strong>Service:</strong> ${serviceType || 'Underfloor Heating'}</p>
-                      <p><strong>Location:</strong> ${location || ''}</p>
-                      <p><strong>Quote Amount:</strong> $${Number(quoteAmount || 0).toFixed(2)}</p>
-                      <p><strong>Breakdown:</strong> Labour: $${Number(req.body.labourSubtotal||0).toFixed(2)}, Materials: $${Number(req.body.materialSubtotal||0).toFixed(2)}, Installation: $${Number(req.body.installationSubtotal||0).toFixed(2)}</p>
-                      <p style="margin-top:16px;">You can view and respond online here:</p>
-                      <p>
-                        <a href="${onlineQuoteUrl}" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;">View Quote Online</a>
-                      </p>
-                      <p style="margin-top:10px;">
-                        <a href="${acceptUrl}" style="display:inline-block;background:#16a34a;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none;margin-right:10px;">Accept Quote</a>
-                        <a href="${declineUrl}" style="display:inline-block;background:#dc2626;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none;">Decline Quote</a>
-                      </p>
-                      <p style="margin-top:16px;color:#6b7280;">This quote was generated automatically by our system.</p>
-                    </div>
-                  `;
+      // 1. Send customer email with quote attachment
+      const customerSubject = `Your Quote is Ready - ${serviceType}`;
+      const customerHtml = `
+        <div style="font-family: Arial, sans-serif; color:#1f2937;">
+          <h2>Your Quote is Ready!</h2>
+          <p>Hi ${customerName},</p>
+          <p>Thank you for your interest in our ${serviceType} services. We have prepared a detailed quote for your project.</p>
+          
+          <div style="background:#f3f4f6;padding:15px;border-radius:6px;margin:20px 0;">
+            <h3 style="margin-top:0;">Quote Summary</h3>
+            <p><strong>Service:</strong> ${serviceType}</p>
+            <p><strong>Location:</strong> ${location || 'Not specified'}</p>
+            <p><strong>Quote Amount:</strong> $${coerceNumeric(quoteAmount).toFixed(2)}</p>
+            <p><strong>Valid Until:</strong> ${new Date(quoteData.validUntil).toLocaleDateString('en-GB')}</p>
+          </div>
+          
+          <div style="background:#d1fae5;padding:15px;border-radius:6px;margin:20px 0;border-left:4px solid #10b981;">
+            <h3 style="margin-top:0;color:#065f46;">Next Steps</h3>
+            <p style="color:#065f46;">You can:</p>
+            <ul style="color:#065f46;">
+              <li><a href="${onlineQuoteUrl}" style="color:#10b981;">View your quote online</a></li>
+              <li><a href="${acceptUrl}" style="color:#10b981;">Accept this quote</a></li>
+              <li><a href="${declineUrl}" style="color:#ef4444;">Decline this quote</a></li>
+            </ul>
+          </div>
+          
+          <p style="margin-top:20px;color:#6b7280;">
+            If you have any questions about this quote, please don't hesitate to contact us at info@kiwitrade.co.nz
+          </p>
+          
+          <p style="margin-top:20px;color:#6b7280;">
+            Best regards,<br>
+            The Kiwi Trade Team
+          </p>
+        </div>
+      `;
 
-      const customerMailOptions = {
+      await transporter.sendMail({
         from: 'Kiwi Trade <danbricks18@gmail.com>',
         to: customerEmail,
-        subject: `Your Quote from Kiwi Trade - ${quoteId}`,
+        subject: customerSubject,
         html: customerHtml,
-        attachments
-      };
-
-      await transporter.sendMail(customerMailOptions);
+        attachments: attachments
+      });
+      
       console.log('✅ Customer quote email sent successfully');
       customerEmailSent = true;
-    } catch (emailError) {
-      console.error('❌ Customer email error:', emailError.message);
-    }
 
-    // 2. Send tradesman confirmation email
-    try {
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: 'danbricks18@gmail.com',
-          pass: 'ptmcojqgthvjbqom'
-        }
-      });
+      // 2. Send tradesman confirmation email
+      const tradesmanSubject = `Quote Submitted - ${customerName}`;
+      const tradesmanHtml = `
+        <div style="font-family: Arial, sans-serif; color:#1f2937;">
+          <h2>Quote Successfully Submitted</h2>
+          <p>Hi ${tradesmanName},</p>
+          <p>Your quote has been successfully submitted and sent to the customer. Here are the details:</p>
+          
+          <div style="background:#f3f4f6;padding:15px;border-radius:6px;margin:20px 0;">
+            <h3 style="margin-top:0;">Quote Details</h3>
+            <p><strong>Customer:</strong> ${customerName}</p>
+            <p><strong>Customer Email:</strong> ${customerEmail}</p>
+            <p><strong>Customer Phone:</strong> ${customerPhone || 'Not provided'}</p>
+            <p><strong>Service:</strong> ${serviceType}</p>
+            <p><strong>Location:</strong> ${location || 'Not specified'}</p>
+            <p><strong>Quote Amount:</strong> $${coerceNumeric(quoteAmount).toFixed(2)}</p>
+            <p><strong>Quote ID:</strong> ${quoteId}</p>
+            <p><strong>Lead ID:</strong> ${leadId}</p>
+          </div>
+          
+          <div style="background:#fef3c7;padding:15px;border-radius:6px;margin:20px 0;border-left:4px solid #f59e0b;">
+            <h3 style="margin-top:0;color:#92400e;">Quote Breakdown</h3>
+            <p style="color:#92400e;"><strong>Materials:</strong> $${coerceNumeric(req.body.materialSubtotal || 0).toFixed(2)}</p>
+            <p style="color:#92400e;"><strong>Labor:</strong> $${coerceNumeric(req.body.labourSubtotal || 0).toFixed(2)}</p>
+            <p style="color:#92400e;"><strong>Installation:</strong> $${coerceNumeric(req.body.installationSubtotal || 0).toFixed(2)}</p>
+            <p style="color:#92400e;"><strong>Total:</strong> $${coerceNumeric(quoteAmount).toFixed(2)}</p>
+          </div>
+          
+          <p style="margin-top:20px;color:#6b7280;">
+            The customer has been notified and can view, accept, or decline the quote online.
+          </p>
+          
+          <p style="margin-top:20px;color:#6b7280;">
+            Best regards,<br>
+            The Kiwi Trade Team
+          </p>
+        </div>
+      `;
 
-      const tradesmanMailOptions = {
+      await transporter.sendMail({
         from: 'Kiwi Trade <danbricks18@gmail.com>',
         to: tradesmanEmail,
-        subject: `Quote Submitted - ${customerName} - $${Number(quoteAmount || 0).toFixed(2)}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #2c3e50;">Quote Submitted Successfully</h2>
-            <p>Hi ${tradesmanName},</p>
-            <p>Your quote has been submitted and sent to the customer. A copy of the quote is attached for your records.</p>
-            
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #34495e; margin-top: 0;">Quote Summary:</h3>
-              <p><strong>Customer:</strong> ${customerName}</p>
-              <p><strong>Customer Email:</strong> ${customerEmail}</p>
-              <p><strong>Customer Phone:</strong> ${customerPhone || 'Not provided'}</p>
-              <p><strong>Service:</strong> ${serviceType}</p>
-              <p><strong>Location:</strong> ${location || 'Not provided'}</p>
-              <p><strong>Quote Amount:</strong> $${Number(quoteAmount || 0).toFixed(2)}</p>
-              <p><strong>Breakdown:</strong> Labour: $${Number(req.body.labourSubtotal||0).toFixed(2)}, Materials: $${Number(req.body.materialSubtotal||0).toFixed(2)}, Installation: $${Number(req.body.installationSubtotal||0).toFixed(2)}</p>
-              <p><strong>Lead ID:</strong> ${leadId}</p>
-              <p><strong>Quote ID:</strong> ${quoteId}</p>
-            </div>
-            
-            <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
-              <h4 style="color: #155724; margin-top: 0;">Customer Actions:</h4>
-              <p>The customer can view and respond to your quote online:</p>
-              <p><a href="${onlineQuoteUrl}" style="color: #2563eb;">View Quote Online</a></p>
-              <p><a href="${acceptUrl}" style="color: #16a34a;">Customer Accept Link</a></p>
-              <p><a href="${declineUrl}" style="color: #dc2626;">Customer Decline Link</a></p>
-            </div>
-            
-            <p><strong>Notes:</strong> ${notes || 'No additional notes'}</p>
-            <p>Best regards,<br>The Kiwi Trade Team</p>
-          </div>
-        `,
-        attachments
-      };
-
-      console.log('📧 Sending tradesman email to:', tradesmanEmail);
-      await transporter.sendMail(tradesmanMailOptions);
-      console.log('✅ Tradesman confirmation email sent successfully with quote attachment');
+        subject: tradesmanSubject,
+        html: tradesmanHtml,
+        attachments: attachments
+      });
+      
+      console.log('✅ Tradesman confirmation email sent successfully');
       tradesmanEmailSent = true;
-    } catch (emailError) {
-      console.error('❌ Tradesman email error:', emailError.message);
-    }
 
-    // 3. Save quote data to Google Sheets
-    try {
-      console.log('📊 Starting Google Sheets save process...');
-      const serviceAccountEmail = process.env.GOOGLE_CLIENT_EMAIL;
-      const privateKey = process.env.GOOGLE_PRIVATE_KEY;
-      const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
-
-      console.log('🔑 Credentials check:', {
-        hasServiceAccountEmail: !!serviceAccountEmail,
-        hasPrivateKey: !!privateKey,
-        hasSpreadsheetId: !!spreadsheetId,
-        spreadsheetId: spreadsheetId
-      });
-
-      if (serviceAccountEmail && privateKey && spreadsheetId) {
-        const auth = new google.auth.GoogleAuth({
-          credentials: {
-            type: 'service_account',
-            project_id: process.env.GOOGLE_PROJECT_ID,
-            private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-            private_key: privateKey.replace(/\\n/g, '\n'),
-            client_email: serviceAccountEmail,
-            client_id: process.env.GOOGLE_CLIENT_ID,
-            auth_uri: 'https://accounts.google.com/o/oauth2/auth',
-            token_uri: 'https://oauth2.googleapis.com/token',
-            auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
-            client_x509_cert_url: process.env.GOOGLE_CLIENT_CER_URL
-          },
-          scopes: ['https://www.googleapis.com/auth/spreadsheets']
-        });
-
-        const sheets = google.sheets({ version: 'v4', auth });
-
-        // Get available sheets to find the correct one to use
-        const metadata = await sheets.spreadsheets.get({
-          spreadsheetId: spreadsheetId
-        });
-        
-        const availableSheets = metadata.data.sheets.map(s => s.properties.title);
-        console.log('📋 Available sheets in spreadsheet:', availableSheets);
-        
-        // Find the correct sheet to use (prefer 'Quotes', fallback to 'Sheet1', then first sheet)
-        let targetSheet = 'Sheet1'; // Default fallback
-        if (availableSheets.includes('Quotes')) {
-          targetSheet = 'Quotes';
-        } else if (availableSheets.includes('Sheet1')) {
-          targetSheet = 'Sheet1';
-        } else if (availableSheets.length > 0) {
-          targetSheet = availableSheets[0];
-        }
-        
-        console.log('📝 Target sheet selected:', targetSheet);
-
-        // Prepare quote data for Google Sheets
-        const quoteData = [
-          [
-            new Date().toISOString(), // Timestamp
-            quoteId, // Quote ID
-            leadId, // Lead ID
-            customerName, // Customer Name
-            customerEmail, // Customer Email
-            customerPhone, // Customer Phone
-            tradesmanName, // Tradesman Name
-            tradesmanEmail, // Tradesman Email
-            tradesmanPhone, // Tradesman Phone
-            serviceType, // Service Type
-            projectDetails, // Project Details
-            projectSize, // Project Size
-            location, // Location
-            budget, // Budget
-            timeline, // Timeline
-            specificDetails, // Specific Details
-            quoteAmount, // Quote Amount
-            req.body.labourRate || '', // Labour Rate
-            req.body.labourHours || '', // Labour Hours
-            req.body.labourSubtotal || '', // Labour Subtotal
-            req.body.materialRate || '', // Material Rate
-            req.body.materialSQM || '', // Material SQM
-            req.body.materialSubtotal || '', // Material Subtotal
-            req.body.installationAmount || '', // Installation Amount
-            req.body.installationSubtotal || '', // Installation Subtotal
-            breakdown, // Breakdown
-            notes || '', // Notes
-            req.body.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Valid Until
-            'Pending', // Status
-            onlineQuoteUrl, // Online Quote URL
-            acceptUrl, // Accept URL
-            declineUrl // Decline URL
-          ]
-        ];
-        
-        console.log('📊 Quote data for Google Sheets:', {
-          quoteId,
-          leadId,
-          customerName,
-          quoteAmount,
-          targetSheet,
-          dataLength: quoteData[0].length,
-          onlineQuoteUrl
-        });
-        
-        console.log('📊 Quote data prepared:', {
-          quoteId,
-          leadId,
-          customerName,
-          quoteAmount,
-          targetSheet,
-          dataLength: quoteData[0].length
-        });
-
-        // Append quote data to the sheet
-        await sheets.spreadsheets.values.append({
-          spreadsheetId: spreadsheetId,
-          range: `${targetSheet}!A:Z`,
-          valueInputOption: 'USER_ENTERED',
-          insertDataOption: 'INSERT_ROWS',
-          resource: { values: quoteData }
-        });
-
-        console.log('✅ Quote data saved to Google Sheets');
-        sheetsUpdated = true;
-      }
-    } catch (sheetsError) {
-      console.error('❌ Google Sheets error:', sheetsError.message);
-    }
-
-    // 4. Send admin notification email
-    try {
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: 'danbricks18@gmail.com',
-          pass: 'ptmcojqgthvjbqom'
-        }
-      });
-
-      // Send admin email (you may already have this)
-      const adminMailOptions = {
-        from: 'Kiwi Trade <danbricks18@gmail.com>',
-        to: 'danbricks18@gmail.com',
-        subject: `New Quote Submitted - ${quoteId}`,
-        html: `
+      // 3. Send admin notification email
+      const adminSubject = `New Quote Submitted - ${customerName} (${serviceType})`;
+      const adminHtml = `
+        <div style="font-family: Arial, sans-serif; color:#1f2937;">
           <h2>New Quote Submitted</h2>
-          <p>A new quote has been submitted by ${tradesmanName || 'Unknown'}.</p>
-          <p><strong>Lead ID:</strong> ${leadId}</p>
-          <p><strong>Amount:</strong> $${Number(quoteAmount || 0).toFixed(2)}</p>
-          <p><a href="${onlineQuoteUrl}">Open Online Quote</a></p>
-        `,
-        attachments
-      };
+          <p>A new quote has been submitted by a tradesman.</p>
+          
+          <div style="background:#f3f4f6;padding:15px;border-radius:6px;margin:20px 0;">
+            <h3 style="margin-top:0;">Quote Summary</h3>
+            <p><strong>Customer:</strong> ${customerName}</p>
+            <p><strong>Customer Email:</strong> ${customerEmail}</p>
+            <p><strong>Customer Phone:</strong> ${customerPhone || 'Not provided'}</p>
+            <p><strong>Tradesman:</strong> ${tradesmanName}</p>
+            <p><strong>Tradesman Email:</strong> ${tradesmanEmail}</p>
+            <p><strong>Service:</strong> ${serviceType}</p>
+            <p><strong>Location:</strong> ${location || 'Not specified'}</p>
+            <p><strong>Quote Amount:</strong> $${coerceNumeric(quoteAmount).toFixed(2)}</p>
+            <p><strong>Quote ID:</strong> ${quoteId}</p>
+            <p><strong>Lead ID:</strong> ${leadId}</p>
+            <p><strong>Valid Until:</strong> ${new Date(quoteData.validUntil).toLocaleDateString('en-GB')}</p>
+          </div>
+          
+          <div style="background:#d1fae5;padding:15px;border-radius:6px;margin:20px 0;border-left:4px solid #10b981;">
+            <h3 style="margin-top:0;color:#065f46;">Actions</h3>
+            <p style="color:#065f46;">
+              <a href="${onlineQuoteUrl}" style="color:#10b981;">View quote online</a> | 
+              <a href="${acceptUrl}" style="color:#10b981;">Accept quote</a> | 
+              <a href="${declineUrl}" style="color:#ef4444;">Decline quote</a>
+            </p>
+          </div>
+          
+          <p style="margin-top:20px;color:#6b7280;">
+            This is an automated notification from the Kiwi Trade system.
+          </p>
+        </div>
+      `;
 
-      await transporter.sendMail(adminMailOptions);
+      await transporter.sendMail({
+        from: 'Kiwi Trade <danbricks18@gmail.com>',
+        to: 'danbricks18@gmail.com', // Admin email
+        subject: adminSubject,
+        html: adminHtml,
+        attachments: attachments
+      });
+      
       console.log('✅ Admin notification email sent successfully');
       adminEmailSent = true;
+
     } catch (emailError) {
-      console.error('❌ Admin email error:', emailError.message);
+      console.error('❌ Email sending error:', emailError.message);
     }
 
-    // 4. Save quote to Google Sheets
-    try {
-      const auth = new google.auth.GoogleAuth({
-        credentials: {
-          type: 'service_account',
-          project_id: process.env.GOOGLE_PROJECT_ID,
-          private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-          private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-          client_email: process.env.GOOGLE_CLIENT_EMAIL,
-          client_id: process.env.GOOGLE_CLIENT_ID,
-          auth_uri: 'https://accounts.google.com/o/oauth2/auth',
-          token_uri: 'https://oauth2.googleapis.com/token',
-          auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
-          client_x509_cert_url: process.env.GOOGLE_CLIENT_CER_URL
-        },
-        scopes: ['https://www.googleapis.com/auth/spreadsheets']
-      });
-
-      const sheets = google.sheets({ version: 'v4', auth });
-      const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
-
-      // Get available sheets to find the correct one to use
-      const metadata = await sheets.spreadsheets.get({
-        spreadsheetId: spreadsheetId
-      });
-      
-      const availableSheets = metadata.data.sheets.map(s => s.properties.title);
-      console.log('📋 Available sheets:', availableSheets);
-      
-      // Find the correct sheet to use (prefer 'Quotes', fallback to 'Sheet1', then first sheet)
-      let targetSheet = 'Sheet1'; // Default fallback
-      if (availableSheets.includes('Quotes')) {
-        targetSheet = 'Quotes';
-      } else if (availableSheets.includes('Sheet1')) {
-        targetSheet = 'Sheet1';
-      } else if (availableSheets.length > 0) {
-        targetSheet = availableSheets[0];
-      }
-      
-      console.log('🎯 Using sheet for quote data:', targetSheet);
-      const range = `${targetSheet}!A:Z`;
-
-             const values = [
-         [
-           new Date().toISOString(), // Timestamp
-           quoteId, // Quote ID
-           leadId, // Lead ID
-           customerName, // Customer Name
-           customerEmail, // Customer Email
-           customerPhone, // Customer Phone
-           tradesmanName, // Tradesman Name
-           tradesmanEmail, // Tradesman Email
-           tradesmanPhone, // Tradesman Phone
-           serviceType, // Service Type
-           projectDetails, // Project Details
-           projectSize, // Project Size
-           location, // Location
-           budget, // Budget
-           timeline, // Timeline
-           specificDetails, // Specific Details
-           quoteAmount, // Quote Amount
-           req.body.labourRate || '', // Labour Rate
-           req.body.labourHours || '', // Labour Hours
-           req.body.labourSubtotal || '', // Labour Subtotal
-           req.body.materialRate || '', // Material Rate
-           req.body.materialSQM || '', // Material SQM
-           req.body.materialSubtotal || '', // Material Subtotal
-           req.body.installationAmount || '', // Installation Amount
-           req.body.installationSubtotal || '', // Installation Subtotal
-           breakdown, // Breakdown
-           notes || '', // Notes
-           req.body.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Valid Until
-           'Pending', // Status
-           onlineQuoteUrl, // Online Quote URL
-           acceptUrl, // Accept URL
-           declineUrl // Decline URL
-         ]
-       ];
-
-      await sheets.spreadsheets.values.append({
-        spreadsheetId,
-        range,
-        valueInputOption: 'USER_ENTERED',
-        insertDataOption: 'INSERT_ROWS',
-        resource: { values }
-      });
-
-      console.log('✅ Quote data saved to Google Sheets');
-      sheetsUpdated = true;
-    } catch (sheetsError) {
-      console.error('❌ Google Sheets error:', sheetsError.message);
-    }
-
-    return res.status(200).json({
+    // Return success response
+    res.status(200).json({
       success: true,
       message: 'Quote submitted successfully',
-      details: {
+      quoteId: quoteId,
+      summary: {
         customerEmailSent,
         tradesmanEmailSent,
         adminEmailSent,
@@ -510,8 +426,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('❌ Quote submission error:', error);
-    return res.status(500).json({
-      success: false,
+    res.status(500).json({
       error: 'Failed to submit quote',
       details: error.message
     });

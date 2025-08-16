@@ -250,8 +250,8 @@ export default async function handler(req, res) {
       console.error('❌ PDF generation error:', pdfError.message);
     }
 
-    // Extract validUntil for email templates
-    const validUntil = quoteData.validUntil;
+    // Extract validUntil for email templates (with fallback)
+    const validUntil = quoteData?.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     
     // Send emails
     try {

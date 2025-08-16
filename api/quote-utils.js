@@ -143,12 +143,12 @@ export async function fetchQuoteData(quoteId) {
             if (cellValue.includes('@') && !mappedData.customerEmail) {
               mappedData.customerEmail = cellValue;
             }
-            // Look for phone patterns
-            else if (cellValue.match(/^\d+$/) && cellValue.length >= 7 && !mappedData.customerPhone) {
+            // Look for phone patterns (must be exactly 7-15 digits, not a large number)
+            else if (cellValue.match(/^\d{7,15}$/) && !mappedData.customerPhone && coerceNumeric(cellValue) < 1000000000) {
               mappedData.customerPhone = cellValue;
             }
-            // Look for amount patterns (numeric fields)
-            else if (cellValue.match(/^\d+(\.\d{2})?$/) && !mappedData.quoteAmount) {
+            // Look for amount patterns (numeric fields with decimal places, or reasonable amounts)
+            else if (cellValue.match(/^\d+(\.\d{2})?$/) && !mappedData.quoteAmount && coerceNumeric(cellValue) > 0 && coerceNumeric(cellValue) < 1000000) {
               mappedData.quoteAmount = coerceNumeric(cellValue);
             }
             // Look for names (no special characters, reasonable length)
@@ -385,10 +385,23 @@ export async function updateQuoteStatus(quoteId, status) {
     // Status is in column 29 (AC) - 0-indexed is 28
     const statusColumn = 29; // Column AC
 
+    // Convert column number to letter (1=A, 2=B, ..., 26=Z, 27=AA, 28=AB, 29=AC)
+    function columnToLetter(column) {
+      let result = '';
+      while (column > 0) {
+        column--;
+        result = String.fromCharCode(65 + (column % 26)) + result;
+        column = Math.floor(column / 26);
+      }
+      return result;
+    }
+
+    const statusColumnLetter = columnToLetter(statusColumn);
+
     // Update the status in the sheet
     await sheets.spreadsheets.values.update({
       spreadsheetId: spreadsheetId,
-      range: `${targetSheet}!${String.fromCharCode(64 + statusColumn)}${targetRow}`, // Convert to column letter
+      range: `${targetSheet}!${statusColumnLetter}${targetRow}`,
       valueInputOption: 'USER_ENTERED',
       resource: {
         values: [[status]]

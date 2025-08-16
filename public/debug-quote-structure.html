@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Debug Quote Structure - Kiwi Trade</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    .header {
+      background: #1e40af;
+      color: white;
+      padding: 20px;
+      margin: -20px -20px 20px -20px;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+    }
+    .form-group {
+      margin: 15px 0;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #374151;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      background: #3b82f6;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 5px;
+    }
+    .btn:hover {
+      background: #2563eb;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      max-height: 600px;
+      overflow-y: auto;
+      background: #f8f9fa;
+      border: 1px solid #e5e7eb;
+    }
+    .error {
+      background: #fee2e2;
+      border: 1px solid #ef4444;
+      color: #991b1b;
+    }
+    .success {
+      background: #d1fae5;
+      border: 1px solid #10b981;
+      color: #065f46;
+    }
+    .info {
+      background: #dbeafe;
+      border: 1px solid #3b82f6;
+      color: #1e40af;
+    }
+    .section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+    }
+    .section h3 {
+      margin-top: 0;
+      color: #374151;
+    }
+    .column-analysis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .column-card {
+      background: #f8f9fa;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      padding: 10px;
+      font-size: 11px;
+    }
+    .column-card h4 {
+      margin: 0 0 8px 0;
+      color: #374151;
+      font-size: 12px;
+    }
+    .column-card .value {
+      font-weight: bold;
+      margin: 4px 0;
+    }
+    .column-card .flags {
+      margin-top: 8px;
+    }
+    .flag {
+      display: inline-block;
+      padding: 2px 6px;
+      margin: 2px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: bold;
+    }
+    .flag.true {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .flag.false {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Debug Quote Structure</h1>
+      <p>Analyze the structure of quote data in Google Sheets</p>
+    </div>
+
+    <div class="section">
+      <h3>Enter Quote ID to Analyze</h3>
+      <div class="form-group">
+        <label>Quote ID:</label>
+        <input type="text" id="quoteId" value="QUOTE-1755314357366-xb36zfpe4" placeholder="Enter quote ID to analyze">
+      </div>
+      <button class="btn" onclick="analyzeQuote()">Analyze Quote Structure</button>
+      <button class="btn" onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div class="section">
+      <h3>Analysis Results</h3>
+      <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="section">
+      <h3>Column Analysis</h3>
+      <div id="columnAnalysis" class="column-analysis" style="display: none;"></div>
+    </div>
+  </div>
+
+  <script>
+    async function analyzeQuote() {
+      const quoteId = document.getElementById('quoteId').value;
+      const resultDiv = document.getElementById('result');
+      const columnAnalysisDiv = document.getElementById('columnAnalysis');
+      
+      if (!quoteId) {
+        showResult(resultDiv, 'Please enter a Quote ID', 'error');
+        return;
+      }
+
+      try {
+        showResult(resultDiv, 'Analyzing quote structure...', 'info');
+        
+        const response = await fetch(`/api/debug-quote-structure?quoteId=${encodeURIComponent(quoteId)}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          showResult(resultDiv, `✅ Quote structure analysis successful!\n\n${JSON.stringify(data, null, 2)}`, 'success');
+          showColumnAnalysis(columnAnalysisDiv, data);
+        } else {
+          const error = await response.text();
+          showResult(resultDiv, `❌ Analysis failed:\n${error}`, 'error');
+        }
+      } catch (error) {
+        showResult(resultDiv, `❌ Error analyzing quote structure:\n${error.message}`, 'error');
+      }
+    }
+
+    function showColumnAnalysis(container, data) {
+      if (!data.columnAnalysis || data.columnAnalysis.length === 0) {
+        container.innerHTML = '<p>No column analysis available</p>';
+        container.style.display = 'block';
+        return;
+      }
+
+      let html = '';
+      
+      data.columnAnalysis.forEach(column => {
+        html += `
+          <div class="column-card">
+            <h4>${column.columnLetter}: ${column.header}</h4>
+            <div class="value">Value: ${column.value || '(empty)'}</div>
+            <div class="value">Type: ${column.valueType}</div>
+            <div class="flags">
+              <span class="flag ${column.isQuoteId ? 'true' : 'false'}">Quote ID</span>
+              <span class="flag ${column.isLeadId ? 'true' : 'false'}">Lead ID</span>
+              <span class="flag ${column.isEmail ? 'true' : 'false'}">Email</span>
+              <span class="flag ${column.isPhone ? 'true' : 'false'}">Phone</span>
+              <span class="flag ${column.isAmount ? 'true' : 'false'}">Amount</span>
+              <span class="flag ${column.isName ? 'true' : 'false'}">Name</span>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+      container.style.display = 'block';
+    }
+
+    function showResult(element, message, type) {
+      element.textContent = message;
+      element.className = `result ${type}`;
+      element.style.display = 'block';
+    }
+
+    function clearResults() {
+      document.getElementById('result').style.display = 'none';
+      document.getElementById('columnAnalysis').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

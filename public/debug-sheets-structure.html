@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Debug Sheets Structure - Kiwi Trade</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    .header {
+      background: #1e40af;
+      color: white;
+      padding: 20px;
+      margin: -20px -20px 20px -20px;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+    }
+    .btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 5px;
+    }
+    .btn:hover {
+      background: #2563eb;
+    }
+    .result {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 15px;
+      margin: 15px 0;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .error {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #dc2626;
+    }
+    .success {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+      color: #16a34a;
+    }
+    .sheet-info {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 15px;
+      margin: 10px 0;
+    }
+    .sheet-name {
+      font-weight: bold;
+      color: #1e40af;
+      margin-bottom: 10px;
+    }
+    .headers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin: 10px 0;
+    }
+    .header-item {
+      background: #e2e8f0;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Debug Google Sheets Structure</h1>
+      <p>Check what sheets exist and their column headers</p>
+    </div>
+
+    <div>
+      <button class="btn" onclick="checkSheetsStructure()">Check Sheets Structure</button>
+      <button class="btn" onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div id="result" class="result" style="display: none;"></div>
+
+    <div id="sheetsInfo"></div>
+  </div>
+
+  <script>
+    async function checkSheetsStructure() {
+      const resultDiv = document.getElementById('result');
+      const sheetsInfoDiv = document.getElementById('sheetsInfo');
+      
+      resultDiv.style.display = 'block';
+      resultDiv.className = 'result';
+      resultDiv.textContent = 'Checking sheets structure...';
+      sheetsInfoDiv.innerHTML = '';
+
+      try {
+        const response = await fetch('/api/debug-sheets-structure');
+        const data = await response.json();
+
+        if (data.success) {
+          resultDiv.className = 'result success';
+          resultDiv.textContent = JSON.stringify(data, null, 2);
+
+          // Display detailed sheet information
+          displaySheetsInfo(data);
+        } else {
+          resultDiv.className = 'result error';
+          resultDiv.textContent = JSON.stringify(data, null, 2);
+        }
+      } catch (error) {
+        resultDiv.className = 'result error';
+        resultDiv.textContent = `Error: ${error.message}`;
+      }
+    }
+
+    function displaySheetsInfo(data) {
+      const sheetsInfoDiv = document.getElementById('sheetsInfo');
+      
+      // Summary
+      const summary = document.createElement('div');
+      summary.className = 'sheet-info';
+      summary.innerHTML = `
+        <div class="sheet-name">📊 Summary</div>
+        <p><strong>Spreadsheet ID:</strong> ${data.spreadsheetId}</p>
+        <p><strong>Available Sheets:</strong> ${data.availableSheets.join(', ')}</p>
+        <p><strong>Has Quotes Sheet:</strong> ${data.hasQuotesSheet ? '✅ Yes' : '❌ No'}</p>
+        <p><strong>Has Leads Sheet:</strong> ${data.hasLeadsSheet ? '✅ Yes' : '❌ No'}</p>
+      `;
+      sheetsInfoDiv.appendChild(summary);
+
+      // Individual sheet details
+      for (const [sheetName, info] of Object.entries(data.sheetsInfo)) {
+        const sheetDiv = document.createElement('div');
+        sheetDiv.className = 'sheet-info';
+        
+        let content = `<div class="sheet-name">📋 ${sheetName}</div>`;
+        
+        if (info.error) {
+          content += `<p style="color: #dc2626;"><strong>Error:</strong> ${info.error}</p>`;
+        } else {
+          content += `
+            <p><strong>Rows:</strong> ${info.rowCount}</p>
+            <p><strong>Columns:</strong> ${info.columnCount}</p>
+            <p><strong>Headers:</strong></p>
+            <div class="headers">
+          `;
+          
+          info.headers.forEach((header, index) => {
+            content += `<span class="header-item">${index + 1}: ${header}</span>`;
+          });
+          
+          content += '</div>';
+        }
+        
+        sheetDiv.innerHTML = content;
+        sheetsInfoDiv.appendChild(sheetDiv);
+      }
+    }
+
+    function clearResults() {
+      document.getElementById('result').style.display = 'none';
+      document.getElementById('sheetsInfo').innerHTML = '';
+    }
+  </script>
+</body>
+</html>

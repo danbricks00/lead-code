@@ -61,29 +61,28 @@ export default async function handler(req, res) {
     let declineUrl = '';
     let attachments = [];
 
-    try {
-      // Compute links first - use Vercel's default domain
-      const origin = process.env.SITE_URL || `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}`;
-      console.log('🌐 Origin URL:', origin);
-      console.log('🔗 Headers:', {
-        host: req.headers.host,
-        'x-forwarded-proto': req.headers['x-forwarded-proto'],
-        'x-forwarded-host': req.headers['x-forwarded-host']
-      });
-      
-      // Generate URLs first
-      onlineQuoteUrl = `${origin}/quote.html?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}`;
-      acceptUrl = `${origin}/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=accept`;
-      declineUrl = `${origin}/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=decline`;
-      
-      console.log('🔗 Generated URLs:', {
-        onlineQuoteUrl,
-        acceptUrl,
-        declineUrl
-      });
+    // Compute links first - use Vercel's default domain
+    const origin = process.env.SITE_URL || `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}`;
+    console.log('🌐 Origin URL:', origin);
+    console.log('🔗 Headers:', {
+      host: req.headers.host,
+      'x-forwarded-proto': req.headers['x-forwarded-proto'],
+      'x-forwarded-host': req.headers['x-forwarded-host']
+    });
+    
+    // Generate URLs first
+    onlineQuoteUrl = `${origin}/quote.html?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}`;
+    acceptUrl = `${origin}/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=accept`;
+    declineUrl = `${origin}/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=decline`;
+    
+    console.log('🔗 Generated URLs:', {
+      onlineQuoteUrl,
+      acceptUrl,
+      declineUrl
+    });
 
-      // Now create quoteData with the correct URLs and coerced numeric fields
-      const quoteData = {
+    // Now create quoteData with the correct URLs and coerced numeric fields
+    const quoteData = {
         timestamp: new Date().toISOString(),
         quoteId: quoteId,
         leadId: leadId,
@@ -126,6 +125,7 @@ export default async function handler(req, res) {
         validUntil: quoteData.validUntil
       });
 
+    try {
       // Generate PDF buffer using unified function
       pdfBuffer = await generateQuotePdfBuffer({
         leadId: leadId,

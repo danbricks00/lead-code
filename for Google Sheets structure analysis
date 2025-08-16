@@ -1,0 +1,5 @@
+[33m7a8e667[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix quoteData undefined error with optional chaining and fallback for validUntil
+[33m1e47aad[m Fix validUntil variable scope in quote submission emails
+[33md5b07b4[m Fix quote submission email error: replace quoteData.validUntil with validUntil variable
+[33mab5b5a3[m Fix quote decision system: Google Sheets range error and nodemailer function name, improve data mapping logic, add debug tools
+[33m2f05a42[m fix up online quote, accept/decline flow

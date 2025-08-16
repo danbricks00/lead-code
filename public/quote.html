@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Quote - Kiwi Trade</title>
   <style>
     body {
@@ -12,7 +12,7 @@
       background: #f5f5f5;
     }
     .container {
-      max-width: 800px;
+      max-width: 1200px;
       margin: 0 auto;
       background: white;
       border-radius: 8px;
@@ -20,7 +20,7 @@
       overflow: hidden;
     }
     .header {
-      background: #2c3e50;
+      background: #1e40af;
       color: white;
       padding: 20px;
       text-align: center;
@@ -29,9 +29,13 @@
       margin: 0;
       font-size: 24px;
     }
+    .header p {
+      margin: 10px 0 0 0;
+      opacity: 0.9;
+    }
     .pdf-container {
       width: 100%;
-      height: 600px;
+      height: 800px;
       border: none;
     }
     .actions {
@@ -44,55 +48,48 @@
       display: inline-block;
       padding: 12px 24px;
       margin: 0 10px;
+      border: none;
       border-radius: 6px;
       text-decoration: none;
       font-weight: bold;
-      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
     }
     .btn-accept {
-      background: #28a745;
+      background: #10b981;
       color: white;
+    }
+    .btn-accept:hover {
+      background: #059669;
     }
     .btn-decline {
-      background: #dc3545;
+      background: #ef4444;
       color: white;
     }
-    .btn:hover {
-      opacity: 0.9;
+    .btn-decline:hover {
+      background: #dc2626;
+    }
+    .btn-download {
+      background: #3b82f6;
+      color: white;
+    }
+    .btn-download:hover {
+      background: #2563eb;
     }
     .warning {
       display: none;
-      background: #fff3cd;
-      color: #856404;
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      color: #92400e;
       padding: 15px;
-      margin: 20px;
       border-radius: 6px;
-      border: 1px solid #ffeaa7;
-    }
-    .status-message {
-      display: none;
-      background: #d1fae5;
-      color: #065f46;
-      padding: 15px;
       margin: 20px;
-      border-radius: 6px;
-      border: 1px solid #10b981;
       text-align: center;
-      font-weight: bold;
-    }
-    .status-declined {
-      background: #fee2e2;
-      color: #991b1b;
-      border: 1px solid #ef4444;
-    }
-    .btn-disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      pointer-events: none;
     }
     .loading {
-      opacity: 0.7;
-      cursor: wait;
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
     }
   </style>
 </head>
@@ -103,88 +100,61 @@
       <p>This online version is identical to the attached PDF</p>
     </div>
     
-    <div class="warning" id="warn"></div>
-    <div class="status-message" id="statusMessage"></div>
+    <div id="warn" class="warning"></div>
     
-    <iframe class="pdf-container" id="pdf" src=""></iframe>
+    <div id="loading" class="loading">
+      Loading quote...
+    </div>
+    
+    <iframe id="pdf" class="pdf-container" style="display: none;"></iframe>
     
     <div class="actions">
-      <a href="#" class="btn btn-accept" id="accept">Accept Quote</a>
-      <a href="#" class="btn btn-decline" id="decline">Decline Quote</a>
+      <a id="download" class="btn btn-download" href="#" target="_blank">Download PDF</a>
+      <a id="accept" class="btn btn-accept" href="#">Accept Quote</a>
+      <a id="decline" class="btn btn-decline" href="#">Decline Quote</a>
     </div>
   </div>
 
   <script>
-    (async function() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const quoteId = urlParams.get('quoteId');
-      const leadId = urlParams.get('leadId');
-      const token = urlParams.get('token') || '';
+(function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const quoteId = urlParams.get('quoteId');
+  const leadId = urlParams.get('leadId');
+  const token = urlParams.get('token') || '';
 
-      const pdfUrl = `/api/quote-pdf?leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&download=0`;
-      const acceptUrl = `/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=accept`;
-      const declineUrl = `/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=decline`;
+  const warn = document.getElementById('warn');
+  const loading = document.getElementById('loading');
+  const pdfFrame = document.getElementById('pdf');
+  const accept = document.getElementById('accept');
+  const decline = document.getElementById('decline');
+  const download = document.getElementById('download');
 
-      document.getElementById('pdf').src = pdfUrl;
-      document.getElementById('accept').href = acceptUrl;
-      document.getElementById('decline').href = declineUrl;
+  if (!leadId) {
+    warn.textContent = 'Missing leadId. Please open this link from your email again.';
+    warn.style.display = 'block';
+    loading.style.display = 'none';
+    return;
+  }
 
-      // Basic guard if query is incomplete
-      if (!leadId) {
-        const w = document.getElementById('warn');
-        w.textContent = 'Missing leadId. Please open this link from your email again.';
-        w.style.display = 'block';
-        return;
-      }
+  // Show PDF when loaded
+  pdfFrame.onload = function() {
+    loading.style.display = 'none';
+    pdfFrame.style.display = 'block';
+  };
 
-      // Check quote status to see if decision has already been made
-      try {
-        // Show loading state briefly
-        const acceptBtn = document.getElementById('accept');
-        const declineBtn = document.getElementById('decline');
-        acceptBtn.classList.add('loading');
-        declineBtn.classList.add('loading');
-        
-        const response = await fetch(`/api/get-quote-by-id?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}`);
-        const data = await response.json();
-        
-        // Remove loading state
-        acceptBtn.classList.remove('loading');
-        declineBtn.classList.remove('loading');
-        
-        if (data.success && data.quote) {
-          const status = data.quote.status || 'Pending';
-          
-          if (status === 'Accepted' || status === 'Declined') {
-            // Decision already made - show status and disable buttons
-            const statusMessage = document.getElementById('statusMessage');
-            
-            if (status === 'Accepted') {
-              statusMessage.textContent = '✅ This quote has already been ACCEPTED. Decisions are final.';
-              statusMessage.className = 'status-message';
-            } else {
-              statusMessage.textContent = '❌ This quote has already been DECLINED. Decisions are final.';
-              statusMessage.className = 'status-message status-declined';
-            }
-            
-            statusMessage.style.display = 'block';
-            acceptBtn.classList.add('btn-disabled');
-            declineBtn.classList.add('btn-disabled');
-            
-            // Update button text to show they're disabled
-            acceptBtn.textContent = 'Already Accepted';
-            declineBtn.textContent = 'Already Declined';
-          }
-        }
-      } catch (error) {
-        console.log('Could not check quote status:', error);
-        // Remove loading state and continue normally if we can't check status
-        const acceptBtn = document.getElementById('accept');
-        const declineBtn = document.getElementById('decline');
-        acceptBtn.classList.remove('loading');
-        declineBtn.classList.remove('loading');
-      }
-    })();
+  // Embed the exact same PDF built by the server (ensures 1:1 match with email attachment)
+  const pdfUrlInline = `/api/quote-pdf?leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&download=0`;
+  const pdfUrlDownload = `/api/quote-pdf?leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&download=1`;
+  pdfFrame.src = pdfUrlInline;
+  download.href = pdfUrlDownload;
+  download.setAttribute('download', `quote-${encodeURIComponent(quoteId || leadId)}.pdf`);
+
+  // Decision links (work even if token is empty due to relaxed server guard)
+  const acceptUrl = `/api/quote-decision?quoteId=${encodeURIComponent(quoteId || leadId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=accept`;
+  const declineUrl = `/api/quote-decision?quoteId=${encodeURIComponent(quoteId || leadId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=decline`;
+  accept.href = acceptUrl;
+  decline.href = declineUrl;
+})();
   </script>
 </body>
 </html>

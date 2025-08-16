@@ -237,7 +237,21 @@ export default async function handler(req, res) {
               <li>Discuss payment terms</li>
             </ul>
           </div>
-          ` : ''}
+          ` : `
+          <div style="background:#fef3c7;padding:15px;border-radius:6px;margin:20px 0;border-left:4px solid #f59e0b;">
+            <h3 style="margin-top:0;color:#92400e;">Counter Quote Opportunity</h3>
+            <p style="color:#92400e;">If you'd like to provide a revised quote, you can submit a counter offer:</p>
+            <p style="color:#92400e;">
+              <a href="${process.env.SITE_URL || 'https://lead-code.vercel.app'}/counter-quote-form.html?quoteId=${quoteId}&leadId=${leadId}&token=${token}" 
+                 style="background:#f59e0b;color:white;padding:10px 20px;text-decoration:none;border-radius:6px;display:inline-block;margin-top:10px;">
+                Submit Counter Quote
+              </a>
+            </p>
+            <p style="color:#92400e;font-size:14px;margin-top:10px;">
+              This will allow you to provide a new offer with revised pricing or terms.
+            </p>
+          </div>
+          `}
           
           <p style="margin-top:20px;color:#6b7280;">
             If you need any assistance, please contact the admin team.

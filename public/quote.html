@@ -184,6 +184,20 @@
           decline.onclick = null;
           accept.href = '#';
           decline.href = '#';
+          
+          // Add counter quote button for declined quotes (only show to tradesmen)
+          if (quoteStatus === 'Declined') {
+            const counterQuoteBtn = document.createElement('a');
+            counterQuoteBtn.href = `/counter-quote-form.html?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}`;
+            counterQuoteBtn.className = 'btn';
+            counterQuoteBtn.style.background = '#f59e0b';
+            counterQuoteBtn.style.marginLeft = '10px';
+            counterQuoteBtn.textContent = 'Submit Counter Quote';
+            counterQuoteBtn.target = '_blank';
+            
+            // Insert after the decline button
+            decline.parentNode.insertBefore(counterQuoteBtn, decline.nextSibling);
+          }
         }
       }
     } catch (error) {

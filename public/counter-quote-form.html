@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Counter Quote Form - Kiwi Trade</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .header {
+      background: #1e40af;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .form-container {
+      padding: 30px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #374151;
+    }
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    .form-group textarea {
+      height: 100px;
+      resize: vertical;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    .breakdown-section {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 6px;
+      margin: 20px 0;
+    }
+    .breakdown-section h3 {
+      margin-top: 0;
+      color: #374151;
+    }
+    .breakdown-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .total-section {
+      background: #d1fae5;
+      padding: 15px;
+      border-radius: 6px;
+      text-align: right;
+      margin: 20px 0;
+    }
+    .total-amount {
+      font-size: 20px;
+      font-weight: bold;
+      color: #065f46;
+    }
+    .btn {
+      background: #10b981;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      width: 100%;
+    }
+    .btn:hover {
+      background: #059669;
+    }
+    .btn:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    .info-box {
+      background: #e0f2fe;
+      border: 1px solid #0288d1;
+      color: #01579b;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+    .error {
+      background: #fee2e2;
+      border: 1px solid #ef4444;
+      color: #991b1b;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 20px 0;
+    }
+    .success {
+      background: #d1fae5;
+      border: 1px solid #10b981;
+      color: #065f46;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Counter Quote Form</h1>
+      <p>Submit a new quote offer for the customer</p>
+    </div>
+    
+    <div class="form-container">
+      <div id="info" class="info-box">
+        <strong>Original Quote Information:</strong><br>
+        <span id="originalQuoteInfo">Loading...</span>
+      </div>
+      
+      <div id="error" class="error" style="display: none;"></div>
+      <div id="success" class="success" style="display: none;"></div>
+      
+      <form id="counterQuoteForm">
+        <input type="hidden" id="originalQuoteId" name="originalQuoteId">
+        <input type="hidden" id="leadId" name="leadId">
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="tradesmanName">Tradesman Name *</label>
+            <input type="text" id="tradesmanName" name="tradesmanName" required>
+          </div>
+          <div class="form-group">
+            <label for="tradesmanEmail">Tradesman Email *</label>
+            <input type="email" id="tradesmanEmail" name="tradesmanEmail" required>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="tradesmanPhone">Tradesman Phone</label>
+          <input type="tel" id="tradesmanPhone" name="tradesmanPhone">
+        </div>
+        
+        <div class="form-group">
+          <label for="reasonForCounter">Reason for Counter Quote</label>
+          <textarea id="reasonForCounter" name="reasonForCounter" placeholder="Explain why you're providing a counter quote (e.g., revised pricing, updated scope, etc.)"></textarea>
+        </div>
+        
+        <div class="breakdown-section">
+          <h3>Quote Breakdown</h3>
+          
+          <div class="breakdown-row">
+            <div class="form-group">
+              <label for="labourRate">Labour Rate ($/hour)</label>
+              <input type="number" id="labourRate" name="labourRate" step="0.01" min="0" onchange="calculateTotals()">
+            </div>
+            <div class="form-group">
+              <label for="labourHours">Labour Hours</label>
+              <input type="number" id="labourHours" name="labourHours" step="0.5" min="0" onchange="calculateTotals()">
+            </div>
+            <div class="form-group">
+              <label for="labourSubtotal">Labour Subtotal</label>
+              <input type="number" id="labourSubtotal" name="labourSubtotal" step="0.01" min="0" readonly>
+            </div>
+          </div>
+          
+          <div class="breakdown-row">
+            <div class="form-group">
+              <label for="materialRate">Material Rate ($/SQM)</label>
+              <input type="number" id="materialRate" name="materialRate" step="0.01" min="0" onchange="calculateTotals()">
+            </div>
+            <div class="form-group">
+              <label for="materialSQM">Material SQM</label>
+              <input type="number" id="materialSQM" name="materialSQM" step="0.1" min="0" onchange="calculateTotals()">
+            </div>
+            <div class="form-group">
+              <label for="materialSubtotal">Material Subtotal</label>
+              <input type="number" id="materialSubtotal" name="materialSubtotal" step="0.01" min="0" readonly>
+            </div>
+          </div>
+          
+          <div class="breakdown-row">
+            <div class="form-group">
+              <label for="installationAmount">Installation Amount</label>
+              <input type="number" id="installationAmount" name="installationAmount" step="0.01" min="0" onchange="calculateTotals()">
+            </div>
+            <div class="form-group">
+              <label for="installationSubtotal">Installation Subtotal</label>
+              <input type="number" id="installationSubtotal" name="installationSubtotal" step="0.01" min="0" readonly>
+            </div>
+            <div class="form-group">
+              <label for="counterQuoteAmount">Total Amount</label>
+              <input type="number" id="counterQuoteAmount" name="counterQuoteAmount" step="0.01" min="0" readonly>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="breakdown">Breakdown Description</label>
+          <textarea id="breakdown" name="breakdown" placeholder="Detailed breakdown of the quote (e.g., Labour: $1000, Materials: $2500, Installation: $500)"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="notes">Additional Notes</label>
+          <textarea id="notes" name="notes" placeholder="Any additional information or special conditions"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="validUntil">Valid Until</label>
+          <input type="date" id="validUntil" name="validUntil" required>
+        </div>
+        
+        <button type="submit" class="btn" id="submitBtn">Submit Counter Quote</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Get URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const originalQuoteId = urlParams.get('quoteId');
+    const leadId = urlParams.get('leadId');
+    const token = urlParams.get('token');
+
+    // Set default date (30 days from now)
+    const defaultDate = new Date();
+    defaultDate.setDate(defaultDate.getDate() + 30);
+    document.getElementById('validUntil').value = defaultDate.toISOString().split('T')[0];
+
+    // Set hidden fields
+    document.getElementById('originalQuoteId').value = originalQuoteId || '';
+    document.getElementById('leadId').value = leadId || '';
+
+    // Load original quote information
+    async function loadOriginalQuote() {
+      try {
+        if (!originalQuoteId) {
+          document.getElementById('originalQuoteInfo').innerHTML = 'No original quote ID provided';
+          return;
+        }
+
+        const response = await fetch(`/api/get-quote-by-id?quoteId=${encodeURIComponent(originalQuoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token || '')}`);
+        const data = await response.json();
+
+        if (data.success && data.quote) {
+          const quote = data.quote;
+          document.getElementById('originalQuoteInfo').innerHTML = `
+            <strong>Quote ID:</strong> ${quote.quoteId}<br>
+            <strong>Original Amount:</strong> $${Number(quote.quoteAmount || 0).toFixed(2)}<br>
+            <strong>Customer:</strong> ${quote.customerName || 'Not provided'}<br>
+            <strong>Service:</strong> ${quote.serviceType || 'Not provided'}
+          `;
+        } else {
+          document.getElementById('originalQuoteInfo').innerHTML = 'Original quote not found';
+        }
+      } catch (error) {
+        console.error('Error loading original quote:', error);
+        document.getElementById('originalQuoteInfo').innerHTML = 'Error loading original quote information';
+      }
+    }
+
+    // Calculate totals
+    function calculateTotals() {
+      const labourRate = parseFloat(document.getElementById('labourRate').value) || 0;
+      const labourHours = parseFloat(document.getElementById('labourHours').value) || 0;
+      const materialRate = parseFloat(document.getElementById('materialRate').value) || 0;
+      const materialSQM = parseFloat(document.getElementById('materialSQM').value) || 0;
+      const installationAmount = parseFloat(document.getElementById('installationAmount').value) || 0;
+
+      const labourSubtotal = labourRate * labourHours;
+      const materialSubtotal = materialRate * materialSQM;
+      const installationSubtotal = installationAmount;
+      const total = labourSubtotal + materialSubtotal + installationSubtotal;
+
+      document.getElementById('labourSubtotal').value = labourSubtotal.toFixed(2);
+      document.getElementById('materialSubtotal').value = materialSubtotal.toFixed(2);
+      document.getElementById('installationSubtotal').value = installationSubtotal.toFixed(2);
+      document.getElementById('counterQuoteAmount').value = total.toFixed(2);
+
+      // Auto-generate breakdown
+      const breakdown = [];
+      if (labourSubtotal > 0) breakdown.push(`Labour: $${labourSubtotal.toFixed(2)}`);
+      if (materialSubtotal > 0) breakdown.push(`Materials: $${materialSubtotal.toFixed(2)}`);
+      if (installationSubtotal > 0) breakdown.push(`Installation: $${installationSubtotal.toFixed(2)}`);
+      
+      document.getElementById('breakdown').value = breakdown.join(', ');
+    }
+
+    // Handle form submission
+    document.getElementById('counterQuoteForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('submitBtn');
+      const errorDiv = document.getElementById('error');
+      const successDiv = document.getElementById('success');
+      
+      // Hide previous messages
+      errorDiv.style.display = 'none';
+      successDiv.style.display = 'none';
+      
+      // Disable submit button
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+      
+      try {
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        
+        // Add missing fields
+        data.labourSubtotal = document.getElementById('labourSubtotal').value;
+        data.materialSubtotal = document.getElementById('materialSubtotal').value;
+        data.installationSubtotal = document.getElementById('installationSubtotal').value;
+        
+        console.log('Submitting counter quote:', data);
+        
+        const response = await fetch('/api/counter-quote', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          successDiv.innerHTML = `
+            <strong>Counter Quote Submitted Successfully!</strong><br>
+            Counter Quote ID: ${result.counterQuoteId}<br>
+            The customer has been notified of your new offer.
+          `;
+          successDiv.style.display = 'block';
+          
+          // Reset form
+          e.target.reset();
+          document.getElementById('validUntil').value = defaultDate.toISOString().split('T')[0];
+        } else {
+          throw new Error(result.error || 'Unknown error');
+        }
+      } catch (error) {
+        console.error('Error submitting counter quote:', error);
+        errorDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+        errorDiv.style.display = 'block';
+      } finally {
+        // Re-enable submit button
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Counter Quote';
+      }
+    });
+
+    // Load original quote on page load
+    loadOriginalQuote();
+  </script>
+</body>
+</html>

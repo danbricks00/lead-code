@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Counter Quote - Kiwi Trade</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .header {
+      background: #1e40af;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .header p {
+      margin: 10px 0 0 0;
+      opacity: 0.9;
+    }
+    .content {
+      padding: 30px;
+    }
+    .quote-details {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+    .quote-details h3 {
+      margin-top: 0;
+      color: #374151;
+    }
+    .detail-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 10px;
+    }
+    .detail-row strong {
+      color: #374151;
+    }
+    .breakdown-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    .breakdown-table th,
+    .breakdown-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .breakdown-table th {
+      background: #f3f4f6;
+      font-weight: bold;
+      color: #374151;
+    }
+    .total-row {
+      background: #d1fae5;
+      font-weight: bold;
+    }
+    .total-row td {
+      color: #065f46;
+    }
+    .actions {
+      text-align: center;
+      margin-top: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-top: 1px solid #e9ecef;
+    }
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      margin: 0 10px;
+      border: none;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-accept {
+      background: #10b981;
+      color: white;
+    }
+    .btn-accept:hover {
+      background: #059669;
+    }
+    .btn-decline {
+      background: #ef4444;
+      color: white;
+    }
+    .btn-decline:hover {
+      background: #dc2626;
+    }
+    .warning {
+      display: none;
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      color: #92400e;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
+    }
+    .status-message {
+      background: #d1fae5;
+      border: 1px solid #10b981;
+      color: #065f46;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 20px;
+      text-align: center;
+      font-weight: bold;
+    }
+    .status-declined {
+      background: #fee2e2;
+      border: 1px solid #ef4444;
+      color: #991b1b;
+    }
+    .btn-disabled {
+      background: #9ca3af !important;
+      color: #6b7280 !important;
+      cursor: not-allowed !important;
+    }
+    .btn-disabled:hover {
+      background: #9ca3af !important;
+    }
+    .reason-box {
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      color: #92400e;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Counter Quote - Kiwi Trade</h1>
+      <p>Review the revised quote offer from the tradesman</p>
+    </div>
+    
+    <div class="content">
+      <div id="warn" class="warning"></div>
+      <div id="status" class="status-message" style="display: none;"></div>
+      
+      <div id="loading" class="loading">
+        Loading counter quote...
+      </div>
+      
+      <div id="quoteContent" style="display: none;">
+        <div class="quote-details">
+          <h3>Counter Quote Information</h3>
+          <div class="detail-row">
+            <div><strong>Counter Quote ID:</strong> <span id="counterQuoteId"></span></div>
+            <div><strong>Original Quote ID:</strong> <span id="originalQuoteId"></span></div>
+          </div>
+          <div class="detail-row">
+            <div><strong>Tradesman:</strong> <span id="tradesmanName"></span></div>
+            <div><strong>Tradesman Email:</strong> <span id="tradesmanEmail"></span></div>
+          </div>
+          <div class="detail-row">
+            <div><strong>Tradesman Phone:</strong> <span id="tradesmanPhone"></span></div>
+            <div><strong>Valid Until:</strong> <span id="validUntil"></span></div>
+          </div>
+          <div class="detail-row">
+            <div><strong>Total Amount:</strong> <span id="totalAmount"></span></div>
+            <div><strong>Status:</strong> <span id="quoteStatus"></span></div>
+          </div>
+        </div>
+
+        <div id="reasonBox" class="reason-box" style="display: none;">
+          <h4>Reason for Counter Quote</h4>
+          <p id="reasonText"></p>
+        </div>
+
+        <div id="breakdownSection">
+          <h3>Quote Breakdown</h3>
+          <table class="breakdown-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Rate</th>
+                <th>Quantity</th>
+                <th>Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Labour</td>
+                <td id="labourRate"></td>
+                <td id="labourHours"></td>
+                <td id="labourSubtotal"></td>
+              </tr>
+              <tr>
+                <td>Materials</td>
+                <td id="materialRate"></td>
+                <td id="materialSQM"></td>
+                <td id="materialSubtotal"></td>
+              </tr>
+              <tr>
+                <td>Installation</td>
+                <td>-</td>
+                <td>-</td>
+                <td id="installationSubtotal"></td>
+              </tr>
+              <tr class="total-row">
+                <td colspan="3"><strong>Total</strong></td>
+                <td id="totalAmountTable"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="notesSection" style="display: none;">
+          <h3>Additional Notes</h3>
+          <p id="notesText"></p>
+        </div>
+      </div>
+      
+      <div class="actions">
+        <a id="accept" class="btn btn-accept" href="#" onclick="handleDecision('accept')">Accept Counter Quote</a>
+        <a id="decline" class="btn btn-decline" href="#" onclick="handleDecision('decline')">Decline Counter Quote</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const counterQuoteId = urlParams.get('counterQuoteId');
+      const originalQuoteId = urlParams.get('originalQuoteId');
+      const leadId = urlParams.get('leadId');
+      const token = urlParams.get('token') || '';
+
+      const warn = document.getElementById('warn');
+      const status = document.getElementById('status');
+      const loading = document.getElementById('loading');
+      const quoteContent = document.getElementById('quoteContent');
+      const accept = document.getElementById('accept');
+      const decline = document.getElementById('decline');
+
+      if (!counterQuoteId || !originalQuoteId || !leadId) {
+        warn.textContent = 'Missing required parameters. Please open this link from your email again.';
+        warn.style.display = 'block';
+        loading.style.display = 'none';
+        return;
+      }
+
+      // Load counter quote data
+      async function loadCounterQuote() {
+        try {
+          const response = await fetch(`/api/get-counter-quote-by-id?counterQuoteId=${encodeURIComponent(counterQuoteId)}&originalQuoteId=${encodeURIComponent(originalQuoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}`);
+          const data = await response.json();
+
+          if (data.success && data.counterQuote) {
+            const quote = data.counterQuote;
+            
+            // Populate quote details
+            document.getElementById('counterQuoteId').textContent = quote.counterQuoteId;
+            document.getElementById('originalQuoteId').textContent = quote.originalQuoteId;
+            document.getElementById('tradesmanName').textContent = quote.tradesmanName || 'Not provided';
+            document.getElementById('tradesmanEmail').textContent = quote.tradesmanEmail || 'Not provided';
+            document.getElementById('tradesmanPhone').textContent = quote.tradesmanPhone || 'Not provided';
+            document.getElementById('validUntil').textContent = quote.validUntil || 'Not specified';
+            document.getElementById('totalAmount').textContent = `$${Number(quote.counterQuoteAmount || 0).toFixed(2)}`;
+            document.getElementById('quoteStatus').textContent = quote.status || 'Pending';
+
+            // Populate breakdown
+            document.getElementById('labourRate').textContent = quote.labourRate ? `$${Number(quote.labourRate).toFixed(2)}/hour` : '-';
+            document.getElementById('labourHours').textContent = quote.labourHours ? `${quote.labourHours} hours` : '-';
+            document.getElementById('labourSubtotal').textContent = quote.labourSubtotal ? `$${Number(quote.labourSubtotal).toFixed(2)}` : '-';
+            
+            document.getElementById('materialRate').textContent = quote.materialRate ? `$${Number(quote.materialRate).toFixed(2)}/SQM` : '-';
+            document.getElementById('materialSQM').textContent = quote.materialSQM ? `${quote.materialSQM} SQM` : '-';
+            document.getElementById('materialSubtotal').textContent = quote.materialSubtotal ? `$${Number(quote.materialSubtotal).toFixed(2)}` : '-';
+            
+            document.getElementById('installationSubtotal').textContent = quote.installationSubtotal ? `$${Number(quote.installationSubtotal).toFixed(2)}` : '-';
+            document.getElementById('totalAmountTable').textContent = `$${Number(quote.counterQuoteAmount || 0).toFixed(2)}`;
+
+            // Show reason if provided
+            if (quote.reasonForCounter) {
+              document.getElementById('reasonText').textContent = quote.reasonForCounter;
+              document.getElementById('reasonBox').style.display = 'block';
+            }
+
+            // Show notes if provided
+            if (quote.notes) {
+              document.getElementById('notesText').textContent = quote.notes;
+              document.getElementById('notesSection').style.display = 'block';
+            }
+
+            // Check status and handle accordingly
+            if (quote.status === 'Accepted' || quote.status === 'Declined') {
+              status.textContent = `Counter quote has already been ${quote.status.toLowerCase()}. Decisions are final and cannot be changed.`;
+              status.className = `status-message ${quote.status === 'Declined' ? 'status-declined' : ''}`;
+              status.style.display = 'block';
+              
+              accept.classList.add('btn-disabled');
+              decline.classList.add('btn-disabled');
+              accept.onclick = null;
+              decline.onclick = null;
+              accept.href = '#';
+              decline.href = '#';
+            }
+
+            loading.style.display = 'none';
+            quoteContent.style.display = 'block';
+          } else {
+            throw new Error(data.error || 'Counter quote not found');
+          }
+        } catch (error) {
+          console.error('Error loading counter quote:', error);
+          warn.textContent = `Error loading counter quote: ${error.message}`;
+          warn.style.display = 'block';
+          loading.style.display = 'none';
+        }
+      }
+
+      // Handle decision button clicks
+      window.handleDecision = function(action) {
+        const confirmMessage = action === 'accept' 
+          ? 'Are you sure you want to accept this counter quote?' 
+          : 'Are you sure you want to decline this counter quote?';
+        
+        if (confirm(confirmMessage)) {
+          const decisionUrl = `/api/counter-quote-decision?counterQuoteId=${encodeURIComponent(counterQuoteId)}&originalQuoteId=${encodeURIComponent(originalQuoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=${action}`;
+          window.location.href = decisionUrl;
+        }
+      };
+
+      // Load counter quote on page load
+      loadCounterQuote();
+    })();
+  </script>
+</body>
+</html>

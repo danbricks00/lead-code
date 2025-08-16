@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Debug Quote Status - Kiwi Trade</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    .header {
+      background: #1e40af;
+      color: white;
+      padding: 20px;
+      margin: -20px -20px 20px -20px;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+    }
+    .form-group {
+      margin: 15px 0;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 5px;
+    }
+    .btn:hover {
+      background: #2563eb;
+    }
+    .result {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 15px;
+      margin: 15px 0;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .error {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #dc2626;
+    }
+    .success {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+      color: #16a34a;
+    }
+    .status-section {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 15px;
+      margin: 10px 0;
+    }
+    .section-title {
+      font-weight: bold;
+      color: #1e40af;
+      margin-bottom: 10px;
+    }
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 5px 0;
+      padding: 5px 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .data-label {
+      font-weight: bold;
+      color: #374151;
+    }
+    .data-value {
+      color: #6b7280;
+      text-align: right;
+    }
+    .status-pending {
+      color: #f59e0b;
+      font-weight: bold;
+    }
+    .status-accepted {
+      color: #10b981;
+      font-weight: bold;
+    }
+    .status-declined {
+      color: #ef4444;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Debug Quote Status</h1>
+      <p>Check quote status and decision finality</p>
+    </div>
+
+    <div class="form-group">
+      <label for="quoteId">Quote ID:</label>
+      <input type="text" id="quoteId" placeholder="e.g., QUOTE-1234567890-abc123">
+    </div>
+
+    <div class="form-group">
+      <label for="leadId">Lead ID (optional):</label>
+      <input type="text" id="leadId" placeholder="e.g., LEAD-1234567890-abc123">
+    </div>
+
+    <div>
+      <button class="btn" onclick="debugQuoteStatus()">Debug Quote Status</button>
+      <button class="btn" onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div id="result" class="result" style="display: none;"></div>
+
+    <div id="statusData"></div>
+  </div>
+
+  <script>
+    async function debugQuoteStatus() {
+      const quoteId = document.getElementById('quoteId').value.trim();
+      const leadId = document.getElementById('leadId').value.trim();
+      
+      if (!quoteId) {
+        alert('Please enter a Quote ID');
+        return;
+      }
+
+      const resultDiv = document.getElementById('result');
+      const statusDiv = document.getElementById('statusData');
+      
+      resultDiv.style.display = 'block';
+      resultDiv.className = 'result';
+      resultDiv.textContent = 'Debugging quote status...';
+      statusDiv.innerHTML = '';
+
+      try {
+        const params = new URLSearchParams();
+        params.append('quoteId', quoteId);
+        if (leadId) params.append('leadId', leadId);
+        
+        const response = await fetch(`/api/debug-quote-status?${params}`);
+        const data = await response.json();
+
+        if (data.success) {
+          resultDiv.className = 'result success';
+          resultDiv.textContent = JSON.stringify(data, null, 2);
+
+          // Display detailed status information
+          displayStatusInfo(data.debug);
+        } else {
+          resultDiv.className = 'result error';
+          resultDiv.textContent = JSON.stringify(data, null, 2);
+        }
+      } catch (error) {
+        resultDiv.className = 'result error';
+        resultDiv.textContent = `Error: ${error.message}`;
+      }
+    }
+
+    function displayStatusInfo(debug) {
+      const statusDiv = document.getElementById('statusData');
+      
+      // Summary
+      const summary = document.createElement('div');
+      summary.className = 'status-section';
+      summary.innerHTML = `
+        <div class="section-title">📊 Summary</div>
+        <div class="data-row">
+          <span class="data-label">Quote ID:</span>
+          <span class="data-value">${debug.quoteId}</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Lead ID:</span>
+          <span class="data-value">${debug.leadId || 'Not provided'}</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Target Sheet:</span>
+          <span class="data-value">${debug.targetSheet}</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Target Row:</span>
+          <span class="data-value">${debug.targetRow}</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Found Column:</span>
+          <span class="data-value">${debug.foundColumn}</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Status Column:</span>
+          <span class="data-value">${debug.statusColumn} (AC)</span>
+        </div>
+      `;
+      statusDiv.appendChild(summary);
+
+      // Raw Status
+      const rawStatus = document.createElement('div');
+      rawStatus.className = 'status-section';
+      const statusClass = debug.rawStatus === 'Accepted' ? 'status-accepted' : 
+                         debug.rawStatus === 'Declined' ? 'status-declined' : 'status-pending';
+      rawStatus.innerHTML = `
+        <div class="section-title">📋 Raw Status (from Google Sheets)</div>
+        <div class="data-row">
+          <span class="data-label">Status:</span>
+          <span class="data-value ${statusClass}">${debug.rawStatus}</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Is Decided:</span>
+          <span class="data-value">${debug.rawStatus === 'Accepted' || debug.rawStatus === 'Declined' ? 'Yes' : 'No'}</span>
+        </div>
+      `;
+      statusDiv.appendChild(rawStatus);
+
+      // Decision State
+      const decisionState = document.createElement('div');
+      decisionState.className = 'status-section';
+      const decisionClass = debug.decisionState.status === 'Accepted' ? 'status-accepted' : 
+                           debug.decisionState.status === 'Declined' ? 'status-declined' : 'status-pending';
+      decisionState.innerHTML = `
+        <div class="section-title">🔍 Decision State (from unified function)</div>
+        <div class="data-row">
+          <span class="data-label">Found:</span>
+          <span class="data-value">${debug.decisionState.found ? 'Yes' : 'No'}</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Status:</span>
+          <span class="data-value ${decisionClass}">${debug.decisionState.status}</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Is Decided:</span>
+          <span class="data-value">${debug.decisionState.isDecided ? 'Yes' : 'No'}</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Message:</span>
+          <span class="data-value">${debug.decisionState.message}</span>
+        </div>
+      `;
+      statusDiv.appendChild(decisionState);
+
+      // Quote Data
+      if (debug.quoteData) {
+        const quoteData = document.createElement('div');
+        quoteData.className = 'status-section';
+        const quoteStatusClass = debug.quoteData.status === 'Accepted' ? 'status-accepted' : 
+                                debug.quoteData.status === 'Declined' ? 'status-declined' : 'status-pending';
+        quoteData.innerHTML = `
+          <div class="section-title">📋 Quote Data (from unified function)</div>
+          <div class="data-row">
+            <span class="data-label">Quote ID:</span>
+            <span class="data-value">${debug.quoteData.quoteId || 'Not found'}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Lead ID:</span>
+            <span class="data-value">${debug.quoteData.leadId || 'Not found'}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Customer Name:</span>
+            <span class="data-value">${debug.quoteData.customerName || 'Not found'}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Status:</span>
+            <span class="data-value ${quoteStatusClass}">${debug.quoteData.status || 'Not found'}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Quote Amount:</span>
+            <span class="data-value">$${debug.quoteData.quoteAmount || '0.00'}</span>
+          </div>
+        `;
+        statusDiv.appendChild(quoteData);
+      }
+
+      // Full Row Data
+      const fullRow = document.createElement('div');
+      fullRow.className = 'status-section';
+      fullRow.innerHTML = `
+        <div class="section-title">📄 Full Row Data (first 10 columns)</div>
+        <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px; max-height: 200px; overflow-y: auto;">
+          ${debug.fullRow ? debug.fullRow.slice(0, 10).map((cell, index) => `${index}: ${cell || '(empty)'}`).join('\n') : 'No row data'}
+        </div>
+      `;
+      statusDiv.appendChild(fullRow);
+    }
+
+    function clearResults() {
+      document.getElementById('result').style.display = 'none';
+      document.getElementById('statusData').innerHTML = '';
+    }
+  </script>
+</body>
+</html>

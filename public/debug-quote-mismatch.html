@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Debug Quote Mismatch - Kiwi Trade</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    .header {
+      background: #1e40af;
+      color: white;
+      padding: 20px;
+      margin: -20px -20px 20px -20px;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+    }
+    .form-group {
+      margin: 15px 0;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 5px;
+    }
+    .btn:hover {
+      background: #2563eb;
+    }
+    .result {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 15px;
+      margin: 15px 0;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .error {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #dc2626;
+    }
+    .success {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+      color: #16a34a;
+    }
+    .comparison-section {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 15px;
+      margin: 10px 0;
+    }
+    .section-title {
+      font-weight: bold;
+      color: #1e40af;
+      margin-bottom: 10px;
+    }
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 5px 0;
+      padding: 5px 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .data-label {
+      font-weight: bold;
+      color: #374151;
+    }
+    .data-value {
+      color: #6b7280;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Debug Quote Mismatch</h1>
+      <p>Compare online quote view vs email attachment data</p>
+    </div>
+
+    <div class="form-group">
+      <label for="quoteId">Quote ID:</label>
+      <input type="text" id="quoteId" placeholder="e.g., QUOTE-1234567890-abc123">
+    </div>
+
+    <div class="form-group">
+      <label for="leadId">Lead ID:</label>
+      <input type="text" id="leadId" placeholder="e.g., LEAD-1234567890-abc123">
+    </div>
+
+    <div>
+      <button class="btn" onclick="debugQuoteMismatch()">Debug Quote Mismatch</button>
+      <button class="btn" onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div id="result" class="result" style="display: none;"></div>
+
+    <div id="comparisonData"></div>
+  </div>
+
+  <script>
+    async function debugQuoteMismatch() {
+      const quoteId = document.getElementById('quoteId').value.trim();
+      const leadId = document.getElementById('leadId').value.trim();
+      
+      if (!quoteId && !leadId) {
+        alert('Please enter either a Quote ID or Lead ID');
+        return;
+      }
+
+      const resultDiv = document.getElementById('result');
+      const comparisonDiv = document.getElementById('comparisonData');
+      
+      resultDiv.style.display = 'block';
+      resultDiv.className = 'result';
+      resultDiv.textContent = 'Debugging quote mismatch...';
+      comparisonDiv.innerHTML = '';
+
+      try {
+        const params = new URLSearchParams();
+        if (quoteId) params.append('quoteId', quoteId);
+        if (leadId) params.append('leadId', leadId);
+        
+        const response = await fetch(`/api/debug-quote-mismatch?${params}`);
+        const data = await response.json();
+
+        if (data.success) {
+          resultDiv.className = 'result success';
+          resultDiv.textContent = JSON.stringify(data, null, 2);
+
+          // Display detailed comparison
+          displayComparison(data.comparison);
+        } else {
+          resultDiv.className = 'result error';
+          resultDiv.textContent = JSON.stringify(data, null, 2);
+        }
+      } catch (error) {
+        resultDiv.className = 'result error';
+        resultDiv.textContent = `Error: ${error.message}`;
+      }
+    }
+
+    function displayComparison(comparison) {
+      const comparisonDiv = document.getElementById('comparisonData');
+      
+      // Summary
+      const summary = document.createElement('div');
+      summary.className = 'comparison-section';
+      summary.innerHTML = `
+        <div class="section-title">📊 Summary</div>
+        <div class="data-row">
+          <span class="data-label">Quote ID:</span>
+          <span class="data-value">${comparison.quoteId || 'Not provided'}</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Lead ID:</span>
+          <span class="data-value">${comparison.leadId || 'Not provided'}</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Data Source:</span>
+          <span class="data-value">${comparison.dataSource}</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Timestamp:</span>
+          <span class="data-value">${comparison.timestamp}</span>
+        </div>
+      `;
+      comparisonDiv.appendChild(summary);
+
+      // Quote Data
+      if (comparison.quoteData) {
+        const quoteSection = document.createElement('div');
+        quoteSection.className = 'comparison-section';
+        quoteSection.innerHTML = `
+          <div class="section-title">📋 Quote Data (from Quotes sheet)</div>
+          <div class="data-row">
+            <span class="data-label">Customer Name:</span>
+            <span class="data-value">${comparison.quoteData.customerName || 'Not provided'}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Customer Email:</span>
+            <span class="data-value">${comparison.quoteData.customerEmail || 'Not provided'}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Tradesman Name:</span>
+            <span class="data-value">${comparison.quoteData.tradesmanName || 'Not provided'}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Service Type:</span>
+            <span class="data-value">${comparison.quoteData.serviceType || 'Not provided'}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Quote Amount:</span>
+            <span class="data-value">$${comparison.quoteData.quoteAmount || '0.00'}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Materials:</span>
+            <span class="data-value">$${comparison.quoteData.materialSubtotal || '0.00'}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Labor:</span>
+            <span class="data-value">$${comparison.quoteData.labourSubtotal || '0.00'}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Installation:</span>
+            <span class="data-value">$${comparison.quoteData.installationSubtotal || '0.00'}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Valid Until:</span>
+            <span class="data-value">${comparison.quoteData.validUntil || 'Not set'}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Status:</span>
+            <span class="data-value">${comparison.quoteData.status || 'Pending'}</span>
+          </div>
+        `;
+        comparisonDiv.appendChild(quoteSection);
+      }
+
+      // Lead Data
+      if (comparison.leadData) {
+        const leadSection = document.createElement('div');
+        leadSection.className = 'comparison-section';
+        leadSection.innerHTML = `
+          <div class="section-title">📋 Lead Data (from Leads sheet)</div>
+          <div class="data-row">
+            <span class="data-label">Customer Name:</span>
+            <span class="data-value">${comparison.leadData.customerName || 'Not provided'}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Customer Email:</span>
+            <span class="data-value">${comparison.leadData.customerEmail || 'Not provided'}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Selected Service:</span>
+            <span class="data-value">${comparison.leadData.selectedService || 'Not provided'}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Project Details:</span>
+            <span class="data-value">${comparison.leadData.projectDetails || 'Not provided'}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Project Size:</span>
+            <span class="data-value">${comparison.leadData.projectSize || 'Not provided'}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Location:</span>
+            <span class="data-value">${comparison.leadData.location || 'Not provided'}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Budget:</span>
+            <span class="data-value">${comparison.leadData.budget || 'Not provided'}</span>
+          </div>
+        `;
+        comparisonDiv.appendChild(leadSection);
+      }
+
+      // Generated HTML Preview
+      const htmlSection = document.createElement('div');
+      htmlSection.className = 'comparison-section';
+      htmlSection.innerHTML = `
+        <div class="section-title">📄 Generated HTML Preview (first 500 chars)</div>
+        <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px; max-height: 200px; overflow-y: auto;">
+          ${comparison.generatedHtml}
+        </div>
+      `;
+      comparisonDiv.appendChild(htmlSection);
+    }
+
+    function clearResults() {
+      document.getElementById('result').style.display = 'none';
+      document.getElementById('comparisonData').innerHTML = '';
+    }
+  </script>
+</body>
+</html>

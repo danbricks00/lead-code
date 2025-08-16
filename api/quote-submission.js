@@ -250,6 +250,9 @@ export default async function handler(req, res) {
       console.error('❌ PDF generation error:', pdfError.message);
     }
 
+    // Extract validUntil for email templates
+    const validUntil = quoteData.validUntil;
+    
     // Send emails
     try {
       const transporter = nodemailer.createTransport({

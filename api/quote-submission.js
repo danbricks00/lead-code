@@ -273,7 +273,7 @@ export default async function handler(req, res) {
             <p><strong>Service:</strong> ${serviceType}</p>
             <p><strong>Location:</strong> ${location || 'Not specified'}</p>
             <p><strong>Quote Amount:</strong> $${coerceNumeric(quoteAmount).toFixed(2)}</p>
-            <p><strong>Valid Until:</strong> ${new Date(quoteData.validUntil).toLocaleDateString('en-GB')}</p>
+            <p><strong>Valid Until:</strong> ${new Date(validUntil).toLocaleDateString('en-GB')}</p>
           </div>
           
           <div style="background:#d1fae5;padding:15px;border-radius:6px;margin:20px 0;border-left:4px solid #10b981;">
@@ -377,7 +377,7 @@ export default async function handler(req, res) {
             <p><strong>Quote Amount:</strong> $${coerceNumeric(quoteAmount).toFixed(2)}</p>
             <p><strong>Quote ID:</strong> ${quoteId}</p>
             <p><strong>Lead ID:</strong> ${leadId}</p>
-            <p><strong>Valid Until:</strong> ${new Date(quoteData.validUntil).toLocaleDateString('en-GB')}</p>
+            <p><strong>Valid Until:</strong> ${new Date(validUntil).toLocaleDateString('en-GB')}</p>
           </div>
           
           <div style="background:#d1fae5;padding:15px;border-radius:6px;margin:20px 0;border-left:4px solid #10b981;">

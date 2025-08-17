@@ -2,6 +2,25 @@ import { google } from 'googleapis';
 import { sendEmailViaGmailAPI, validateEmail, logEmailAttempt } from './gmail-api-helper.js';
 import { generateQuoteDocument } from './word-document-generator.js';
 
+// Helper function to format timestamp in NZT
+function formatNZTTime(timestamp) {
+  try {
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-NZ', {
+      timeZone: 'Pacific/Auckland',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }) + ' NZT';
+  } catch (error) {
+    console.error('Error formatting timestamp:', error);
+    return 'Unknown time';
+  }
+}
+
 // Generate mobile-friendly HTML quote
 function generateHtmlQuote(quoteData) {
   const formatDate = (dateString) => {
@@ -545,24 +564,26 @@ export default async function handler(req, res) {
         }
       }
 
-      // 2. Send confirmation email to tradesman
-      console.log('📧 Step 1: Sending tradesman confirmation...');
-      try {
-        const tradesmanSubject = `Quote Submission Successful - ${quoteData.quoteNumber}`;
-        const tradesmanHtml = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #2c3e50;">✅ Quote Submission Successful!</h2>
-            <p>Dear ${quoteData.tradesmanName},</p>
-            <p>Your quote has been successfully submitted and is being processed.</p>
-      
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
-              <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
-              <p><strong>Customer:</strong> ${quoteData.customerName || 'Not specified'}</p>
-              <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
-              <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
-              <p><strong>Status:</strong> Submitted and being processed</p>
-            </div>
+             // 2. Send confirmation email to tradesman
+       console.log('📧 Step 1: Sending tradesman confirmation...');
+       try {
+         const currentTime = formatNZTTime(new Date());
+         const tradesmanSubject = `Quote Submission Successful - ${quoteData.quoteNumber}`;
+         const tradesmanHtml = `
+           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+             <h2 style="color: #2c3e50;">✅ Quote Submission Successful!</h2>
+             <p>Dear ${quoteData.tradesmanName},</p>
+             <p>Your quote has been successfully submitted and is being processed.</p>
+       
+             <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+               <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
+               <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+               <p><strong>Customer:</strong> ${quoteData.customerName || 'Not specified'}</p>
+               <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
+               <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
+               <p><strong>Submitted on:</strong> ${currentTime}</p>
+               <p><strong>Status:</strong> Submitted and being processed</p>
+             </div>
 
             <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <h3 style="color: #27ae60; margin-top: 0;">What happens next:</h3>
@@ -693,6 +714,7 @@ export default async function handler(req, res) {
             <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
               <h3 style="color: #27ae60; margin-top: 0;">Next Steps</h3>
               <p style="margin: 15px 0;">You can:</p>
+              <p style="margin: 10px 0; font-style: italic; color: #666;">Would you like to accept or decline the quote - one time action only</p>
               <ul style="list-style: none; padding: 0; margin: 20px 0;">
                 <li style="margin: 10px 0;">
                   <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 

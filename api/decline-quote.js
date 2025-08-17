@@ -110,9 +110,12 @@ export default async function handler(req, res) {
             const rows = response.data.values || [];
             const quoteRow = rows.find(row => row[1] === quoteId || row[2] === quoteNumber);
             
-            if (quoteRow && quoteRow[0]) {
-              acceptedTime = formatNZTTime(quoteRow[0]);
-            }
+                         if (quoteRow && quoteRow[11]) {
+               // Use the acceptance timestamp from column L (index 11)
+               acceptedTime = formatNZTTime(quoteRow[11]);
+             } else {
+               acceptedTime = formatNZTTime(new Date());
+             }
           } catch (error) {
             console.error('Error getting acceptance timestamp:', error);
           }
@@ -171,9 +174,12 @@ export default async function handler(req, res) {
             const rows = response.data.values || [];
             const quoteRow = rows.find(row => row[1] === quoteId || row[2] === quoteNumber);
             
-            if (quoteRow && quoteRow[0]) {
-              declinedTime = formatNZTTime(quoteRow[0]);
-            }
+                         if (quoteRow && quoteRow[11]) {
+               // Use the decline timestamp from column L (index 11)
+               declinedTime = formatNZTTime(quoteRow[11]);
+             } else {
+               declinedTime = formatNZTTime(new Date());
+             }
           } catch (error) {
             console.error('Error getting decline timestamp:', error);
           }
@@ -230,15 +236,16 @@ export default async function handler(req, res) {
           const rows = response.data.values || [];
           const quoteRowIndex = rows.findIndex(row => row[1] === quoteId || row[2] === quoteNumber);
           
-          if (quoteRowIndex !== -1) {
-            await sheets.spreadsheets.values.update({
-              spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-              range: `Quotes!K${quoteRowIndex + 1}`,
-              valueInputOption: 'RAW',
-              resource: { values: [['declined']] }
-            });
-            console.log('✅ Quote status updated to declined');
-          }
+                     if (quoteRowIndex !== -1) {
+             const currentTime = new Date().toISOString();
+             await sheets.spreadsheets.values.update({
+               spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+               range: `Quotes!K${quoteRowIndex + 1}:L${quoteRowIndex + 1}`,
+               valueInputOption: 'RAW',
+               resource: { values: [['declined', currentTime]] }
+             });
+             console.log('✅ Quote status updated to declined with timestamp');
+           }
         } catch (sheetsError) {
           console.error('❌ Google Sheets update error:', sheetsError.message);
         }

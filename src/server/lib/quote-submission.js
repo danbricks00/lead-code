@@ -677,13 +677,35 @@ export default async function handler(req, res) {
               </ul>
             </div>
             
-            <div style="text-align: center; margin: 30px 0;">
+            <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+              <h3 style="color: #1976d2; margin-top: 0;">📄 View Your Quote</h3>
+              <p style="margin: 15px 0;">Click below to view your detailed quote online:</p>
               <a href="${currentUrl}/api/view-quote?quoteId=${quoteData.quoteId}" 
-                 style="background: #4a90e2; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-size: 16px; font-weight: bold; margin: 10px;">
+                 style="background: #4a90e2; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-size: 16px; font-weight: bold;">
                  🌐 View Quote Online
               </a>
+            </div>
+            
+            <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+              <h3 style="color: #856404; margin-top: 0;">🤔 Would you like to accept or decline the quote?</h3>
+              <p style="margin: 15px 0; font-weight: bold;">One time action only</p>
+              <div style="margin: 20px 0;">
+                <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+                   style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-size: 16px; font-weight: bold; margin: 10px;">
+                   ✅ Accept Quote
+                </a>
+                <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+                   style="background: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-size: 16px; font-weight: bold; margin: 10px;">
+                   ❌ Decline Quote
+                </a>
+              </div>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center;">
+              <h3 style="color: #6c757d; margin-top: 0;">📧 Have Questions?</h3>
+              <p style="margin: 15px 0;">Contact us directly if you need clarification:</p>
               <a href="mailto:${quoteData.tradesmanEmail}?subject=Quote ${quoteData.quoteNumber} - Question" 
-                 style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-size: 16px; font-weight: bold; margin: 10px;">
+                 style="background: #6c757d; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-size: 16px; font-weight: bold;">
                  📧 Ask Questions
               </a>
             </div>

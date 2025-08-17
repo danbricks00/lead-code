@@ -30,13 +30,18 @@ export default async function handler(req, res) {
 
     console.log(`🔍 Quote decision received: ${action} for quote ${quoteId}, lead ${leadId}`);
 
-    // Check quote decision state using unified function (keyed by quoteId + leadId)
-    console.log('🔍 Checking quote decision state...');
-    const decisionState = await checkQuoteDecisionState(quoteId, leadId);
-    console.log('📋 Decision state result:', decisionState);
+    // Fetch quote and lead data first
+    console.log('🔍 Fetching quote data for:', quoteId);
+    const quoteData = await fetchQuoteData(quoteId);
+    console.log('📋 Quote data result:', quoteData ? 'Found' : 'Not found');
     
-    if (!decisionState.found) {
-      console.error('❌ Quote not found or does not match lead:', quoteId, leadId);
+    console.log('🔍 Fetching lead data for:', leadId);
+    const leadData = await fetchLeadData(leadId);
+    console.log('📋 Lead data result:', leadData ? 'Found' : 'Not found');
+
+    // Check if quote exists and matches lead
+    if (!quoteData) {
+      console.error('❌ Quote not found:', quoteId);
       return res.status(404).send(`
         <!doctype html>
         <html>
@@ -49,7 +54,6 @@ export default async function handler(req, res) {
             .header { text-align: center; margin-bottom: 30px; }
             .company-name { font-size: 24px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; }
             .error { background: #fee2e2; padding: 20px; border-radius: 8px; border-left: 4px solid #ef4444; }
-            .debug { background: #f3f4f6; padding: 15px; border-radius: 6px; margin-top: 20px; font-family: monospace; font-size: 12px; }
           </style>
         </head>
         <body>
@@ -62,28 +66,53 @@ export default async function handler(req, res) {
             <p><strong>Quote ID:</strong> ${quoteId}</p>
             <p><strong>Lead ID:</strong> ${leadId}</p>
             <p><strong>Action:</strong> ${action}</p>
-            <p><strong>Error:</strong> ${decisionState.message}</p>
-          </div>
-          <div class="debug">
-            <strong>Debug Information:</strong><br>
-            Quote ID: ${quoteId}<br>
-            Lead ID: ${leadId}<br>
-            Action: ${action}<br>
-            <br>
-            <a href="/debug-quote-decision.html" target="_blank">Click here to debug this issue</a>
           </div>
         </body>
         </html>
       `);
     }
 
-    // Check if a decision has already been made
-    if (decisionState.isDecided) {
-      console.log(`⚠️ Quote ${quoteId} already has a decision: ${decisionState.status}`);
+    // Verify the quote belongs to the correct lead
+    if (quoteData.leadId !== leadId) {
+      console.error('❌ Quote does not match lead:', quoteId, leadId);
+      return res.status(400).send(`
+        <!doctype html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <title>Invalid Quote</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto; line-height: 1.6; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .company-name { font-size: 24px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; }
+            .error { background: #fee2e2; padding: 20px; border-radius: 8px; border-left: 4px solid #ef4444; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="company-name">KIWI UNDERFLOOR HEATING</div>
+          </div>
+          <div class="error">
+            <h2>Invalid Quote</h2>
+            <p>The quote does not match the lead ID provided.</p>
+            <p><strong>Quote ID:</strong> ${quoteId}</p>
+            <p><strong>Lead ID:</strong> ${leadId}</p>
+            <p><strong>Quote's Lead ID:</strong> ${quoteData.leadId}</p>
+          </div>
+        </body>
+        </html>
+      `);
+    }
+
+    // Check if a decision has already been made (CRITICAL: Check current status)
+    const currentStatus = quoteData.status || 'Pending';
+    if (currentStatus === 'Accepted' || currentStatus === 'Declined') {
+      console.log(`⚠️ Quote ${quoteId} already has a decision: ${currentStatus}`);
       
-      const originalDecision = decisionState.status === 'Accepted' ? 'accept' : 'decline';
-      const title = decisionState.status === 'Accepted' ? 'Quote Already Accepted' : 'Quote Already Declined';
-      const msg = decisionState.status === 'Accepted' 
+      const originalDecision = currentStatus === 'Accepted' ? 'accept' : 'decline';
+      const title = currentStatus === 'Accepted' ? 'Quote Already Accepted' : 'Quote Already Declined';
+      const msg = currentStatus === 'Accepted' 
         ? 'This quote has already been accepted. No further action is needed.'
         : 'This quote has already been declined. No further action is needed.';
 
@@ -99,7 +128,7 @@ export default async function handler(req, res) {
             body { font-family: Arial, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto; line-height: 1.6; }
             .header { text-align: center; margin-bottom: 30px; }
             .company-name { font-size: 24px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; }
-            .message { background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #${originalDecision === 'accept' ? '#10b981' : '#ef4444'}; }
+            .message { background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #${originalDecision === 'accept' ? '10b981' : 'ef4444'}; }
             .status { text-align: center; margin-top: 20px; padding: 15px; background: #${originalDecision === 'accept' ? 'd1fae5' : 'fee2e2'}; border-radius: 6px; color: #${originalDecision === 'accept' ? '065f46' : '991b1b'}; }
             .warning { background: #fef3c7; border: 1px solid #f59e0b; color: #92400e; padding: 15px; border-radius: 6px; margin: 20px 0; }
           </style>
@@ -110,14 +139,14 @@ export default async function handler(req, res) {
           </div>
           <div class="warning">
             <strong>⚠️ Decision Already Made</strong><br>
-            This quote has already been ${decisionState.status.toLowerCase()}. Decisions are final and cannot be changed.
+            This quote has already been ${currentStatus.toLowerCase()}. Decisions are final and cannot be changed.
           </div>
           <div class="message">
             <h2>${title}</h2>
             <p>${msg}</p>
           </div>
           <div class="status">
-            <strong>Status:</strong> ${decisionState.status === 'Accepted' ? '✅ Already Accepted' : '❌ Already Declined'}
+            <strong>Status:</strong> ${currentStatus === 'Accepted' ? '✅ Already Accepted' : '❌ Already Declined'}
           </div>
           <p style="text-align: center; margin-top: 30px; color: #6b7280; font-size: 14px;">
             Thank you for using Kiwi Trade services.
@@ -128,31 +157,78 @@ export default async function handler(req, res) {
       return;
     }
 
-    // Fetch quote and lead data for email sending
-    console.log('🔍 Fetching quote data for:', quoteId);
-    const quoteData = await fetchQuoteData(quoteId);
-    console.log('📋 Quote data result:', quoteData ? 'Found' : 'Not found');
-    
-    console.log('🔍 Fetching lead data for:', leadId);
-    const leadData = await fetchLeadData(leadId);
-    console.log('📋 Lead data result:', leadData ? 'Found' : 'Not found');
+    // Use the already fetched quote and lead data
+    console.log('📋 Using fetched quote and lead data for email sending');
 
     let customerEmailSent = false;
     let tradesmanEmailSent = false;
     let adminEmailSent = false;
     let statusUpdated = false;
 
-    // Update quote status in Google Sheets using unified function
+    // CRITICAL: Update quote status FIRST to prevent race conditions
+    console.log('🔒 Updating quote status to prevent duplicate decisions...');
     try {
       const updateSuccess = await updateQuoteStatus(quoteId, action === 'accept' ? 'Accepted' : 'Declined');
       if (updateSuccess) {
         statusUpdated = true;
-        console.log('✅ Quote status updated in Google Sheets');
+        console.log('✅ Quote status updated in Google Sheets - preventing duplicate decisions');
       } else {
-        console.error('❌ Failed to update quote status');
+        console.error('❌ Failed to update quote status - aborting to prevent duplicate emails');
+        return res.status(500).send(`
+          <!doctype html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>Error</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto; line-height: 1.6; }
+              .header { text-align: center; margin-bottom: 30px; }
+              .company-name { font-size: 24px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; }
+              .error { background: #fee2e2; padding: 20px; border-radius: 8px; border-left: 4px solid #ef4444; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <div class="company-name">KIWI UNDERFLOOR HEATING</div>
+            </div>
+            <div class="error">
+              <h2>System Error</h2>
+              <p>We encountered an error while processing your decision. Please try again in a few moments.</p>
+              <p>If the problem persists, please contact support.</p>
+            </div>
+          </body>
+          </html>
+        `);
       }
     } catch (updateError) {
       console.error('❌ Failed to update quote status:', updateError.message);
+      return res.status(500).send(`
+        <!doctype html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <title>Error</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto; line-height: 1.6; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .company-name { font-size: 24px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; }
+            .error { background: #fee2e2; padding: 20px; border-radius: 8px; border-left: 4px solid #ef4444; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="company-name">KIWI UNDERFLOOR HEATING</div>
+          </div>
+          <div class="error">
+            <h2>System Error</h2>
+            <p>We encountered an error while processing your decision. Please try again in a few moments.</p>
+            <p>If the problem persists, please contact support.</p>
+          </div>
+        </body>
+        </html>
+      `);
     }
 
     // Send emails based on the decision

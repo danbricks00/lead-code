@@ -90,73 +90,42 @@ export async function fetchQuoteData(quoteId) {
       if (foundQuoteId === quoteId) {
         console.log(`✅ Found quote in row ${i + 1}, column ${foundColumnIndex} (${String.fromCharCode(65 + foundColumnIndex)})`);
         
-        // Found the quote! Now map the data with proper numeric coercion
+        // Found the quote! Now map the data using exact column indices from quote submission
+        // Based on the quote submission order: timestamp, quoteId, leadId, customerName, customerEmail, customerPhone, tradesmanName, tradesmanEmail, tradesmanPhone, serviceType, projectDetails, projectSize, location, budget, timeline, specificDetails, quoteAmount, labourRate, labourHours, labourSubtotal, materialRate, materialSQM, materialSubtotal, installationAmount, installationSubtotal, breakdown, notes, validUntil, status, onlineQuoteUrl, acceptUrl, declineUrl
         const mappedData = {
           timestamp: row[0] || '',
           quoteId: foundQuoteId,
-          leadId: '',
-          customerName: '',
-          customerEmail: '',
-          customerPhone: '',
-          tradesmanName: '',
-          tradesmanEmail: '',
-          tradesmanPhone: '',
-          serviceType: '',
-          projectDetails: '',
-          projectSize: '',
-          location: '',
-          budget: '',
-          timeline: '',
-          specificDetails: '',
-          quoteAmount: coerceNumeric(''),
-          labourRate: coerceNumeric(''),
-          labourHours: coerceNumeric(''),
-          labourSubtotal: coerceNumeric(''),
-          materialRate: coerceNumeric(''),
-          materialSQM: coerceNumeric(''),
-          materialSubtotal: coerceNumeric(''),
-          installationAmount: coerceNumeric(''),
-          installationSubtotal: coerceNumeric(''),
-          breakdown: '',
-          notes: '',
-          validUntil: '',
-          status: 'Pending',
-          onlineQuoteUrl: '',
-          acceptUrl: '',
-          declineUrl: ''
+          leadId: row[2] || '', // Column C
+          customerName: row[3] || '', // Column D
+          customerEmail: row[4] || '', // Column E
+          customerPhone: row[5] || '', // Column F
+          tradesmanName: row[6] || '', // Column G
+          tradesmanEmail: row[7] || '', // Column H
+          tradesmanPhone: row[8] || '', // Column I
+          serviceType: row[9] || '', // Column J
+          projectDetails: row[10] || '', // Column K
+          projectSize: row[11] || '', // Column L
+          location: row[12] || '', // Column M
+          budget: coerceNumeric(row[13]), // Column N
+          timeline: row[14] || '', // Column O
+          specificDetails: row[15] || '', // Column P
+          quoteAmount: coerceNumeric(row[16]), // Column Q
+          labourRate: coerceNumeric(row[17]), // Column R
+          labourHours: coerceNumeric(row[18]), // Column S
+          labourSubtotal: coerceNumeric(row[19]), // Column T
+          materialRate: coerceNumeric(row[20]), // Column U
+          materialSQM: coerceNumeric(row[21]), // Column V
+          materialSubtotal: coerceNumeric(row[22]), // Column W
+          installationAmount: coerceNumeric(row[23]), // Column X
+          installationSubtotal: coerceNumeric(row[24]), // Column Y
+          breakdown: row[25] || '', // Column Z
+          notes: row[26] || '', // Column AA
+          validUntil: row[27] || '', // Column AB
+          status: row[28] || 'Pending', // Column AC
+          onlineQuoteUrl: row[29] || '', // Column AD
+          acceptUrl: row[30] || '', // Column AE
+          declineUrl: row[31] || '' // Column AF
         };
-        
-        // Try to find leadId in the same row (usually next to quoteId)
-        for (let colIndex = 0; colIndex < row.length; colIndex++) {
-          const cellValue = row[colIndex];
-          if (cellValue && cellValue.startsWith('LEAD-')) {
-            mappedData.leadId = cellValue;
-            break;
-          }
-        }
-        
-        // Try to find other key data in the row with proper type handling
-        for (let colIndex = 0; colIndex < row.length; colIndex++) {
-          const cellValue = row[colIndex];
-          if (cellValue) {
-            // Look for email patterns
-            if (cellValue.includes('@') && !mappedData.customerEmail) {
-              mappedData.customerEmail = cellValue;
-            }
-            // Look for phone patterns (must be exactly 7-15 digits, not a large number)
-            else if (cellValue.match(/^\d{7,15}$/) && !mappedData.customerPhone && coerceNumeric(cellValue) < 1000000000) {
-              mappedData.customerPhone = cellValue;
-            }
-            // Look for amount patterns (numeric fields with decimal places, or reasonable amounts)
-            else if (cellValue.match(/^\d+(\.\d{2})?$/) && !mappedData.quoteAmount && coerceNumeric(cellValue) > 0 && coerceNumeric(cellValue) < 1000000) {
-              mappedData.quoteAmount = coerceNumeric(cellValue);
-            }
-            // Look for names (no special characters, reasonable length)
-            else if (cellValue.match(/^[A-Za-z\s]+$/) && cellValue.length > 2 && cellValue.length < 50 && !mappedData.customerName) {
-              mappedData.customerName = cellValue;
-            }
-          }
-        }
         
         console.log(`📋 Mapped quote data:`, {
           quoteId: mappedData.quoteId,

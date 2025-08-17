@@ -212,6 +212,18 @@
       : 'Are you sure you want to decline this quote?';
     
     if (confirm(confirmMessage)) {
+      // Immediately disable both buttons to prevent multiple clicks
+      accept.classList.add('btn-disabled');
+      decline.classList.add('btn-disabled');
+      accept.onclick = null;
+      decline.onclick = null;
+      accept.href = '#';
+      decline.href = '#';
+      
+      // Show loading message
+      status.textContent = 'Processing your decision...';
+      status.style.display = 'block';
+      
       const decisionUrl = `/api/quote-decision?quoteId=${encodeURIComponent(quoteId || leadId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&action=${action}`;
       window.location.href = decisionUrl;
     }

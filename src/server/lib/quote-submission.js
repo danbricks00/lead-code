@@ -402,18 +402,24 @@ export default async function handler(req, res) {
           });
 
           const rows = response.data.values || [];
+          console.log('🔍 Checking for existing quotes. Looking for:', { leadId: quoteData.leadId, tradesmanEmail: quoteData.tradesmanEmail });
+          console.log('📊 Total rows in Quotes sheet:', rows.length);
+          
           const existingQuote = rows.find(row => 
-            row[1] === quoteData.leadId && // leadId column
-            row[4] === quoteData.tradesmanEmail // tradesmanEmail column
+            row[1] === quoteData.leadId && // leadId column (B)
+            row[4] === quoteData.tradesmanEmail // tradesmanEmail column (E)
           );
 
           if (existingQuote) {
             console.log('❌ Tradesman already submitted quote for this lead');
+            console.log('❌ Existing quote found:', existingQuote);
             return res.status(400).json({
               success: false,
               error: 'You have already submitted a quote for this lead. Only one quote per tradesman per lead is allowed.'
             });
           }
+          
+          console.log('✅ No existing quote found - proceeding with submission');
         } catch (sheetsError) {
           console.error('❌ Google Sheets error checking existing quotes:', sheetsError.message);
           // Continue with submission if we can't check (fail open for reliability)
@@ -736,37 +742,28 @@ export default async function handler(req, res) {
               </ul>
             </div>
             
-            <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
-              <h3 style="color: #27ae60; margin-top: 0;">Next Steps</h3>
-              <p style="margin: 15px 0;">You can:</p>
-              <ul style="list-style: none; padding: 0; margin: 20px 0;">
-                <li style="margin: 10px 0;">
-                  <a href="${currentUrl}/api/view-quote?quoteId=${quoteData.quoteId}" 
-                     style="color: #6f42c1; text-decoration: underline; font-weight: bold;">
-                     View your quote online
-                  </a>
-                </li>
-              </ul>
+            <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+              <h3 style="color: #1976d2; margin-top: 0;">📄 View Your Quote</h3>
+              <p style="margin: 15px 0;">Click below to view your detailed quote online:</p>
+                             <a href="${currentUrl}/api/view-quote?quoteId=${quoteData.quoteId}" 
+                  style="color: #6f42c1; text-decoration: underline; font-weight: bold; font-size: 16px;">
+                  🌐 View quote online
+               </a>
             </div>
             
-            <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
-              <h3 style="color: #27ae60; margin-top: 0;">Next Steps</h3>
-              <p style="margin: 15px 0;">You can:</p>
-              <p style="margin: 10px 0; font-style: italic; color: #666;">Would you like to accept or decline the quote - one time action only</p>
-              <ul style="list-style: none; padding: 0; margin: 20px 0;">
-                <li style="margin: 10px 0;">
-                  <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
-                     style="color: #28a745; text-decoration: underline; font-weight: bold;">
-                     Accept this quote
-                  </a>
-                </li>
-                <li style="margin: 10px 0;">
-                  <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
-                     style="color: #dc3545; text-decoration: underline; font-weight: bold;">
-                     Decline this quote
-                  </a>
-                </li>
-              </ul>
+            <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+              <h3 style="color: #856404; margin-top: 0;">🤔 Would you like to accept or decline the quote?</h3>
+              <p style="margin: 10px 0; font-style: italic; color: #666;">One time action only</p>
+              <div style="margin: 20px 0;">
+                                 <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+                    style="color: #28a745; text-decoration: underline; font-weight: bold; font-size: 16px; margin-right: 20px;">
+                    ✅ Accept quote
+                 </a>
+                 <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+                    style="color: #dc3545; text-decoration: underline; font-weight: bold; font-size: 16px;">
+                    ❌ Decline quote
+                 </a>
+              </div>
             </div>
             
             <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0;">

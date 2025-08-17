@@ -113,6 +113,7 @@
     <form id="quoteForm">
         <!-- Hidden fields for lead data -->
         <input type="hidden" id="leadId" name="leadId">
+        <input type="hidden" id="quoteId" name="quoteId">
         <input type="hidden" id="token" name="token">
         <input type="hidden" id="customerName" name="customerName">
         <input type="hidden" id="customerEmail" name="customerEmail">
@@ -343,6 +344,10 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 DOM loaded, initializing quote form...');
             
+            // Generate unique quote ID
+            const quoteId = 'QUOTE-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            document.getElementById('quoteId').value = quoteId;
+            
             // Set default quote number
             document.getElementById('quoteNumber').value = 'QU' + Date.now();
             
@@ -492,11 +497,13 @@
                  return;
              }
              
-             try {
-                 console.log('📤 Submitting quote data:', data);
-                 console.log('📧 Tradesman Email:', data.tradesmanEmail);
-                 console.log('📞 Tradesman Phone:', data.tradesmanPhone);
-                 console.log('💰 Total Amount:', data.totalAmount);
+                           try {
+                  console.log('📤 Submitting quote data:', data);
+                  console.log('📧 Tradesman Email:', data.tradesmanEmail);
+                  console.log('📞 Tradesman Phone:', data.tradesmanPhone);
+                  console.log('💰 Total Amount:', data.totalAmount);
+                  console.log('🔢 Quote ID:', data.quoteId);
+                  console.log('📋 Lead ID:', data.leadId);
                  
                  const response = await fetch('/api/quote-submission', {
                      method: 'POST',

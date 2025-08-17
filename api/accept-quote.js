@@ -3,7 +3,24 @@ import { google } from 'googleapis';
 // Helper function to format timestamp in NZT
 function formatNZTTime(timestamp) {
   try {
-    const date = new Date(timestamp);
+    // Handle different timestamp formats
+    let date;
+    if (typeof timestamp === 'string') {
+      // If it's already a formatted string, try to parse it
+      if (timestamp.includes('NZT')) {
+        return timestamp; // Already formatted
+      }
+      date = new Date(timestamp);
+    } else {
+      date = new Date(timestamp);
+    }
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      console.error('Invalid timestamp:', timestamp);
+      return 'Unknown time';
+    }
+    
     return date.toLocaleString('en-NZ', {
       timeZone: 'Pacific/Auckland',
       day: '2-digit',
@@ -14,7 +31,7 @@ function formatNZTTime(timestamp) {
       hour12: false
     }) + ' NZT';
   } catch (error) {
-    console.error('Error formatting timestamp:', error);
+    console.error('Error formatting timestamp:', error, 'Original timestamp:', timestamp);
     return 'Unknown time';
   }
 }
@@ -110,12 +127,15 @@ export default async function handler(req, res) {
             const rows = response.data.values || [];
             const quoteRow = rows.find(row => row[1] === quoteId || row[2] === quoteNumber);
             
-                         if (quoteRow && quoteRow[11]) {
-               // Use the acceptance timestamp from column L (index 11)
-               acceptedTime = formatNZTTime(quoteRow[11]);
-             } else {
-               acceptedTime = formatNZTTime(new Date());
-             }
+                                     if (quoteRow && quoteRow[11]) {
+              // Use the acceptance timestamp from column L (index 11)
+              // Ensure we're parsing the timestamp correctly
+              const timestamp = quoteRow[11];
+              console.log('📅 Retrieved acceptance timestamp:', timestamp);
+              acceptedTime = formatNZTTime(timestamp);
+            } else {
+              acceptedTime = formatNZTTime(new Date());
+            }
           } catch (error) {
             console.error('Error getting acceptance timestamp:', error);
           }
@@ -176,7 +196,10 @@ export default async function handler(req, res) {
             
                          if (quoteRow && quoteRow[11]) {
                // Use the decline timestamp from column L (index 11)
-               declinedTime = formatNZTTime(quoteRow[11]);
+               // Ensure we're parsing the timestamp correctly
+               const timestamp = quoteRow[11];
+               console.log('📅 Retrieved decline timestamp:', timestamp);
+               declinedTime = formatNZTTime(timestamp);
              } else {
                declinedTime = formatNZTTime(new Date());
              }

@@ -66,11 +66,12 @@ export default async function handler(req, res) {
 
         const rows = response.data.values || [];
         const existingQuote = rows.find(row => 
-          row[1] === leadId && // leadId column
-          row[4] === tradesmanEmail // tradesmanEmail column
+          row[1] === leadId && // leadId column (B)
+          row[4] === tradesmanEmail // tradesmanEmail column (E)
         );
 
         if (existingQuote) {
+          console.log('❌ Duplicate quote detected:', { leadId, tradesmanEmail, existingQuote });
           return res.status(400).json({
             error: 'You have already submitted a quote for this lead. Only one quote per tradesman per lead is allowed.'
           });
@@ -86,8 +87,8 @@ export default async function handler(req, res) {
     let adminEmailSent = false;
     let sheetsUpdated = false;
 
-    // Generate PDF and prepare links
-    const quoteId = `QUOTE-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // Use quoteId from form or generate new one
+    const quoteId = req.body.quoteId || `QUOTE-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const token = req.body.token || req.body.hmac || '';
 
     // Build PDF buffer for attachment

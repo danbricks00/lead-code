@@ -1,5 +1,24 @@
 import { google } from 'googleapis';
 
+// Helper function to format timestamp in NZT
+function formatNZTTime(timestamp) {
+  try {
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-NZ', {
+      timeZone: 'Pacific/Auckland',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }) + ' NZT';
+  } catch (error) {
+    console.error('Error formatting timestamp:', error);
+    return 'Unknown time';
+  }
+}
+
 export default async function handler(req, res) {
   console.log('❌ Decline Quote API called:', req.method, req.url);
   
@@ -69,6 +88,36 @@ export default async function handler(req, res) {
 
       // 2. Check if quote was already processed
       if (currentStatus === 'accepted') {
+        // Get the timestamp when the quote was accepted
+        let acceptedTime = 'Unknown time';
+        if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {
+          try {
+            const auth = new google.auth.GoogleAuth({
+              credentials: {
+                client_email: process.env.GOOGLE_CLIENT_EMAIL,
+                private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+              },
+              scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+            });
+
+            const sheets = google.sheets({ version: 'v4', auth });
+            
+            const response = await sheets.spreadsheets.values.get({
+              spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+              range: 'Quotes!A:T',
+            });
+
+            const rows = response.data.values || [];
+            const quoteRow = rows.find(row => row[1] === quoteId || row[2] === quoteNumber);
+            
+            if (quoteRow && quoteRow[0]) {
+              acceptedTime = formatNZTTime(quoteRow[0]);
+            }
+          } catch (error) {
+            console.error('Error getting acceptance timestamp:', error);
+          }
+        }
+
         const alreadyAcceptedHtml = `
           <!DOCTYPE html>
           <html>
@@ -85,7 +134,8 @@ export default async function handler(req, res) {
               <div class="info">
                   <h1>📋 Quote Already Accepted</h1>
                   <p><strong>Quote Number:</strong> ${quoteNumber}</p>
-                  <p>This quote has already been accepted. We're processing your request and will be in touch soon.</p>
+                  <p>This quote has already been accepted on ${acceptedTime}.</p>
+                  <p>We're processing your request and will be in touch soon.</p>
                   <p>If you have any questions, please contact us directly.</p>
               </div>
               
@@ -99,6 +149,36 @@ export default async function handler(req, res) {
       }
 
       if (currentStatus === 'declined') {
+        // Get the timestamp when the quote was declined
+        let declinedTime = 'Unknown time';
+        if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {
+          try {
+            const auth = new google.auth.GoogleAuth({
+              credentials: {
+                client_email: process.env.GOOGLE_CLIENT_EMAIL,
+                private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+              },
+              scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+            });
+
+            const sheets = google.sheets({ version: 'v4', auth });
+            
+            const response = await sheets.spreadsheets.values.get({
+              spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+              range: 'Quotes!A:T',
+            });
+
+            const rows = response.data.values || [];
+            const quoteRow = rows.find(row => row[1] === quoteId || row[2] === quoteNumber);
+            
+            if (quoteRow && quoteRow[0]) {
+              declinedTime = formatNZTTime(quoteRow[0]);
+            }
+          } catch (error) {
+            console.error('Error getting decline timestamp:', error);
+          }
+        }
+
         const alreadyDeclinedHtml = `
           <!DOCTYPE html>
           <html>
@@ -115,7 +195,8 @@ export default async function handler(req, res) {
               <div class="info">
                   <h1>📋 Quote Already Declined</h1>
                   <p><strong>Quote Number:</strong> ${quoteNumber}</p>
-                  <p>This quote has already been declined. If you'd like to discuss alternative options, please contact us directly.</p>
+                  <p>This quote has already been declined on ${declinedTime}.</p>
+                  <p>If you'd like to discuss alternative options, please contact us directly.</p>
               </div>
               
               <a href="https://lead-code.vercel.app/" class="button">Back to Home</a>
@@ -218,6 +299,7 @@ export default async function handler(req, res) {
       }
 
       // 5. Return decline confirmation page
+      const currentTime = formatNZTTime(new Date());
       const html = `
         <!DOCTYPE html>
         <html>
@@ -235,6 +317,7 @@ export default async function handler(req, res) {
             <div class="decline">
                 <h1>❌ Quote Declined</h1>
                 <p><strong>Quote Number:</strong> ${quoteNumber}</p>
+                <p><strong>Declined on:</strong> ${currentTime}</p>
                 <p>Thank you for your response. We understand that this quote didn't meet your requirements.</p>
             </div>
             

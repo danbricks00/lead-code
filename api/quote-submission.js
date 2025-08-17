@@ -45,6 +45,42 @@ export default async function handler(req, res) {
       });
     }
 
+    // Check if this tradesman has already submitted a quote for this lead
+    if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {
+      try {
+        const auth = new google.auth.GoogleAuth({
+          credentials: {
+            client_email: process.env.GOOGLE_CLIENT_EMAIL,
+            private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+          },
+          scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+        });
+
+        const sheets = google.sheets({ version: 'v4', auth });
+        
+        // Check the Quotes sheet for existing quotes from this tradesman for this lead
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+          range: 'Quotes!A:T',
+        });
+
+        const rows = response.data.values || [];
+        const existingQuote = rows.find(row => 
+          row[1] === leadId && // leadId column
+          row[4] === tradesmanEmail // tradesmanEmail column
+        );
+
+        if (existingQuote) {
+          return res.status(400).json({
+            error: 'You have already submitted a quote for this lead. Only one quote per tradesman per lead is allowed.'
+          });
+        }
+      } catch (sheetsError) {
+        console.error('❌ Google Sheets error checking existing quotes:', sheetsError.message);
+        // Continue with submission if we can't check (fail open for reliability)
+      }
+    }
+
     let customerEmailSent = false;
     let tradesmanEmailSent = false;
     let adminEmailSent = false;

@@ -225,18 +225,8 @@
             <textarea id="additionalNotes" name="additionalNotes" rows="4"></textarea>
         </div>
 
-        <button type="button" id="downloadPdf">Download PDF</button>
         <button type="submit">Submit Quote</button>
     </form>
-    
-    <!-- Debug section -->
-    <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px; border: 1px solid #dee2e6;">
-        <h4>Debug Information</h4>
-        <button type="button" id="testCalcBtn" style="background: #28a745; margin-right: 10px;">Test Calculation</button>
-        <button type="button" id="manualCalcBtn" style="background: #ffc107; margin-right: 10px;">Manual Calculate</button>
-        <button type="button" id="checkElementsBtn" style="background: #17a2b8;">Check Elements</button>
-        <div id="debugOutput" style="margin-top: 10px; font-family: monospace; font-size: 12px;"></div>
-    </div>
 
     <script>
         // Function to calculate subtotals and total
@@ -342,91 +332,12 @@
                 }
             });
             
-            // Add debug button listeners
-            const testCalcBtn = document.getElementById('testCalcBtn');
-            const manualCalcBtn = document.getElementById('manualCalcBtn');
-            const checkElementsBtn = document.getElementById('checkElementsBtn');
-            
-            if (testCalcBtn) {
-                testCalcBtn.addEventListener('click', testCalculation);
-            }
-            
-            if (manualCalcBtn) {
-                manualCalcBtn.addEventListener('click', calculateTotals);
-            }
-            
-                         if (checkElementsBtn) {
-                 checkElementsBtn.addEventListener('click', function() {
-                     console.log('Form elements:', document.getElementById('labourRate'), document.getElementById('labourSubtotal'));
-                 });
-             }
+
              
-             // Wire the PDF button
-             const downloadPdfBtn = document.getElementById('downloadPdf');
-             if (downloadPdfBtn) {
-                 downloadPdfBtn.addEventListener('click', async () => {
-                     try {
-                         const leadId = document.getElementById('leadId')?.value || '';
-                         const token = document.getElementById('token')?.value || '';
-                         if (!leadId || !token) {
-                             alert('Missing leadId or token for PDF generation.');
-                             return;
-                         }
-                         // If the server composes the PDF from saved Sheets, we just send leadId+token.
-                         const res = await fetch(`/api/quote-pdf?leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&download=1`, {
-                             method: 'POST',
-                             headers: { 'Content-Type': 'application/json' }
-                         });
-                         if (!res.ok) throw new Error('PDF generation failed');
-                         const blob = await res.blob();
-                         const url = URL.createObjectURL(blob);
-                         const a = document.createElement('a');
-                         a.href = url;
-                         a.download = `quote-${leadId}.pdf`;
-                         a.click();
-                         URL.revokeObjectURL(url);
-                     } catch (e) {
-                         console.error(e);
-                         alert('Failed to generate PDF.');
-                     }
-                 });
-             }
+
         }
         
-        // Test function for debugging
-        function testCalculation() {
-            console.log('🧪 Testing calculation...');
-            const debugOutput = document.getElementById('debugOutput');
-            
-            // Test if elements exist
-            const elements = ['labourRate', 'labourHours', 'materialRate', 'materialSQM', 'installationAmount', 'labourSubtotal', 'materialSubtotal', 'installationSubtotal', 'totalAmount'];
-            const elementStatus = {};
-            
-            elements.forEach(id => {
-                const element = document.getElementById(id);
-                elementStatus[id] = element ? 'Found' : 'Missing';
-                if (element) {
-                    elementStatus[id] += ' (value: ' + element.value + ')';
-                }
-            });
-            
-            debugOutput.innerHTML = '<strong>Element Status:</strong><br>' + 
-                Object.entries(elementStatus).map(([id, status]) => id + ': ' + status).join('<br>');
-            
-            // Test calculation
-            calculateTotals();
-            
-            setTimeout(() => {
-                const finalStatus = {};
-                elements.forEach(id => {
-                    const element = document.getElementById(id);
-                    finalStatus[id] = element ? 'Found (value: ' + element.value + ')' : 'Missing';
-                });
-                
-                debugOutput.innerHTML += '<br><br><strong>After Calculation:</strong><br>' + 
-                    Object.entries(finalStatus).map(([id, status]) => id + ': ' + status).join('<br>');
-            }, 500);
-        }
+
         
         // Initialize when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {

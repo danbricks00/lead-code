@@ -8,6 +8,9 @@ import { fetchQuoteData, fetchLeadData } from './quote-utils.js';
 const DECISIONS_TAB = process.env.SHEETS_DECISIONS_TAB || 'QuoteDecisions';
 const DEBUG = process.env.EMAIL_DEBUG === '1';
 
+// Scope control: 'lead' = any decision for the lead locks all counter quotes; 'quote' = only this quoteId
+const SCOPE = (process.env.SHEETS_DECISION_SCOPE || 'lead').toLowerCase(); // 'lead' or 'quote'
+
 // Header we expect in the decisions sheet
 const HEADER = ['timestamp', 'quoteId', 'leadId', 'status', 'decidedBy'];
 
@@ -36,8 +39,16 @@ async function findExistingDecision({ quoteId, leadId }) {
     const rows = await getRange({ range: `${DECISIONS_TAB}!A:E` });
     for (let i = 0; i < rows.length; i++) {
       const [ts, qid, lid, status] = rows[i];
-      if (qid === quoteId && lid === leadId && (status === 'ACCEPTED' || status === 'DECLINED')) {
-        return { decided: true, status, timestamp: ts };
+      if (status !== 'ACCEPTED' && status !== 'DECLINED') continue;
+
+      // Scope=lead: any prior decision for this lead locks all counter quotes
+      if (SCOPE === 'lead' && lid === leadId) {
+        return { decided: true, status, timestamp: ts, scope: 'lead' };
+      }
+
+      // Scope=quote: decision applies only to this quoteId+leadId pair
+      if (SCOPE !== 'lead' && qid === quoteId && lid === leadId) {
+        return { decided: true, status, timestamp: ts, scope: 'quote' };
       }
     }
   } catch (e) {
@@ -262,7 +273,7 @@ export default async function handler(req, res) {
     if (existing.decided) {
       const page = htmlPage(
         'Decision Already Recorded',
-        `We have already recorded your decision for this quote (<strong>${existing.status}</strong>) on ${existing.timestamp || 'a previous visit'}.`
+        `We have already recorded your decision for this ${SCOPE === 'lead' ? 'lead' : 'quote'} (<strong>${existing.status}</strong>) on ${existing.timestamp || 'a previous visit'}.`
       );
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       return res.status(200).send(page);

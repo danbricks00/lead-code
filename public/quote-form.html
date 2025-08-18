@@ -78,12 +78,30 @@
             font-weight: 600;
         }
         
-        .calculating {
-            background-color: #fff3cd !important;
-            border-color: #ffc107 !important;
-        }
-        
-        @media (max-width: 768px) {
+                 .calculating {
+             background-color: #fff3cd !important;
+             border-color: #ffc107 !important;
+         }
+         
+         /* Validation styles */
+         .valid {
+             border-color: #28a745 !important;
+             background-color: #f8fff9 !important;
+         }
+         
+         .invalid {
+             border-color: #dc3545 !important;
+             background-color: #fff8f8 !important;
+         }
+         
+         .error-message {
+             color: #dc3545;
+             font-size: 12px;
+             margin-top: 5px;
+             display: none;
+         }
+         
+         @media (max-width: 768px) {
             .breakdown-row {
                 flex-direction: column;
                 gap: 10px;
@@ -138,15 +156,17 @@
             <input type="text" id="tradesmanName" name="tradesmanName" required>
         </div>
         
-        <div class="form-group">
-            <label for="tradesmanPhone">Your Phone:</label>
-            <input type="tel" id="tradesmanPhone" name="tradesmanPhone">
-        </div>
+                 <div class="form-group">
+             <label for="tradesmanPhone">Your Phone:</label>
+             <input type="tel" id="tradesmanPhone" name="tradesmanPhone">
+             <div id="tradesmanPhoneError" class="error-message"></div>
+         </div>
 
-        <div class="form-group">
-            <label for="tradesmanEmail">Your Email:</label>
-            <input type="email" id="tradesmanEmail" name="tradesmanEmail" required>
-        </div>
+                 <div class="form-group">
+             <label for="tradesmanEmail">Your Email:</label>
+             <input type="email" id="tradesmanEmail" name="tradesmanEmail" required>
+             <div id="tradesmanEmailError" class="error-message"></div>
+         </div>
 
         <div class="form-group">
             <label for="quoteNumber">Quote Number:</label>
@@ -237,6 +257,79 @@
     </form>
 
     <script>
+        // Import validation functions
+        import { validateInput, getInvalidMessage, validateTradespersonDetails, validateCustomerDetails, validateQuoteDetails } from './utils/validateInput.js';
+        
+        // Real-time validation functions
+        function validateField(field, type) {
+            const value = field.value;
+            const isValid = validateInput(type, value);
+            
+            // Remove existing validation classes
+            field.classList.remove('valid', 'invalid');
+            
+            // Add validation class
+            if (isValid) {
+                field.classList.add('valid');
+                field.classList.remove('invalid');
+            } else {
+                field.classList.add('invalid');
+                field.classList.remove('valid');
+            }
+            
+            // Show/hide error message
+            const errorElement = document.getElementById(field.id + 'Error');
+            if (errorElement) {
+                if (!isValid && value) {
+                    errorElement.textContent = getInvalidMessage(type);
+                    errorElement.style.display = 'block';
+                } else {
+                    errorElement.style.display = 'none';
+                }
+            }
+            
+            return isValid;
+        }
+        
+        // Add validation event listeners
+        function addValidationListeners() {
+            // Tradesperson email validation
+            const tradesmanEmail = document.getElementById('tradesmanEmail');
+            if (tradesmanEmail) {
+                tradesmanEmail.addEventListener('blur', () => validateField(tradesmanEmail, 'email'));
+                tradesmanEmail.addEventListener('input', () => {
+                    if (tradesmanEmail.classList.contains('invalid')) {
+                        validateField(tradesmanEmail, 'email');
+                    }
+                });
+            }
+            
+            // Tradesperson phone validation
+            const tradesmanPhone = document.getElementById('tradesmanPhone');
+            if (tradesmanPhone) {
+                tradesmanPhone.addEventListener('blur', () => validateField(tradesmanPhone, 'phone'));
+                tradesmanPhone.addEventListener('input', () => {
+                    if (tradesmanPhone.classList.contains('invalid')) {
+                        validateField(tradesmanPhone, 'phone');
+                    }
+                });
+            }
+            
+            // Numeric field validation
+            const numericFields = ['labourRate', 'labourHours', 'materialRate', 'materialSQM', 'installationAmount'];
+            numericFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.addEventListener('blur', () => validateField(field, 'numeric'));
+                    field.addEventListener('input', () => {
+                        if (field.classList.contains('invalid')) {
+                            validateField(field, 'numeric');
+                        }
+                    });
+                }
+            });
+        }
+        
         // Function to calculate subtotals and total
         function calculateTotals() {
             console.log('🔄 Calculating totals...');
@@ -396,8 +489,9 @@
                 document.getElementById('tradesmanEmail').value = tradesmanEmail;
             }
             
-            addEventListeners();
-            calculateTotals(); // Initial calculation
+                         addEventListeners();
+             addValidationListeners(); // Add validation listeners
+             calculateTotals(); // Initial calculation
         });
         
         // Function to load lead data from API
@@ -461,7 +555,7 @@
                 const response = await fetch(`/api/check-existing-quote?leadId=${encodeURIComponent(leadId)}&tradesmanEmail=${encodeURIComponent(tradesmanEmail)}`);
                 const data = await response.json();
                 
-                if (data.success && data.exists) {
+                if (data.success && data.exists && !data.canResubmit) {
                     console.log('❌ BLOCKED: Tradesman already submitted quote for this lead');
                     
                     // Hide the entire form
@@ -485,6 +579,8 @@
                                 <p><strong>Total Amount:</strong> $${quote.totalAmount || 'N/A'}</p>
                                 <p><strong>Status:</strong> ${quote.status || 'submitted'}</p>
                                 <p><strong>Submitted:</strong> ${quote.timestamp ? new Date(quote.timestamp).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }) : 'N/A'}</p>
+                                ${quote.declineReason ? `<p><strong>Decline Reason:</strong> ${quote.declineReason}</p>` : ''}
+                                ${quote.resubmissionUsed ? `<p><strong>Resubmission Used:</strong> Yes</p>` : ''}
                             </div>
                             <p style="margin-top: 20px;">If you need to modify your existing quote, please contact support.</p>
                             <a href="https://lead-code.vercel.app/" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 15px;">Back to Home</a>
@@ -499,6 +595,29 @@
                     document.title = 'Quote Already Submitted - Access Denied';
                     
                     return true; // Quote exists - form is blocked
+                } else if (data.success && data.canResubmit) {
+                    console.log('✅ RESUBMISSION: Allowed to resubmit quote');
+                    
+                    // Show resubmission notice
+                    const resubmissionNotice = document.createElement('div');
+                    resubmissionNotice.id = 'resubmissionNotice';
+                    resubmissionNotice.innerHTML = `
+                        <div style="background: #d1fae5; color: #065f46; padding: 20px; border-radius: 12px; margin: 20px 0; border: 2px solid #10b981; text-align: center;">
+                            <h2 style="color: #065f46; margin-bottom: 15px;">🔄 Quote Resubmission</h2>
+                            <p style="font-size: 16px; margin-bottom: 15px;"><strong>Your previous quote was declined.</strong></p>
+                            <p style="margin-bottom: 15px;">You are allowed to resubmit one corrected quote for this lead.</p>
+                            <div style="background: #fff; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #10b981;">
+                                <p><strong>Previous Decline Reason:</strong> ${data.declineReason}</p>
+                                <p><strong>Please ensure your new quote addresses this issue.</strong></p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Insert the resubmission notice at the top of the page
+                    const body = document.querySelector('body');
+                    body.insertBefore(resubmissionNotice, body.firstChild);
+                    
+                    return false; // Allow form to proceed
                 } else {
                     console.log('✅ CLEAR: No existing quote found - form can proceed');
                     return false; // No quote exists - form can proceed

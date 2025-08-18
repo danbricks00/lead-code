@@ -56,32 +56,74 @@ export default async function handler(req, res) {
         console.log('🔍 Checking for duplicate quotes. Total rows:', rows.length);
         console.log('🔍 Looking for:', { leadId, tradesmanEmail });
         
-        const existingQuote = rows.find(row => 
+        const existingQuotes = rows.filter(row => 
           row[1] === leadId && // leadId column (B)
           row[4] === tradesmanEmail // tradesmanEmail column (E)
         );
 
-        if (existingQuote) {
-          console.log('❌ Duplicate quote found:', { leadId, tradesmanEmail });
-          return res.json({
-            success: true,
-            exists: true,
-            quote: {
-              quoteId: existingQuote[1],
-              quoteNumber: existingQuote[2],
-              tradesmanName: existingQuote[3],
-              tradesmanEmail: existingQuote[4],
-              totalAmount: existingQuote[6],
-              status: existingQuote[10] || 'submitted',
-              timestamp: existingQuote[0]
+        if (existingQuotes.length > 0) {
+          // Check if any existing quote allows resubmission
+          const declinedQuote = existingQuotes.find(row => row[10] === 'declined'); // status column (K)
+          
+          if (declinedQuote) {
+            const declineReason = declinedQuote[11]; // decline reason column (L)
+            const resubmissionUsed = declinedQuote[14]; // resubmission_used column (O)
+            
+            // Check if resubmission is allowed
+            if ((declineReason === 'pricing_error' || declineReason === 'missing_details') && resubmissionUsed !== 'TRUE') {
+              console.log('✅ Resubmission allowed for declined quote:', { leadId, tradesmanEmail, declineReason });
+              return res.json({
+                success: true,
+                exists: false,
+                quote: null,
+                canResubmit: true,
+                declineReason: declineReason
+              });
+            } else {
+              console.log('❌ Resubmission not allowed:', { leadId, tradesmanEmail, declineReason, resubmissionUsed });
+              return res.json({
+                success: true,
+                exists: true,
+                quote: {
+                  quoteId: declinedQuote[1],
+                  quoteNumber: declinedQuote[2],
+                  tradesmanName: declinedQuote[3],
+                  tradesmanEmail: declinedQuote[4],
+                  totalAmount: declinedQuote[6],
+                  status: declinedQuote[10] || 'declined',
+                  timestamp: declinedQuote[0],
+                  declineReason: declineReason,
+                  resubmissionUsed: resubmissionUsed === 'TRUE'
+                },
+                canResubmit: false
+              });
             }
-          });
+          } else {
+            // No declined quote found, this is a regular duplicate
+            const existingQuote = existingQuotes[0];
+            console.log('❌ Duplicate quote found:', { leadId, tradesmanEmail });
+            return res.json({
+              success: true,
+              exists: true,
+              quote: {
+                quoteId: existingQuote[1],
+                quoteNumber: existingQuote[2],
+                tradesmanName: existingQuote[3],
+                tradesmanEmail: existingQuote[4],
+                totalAmount: existingQuote[6],
+                status: existingQuote[10] || 'submitted',
+                timestamp: existingQuote[0]
+              },
+              canResubmit: false
+            });
+          }
         } else {
           console.log('✅ No duplicate quote found');
           return res.json({
             success: true,
             exists: false,
-            quote: null
+            quote: null,
+            canResubmit: false
           });
         }
       } catch (sheetsError) {

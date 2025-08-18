@@ -74,19 +74,72 @@ export default async function handler(req, res) {
       console.log('🔍 Checking for duplicate quotes. Total rows:', rows.length);
       console.log('🔍 Looking for:', { leadId, tradesmanEmail });
       
-      const existingQuote = rows.find(row => 
+      const existingQuotes = rows.filter(row => 
         row[1] === leadId && // leadId column (B)
         row[4] === tradesmanEmail // tradesmanEmail column (E)
       );
 
-      if (existingQuote) {
-        console.log('❌ Duplicate quote detected:', { leadId, tradesmanEmail, existingQuote });
-        return res.status(400).json({
-          error: 'You have already submitted a quote for this lead.'
-        });
+      if (existingQuotes.length > 0) {
+        // Check if any existing quote allows resubmission
+        const declinedQuote = existingQuotes.find(row => row[10] === 'declined'); // status column (K)
+        
+        if (declinedQuote) {
+          const declineReason = declinedQuote[11]; // decline reason column (L)
+          const resubmissionUsed = declinedQuote[14]; // resubmission_used column (O)
+          
+          // Check if resubmission is allowed
+          if ((declineReason === 'pricing_error' || declineReason === 'missing_details') && resubmissionUsed !== 'TRUE') {
+            console.log('✅ Resubmission allowed for declined quote:', { leadId, tradesmanEmail, declineReason });
+            // Continue with submission - this is a valid resubmission
+          } else {
+            console.log('❌ Resubmission not allowed:', { leadId, tradesmanEmail, declineReason, resubmissionUsed });
+            return res.status(400).json({
+              error: 'You have already submitted a quote for this lead and resubmission is not allowed.'
+            });
+          }
+        } else {
+          // No declined quote found, this is a duplicate
+          console.log('❌ Duplicate quote detected:', { leadId, tradesmanEmail, existingQuotes });
+          return res.status(400).json({
+            error: 'You have already submitted a quote for this lead.'
+          });
+        }
       }
       
-      console.log('✅ No duplicate quote found - proceeding with submission');
+      console.log('✅ Quote validation passed - proceeding with submission');
+      
+      // If this is a resubmission, mark the original declined quote as resubmission used
+      if (existingQuotes.length > 0) {
+        const declinedQuote = existingQuotes.find(row => row[10] === 'declined');
+        if (declinedQuote) {
+          const declineReason = declinedQuote[11];
+          if (declineReason === 'pricing_error' || declineReason === 'missing_details') {
+            console.log('🔄 This is a resubmission - marking original quote as resubmission used');
+            // Find the row index of the declined quote
+            const declinedRowIndex = rows.findIndex(row => 
+              row[1] === leadId && row[4] === tradesmanEmail && row[10] === 'declined'
+            );
+            
+            if (declinedRowIndex !== -1) {
+              const updateRange = `Quotes!O${declinedRowIndex + 1}`; // +1 because sheets are 1-indexed
+              try {
+                await sheets.spreadsheets.values.update({
+                  spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+                  range: updateRange,
+                  valueInputOption: 'RAW',
+                  resource: {
+                    values: [['TRUE']]
+                  }
+                });
+                console.log('✅ Marked original quote as resubmission used');
+              } catch (updateError) {
+                console.error('❌ Error marking resubmission used:', updateError);
+                // Continue with submission even if marking fails
+              }
+            }
+          }
+        }
+      }
     } catch (sheetsError) {
       console.error('❌ Google Sheets error checking existing quotes:', sheetsError.message);
       return res.status(500).json({

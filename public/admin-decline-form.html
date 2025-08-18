@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Decline Quote</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 600px; 
+            margin: 50px auto; 
+            padding: 20px; 
+            background-color: #f8f9fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .header h1 {
+            color: #dc3545;
+            margin-bottom: 10px;
+        }
+        .quote-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 4px solid #6c757d;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #495057;
+        }
+        select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        select:focus, textarea:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .required {
+            color: #dc3545;
+        }
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .error {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚫 Decline Quote</h1>
+            <p>Please provide a reason for declining this quote</p>
+        </div>
+
+        <div class="quote-info" id="quoteInfo">
+            <h3>Quote Details</h3>
+            <p><strong>Quote ID:</strong> <span id="quoteId"></span></p>
+            <p><strong>Customer:</strong> <span id="customerName"></span></p>
+            <p><strong>Tradesman:</strong> <span id="tradesmanName"></span></p>
+            <p><strong>Amount:</strong> $<span id="quoteAmount"></span></p>
+            <p><strong>Service:</strong> <span id="serviceType"></span></p>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ Important:</strong> Once declined, the tradesperson will be notified and may be able to resubmit depending on the reason selected.
+        </div>
+
+        <form id="declineForm">
+            <input type="hidden" id="quoteIdInput" name="quoteId">
+            <input type="hidden" id="leadIdInput" name="leadId">
+            
+            <div class="form-group">
+                <label for="declineReason">Decline Reason <span class="required">*</span></label>
+                <select id="declineReason" name="declineReason" required>
+                    <option value="">Select a reason...</option>
+                    <option value="pricing_error">Pricing Error</option>
+                    <option value="missing_details">Missing/Incorrect Details</option>
+                    <option value="other">Other</option>
+                </select>
+                <div id="reasonError" class="error">Please select a decline reason</div>
+            </div>
+
+            <div class="form-group">
+                <label for="declineNotes">Notes</label>
+                <textarea id="declineNotes" name="declineNotes" placeholder="Provide additional details about the decline reason..."></textarea>
+                <div id="notesError" class="error">Notes are required when selecting 'Other' as the reason</div>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn btn-danger">Decline Quote</button>
+                <a href="javascript:history.back()" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Load quote details from URL parameters
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const quoteId = urlParams.get('quoteId');
+            const leadId = urlParams.get('leadId');
+            
+            if (quoteId) {
+                document.getElementById('quoteIdInput').value = quoteId;
+                document.getElementById('quoteId').textContent = quoteId;
+            }
+            
+            if (leadId) {
+                document.getElementById('leadIdInput').value = leadId;
+            }
+            
+            // Load quote details from API
+            loadQuoteDetails(quoteId);
+        });
+
+        // Load quote details from API
+        async function loadQuoteDetails(quoteId) {
+            try {
+                const response = await fetch(`/api/get-quote-by-id?quoteId=${encodeURIComponent(quoteId)}`);
+                const data = await response.json();
+                
+                if (data.success && data.quote) {
+                    const quote = data.quote;
+                    document.getElementById('customerName').textContent = quote.customerName || 'N/A';
+                    document.getElementById('tradesmanName').textContent = quote.tradesmanName || 'N/A';
+                    document.getElementById('quoteAmount').textContent = quote.quoteAmount || 'N/A';
+                    document.getElementById('serviceType').textContent = quote.serviceType || 'N/A';
+                }
+            } catch (error) {
+                console.error('Error loading quote details:', error);
+            }
+        }
+
+        // Form validation
+        document.getElementById('declineReason').addEventListener('change', function() {
+            const reason = this.value;
+            const notes = document.getElementById('declineNotes').value;
+            const notesError = document.getElementById('notesError');
+            
+            if (reason === 'other' && !notes.trim()) {
+                notesError.style.display = 'block';
+            } else {
+                notesError.style.display = 'none';
+            }
+        });
+
+        document.getElementById('declineNotes').addEventListener('input', function() {
+            const reason = document.getElementById('declineReason').value;
+            const notes = this.value;
+            const notesError = document.getElementById('notesError');
+            
+            if (reason === 'other' && !notes.trim()) {
+                notesError.style.display = 'block';
+            } else {
+                notesError.style.display = 'none';
+            }
+        });
+
+        // Form submission
+        document.getElementById('declineForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const reason = document.getElementById('declineReason').value;
+            const notes = document.getElementById('declineNotes').value;
+            const quoteId = document.getElementById('quoteIdInput').value;
+            const leadId = document.getElementById('leadIdInput').value;
+            
+            // Validate form
+            if (!reason) {
+                document.getElementById('reasonError').style.display = 'block';
+                return;
+            }
+            
+            if (reason === 'other' && !notes.trim()) {
+                document.getElementById('notesError').style.display = 'block';
+                return;
+            }
+            
+            // Submit decline
+            try {
+                const response = await fetch('/api/admin-decline-quote', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        quoteId,
+                        leadId,
+                        reason,
+                        notes: notes.trim()
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Quote declined successfully. Both tradesperson and customer have been notified.');
+                    window.location.href = '/admin.html';
+                } else {
+                    alert('Error declining quote: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error submitting decline:', error);
+                alert('Error declining quote. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>

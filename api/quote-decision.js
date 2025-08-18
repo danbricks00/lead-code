@@ -5,6 +5,25 @@ import { appendRow, getRange, ensureSheetAndHeader } from './_googleSheetsClient
 import nodemailer from 'nodemailer';
 import { fetchQuoteData, fetchLeadData } from './quote-utils.js';
 
+// Helper function to format timestamp in NZT
+function formatNZTTime(timestamp) {
+  try {
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-NZ', {
+      timeZone: 'Pacific/Auckland',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  } catch (error) {
+    console.error('Error formatting timestamp:', error);
+    return 'Unknown time';
+  }
+}
+
 const DECISIONS_TAB = process.env.SHEETS_DECISIONS_TAB || 'QuoteDecisions';
 const DEBUG = process.env.EMAIL_DEBUG === '1';
 
@@ -213,7 +232,7 @@ async function sendNotifications({ quoteId, leadId, action, quoteData, leadData 
           <p><strong>Quote ID:</strong> ${quoteId}</p>
           <p><strong>Lead ID:</strong> ${leadId}</p>
           <p><strong>Decision:</strong> <span style="color:${action === 'accept' ? '#10b981' : '#ef4444'};font-weight:bold;">${status.toUpperCase()}</span></p>
-          <p><strong>Date:</strong> ${new Date().toLocaleDateString('en-GB')} at ${new Date().toLocaleTimeString('en-GB')}</p>
+          <p><strong>Quote decision made on:</strong> ${formatNZTTime(new Date())}</p>
         </div>
         
         <div style="background:#${action === 'accept' ? 'd1fae5' : 'fee2e2'};padding:15px;border-radius:6px;margin:20px 0;border-left:4px solid #${action === 'accept' ? '10b981' : 'ef4444'};">

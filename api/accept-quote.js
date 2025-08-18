@@ -157,7 +157,7 @@ export default async function handler(req, res) {
               <div class="info">
                   <h1>📋 Quote Already Accepted</h1>
                   <p><strong>Quote Number:</strong> ${quoteNumber}</p>
-                  <p>This quote has already been accepted on ${acceptedTime}.</p>
+                  <p><strong>Quote decision recorded on:</strong> ${acceptedTime}</p>
                   <p>We're processing your request and will be in touch soon.</p>
                   <p>If you have any questions, please contact us directly.</p>
               </div>
@@ -224,7 +224,7 @@ export default async function handler(req, res) {
               <div class="info">
                   <h1>📋 Quote Already Declined</h1>
                   <p><strong>Quote Number:</strong> ${quoteNumber}</p>
-                  <p>This quote has already been declined on ${declinedTime}.</p>
+                  <p><strong>Quote decision recorded on:</strong> ${declinedTime}</p>
                   <p>If you'd like to discuss alternative options, please contact us directly.</p>
               </div>
               

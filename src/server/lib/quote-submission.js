@@ -723,57 +723,62 @@ export default async function handler(req, res) {
             <p>Dear ${quoteData.customerName},</p>
             <p>Thank you for your inquiry. We have prepared a detailed quote for your project.</p>
             
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #34495e; margin-top: 0;">Quote Summary:</h3>
-              <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
-              <p><strong>Service:</strong> ${quoteData.serviceType || 'Underfloor Heating'}</p>
-              <p><strong>Total Amount:</strong> $${quoteData.totalAmount}</p>
-              <p><strong>Valid Until:</strong> ${quoteData.validUntil}</p>
-              <p><strong>Location:</strong> ${quoteData.location || 'Auckland'}</p>
-            </div>
-            
-            <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #27ae60; margin-top: 0;">What's included:</h3>
-              <ul style="margin: 10px 0; padding-left: 20px;">
-                <li>📄 Professional quote document (attached)</li>
-                <li>🌐 Online quote viewer with accept/decline options</li>
-                <li>📞 Direct contact with our team</li>
-                <li>⚡ Fast response to your decision</li>
-              </ul>
-            </div>
-            
-            <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
-              <h3 style="color: #1976d2; margin-top: 0;">📄 View Your Quote</h3>
-              <p style="margin: 15px 0;">Click below to view your detailed quote online:</p>
-                             <a href="${currentUrl}/api/view-quote?quoteId=${quoteData.quoteId}" 
-                  style="color: #6f42c1; text-decoration: underline; font-weight: bold; font-size: 16px;">
-                  🌐 View quote online
-               </a>
-            </div>
-            
-            <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
-              <h3 style="color: #856404; margin-top: 0;">🤔 Would you like to accept or decline the quote?</h3>
-              <p style="margin: 10px 0; font-style: italic; color: #666;">One time action only</p>
-              <div style="margin: 20px 0;">
-                                 <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
-                    style="color: #28a745; text-decoration: underline; font-weight: bold; font-size: 16px; margin-right: 20px;">
-                    ✅ Accept quote
-                 </a>
-                 <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
-                    style="color: #dc3545; text-decoration: underline; font-weight: bold; font-size: 16px;">
-                    ❌ Decline quote
-                 </a>
+            <!-- Box 1: Quote Summary & Details -->
+            <div style="background: #f8f9fa; padding: 25px; border-radius: 10px; margin: 25px 0; border-left: 5px solid #3498db;">
+              <h3 style="color: #2c3e50; margin-top: 0; font-size: 20px;">📋 Quote Summary & Details</h3>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #e9ecef;">
+                  <strong style="color: #495057;">Quote Number:</strong><br>
+                  <span style="color: #6c757d;">${quoteData.quoteNumber}</span>
+                </div>
+                <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #e9ecef;">
+                  <strong style="color: #495057;">Service Type:</strong><br>
+                  <span style="color: #6c757d;">${quoteData.serviceType || 'Underfloor Heating'}</span>
+                </div>
+                <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #e9ecef;">
+                  <strong style="color: #495057;">Total Amount:</strong><br>
+                  <span style="color: #28a745; font-weight: bold; font-size: 16px;">$${quoteData.totalAmount}</span>
+                </div>
+                <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #e9ecef;">
+                  <strong style="color: #495057;">Valid Until:</strong><br>
+                  <span style="color: #6c757d;">${quoteData.validUntil}</span>
+                </div>
+                <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #e9ecef;">
+                  <strong style="color: #495057;">Location:</strong><br>
+                  <span style="color: #6c757d;">${quoteData.location || 'Auckland'}</span>
+                </div>
+                <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #e9ecef;">
+                  <strong style="color: #495057;">Date Created:</strong><br>
+                  <span style="color: #6c757d;">${new Date().toLocaleDateString('en-NZ')}</span>
+                </div>
               </div>
             </div>
             
-            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #856404; margin-top: 0;">Next Steps:</h3>
-              <ol style="margin: 10px 0; padding-left: 20px;">
-                <li>Review the attached quote document</li>
-                <li>Visit the online quote to accept or decline</li>
-                <li>Contact us if you have any questions</li>
-                <li>We'll proceed with your project once confirmed</li>
-              </ol>
+            <!-- Box 2: Quote Viewer -->
+            <div style="background: #e3f2fd; padding: 25px; border-radius: 10px; margin: 25px 0; text-align: center; border-left: 5px solid #1976d2;">
+              <h3 style="color: #1976d2; margin-top: 0; font-size: 20px;">📄 Quote Viewer</h3>
+              <p style="margin: 15px 0; color: #424242; font-size: 16px;">Click below to view your complete quote with all details:</p>
+              <a href="${currentUrl}/api/view-quote?quoteId=${quoteData.quoteId}" 
+                 style="background: #1976d2; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-size: 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s ease;">
+                 📄 View Full Quote
+              </a>
+            </div>
+            
+            <!-- Box 3: Quote Actions -->
+            <div style="background: #fff3cd; padding: 25px; border-radius: 10px; margin: 25px 0; text-align: center; border-left: 5px solid #ffc107;">
+              <h3 style="color: #856404; margin-top: 0; font-size: 20px;">⚡ Quote Actions</h3>
+              <p style="margin: 15px 0; color: #666; font-style: italic;">Choose your action below:</p>
+              <div style="margin: 25px 0; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+                <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+                   style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-size: 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s ease;">
+                   ✅ Accept Quote
+                </a>
+                <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+                   style="background: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-size: 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s ease;">
+                   ❌ Decline Quote
+                </a>
+              </div>
+              <p style="margin: 10px 0; font-size: 14px; color: #856404; font-weight: bold;">⚠️ One time action only</p>
             </div>
             
             <p><strong>Reference:</strong> ${quoteData.quoteNumber}</p>

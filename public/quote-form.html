@@ -348,8 +348,22 @@
 
         
         // Initialize when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             console.log('🚀 DOM loaded, initializing quote form...');
+            
+            // Load URL parameters first
+            const urlParams = new URLSearchParams(window.location.search);
+            const leadId = urlParams.get('leadId');
+            const tradesmanEmail = urlParams.get('email') || urlParams.get('tradesmanEmail');
+            
+            // IMMEDIATE CHECK: Block form if tradesman already submitted quote for this lead
+            if (leadId && tradesmanEmail) {
+                const isBlocked = await checkForExistingQuoteOnLoad(leadId, tradesmanEmail);
+                if (isBlocked) {
+                    console.log('🚫 Form blocked - tradesman already submitted quote');
+                    return; // Stop initialization - form is blocked
+                }
+            }
             
             // Generate unique quote ID
             const quoteId = 'QUOTE-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
@@ -363,21 +377,24 @@
             const validUntil = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
             document.getElementById('validUntil').value = validUntil.toISOString().split('T')[0];
             
-                         // Load URL parameters and fetch lead data
-             const urlParams = new URLSearchParams(window.location.search);
-             if (urlParams.has('leadId')) {
-                 const leadId = urlParams.get('leadId');
-                 document.getElementById('leadId').value = leadId;
-                 document.getElementById('leadIdDisplay').textContent = leadId;
-                 
-                 // Fetch lead data from API
-                 loadLeadData(leadId);
-             }
-             
-             // Populate token from URL
-             const token = urlParams.get('token') || '';
-             const tokenEl = document.getElementById('token');
-             if (tokenEl) tokenEl.value = token;
+            // Load URL parameters and fetch lead data
+            if (leadId) {
+                document.getElementById('leadId').value = leadId;
+                document.getElementById('leadIdDisplay').textContent = leadId;
+                
+                // Fetch lead data from API
+                loadLeadData(leadId);
+            }
+            
+            // Populate token from URL
+            const token = urlParams.get('token') || '';
+            const tokenEl = document.getElementById('token');
+            if (tokenEl) tokenEl.value = token;
+            
+            // Pre-populate tradesman email if provided in URL
+            if (tradesmanEmail) {
+                document.getElementById('tradesmanEmail').value = tradesmanEmail;
+            }
             
             addEventListeners();
             calculateTotals(); // Initial calculation
@@ -436,21 +453,84 @@
             }
         }
         
-                 // Check for existing quotes when form loads
+        // IMMEDIATE CHECK: Block entire form if tradesman already submitted quote for this lead
+        async function checkForExistingQuoteOnLoad(leadId, tradesmanEmail) {
+            console.log('🔍 IMMEDIATE CHECK: Checking for existing quote...', { leadId, tradesmanEmail });
+            
+            try {
+                const response = await fetch(`/api/check-existing-quote?leadId=${encodeURIComponent(leadId)}&tradesmanEmail=${encodeURIComponent(tradesmanEmail)}`);
+                const data = await response.json();
+                
+                if (data.success && data.exists) {
+                    console.log('❌ BLOCKED: Tradesman already submitted quote for this lead');
+                    
+                    // Hide the entire form
+                    document.getElementById('quoteForm').style.display = 'none';
+                    document.getElementById('customerInfo').style.display = 'none';
+                    
+                    // Show blocking message with quote details
+                    const quote = data.quote;
+                    const blockingMessage = document.createElement('div');
+                    blockingMessage.id = 'blockingMessage';
+                    blockingMessage.innerHTML = `
+                        <div style="background: #f8d7da; color: #721c24; padding: 30px; border-radius: 12px; margin: 20px 0; border: 2px solid #f5c6cb; text-align: center;">
+                            <h1 style="color: #721c24; margin-bottom: 20px;">🚫 Quote Already Submitted</h1>
+                            <p style="font-size: 18px; margin-bottom: 15px;"><strong>You have already submitted a quote for this lead.</strong></p>
+                            <p style="margin-bottom: 20px;">Only one quote per tradesman per lead is allowed.</p>
+                            <div style="background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #dee2e6;">
+                                <h3 style="color: #495057; margin-top: 0;">Your Existing Quote Details:</h3>
+                                <p><strong>Lead ID:</strong> ${leadId}</p>
+                                <p><strong>Tradesman Email:</strong> ${tradesmanEmail}</p>
+                                <p><strong>Quote Number:</strong> ${quote.quoteNumber || 'N/A'}</p>
+                                <p><strong>Total Amount:</strong> $${quote.totalAmount || 'N/A'}</p>
+                                <p><strong>Status:</strong> ${quote.status || 'submitted'}</p>
+                                <p><strong>Submitted:</strong> ${quote.timestamp ? new Date(quote.timestamp).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }) : 'N/A'}</p>
+                            </div>
+                            <p style="margin-top: 20px;">If you need to modify your existing quote, please contact support.</p>
+                            <a href="https://lead-code.vercel.app/" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 15px;">Back to Home</a>
+                        </div>
+                    `;
+                    
+                    // Insert the blocking message at the top of the page
+                    const body = document.querySelector('body');
+                    body.insertBefore(blockingMessage, body.firstChild);
+                    
+                    // Update page title
+                    document.title = 'Quote Already Submitted - Access Denied';
+                    
+                    return true; // Quote exists - form is blocked
+                } else {
+                    console.log('✅ CLEAR: No existing quote found - form can proceed');
+                    return false; // No quote exists - form can proceed
+                }
+            } catch (error) {
+                console.error('❌ Error checking for existing quote:', error);
+                // If we can't check, allow the form to proceed (backend will catch duplicates)
+                return false;
+            }
+        }
+        
+        // Check for existing quotes when tradesman email changes (for manual entry)
         async function checkExistingQuote() {
             const leadId = document.getElementById('leadId').value;
             const tradesmanEmail = document.getElementById('tradesmanEmail').value;
             
             if (leadId && tradesmanEmail) {
                 try {
-                    const response = await fetch(`/api/get-quotes?leadId=${encodeURIComponent(leadId)}&tradesmanEmail=${encodeURIComponent(tradesmanEmail)}`);
+                    const response = await fetch(`/api/check-existing-quote?leadId=${encodeURIComponent(leadId)}&tradesmanEmail=${encodeURIComponent(tradesmanEmail)}`);
                     const data = await response.json();
                     
-                    if (data.quotes && data.quotes.length > 0) {
+                    if (data.success && data.exists) {
                         document.getElementById('duplicateWarning').style.display = 'block';
                         document.getElementById('submitButton').disabled = true;
                         document.getElementById('submitButton').textContent = 'Quote Already Submitted';
                         document.getElementById('submitButton').style.backgroundColor = '#6c757d';
+                    } else {
+                        // Clear warning if no duplicate found
+                        document.getElementById('duplicateWarning').style.display = 'none';
+                        document.getElementById('submitButton').disabled = false;
+                        document.getElementById('submitButton').textContent = 'Submit Quote';
+                        document.getElementById('submitButton').style.backgroundColor = '#007bff';
                     }
                 } catch (error) {
                     console.log('Could not check for existing quotes:', error);
@@ -458,8 +538,21 @@
             }
         }
         
-        // Check for existing quotes when tradesman email changes
-        document.getElementById('tradesmanEmail').addEventListener('blur', checkExistingQuote);
+                 // Check for existing quotes when tradesman email changes
+         document.getElementById('tradesmanEmail').addEventListener('blur', async function() {
+             const leadId = document.getElementById('leadId').value;
+             const tradesmanEmail = this.value;
+             
+             if (leadId && tradesmanEmail) {
+                 const isBlocked = await checkForExistingQuoteOnLoad(leadId, tradesmanEmail);
+                 if (isBlocked) {
+                     return; // Form is blocked
+                 }
+             }
+             
+             // If not blocked, run the regular check
+             checkExistingQuote();
+         });
         
         // Form submission
          document.getElementById('quoteForm').addEventListener('submit', async (e) => {
@@ -529,19 +622,19 @@
                  return;
              }
              
-             // FINAL CHECK: Verify no duplicate quote exists before submission
-             try {
-                 const checkResponse = await fetch(`/api/get-quotes?leadId=${encodeURIComponent(data.leadId)}&tradesmanEmail=${encodeURIComponent(data.tradesmanEmail)}`);
-                 const checkData = await checkResponse.json();
-                 
-                 if (checkData.quotes && checkData.quotes.length > 0) {
-                     alert('❌ Duplicate Quote Detected!\n\nYou have already submitted a quote for this lead. Only one quote per tradesman per lead is allowed.\n\nPlease check your records or contact support if you need to modify your existing quote.');
-                     return;
-                 }
-             } catch (checkError) {
-                 console.log('Could not perform final duplicate check:', checkError);
-                 // Continue with submission - backend will catch duplicates
-             }
+                           // FINAL CHECK: Verify no duplicate quote exists before submission
+              try {
+                  const checkResponse = await fetch(`/api/check-existing-quote?leadId=${encodeURIComponent(data.leadId)}&tradesmanEmail=${encodeURIComponent(data.tradesmanEmail)}`);
+                  const checkData = await checkResponse.json();
+                  
+                  if (checkData.success && checkData.exists) {
+                      alert('❌ Duplicate Quote Detected!\n\nYou have already submitted a quote for this lead. Only one quote per tradesman per lead is allowed.\n\nPlease check your records or contact support if you need to modify your existing quote.');
+                      return;
+                  }
+              } catch (checkError) {
+                  console.log('Could not perform final duplicate check:', checkError);
+                  // Continue with submission - backend will catch duplicates
+              }
              
                            try {
                   console.log('📤 Submitting quote data:', data);

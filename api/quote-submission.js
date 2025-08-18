@@ -308,22 +308,54 @@ export default async function handler(req, res) {
           <p>Hi ${customerName},</p>
           <p>Thank you for your interest in our ${serviceType} services. We have prepared a detailed quote for your project.</p>
           
-          <div style="background:#f3f4f6;padding:15px;border-radius:6px;margin:20px 0;">
-            <h3 style="margin-top:0;">Quote Summary</h3>
-            <p><strong>Service:</strong> ${serviceType}</p>
-            <p><strong>Location:</strong> ${location || 'Not specified'}</p>
-            <p><strong>Quote Amount:</strong> $${coerceNumeric(quoteAmount).toFixed(2)}</p>
-            <p><strong>Valid Until:</strong> ${new Date(validUntil).toLocaleDateString('en-GB')}</p>
+          <!-- Box 1: Quote Summary & Details -->
+          <div style="background:#f3f4f6;padding:20px;border-radius:8px;margin:25px 0;border-left:5px solid #3498db;">
+            <h3 style="margin-top:0;color:#2c3e50;font-size:18px;">📋 Quote Summary & Details</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:15px;">
+              <div style="background:white;padding:12px;border-radius:6px;border:1px solid #e9ecef;">
+                <strong style="color:#495057;">Service Type:</strong><br>
+                <span style="color:#6c757d;">${serviceType}</span>
+              </div>
+              <div style="background:white;padding:12px;border-radius:6px;border:1px solid #e9ecef;">
+                <strong style="color:#495057;">Location:</strong><br>
+                <span style="color:#6c757d;">${location || 'Not specified'}</span>
+              </div>
+              <div style="background:white;padding:12px;border-radius:6px;border:1px solid #e9ecef;">
+                <strong style="color:#495057;">Quote Amount:</strong><br>
+                <span style="color:#28a745;font-weight:bold;font-size:16px;">$${coerceNumeric(quoteAmount).toFixed(2)}</span>
+              </div>
+              <div style="background:white;padding:12px;border-radius:6px;border:1px solid #e9ecef;">
+                <strong style="color:#495057;">Valid Until:</strong><br>
+                <span style="color:#6c757d;">${new Date(validUntil).toLocaleDateString('en-GB')}</span>
+              </div>
+            </div>
           </div>
           
-          <div style="background:#d1fae5;padding:15px;border-radius:6px;margin:20px 0;border-left:4px solid #10b981;">
-            <h3 style="margin-top:0;color:#065f46;">Next Steps</h3>
-            <p style="color:#065f46;">You can:</p>
-            <ul style="color:#065f46;">
-              <li><a href="${onlineQuoteUrl}" style="color:#10b981;">View your quote online</a></li>
-              <li><a href="${acceptUrl}" style="color:#10b981;">Accept this quote</a></li>
-              <li><a href="${declineUrl}" style="color:#ef4444;">Decline this quote</a></li>
-            </ul>
+          <!-- Box 2: Quote Viewer -->
+          <div style="background:#e3f2fd;padding:20px;border-radius:8px;margin:25px 0;text-align:center;border-left:5px solid #1976d2;">
+            <h3 style="margin-top:0;color:#1976d2;font-size:18px;">📄 Quote Viewer</h3>
+            <p style="margin:15px 0;color:#424242;font-size:16px;">Click below to view your complete quote with all details:</p>
+            <a href="${onlineQuoteUrl}" 
+               style="background:#1976d2;color:white;padding:15px 30px;text-decoration:none;border-radius:8px;display:inline-block;font-size:16px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.1);transition:all 0.3s ease;">
+               📄 View Full Quote
+            </a>
+          </div>
+          
+          <!-- Box 3: Quote Actions -->
+          <div style="background:#fff3cd;padding:20px;border-radius:8px;margin:25px 0;text-align:center;border-left:5px solid #ffc107;">
+            <h3 style="margin-top:0;color:#856404;font-size:18px;">⚡ Quote Actions</h3>
+            <p style="margin:15px 0;color:#666;font-style:italic;">Choose your action below:</p>
+            <div style="margin:25px 0;display:flex;justify-content:center;gap:20px;flex-wrap:wrap;">
+              <a href="${acceptUrl}" 
+                 style="background:#28a745;color:white;padding:15px 30px;text-decoration:none;border-radius:8px;display:inline-block;font-size:16px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.1);transition:all 0.3s ease;">
+                 ✅ Accept Quote
+              </a>
+              <a href="${declineUrl}" 
+                 style="background:#dc3545;color:white;padding:15px 30px;text-decoration:none;border-radius:8px;display:inline-block;font-size:16px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.1);transition:all 0.3s ease;">
+                 ❌ Decline Quote
+              </a>
+            </div>
+            <p style="margin:10px 0;font-size:14px;color:#856404;font-weight:bold;">⚠️ One time action only</p>
           </div>
           
           <p style="margin-top:20px;color:#6b7280;">

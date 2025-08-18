@@ -99,6 +99,13 @@
 <body>
     <h1>Submit Quote</h1>
     
+    <!-- Duplicate Quote Warning (hidden by default) -->
+    <div id="duplicateWarning" style="display: none; background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #f5c6cb;">
+        <h3 style="margin-top: 0; color: #721c24;">⚠️ Duplicate Quote Warning</h3>
+        <p style="margin-bottom: 10px;"><strong>You have already submitted a quote for this lead.</strong></p>
+        <p style="margin-bottom: 0;">Only one quote per tradesman per lead is allowed. If you need to modify your existing quote, please contact support.</p>
+    </div>
+    
     <div id="customerInfo" class="customer-info" style="display: none;">
         <h3>📋 Customer Information (Pre-filled from Lead)</h3>
         <p><strong>Lead ID:</strong> <span id="leadIdDisplay"></span></p>
@@ -226,7 +233,7 @@
             <textarea id="additionalNotes" name="additionalNotes" rows="4"></textarea>
         </div>
 
-        <button type="submit">Submit Quote</button>
+                        <button type="submit" id="submitButton">Submit Quote</button>
     </form>
 
     <script>
@@ -429,7 +436,32 @@
             }
         }
         
-                 // Form submission
+                 // Check for existing quotes when form loads
+        async function checkExistingQuote() {
+            const leadId = document.getElementById('leadId').value;
+            const tradesmanEmail = document.getElementById('tradesmanEmail').value;
+            
+            if (leadId && tradesmanEmail) {
+                try {
+                    const response = await fetch(`/api/get-quotes?leadId=${encodeURIComponent(leadId)}&tradesmanEmail=${encodeURIComponent(tradesmanEmail)}`);
+                    const data = await response.json();
+                    
+                    if (data.quotes && data.quotes.length > 0) {
+                        document.getElementById('duplicateWarning').style.display = 'block';
+                        document.getElementById('submitButton').disabled = true;
+                        document.getElementById('submitButton').textContent = 'Quote Already Submitted';
+                        document.getElementById('submitButton').style.backgroundColor = '#6c757d';
+                    }
+                } catch (error) {
+                    console.log('Could not check for existing quotes:', error);
+                }
+            }
+        }
+        
+        // Check for existing quotes when tradesman email changes
+        document.getElementById('tradesmanEmail').addEventListener('blur', checkExistingQuote);
+        
+        // Form submission
          document.getElementById('quoteForm').addEventListener('submit', async (e) => {
              e.preventDefault();
              
@@ -522,7 +554,13 @@
                  } else {
                      console.error('❌ Server error:', result.error || 'Unknown error');
                      const errorMessage = result.error || result.details || 'Unknown error occurred';
-                     alert('❌ Error: ' + errorMessage);
+                     
+                     // Special handling for duplicate quote error
+                     if (errorMessage.includes('already submitted a quote for this lead')) {
+                         alert('❌ Duplicate Quote Detected!\n\nYou have already submitted a quote for this lead. Only one quote per tradesman per lead is allowed.\n\nPlease check your records or contact support if you need to modify your existing quote.');
+                     } else {
+                         alert('❌ Error: ' + errorMessage);
+                     }
                  }
              } catch (error) {
                  console.error('❌ Submission error:', error);

@@ -45,41 +45,53 @@ export default async function handler(req, res) {
       });
     }
 
-    // Check if this tradesman has already submitted a quote for this lead
-    if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {
-      try {
-        const auth = new google.auth.GoogleAuth({
-          credentials: {
-            client_email: process.env.GOOGLE_CLIENT_EMAIL,
-            private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-          },
-          scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+    // STRICT: Check if this tradesman has already submitted a quote for this lead
+    if (!process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_SPREADSHEET_ID) {
+      console.error('❌ Missing Google Sheets configuration - cannot validate duplicate quotes');
+      return res.status(500).json({
+        error: 'System configuration error. Please contact support.'
+      });
+    }
+
+    try {
+      const auth = new google.auth.GoogleAuth({
+        credentials: {
+          client_email: process.env.GOOGLE_CLIENT_EMAIL,
+          private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        },
+        scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+      });
+
+      const sheets = google.sheets({ version: 'v4', auth });
+      
+      // Check the Quotes sheet for existing quotes from this tradesman for this lead
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+        range: 'Quotes!A:T',
+      });
+
+      const rows = response.data.values || [];
+      console.log('🔍 Checking for duplicate quotes. Total rows:', rows.length);
+      console.log('🔍 Looking for:', { leadId, tradesmanEmail });
+      
+      const existingQuote = rows.find(row => 
+        row[1] === leadId && // leadId column (B)
+        row[4] === tradesmanEmail // tradesmanEmail column (E)
+      );
+
+      if (existingQuote) {
+        console.log('❌ Duplicate quote detected:', { leadId, tradesmanEmail, existingQuote });
+        return res.status(400).json({
+          error: 'You have already submitted a quote for this lead.'
         });
-
-        const sheets = google.sheets({ version: 'v4', auth });
-        
-        // Check the Quotes sheet for existing quotes from this tradesman for this lead
-        const response = await sheets.spreadsheets.values.get({
-          spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-          range: 'Quotes!A:T',
-        });
-
-        const rows = response.data.values || [];
-        const existingQuote = rows.find(row => 
-          row[1] === leadId && // leadId column (B)
-          row[4] === tradesmanEmail // tradesmanEmail column (E)
-        );
-
-        if (existingQuote) {
-          console.log('❌ Duplicate quote detected:', { leadId, tradesmanEmail, existingQuote });
-          return res.status(400).json({
-            error: 'You have already submitted a quote for this lead. Only one quote per tradesman per lead is allowed.'
-          });
-        }
-      } catch (sheetsError) {
-        console.error('❌ Google Sheets error checking existing quotes:', sheetsError.message);
-        // Continue with submission if we can't check (fail open for reliability)
       }
+      
+      console.log('✅ No duplicate quote found - proceeding with submission');
+    } catch (sheetsError) {
+      console.error('❌ Google Sheets error checking existing quotes:', sheetsError.message);
+      return res.status(500).json({
+        error: 'Unable to validate quote submission. Please try again or contact support.'
+      });
     }
 
     let customerEmailSent = false;

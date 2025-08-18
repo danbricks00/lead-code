@@ -529,6 +529,20 @@
                  return;
              }
              
+             // FINAL CHECK: Verify no duplicate quote exists before submission
+             try {
+                 const checkResponse = await fetch(`/api/get-quotes?leadId=${encodeURIComponent(data.leadId)}&tradesmanEmail=${encodeURIComponent(data.tradesmanEmail)}`);
+                 const checkData = await checkResponse.json();
+                 
+                 if (checkData.quotes && checkData.quotes.length > 0) {
+                     alert('❌ Duplicate Quote Detected!\n\nYou have already submitted a quote for this lead. Only one quote per tradesman per lead is allowed.\n\nPlease check your records or contact support if you need to modify your existing quote.');
+                     return;
+                 }
+             } catch (checkError) {
+                 console.log('Could not perform final duplicate check:', checkError);
+                 // Continue with submission - backend will catch duplicates
+             }
+             
                            try {
                   console.log('📤 Submitting quote data:', data);
                   console.log('📧 Tradesman Email:', data.tradesmanEmail);

@@ -129,11 +129,16 @@ export default async function handler(req, res) {
             
                                      if (quoteRow && quoteRow[11]) {
               // Use the acceptance timestamp from column L (index 11)
-              // Ensure we're parsing the timestamp correctly
               const timestamp = quoteRow[11];
               console.log('📅 Retrieved acceptance timestamp:', timestamp);
               acceptedTime = formatNZTTime(timestamp);
+            } else if (quoteRow && quoteRow[0]) {
+              // Fallback to the first column (timestamp) if column L is empty
+              const timestamp = quoteRow[0];
+              console.log('📅 Using fallback timestamp from column A:', timestamp);
+              acceptedTime = formatNZTTime(timestamp);
             } else {
+              console.log('📅 No timestamp found, using current time');
               acceptedTime = formatNZTTime(new Date());
             }
           } catch (error) {
@@ -196,11 +201,16 @@ export default async function handler(req, res) {
             
                          if (quoteRow && quoteRow[11]) {
                // Use the decline timestamp from column L (index 11)
-               // Ensure we're parsing the timestamp correctly
                const timestamp = quoteRow[11];
                console.log('📅 Retrieved decline timestamp:', timestamp);
                declinedTime = formatNZTTime(timestamp);
+             } else if (quoteRow && quoteRow[0]) {
+               // Fallback to the first column (timestamp) if column L is empty
+               const timestamp = quoteRow[0];
+               console.log('📅 Using fallback timestamp from column A:', timestamp);
+               declinedTime = formatNZTTime(timestamp);
              } else {
+               console.log('📅 No timestamp found, using current time');
                declinedTime = formatNZTTime(new Date());
              }
           } catch (error) {

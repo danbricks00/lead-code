@@ -375,6 +375,67 @@
             transform: scale(1.1);
         }
 
+        /* Progress Bar and Checklist */
+        .chatbot-progress {
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-ticks {
+            display: flex;
+            justify-content: space-between;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 11px;
+        }
+
+        .tick {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #999;
+            transition: color 0.3s ease;
+        }
+
+        .tick.completed {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .tick-icon {
+            font-size: 14px;
+            opacity: 0.3;
+            transition: opacity 0.3s ease;
+        }
+
+        .tick.completed .tick-icon {
+            opacity: 1;
+        }
+
+        .tick-text {
+            white-space: nowrap;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .nav-menu {
@@ -397,6 +458,26 @@
                 width: calc(100vw - 40px);
                 right: 20px;
                 left: 20px;
+            }
+            
+            .progress-ticks {
+                font-size: 10px;
+            }
+            
+            .tick-text {
+                font-size: 9px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .progress-ticks {
+                flex-direction: column;
+                gap: 5px;
+                align-items: flex-start;
+            }
+            
+            .tick {
+                font-size: 10px;
             }
         }
 
@@ -477,7 +558,7 @@
     <!-- Simple Chatbot -->
     <div id="chatbot" class="chatbot">
         <div class="chatbot-header">
-            <div class="chatbot-title">Kiwi Trade</div>
+            <div class="chatbot-title">Kiwi Trade Chatbot</div>
             <div class="chatbot-buttons">
                 <button id="minimize-btn" class="chatbot-btn">−</button>
                 <button id="close-btn" class="chatbot-btn">×</button>
@@ -486,6 +567,32 @@
         <div class="chatbot-messages" id="chatMessages">
             <div class="message bot-message">👋 Welcome to Kiwi Trade! We'll ask a couple of quick questions to prepare your underfloor heating quote.</div>
         </div>
+        
+        <!-- Progress Bar and Checklist -->
+        <div class="chatbot-progress">
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progress-bar"></div>
+            </div>
+            <ul class="progress-ticks" id="progress-ticks">
+                <li class="tick" data-step="room-details">
+                    <span class="tick-icon">✓</span>
+                    <span class="tick-text">Room Details</span>
+                </li>
+                <li class="tick" data-step="timeframe">
+                    <span class="tick-icon">✓</span>
+                    <span class="tick-text">Timeframe</span>
+                </li>
+                <li class="tick" data-step="personal-details">
+                    <span class="tick-icon">✓</span>
+                    <span class="tick-text">Personal Details</span>
+                </li>
+                <li class="tick" data-step="quote-sent">
+                    <span class="tick-icon">✓</span>
+                    <span class="tick-text">Quote Sent</span>
+                </li>
+            </ul>
+        </div>
+        
         <div class="chatbot-input">
             <input type="text" id="chatInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
             <button onclick="sendMessage()">➤</button>
@@ -498,7 +605,13 @@
     </button>
 
     <script>
-        // Simple Chatbot
+        // Enhanced Chatbot with Progress Tracking
+        const steps = ["Room Details", "Timeframe", "Personal Details", "Quote Sent"];
+        let currentStep = 0;
+        let totalRooms = 0;
+        let currentRoom = 0;
+        let roomDetails = [];
+        
         let chatState = {
             step: 'welcome',
             customerName: '',
@@ -506,7 +619,8 @@
             customerPhone: '',
             location: '',
             areasCount: '',
-            areaSizes: ''
+            areaSizes: '',
+            timeframe: ''
         };
 
         function openChat() {
@@ -526,9 +640,25 @@
             }
         }
 
+        function updateProgress() {
+            const progress = (currentStep / steps.length) * 100;
+            document.getElementById('progress-bar').style.width = progress + '%';
+
+            const ticks = document.querySelectorAll('.tick');
+            ticks.forEach((tick, index) => {
+                if (index < currentStep) {
+                    tick.classList.add('completed');
+                } else {
+                    tick.classList.remove('completed');
+                }
+            });
+        }
+
         function startChat() {
             console.log('Starting chat...');
             chatState.step = 'areas_count';
+            currentStep = 0;
+            updateProgress();
             addMessage('How many areas are you planning to install underfloor heating in?');
         }
 
@@ -561,54 +691,109 @@
             setTimeout(() => {
                 switch (chatState.step) {
                     case 'areas_count':
+                        const roomCount = parseInt(message);
+                        if (isNaN(roomCount) || roomCount < 1) {
+                            addMessage('Please enter a valid number of areas (e.g., 1, 2, 3).');
+                            return;
+                        }
+                        totalRooms = roomCount;
+                        currentRoom = 0;
+                        roomDetails = [];
                         chatState.areasCount = message;
-                        chatState.step = 'area_sizes';
-                        addMessage('How big is each area? You can list like: kitchen 12m², living room 25m².');
+                        chatState.step = 'room_details';
+                        currentStep = 0; // Start room details phase
+                        updateProgress();
+                        handleRoomDetails();
                         break;
-                    case 'area_sizes':
-                        chatState.areaSizes = message;
+                        
+                    case 'room_details':
+                        if (currentRoom < totalRooms) {
+                            // Collect room name
+                            if (!roomDetails[currentRoom]) {
+                                roomDetails[currentRoom] = { name: message };
+                                addMessage(`What are the dimensions of the ${message}? (e.g., 12m² or 4m x 3m)`);
+                            } else {
+                                // Collect room dimensions
+                                roomDetails[currentRoom].dimensions = message;
+                                currentRoom++;
+                                
+                                if (currentRoom < totalRooms) {
+                                    addMessage(`What's the name of room ${currentRoom + 1}?`);
+                                } else {
+                                    // All rooms collected, move to timeframe
+                                    chatState.step = 'timeframe';
+                                    currentStep = 1;
+                                    updateProgress();
+                                    addMessage("Great! What's your preferred timeframe for this project?");
+                                }
+                            }
+                        }
+                        break;
+                        
+                    case 'timeframe':
+                        chatState.timeframe = message;
                         chatState.step = 'collect_details_intro';
                         addMessage("Before we notify a tradie about your project enquiry, can you please enter your personal details so we can find a tradie who can service your area and your needs.");
                         setTimeout(() => {
                             chatState.step = 'customer_name';
+                            currentStep = 2; // Personal details phase
+                            updateProgress();
                             addMessage("What's your name?");
-                        }, 8000); // Increased from 2000ms to 4000ms (4 seconds)
+                        }, 3000);
                         break;
+                        
                     case 'customer_name':
                         chatState.customerName = message;
                         chatState.step = 'customer_phone';
                         setTimeout(() => {
                             addMessage("What's your phone number?");
-                        }, 1500); // Added 1.5 second delay
+                        }, 1500);
                         break;
+                        
                     case 'customer_phone':
                         chatState.customerPhone = message;
                         chatState.step = 'location';
                         setTimeout(() => {
                             addMessage("What's the address of the job?");
-                        }, 1500); // Added 1.5 second delay
+                        }, 1500);
                         break;
+                        
                     case 'location':
                         chatState.location = message;
                         chatState.step = 'customer_email';
                         setTimeout(() => {
                             addMessage("Finally, what's your email address?");
-                        }, 1500); // Added 1.5 second delay
+                        }, 1500);
                         break;
+                        
                     case 'customer_email':
                         chatState.customerEmail = message;
+                        currentStep = 3; // Quote sent phase
+                        updateProgress();
                         setTimeout(() => {
                             generateLead();
-                        }, 1000); // Added 1 second delay before generating lead
+                        }, 1000);
                         break;
+                        
                     default:
                         addMessage("I'm not sure I understand. Could you please clarify?");
                 }
-            }, 800); // Increased from 500ms to 800ms for initial response
+            }, 800);
+        }
+
+        function handleRoomDetails() {
+            if (currentRoom < totalRooms) {
+                addMessage(`What's the name of room ${currentRoom + 1}?`);
+            }
         }
 
         function generateLead() {
-            addMessage("Thank you! Your lead has been submitted successfully. A qualified tradesman will contact you within 24 hours.");
+            addMessage("Thank you! Your details have been sent for a quote. A qualified tradesman will contact you within 24 hours.");
+            
+            // Format room details for submission
+            const roomDetailsText = roomDetails.map(room => 
+                `${room.name}: ${room.dimensions}`
+            ).join(', ');
             
             // Submit lead data
             const leadData = {
@@ -616,14 +801,14 @@
                 customerEmail: chatState.customerEmail,
                 customerPhone: chatState.customerPhone,
                 selectedService: 'underfloor_heating',
-                projectDetails: `Underfloor heating installation - Areas: ${chatState.areasCount || '1'}; Sizes: ${chatState.areaSizes || '12'}m²`,
-                projectSize: chatState.areaSizes || '12',
+                projectDetails: `Underfloor heating installation - ${totalRooms} room(s): ${roomDetailsText}`,
+                projectSize: roomDetailsText,
                 location: chatState.location,
-                areasCount: chatState.areasCount,
-                areaSizes: chatState.areaSizes,
+                areasCount: totalRooms.toString(),
+                areaSizes: roomDetailsText,
                 budget: 'To be quoted',
-                timeline: 'Flexible',
-                specificDetails: `Customer requires underfloor heating installation for ${chatState.areasCount || '1'} area(s) with total size of ${chatState.areaSizes || '12'}m²`
+                timeline: chatState.timeframe || 'Flexible',
+                specificDetails: `Customer requires underfloor heating installation for ${totalRooms} room(s): ${roomDetailsText}. Timeframe: ${chatState.timeframe || 'Flexible'}`
             };
 
             fetch('/api/lead-intake', {
@@ -667,6 +852,8 @@
                     // Reset chat
                     const messagesContainer = document.getElementById('chatMessages');
                     messagesContainer.innerHTML = '<div class="message bot-message">👋 Welcome to Kiwi Trade! We\'ll ask a couple of quick questions to prepare your underfloor heating quote.</div>';
+                    
+                    // Reset all state variables
                     chatState = {
                         step: 'welcome',
                         customerName: '',
@@ -674,8 +861,17 @@
                         customerPhone: '',
                         location: '',
                         areasCount: '',
-                        areaSizes: ''
+                        areaSizes: '',
+                        timeframe: ''
                     };
+                    
+                    currentStep = 0;
+                    totalRooms = 0;
+                    currentRoom = 0;
+                    roomDetails = [];
+                    
+                    // Reset progress bar and checklist
+                    updateProgress();
                 });
             }
         });

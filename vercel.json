@@ -8,6 +8,10 @@
     {
       "src": "public/**/*",
       "use": "@vercel/static"
+    },
+    {
+      "src": "New--tradewebsite-code/**/*",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -16,8 +20,21 @@
       "dest": "/api/$1.js"
     },
     {
+      "src": "/test-zone-sheet-structure.html",
+      "dest": "/test-zone-sheet-structure.html"
+    },
+    {
+      "src": "/debug-zone-api.html",
+      "dest": "/debug-zone-api.html"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/public/$1"
+      "dest": "/New--tradewebsite-code/$1"
     }
-  ]
+  ],
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  }
 } 

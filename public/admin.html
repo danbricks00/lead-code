@@ -238,6 +238,54 @@
             </div>
         </div>
 
+        <!-- Gamified Progress Dashboard -->
+        <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+            <h2 style="color: #2c3e50; margin-bottom: 1rem;">📊 Lead Management Journey</h2>
+            <div style="background: #e0e0e0; height: 20px; border-radius: 10px; margin: 20px 0; overflow: hidden;">
+                <div style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); height: 100%; width: 25%; transition: width 0.3s ease;" id="adminProgressBar"></div>
+            </div>
+            <p style="text-align: center; color: #666; margin-bottom: 1.5rem;"><strong id="adminProgressText">Step 1 of 4 completed</strong></p>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div style="display: flex; align-items: center; padding: 1rem; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
+                    <div style="width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; background: #28a745; color: white;">✓</div>
+                    <div>
+                        <strong>Lead Captured</strong>
+                        <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: #666;">New leads captured</p>
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: center; padding: 1rem; background: #e0e0e0; border-radius: 8px; border-left: 4px solid #ccc;">
+                    <div style="width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; background: #e0e0e0; color: #666; border: 2px solid #ccc;">○</div>
+                    <div>
+                        <strong>Tradesman Assignment</strong>
+                        <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: #666;">Leads assigned</p>
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: center; padding: 1rem; background: #e0e0e0; border-radius: 8px; border-left: 4px solid #ccc;">
+                    <div style="width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; background: #e0e0e0; color: #666; border: 2px solid #ccc;">○</div>
+                    <div>
+                        <strong>Quote Generated</strong>
+                        <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: #666;">Quotes sent</p>
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: center; padding: 1rem; background: #e0e0e0; border-radius: 8px; border-left: 4px solid #ccc;">
+                    <div style="width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; background: #e0e0e0; color: #666; border: 2px solid #ccc;">○</div>
+                    <div>
+                        <strong>Project Won/Lost</strong>
+                        <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: #666;">Decisions made</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 1.5rem; padding: 1rem; background: #e8f4fd; border-radius: 8px; border-left: 4px solid #3498db;">
+                <h4 style="margin: 0 0 0.5rem 0; color: #2c3e50;">🎯 Admin Dashboard Status</h4>
+                <p style="margin: 0; color: #666; font-size: 0.9rem;">This dashboard shows the overall progress of your lead management system. Each step represents a milestone in the customer journey.</p>
+            </div>
+        </div>
+
         <!-- Tabs -->
         <div class="tabs">
             <button class="tab active" onclick="showTab('all')">All Tradesmen</button>

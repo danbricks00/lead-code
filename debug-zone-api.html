@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Zone API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .debug-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .error {
+            color: red;
+            background: #ffe6e6;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            color: green;
+            background: #e6ffe6;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .info {
+            color: blue;
+            background: #e6f3ff;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Zone API</h1>
+    <p>This page helps debug why the "choose an area" dropdown isn't populating on Vercel.</p>
+
+    <div class="debug-section">
+        <h2>1. Environment Check</h2>
+        <div id="env-check">
+            <p>Checking if we're on Vercel deployment...</p>
+            <p><strong>Current URL:</strong> <span id="current-url"></span></p>
+            <p><strong>Is Vercel:</strong> <span id="is-vercel"></span></p>
+        </div>
+    </div>
+
+    <div class="debug-section">
+        <h2>2. API Endpoint Test</h2>
+        <button onclick="testZoneAPI()">Test /api/get-zone-data</button>
+        <div id="api-result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>3. Network Request Details</h2>
+        <button onclick="testWithDetails()">Test with Full Details</button>
+        <div id="network-details"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>4. Environment Variables Check</h2>
+        <p>Note: Environment variables are server-side only and cannot be checked from the browser.</p>
+        <p>Required variables for Zone API:</p>
+        <ul>
+            <li>GOOGLE_CLIENT_EMAIL</li>
+            <li>GOOGLE_PRIVATE_KEY</li>
+            <li>GOOGLE_SPREADSHEET_ID</li>
+            <li>GOOGLE_PROJECT_ID</li>
+            <li>GOOGLE_PRIVATE_KEY_ID</li>
+            <li>GOOGLE_CLIENT_ID</li>
+            <li>GOOGLE_CLIENT_CER_URL</li>
+        </ul>
+    </div>
+
+    <div class="debug-section">
+        <h2>5. Manual Test</h2>
+        <p>Try accessing the API directly:</p>
+        <a href="/api/get-zone-data" target="_blank">Open /api/get-zone-data in new tab</a>
+    </div>
+
+    <script>
+        // Check environment
+        document.getElementById('current-url').textContent = window.location.href;
+        document.getElementById('is-vercel').textContent = window.location.hostname.includes('vercel.app') ? 'Yes' : 'No';
+
+        async function testZoneAPI() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '<div class="info">Testing API...</div>';
+
+            try {
+                const response = await fetch('/api/get-zone-data');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">✅ API call successful!</div>
+                        <h3>Response Data:</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">❌ API call failed with status ${response.status}</div>
+                        <h3>Error Response:</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">❌ Network error: ${error.message}</div>
+                    <p>This could indicate:</p>
+                    <ul>
+                        <li>API endpoint doesn't exist</li>
+                        <li>Server is not running</li>
+                        <li>Network connectivity issue</li>
+                        <li>CORS issue</li>
+                    </ul>
+                `;
+            }
+        }
+
+        async function testWithDetails() {
+            const detailsDiv = document.getElementById('network-details');
+            detailsDiv.innerHTML = '<div class="info">Testing with full network details...</div>';
+
+            try {
+                const startTime = Date.now();
+                const response = await fetch('/api/get-zone-data', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+
+                const data = await response.json();
+                
+                detailsDiv.innerHTML = `
+                    <div class="info">📊 Network Details:</div>
+                    <ul>
+                        <li><strong>Response Time:</strong> ${responseTime}ms</li>
+                        <li><strong>Status:</strong> ${response.status} ${response.statusText}</li>
+                        <li><strong>Content-Type:</strong> ${response.headers.get('content-type')}</li>
+                        <li><strong>URL:</strong> ${response.url}</li>
+                    </ul>
+                    <h3>Response:</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                detailsDiv.innerHTML = `
+                    <div class="error">❌ Network error: ${error.message}</div>
+                    <p><strong>Error Type:</strong> ${error.name}</p>
+                    <p><strong>Error Stack:</strong></p>
+                    <pre>${error.stack}</pre>
+                `;
+            }
+        }
+
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            setTimeout(testZoneAPI, 1000);
+        });
+    </script>
+</body>
+</html>

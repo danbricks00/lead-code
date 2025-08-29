@@ -191,20 +191,68 @@ async function sendQuoteEmail(quoteData, req) {
 
         const emailContent = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <p>Hi ${quoteData.customerName},</p>
+                <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                    <h1>📋 Your Quote is Ready!</h1>
+                    <p>Hi ${quoteData.customerName}, your detailed quote has been prepared!</p>
+                </div>
                 
-                <p>Thank you for your enquiry.</p>
-                
-                <p>Here's quote ${quoteData.quoteNumber} for NZD ${quoteData.total}.</p>
-                
-                <p>You can view your quote online:</p>
-                <p><a href="${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}" style="color: #6f42c1;">${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}</a></p>
-                
-                <p>From your online quote you can accept, decline, comment or print.</p>
-                
-                <p>If you have any questions, please let us know.</p>
-                
-                <p>Thanks,<br>${quoteData.companyName}</p>
+                <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+                    <h2>📊 Your Quote Journey</h2>
+                    <div style="background: #e0e0e0; height: 20px; border-radius: 10px; margin: 20px 0; overflow: hidden;">
+                        <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); height: 100%; width: 66%; transition: width 0.3s ease;"></div>
+                    </div>
+                    <p><strong>Step 2 of 3 completed</strong></p>
+                    
+                    <div style="margin: 20px 0;">
+                        <h3>✅ Your Journey Checklist</h3>
+                        
+                        <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background: #d4edda; border-left: 4px solid #28a745;">
+                            <div style="width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; background: #28a745; color: white;">✓</div>
+                            <div>
+                                <strong>Project Details Sent</strong>
+                                <p style="margin: 5px 0 0 0;">Your underfloor heating project details have been received and processed.</p>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background: #d4edda; border-left: 4px solid #28a745;">
+                            <div style="width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; background: #28a745; color: white;">✓</div>
+                            <div>
+                                <strong>Quote Received</strong>
+                                <p style="margin: 5px 0 0 0;">Your detailed quote with pricing and timeline has been prepared.</p>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; background: #e0e0e0; color: #666; border: 2px solid #ccc;">○</div>
+                            <div>
+                                <strong>Quote Decision</strong>
+                                <p style="margin: 5px 0 0 0;">Review your quote and decide whether to proceed with the project.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 25px; margin: 10px 5px; display: inline-block;">View Your Quote</a>
+                        <a href="${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 25px; margin: 10px 5px; display: inline-block;">Accept Quote</a>
+                    </div>
+                    
+                    <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h4>📋 Quote Details</h4>
+                        <p>Your quote includes:</p>
+                        <ul>
+                            <li>Detailed cost breakdown</li>
+                            <li>Project timeline (start and completion dates)</li>
+                            <li>Materials and specifications</li>
+                            <li>Warranty information</li>
+                            <li>Payment terms and schedule</li>
+                        </ul>
+                        <p><strong>Next Steps:</strong> Review the quote and let us know if you'd like to proceed with the project.</p>
+                    </div>
+                    
+                    <p style="margin-top: 30px;">If you have any questions, please don't hesitate to contact us.</p>
+                    
+                    <p style="margin-top: 30px;">Best regards,<br><strong>${quoteData.companyName}</strong></p>
+                </div>
             </div>
         `;
 
@@ -212,6 +260,30 @@ async function sendQuoteEmail(quoteData, req) {
         
         if (success) {
             console.log('✅ Quote email sent to customer successfully');
+            
+            // Automatically update tradesman progress to mark "Quote Sent" as completed
+            try {
+                const updateResponse = await fetch(`${currentUrl}/api/update-tradesman-progress`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        customerEmail: quoteData.customerEmail,
+                        service: quoteData.serviceType,
+                        step: 'quote_sent',
+                        status: 'completed'
+                    })
+                });
+                
+                if (updateResponse.ok) {
+                    console.log('✅ Tradesman progress updated: Quote Sent marked as completed');
+                } else {
+                    console.log('⚠️ Failed to update tradesman progress');
+                }
+            } catch (updateError) {
+                console.log('⚠️ Error updating tradesman progress:', updateError.message);
+            }
         } else {
             console.log('❌ Failed to send quote email to customer');
         }
@@ -234,34 +306,85 @@ async function sendAdminQuoteEmail(quoteData, req) {
         const potentialCommission = parseFloat(quoteData.total) * commissionRate;
 
         const emailContent = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #2c3e50;">📊 New Quote Generated - Admin Copy</h2>
-                <p>Hello Admin,</p>
-                <p>A new quote has been generated and sent to the customer. Here are the details for tracking and commission purposes:</p>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                    <h1>📊 New Quote Generated!</h1>
+                    <p>Hello Admin, a new quote has been generated and sent to the customer.</p>
+                </div>
                 
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <h3 style="color: #34495e; margin-top: 0;">Quote Details</h3>
-                    <p><strong>Quote ID:</strong> ${quoteData.quoteId}</p>
-                    <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
-                    <p><strong>Customer:</strong> ${quoteData.customerName}</p>
-                    <p><strong>Customer Email:</strong> ${quoteData.customerEmail}</p>
-                    <p><strong>Service Type:</strong> ${quoteData.serviceType}</p>
-                </div>
+                <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+                    <h2>📊 Lead Management Journey</h2>
+                    <div style="background: #e0e0e0; height: 20px; border-radius: 10px; margin: 20px 0; overflow: hidden;">
+                        <div style="background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); height: 100%; width: 75%; transition: width 0.3s ease;"></div>
+                    </div>
+                    <p><strong>Step 3 of 4 completed</strong></p>
+                    
+                    <div style="margin: 20px 0;">
+                        <h3>✅ Lead Management Checklist</h3>
+                        
+                        <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background: #d4edda; border-left: 4px solid #28a745;">
+                            <div style="width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; background: #28a745; color: white;">✓</div>
+                            <div>
+                                <strong>Lead Captured</strong>
+                                <p style="margin: 5px 0 0 0;">New lead details have been captured and stored in the system.</p>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background: #d4edda; border-left: 4px solid #28a745;">
+                            <div style="width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; background: #28a745; color: white;">✓</div>
+                            <div>
+                                <strong>Tradesman Assignment</strong>
+                                <p style="margin: 5px 0 0 0;">Lead has been assigned to qualified tradesmen for quote preparation.</p>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background: #d4edda; border-left: 4px solid #28a745;">
+                            <div style="width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; background: #28a745; color: white;">✓</div>
+                            <div>
+                                <strong>Quote Generated</strong>
+                                <p style="margin: 5px 0 0 0;">Tradesman has generated and sent quote to customer.</p>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; background: #e0e0e0; color: #666; border: 2px solid #ccc;">○</div>
+                            <div>
+                                <strong>Project Won/Lost</strong>
+                                <p style="margin: 5px 0 0 0;">Customer will make decision on quote and project status.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h4>📋 Quote Details</h4>
+                        <p><strong>Quote ID:</strong> ${quoteData.quoteId}</p>
+                        <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+                        <p><strong>Customer:</strong> ${quoteData.customerName}</p>
+                        <p><strong>Customer Email:</strong> ${quoteData.customerEmail}</p>
+                        <p><strong>Service Type:</strong> ${quoteData.serviceType}</p>
+                    </div>
 
-                <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <h3 style="color: #155724; margin-top: 0;">Financial Details</h3>
-                    <p><strong>Total Quote Amount:</strong> $${quoteData.total}</p>
-                    <p><strong>Potential Commission (10%):</strong> $${potentialCommission.toFixed(2)}</p>
-                </div>
+                    <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h4 style="color: #155724; margin-top: 0;">💰 Financial Details</h4>
+                        <p><strong>Total Quote Amount:</strong> $${quoteData.total}</p>
+                        <p><strong>Potential Commission (10%):</strong> $${potentialCommission.toFixed(2)}</p>
+                    </div>
 
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}" 
-                       style="background: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-                        View Full Quote
-                    </a>
-                </div>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}" 
+                           style="background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 25px; display: inline-block; font-weight: bold;">
+                            📄 View Full Quote
+                        </a>
+                    </div>
+                    
+                    <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                        <h4>🎯 Next Steps</h4>
+                        <p><strong>The customer will now review the quote and make their decision.</strong></p>
+                        <p>You'll receive another notification when the customer accepts or declines the quote.</p>
+                    </div>
 
-                <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade</strong></p>
+                    <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+                </div>
             </div>
         `;
 
@@ -700,23 +823,177 @@ app.post('/api/send-to-sheets', async (req, res) => {
             console.log('=====================================');
             
             // Email to tradesmen
-            const tradesmenSubject = `New Lead: ${leadData.selectedService} Project in ${leadData.location}`;
+            const tradesmenSubject = `🎯 New Lead: ${leadData.selectedService} Project in ${leadData.location}`;
             const tradesmenBody = `
-New Lead Received
-
-Service Required: ${leadData.selectedService}
-Customer Name: ${leadData.customerName}
-Customer Email: ${leadData.customerEmail}
-Customer Phone: ${leadData.customerPhone}
-Location: ${leadData.location}
-Project Details: ${leadData.projectDetails}
-Project Size: ${leadData.projectSize}
-Specific Requirements: ${leadData.specificDetails}
-Budget: ${leadData.budget}
-Timeline: ${leadData.timeline}
-Date: ${new Date().toLocaleString()}
-
-Please contact the customer directly to discuss this project.
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                    <h1>🎯 New Lead Received!</h1>
+                    <p>Hi there, you have a new ${leadData.selectedService} project opportunity!</p>
+                </div>
+                
+                <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+                    <h2>📊 Your Lead Journey</h2>
+                    <div style="background: #e0e0e0; height: 20px; border-radius: 10px; margin: 20px 0; overflow: hidden;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100%; width: 33%; transition: width 0.3s ease;"></div>
+                    </div>
+                    <p><strong>Step 1 of 3 completed</strong></p>
+                    
+                    <div style="margin: 20px 0;">
+                        <h3>✅ Your Lead Checklist</h3>
+                        
+                        <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background: #d4edda; border-left: 4px solid #28a745;">
+                            <div style="width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; background: #28a745; color: white;">✓</div>
+                            <div>
+                                <strong>Lead Received</strong>
+                                <p style="margin: 5px 0 0 0;">New lead details have been received and assigned to you.</p>
+                            </div>
+                        </div>
+                        
+                        <div id="quote-sent-step" style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" onclick="markQuoteSent('${leadData.customerEmail}', '${leadData.selectedService}')">
+                            <div id="quote-sent-icon" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; background: #e0e0e0; color: #666; border: 2px solid #ccc; transition: all 0.3s ease;">○</div>
+                            <div>
+                                <strong>Quote Sent</strong>
+                                <p style="margin: 5px 0 0 0;">Click here when you have sent your quote to the customer.</p>
+                            </div>
+                        </div>
+                        
+                        <div id="quote-decision-step" style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div id="quote-decision-icon" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; background: #e0e0e0; color: #666; border: 2px solid #ccc; transition: all 0.3s ease;">○</div>
+                            <div>
+                                <strong>Quote Decision</strong>
+                                <p style="margin: 5px 0 0 0;">Customer will review your quote and make their decision.</p>
+                                <div style="margin-top: 10px;">
+                                    <button onclick="updateQuoteDecision('${leadData.customerEmail}', 'accepted')" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin-right: 10px; cursor: pointer;">Quote Accepted</button>
+                                    <button onclick="updateQuoteDecision('${leadData.customerEmail}', 'declined')" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Quote Declined</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h4>📋 Lead Details</h4>
+                        <p><strong>Service Required:</strong> ${leadData.selectedService}</p>
+                        <p><strong>Customer Name:</strong> ${leadData.customerName}</p>
+                        <p><strong>Customer Email:</strong> ${leadData.customerEmail}</p>
+                        <p><strong>Customer Phone:</strong> ${leadData.customerPhone}</p>
+                        <p><strong>Location:</strong> ${leadData.location}</p>
+                        <p><strong>Project Details:</strong> ${leadData.projectDetails}</p>
+                        <p><strong>Project Size:</strong> ${leadData.projectSize}</p>
+                        <p><strong>Specific Requirements:</strong> ${leadData.specificDetails}</p>
+                        <p><strong>Budget:</strong> ${leadData.budget}</p>
+                        <p><strong>Timeline:</strong> ${leadData.timeline}</p>
+                        <p><strong>Date Received:</strong> ${new Date().toLocaleString()}</p>
+                    </div>
+                    
+                    <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                        <h4>🎯 Next Steps</h4>
+                        <p><strong>Please contact the customer directly to discuss this project and prepare your quote.</strong></p>
+                        <ul>
+                            <li>Review the project requirements carefully</li>
+                            <li>Contact the customer within 24 hours</li>
+                            <li>Prepare a detailed quote with pricing</li>
+                            <li>Submit your quote through the system</li>
+                        </ul>
+                    </div>
+                    
+                    <p style="margin-top: 30px;">If you have any questions, please don't hesitate to contact the admin team.</p>
+                    
+                    <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade Team</strong></p>
+                </div>
+                
+                <script>
+                function markQuoteSent(customerEmail, service) {
+                    const quoteSentStep = document.getElementById('quote-sent-step');
+                    const quoteSentIcon = document.getElementById('quote-sent-icon');
+                    const progressBar = document.querySelector('.progress-bar-fill');
+                    
+                    // Update the UI
+                    quoteSentIcon.innerHTML = '✓';
+                    quoteSentIcon.style.background = '#28a745';
+                    quoteSentIcon.style.color = 'white';
+                    quoteSentIcon.style.border = 'none';
+                    quoteSentStep.style.background = '#d4edda';
+                    quoteSentStep.style.borderLeft = '4px solid #28a745';
+                    quoteSentStep.style.cursor = 'default';
+                    
+                    // Update progress bar to 66%
+                    if (progressBar) {
+                        progressBar.style.width = '66%';
+                    }
+                    
+                    // Update the step text
+                    const stepText = quoteSentStep.querySelector('p');
+                    stepText.innerHTML = 'Quote has been sent to the customer.';
+                    
+                    // Disable the click
+                    quoteSentStep.onclick = null;
+                    
+                    // Send update to server
+                    fetch('/api/update-tradesman-progress', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            customerEmail: customerEmail,
+                            service: service,
+                            step: 'quote_sent',
+                            status: 'completed'
+                        })
+                    }).catch(error => console.log('Progress update sent'));
+                }
+                
+                function updateQuoteDecision(customerEmail, decision) {
+                    const quoteDecisionStep = document.getElementById('quote-decision-step');
+                    const quoteDecisionIcon = document.getElementById('quote-decision-icon');
+                    const progressBar = document.querySelector('.progress-bar-fill');
+                    
+                    if (decision === 'accepted') {
+                        // Update UI for accepted
+                        quoteDecisionIcon.innerHTML = '✓';
+                        quoteDecisionIcon.style.background = '#28a745';
+                        quoteDecisionIcon.style.color = 'white';
+                        quoteDecisionIcon.style.border = 'none';
+                        quoteDecisionStep.style.background = '#d4edda';
+                        quoteDecisionStep.style.borderLeft = '4px solid #28a745';
+                    } else {
+                        // Update UI for declined
+                        quoteDecisionIcon.innerHTML = '✗';
+                        quoteDecisionIcon.style.background = '#dc3545';
+                        quoteDecisionIcon.style.color = 'white';
+                        quoteDecisionIcon.style.border = 'none';
+                        quoteDecisionStep.style.background = '#f8d7da';
+                        quoteDecisionStep.style.borderLeft = '4px solid #dc3545';
+                    }
+                    
+                    // Update progress bar to 100%
+                    if (progressBar) {
+                        progressBar.style.width = '100%';
+                    }
+                    
+                    // Update the step text
+                    const stepText = quoteDecisionStep.querySelector('p');
+                    stepText.innerHTML = \`Quote has been \${decision === 'accepted' ? 'accepted' : 'declined'} by the customer.\`;
+                    
+                    // Remove the buttons
+                    const buttonsDiv = quoteDecisionStep.querySelector('div');
+                    buttonsDiv.innerHTML = '';
+                    
+                    // Send update to server
+                    fetch('/api/update-tradesman-progress', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            customerEmail: customerEmail,
+                            step: 'quote_decision',
+                            status: decision
+                        })
+                    }).catch(error => console.log('Decision update sent'));
+                }
+                </script>
+            </div>
             `;
 
             console.log('📤 TO TRADESMEN:');
@@ -810,6 +1087,193 @@ The LeadBot Team
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// API endpoint to handle tradesman progress updates
+app.post('/api/update-tradesman-progress', async (req, res) => {
+    try {
+        const { customerEmail, service, step, status } = req.body;
+
+        if (!customerEmail || !step || !status) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Missing required fields: customerEmail, step, status' 
+            });
+        }
+
+        console.log(`Updating tradesman progress: ${customerEmail} - ${step} - ${status}`);
+
+        // Update the Google Sheet
+        const sheets = await getSheetsClient();
+        if (!sheets) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Google Sheets client not available' 
+            });
+        }
+
+        const spreadsheetId = process.env.GOOGLE_SHEETS_ID;
+        if (!spreadsheetId) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Google Sheets ID not configured' 
+            });
+        }
+
+        // Find the sheet that contains the lead data
+        const spreadsheet = await sheets.spreadsheets.get({
+            spreadsheetId: spreadsheetId
+        });
+
+        let targetSheet = null;
+        for (const sheet of spreadsheet.data.sheets) {
+            const sheetName = sheet.properties.title;
+            if (sheetName === 'Zone' || sheetName === 'Leads' || sheetName === 'Sheet1') {
+                targetSheet = sheetName;
+                break;
+            }
+        }
+
+        if (!targetSheet) {
+            targetSheet = spreadsheet.data.sheets[0].properties.title;
+        }
+
+        // Read the sheet to find the row with the customer email
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: spreadsheetId,
+            range: `${targetSheet}!A:Z`
+        });
+
+        const rows = response.data.values;
+        if (!rows || rows.length === 0) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'No data found in sheet' 
+            });
+        }
+
+        // Find the row with the customer email
+        let targetRow = -1;
+        for (let i = 0; i < rows.length; i++) {
+            if (rows[i][2] === customerEmail) { // Assuming email is in column C (index 2)
+                targetRow = i + 1; // Sheets rows are 1-indexed
+                break;
+            }
+        }
+
+        if (targetRow === -1) {
+            return res.status(404).json({ 
+                success: false, 
+                message: `Customer email ${customerEmail} not found in sheet` 
+            });
+        }
+
+        // Determine which column to update based on the step
+        let columnToUpdate = '';
+        if (step === 'quote_sent') {
+            columnToUpdate = 'P'; // Column P for quote sent status
+        } else if (step === 'quote_decision') {
+            columnToUpdate = 'Q'; // Column Q for quote decision status
+        }
+
+        if (!columnToUpdate) {
+            return res.status(400).json({ 
+                success: false, 
+                message: `Unknown step: ${step}` 
+            });
+        }
+
+        // Update the cell
+        await sheets.spreadsheets.values.update({
+            spreadsheetId: spreadsheetId,
+            range: `${targetSheet}!${columnToUpdate}${targetRow}`,
+            valueInputOption: 'RAW',
+            requestBody: {
+                values: [[status]]
+            }
+        });
+
+        console.log(`Updated ${targetSheet}!${columnToUpdate}${targetRow} with status: ${status}`);
+
+        // If quote was sent, send notification to admin
+        if (step === 'quote_sent' && status === 'completed') {
+            const adminEmail = process.env.ADMIN_EMAIL || 'admin@kiwitrade.co.nz';
+            const adminSubject = `📋 Quote Sent: ${service} Project`;
+            const adminBody = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                    <h1>📋 Quote Sent!</h1>
+                    <p>A tradesman has sent a quote for a ${service} project.</p>
+                </div>
+                
+                <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+                    <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h4>📋 Project Details</h4>
+                        <p><strong>Service:</strong> ${service}</p>
+                        <p><strong>Customer Email:</strong> ${customerEmail}</p>
+                        <p><strong>Quote Status:</strong> Sent</p>
+                        <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
+                    </div>
+                    
+                    <p style="margin-top: 30px;">The customer will now review the quote and make their decision.</p>
+                    
+                    <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+                </div>
+            </div>
+            `;
+
+            await sendEmail(adminEmail, adminSubject, adminBody);
+        }
+
+        // If quote decision was made, send notification to admin
+        if (step === 'quote_decision') {
+            const adminEmail = process.env.ADMIN_EMAIL || 'admin@kiwitrade.co.nz';
+            const decisionText = status === 'accepted' ? 'Accepted' : 'Declined';
+            const adminSubject = `🎯 Quote Decision: ${decisionText} - ${service} Project`;
+            const adminBody = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="background: linear-gradient(135deg, ${status === 'accepted' ? '#28a745 0%, #20c997 100%' : '#dc3545 0%, #fd7e14 100%'}); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                    <h1>🎯 Quote ${decisionText}!</h1>
+                    <p>The customer has ${status === 'accepted' ? 'accepted' : 'declined'} the quote for the ${service} project.</p>
+                </div>
+                
+                <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+                    <div style="background: ${status === 'accepted' ? '#d4edda' : '#f8d7da'}; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid ${status === 'accepted' ? '#28a745' : '#dc3545'};">
+                        <h4>📋 Project Decision</h4>
+                        <p><strong>Service:</strong> ${service}</p>
+                        <p><strong>Customer Email:</strong> ${customerEmail}</p>
+                        <p><strong>Decision:</strong> <span style="color: ${status === 'accepted' ? '#28a745' : '#dc3545'}; font-weight: bold;">${decisionText}</span></p>
+                        <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
+                    </div>
+                    
+                    ${status === 'accepted' ? 
+                        '<p style="margin-top: 20px;"><strong>🎉 Congratulations! The project is now confirmed and ready to proceed.</strong></p>' :
+                        '<p style="margin-top: 20px;"><strong>📝 The project was not accepted. Consider following up with the customer for feedback.</strong></p>'
+                    }
+                    
+                    <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+                </div>
+            </div>
+            `;
+
+            await sendEmail(adminEmail, adminSubject, adminBody);
+        }
+
+        res.json({ 
+            success: true, 
+            message: 'Tradesman progress updated successfully',
+            step: step,
+            status: status
+        });
+
+    } catch (error) {
+        console.error('Error in update-tradesman-progress:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Internal server error',
+            error: error.message 
+        });
     }
 });
 

@@ -19,56 +19,34 @@ export async function sendToSheets(leadData) {
     emailType: typeof leadData.customerEmail
   });
 
-  // 1. Send customer confirmation email
+  // 1. Send gamified welcome email to customer
   let customerEmailSent = false;
   try {
-    const nodemailer = await import('nodemailer');
-    const transporter = nodemailer.default.createTransport({
-      service: 'gmail',
-      auth: {
-        user: 'danbricks18@gmail.com',
-        pass: 'ptmcojqgthvjbqom'
-      }
-    });
-
     // Check if customer email is provided
     if (!leadData.customerEmail) {
       console.error('❌ No customer email provided in lead data');
       throw new Error('No customer email provided');
     }
 
-    const customerMailOptions = {
-      from: 'Kiwi Trade <danbricks18@gmail.com>',
-      to: leadData.customerEmail,
-      subject: 'Your Project Request Confirmation - Quote Coming Soon',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2c3e50;">Thank you for your project request!</h2>
-          <p>Hi ${leadData.customerName || 'there'},</p>
-          <p>We have received your request for <strong>${leadData.selectedService || 'our services'}</strong> and are working on your quote.</p>
-          
-          <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #34495e; margin-top: 0;">Project Details:</h3>
-            <p><strong>Service:</strong> ${leadData.selectedService || 'Not specified'}</p>
-            <p><strong>Project:</strong> ${leadData.projectDetails || 'Not specified'}</p>
-            <p><strong>Location:</strong> ${leadData.location || 'Not specified'}</p>
-            <p><strong>Size/Scope:</strong> ${leadData.projectSize || 'Not specified'}</p>
-            <p><strong>Budget:</strong> ${leadData.budget || 'Not specified'}</p>
-            <p><strong>Timeline:</strong> ${leadData.timeline || 'Not specified'}</p>
-            ${leadData.specificDetails ? `<p><strong>Specific Requirements:</strong> ${leadData.specificDetails}</p>` : ''}
-          </div>
-          
-          <p>Our qualified tradesmen are reviewing your project and will send you a detailed quote within 24 hours.</p>
-          <p>You'll receive an email with the quote and tradesman details for your approval.</p>
-          
-          <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade</strong></p>
-        </div>
-      `
-    };
+    // Send gamified welcome email
+    const welcomeEmailResponse = await fetch(`${process.env.BASE_URL || 'http://localhost:3000'}/api/send-gamified-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerEmail: leadData.customerEmail,
+        customerName: leadData.customerName || 'there',
+        leadId: leadId,
+        emailType: 'welcome'
+      })
+    });
 
-    await transporter.sendMail(customerMailOptions);
-    console.log('✅ Customer confirmation email sent successfully');
-    customerEmailSent = true;
+    const welcomeEmailResult = await welcomeEmailResponse.json();
+    if (welcomeEmailResult.success) {
+      console.log('✅ Gamified welcome email sent successfully');
+      customerEmailSent = true;
+    } else {
+      console.error('❌ Error sending gamified email:', welcomeEmailResult.error);
+    }
   } catch (emailError) {
     console.error('❌ Customer email error:', emailError.message);
   }
@@ -160,27 +138,84 @@ export async function sendToSheets(leadData) {
     const adminMailOptions = {
       from: 'Kiwi Trade <danbricks18@gmail.com>',
       to: 'danbricks18@gmail.com',
-      subject: 'New Lead captured',
+      subject: '🎯 New Lead Captured - Admin Dashboard',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2c3e50;">New Lead Captured from Chatbot</h2>
-          <p>A new lead has been submitted through the chatbot system.</p>
-          
-          <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #34495e; margin-top: 0;">Lead Details:</h3>
-            <p><strong>Customer:</strong> ${leadData.customerName || 'Not provided'}</p>
-            <p><strong>Email:</strong> ${leadData.customerEmail || 'Not provided'}</p>
-            <p><strong>Phone:</strong> ${leadData.customerPhone || 'Not provided'}</p>
-            <p><strong>Location:</strong> ${leadData.location || 'Not provided'}</p>
-            <p><strong>Service:</strong> ${leadData.selectedService || 'Not specified'}</p>
-            <p><strong>Project:</strong> ${leadData.projectDetails || 'Not specified'}</p>
-            <p><strong>Size/Scope:</strong> ${leadData.projectSize || 'Not specified'}</p>
-            <p><strong>Budget:</strong> ${leadData.budget || 'Not specified'}</p>
-            <p><strong>Timeline:</strong> ${leadData.timeline || 'Not specified'}</p>
-            ${leadData.specificDetails ? `<p><strong>Specific Details:</strong> ${leadData.specificDetails}</p>` : ''}
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1>🎯 New Lead Captured!</h1>
+            <p>Hello Admin, a new lead has been submitted through the chatbot system.</p>
           </div>
           
-          <p><em>This lead was automatically captured from the chatbot system.</em></p>
+          <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+            <h2>📊 Lead Management Journey</h2>
+            <div style="background: #e0e0e0; height: 20px; border-radius: 10px; margin: 20px 0; overflow: hidden;">
+              <div style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); height: 100%; width: 25%; transition: width 0.3s ease;"></div>
+            </div>
+            <p><strong>Step 1 of 4 completed</strong></p>
+            
+            <div style="margin: 20px 0;">
+              <h3>✅ Lead Management Checklist</h3>
+              
+              <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background: #d4edda; border-left: 4px solid #28a745;">
+                <div style="width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; background: #28a745; color: white;">✓</div>
+                <div>
+                  <strong>Lead Captured</strong>
+                  <p style="margin: 5px 0 0 0;">New lead details have been captured and stored in the system.</p>
+                </div>
+              </div>
+              
+              <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div style="width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; background: #e0e0e0; color: #666; border: 2px solid #ccc;">○</div>
+                <div>
+                  <strong>Tradesman Assignment</strong>
+                  <p style="margin: 5px 0 0 0;">Lead will be assigned to qualified tradesmen for quote preparation.</p>
+                </div>
+              </div>
+              
+              <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div style="width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; background: #e0e0e0; color: #666; border: 2px solid #ccc;">○</div>
+                <div>
+                  <strong>Quote Generated</strong>
+                  <p style="margin: 5px 0 0 0;">Tradesman will generate and send quote to customer.</p>
+                </div>
+              </div>
+              
+              <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div style="width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; background: #e0e0e0; color: #666; border: 2px solid #ccc;">○</div>
+                <div>
+                  <strong>Project Won/Lost</strong>
+                  <p style="margin: 5px 0 0 0;">Customer will make decision on quote and project status.</p>
+                </div>
+              </div>
+            </div>
+            
+            <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h4>📋 Lead Details</h4>
+              <p><strong>Customer:</strong> ${leadData.customerName || 'Not provided'}</p>
+              <p><strong>Email:</strong> ${leadData.customerEmail || 'Not provided'}</p>
+              <p><strong>Phone:</strong> ${leadData.customerPhone || 'Not provided'}</p>
+              <p><strong>Location:</strong> ${leadData.location || 'Not provided'}</p>
+              <p><strong>Service:</strong> ${leadData.selectedService || 'Not specified'}</p>
+              <p><strong>Project:</strong> ${leadData.projectDetails || 'Not specified'}</p>
+              <p><strong>Size/Scope:</strong> ${leadData.projectSize || 'Not specified'}</p>
+              <p><strong>Budget:</strong> ${leadData.budget || 'Not specified'}</p>
+              <p><strong>Timeline:</strong> ${leadData.timeline || 'Not specified'}</p>
+              ${leadData.specificDetails ? `<p><strong>Specific Details:</strong> ${leadData.specificDetails}</p>` : ''}
+            </div>
+            
+            <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+              <h4>🎯 Admin Actions</h4>
+              <p><strong>This lead has been automatically processed and notifications sent to:</strong></p>
+              <ul>
+                <li>✅ Customer confirmation email</li>
+                <li>✅ Tradesman notification emails</li>
+                <li>✅ Google Sheets updated (if configured)</li>
+              </ul>
+              <p style="margin-top: 15px;"><em>No immediate action required - the system is handling the lead automatically.</em></p>
+            </div>
+            
+            <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+          </div>
         </div>
       `
     };
@@ -231,9 +266,11 @@ export async function sendToSheets(leadData) {
       const availableSheets = metadata.data.sheets.map(s => s.properties.title);
       console.log('📋 Available sheets:', availableSheets);
       
-      // Find the correct sheet to use (prefer 'Leads', fallback to 'Sheet1', then first sheet)
+      // Find the correct sheet to use (prefer 'Zone', fallback to 'Leads', then 'Sheet1', then first sheet)
       let targetSheet = 'Sheet1'; // Default fallback
-      if (availableSheets.includes('Leads')) {
+      if (availableSheets.includes('Zone')) {
+        targetSheet = 'Zone';
+      } else if (availableSheets.includes('Leads')) {
         targetSheet = 'Leads';
       } else if (availableSheets.includes('Sheet1')) {
         targetSheet = 'Sheet1';
@@ -241,7 +278,7 @@ export async function sendToSheets(leadData) {
         targetSheet = availableSheets[0];
       }
       
-      console.log('🎯 Using sheet for lead data:', targetSheet);
+      console.log('🎯 Using sheet for lead data:', targetSheet, '(preferred: Zone)');
       const range = `${targetSheet}!A:Z`;
       
       const values = [

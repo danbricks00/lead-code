@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Tradesman Gamified Email</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .email-preview {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #ddd;
+        }
+        .progress-bar {
+            background: #e0e0e0;
+            height: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            width: 33%;
+            transition: width 0.3s ease;
+        }
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .checklist-item.completed {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        .checklist-item.declined {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+        .checklist-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            background: #e0e0e0;
+            color: #666;
+            border: 2px solid #ccc;
+            transition: all 0.3s ease;
+        }
+        .checklist-icon.completed {
+            background: #28a745;
+            color: white;
+            border: none;
+        }
+        .checklist-icon.declined {
+            background: #dc3545;
+            color: white;
+            border: none;
+        }
+        .decision-buttons {
+            margin-top: 10px;
+        }
+        .decision-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        .decision-btn.decline {
+            background: #dc3545;
+        }
+        .decision-btn:hover {
+            opacity: 0.8;
+        }
+        .test-info {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .api-info {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Tradesman Gamified Email</h1>
+        
+        <div class="test-info">
+            <h3>📋 Test Overview</h3>
+            <p>This page tests the tradesman gamified email functionality with automatic progress updates.</p>
+            <ul>
+                <li><strong>Lead Received:</strong> Automatically completed (green tick)</li>
+                <li><strong>Quote Sent:</strong> Automatically completed when quote is sent to customer</li>
+                <li><strong>Quote Decision:</strong> Automatically updated when customer accepts/declines</li>
+            </ul>
+            <p><strong>Note:</strong> The tradesman's progress updates automatically based on system events, not manual clicks.</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Tradesman Email Preview</h3>
+            <p>This simulates the email that tradesmen receive when a new lead is assigned. Progress updates automatically:</p>
+            
+            <div class="email-preview">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                    <h1>🎯 New Lead Received!</h1>
+                    <p>Hi there, you have a new Painting project opportunity!</p>
+                </div>
+                
+                <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+                    <h2>📊 Your Lead Journey</h2>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <p><strong>Step 1 of 3 completed</strong></p>
+                    
+                    <div style="margin: 20px 0;">
+                        <h3>✅ Your Lead Checklist</h3>
+                        
+                        <div class="checklist-item completed">
+                            <div class="checklist-icon completed">✓</div>
+                            <div>
+                                <strong>Lead Received</strong>
+                                <p style="margin: 5px 0 0 0;">New lead details have been received and assigned to you.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item" id="quote-sent-step">
+                            <div class="checklist-icon" id="quote-sent-icon">○</div>
+                            <div>
+                                <strong>Quote Sent</strong>
+                                <p style="margin: 5px 0 0 0;">Automatically updated when quote is sent to customer.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item" id="quote-decision-step">
+                            <div class="checklist-icon" id="quote-decision-icon">○</div>
+                            <div>
+                                <strong>Quote Decision</strong>
+                                <p style="margin: 5px 0 0 0;">Automatically updated when customer makes decision.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h4>📋 Lead Details</h4>
+                        <p><strong>Service Required:</strong> Painting</p>
+                        <p><strong>Customer Name:</strong> John Doe</p>
+                        <p><strong>Customer Email:</strong> john.doe@example.com</p>
+                        <p><strong>Customer Phone:</strong> 021-123-4567</p>
+                        <p><strong>Location:</strong> Auckland Central</p>
+                        <p><strong>Project Details:</strong> Interior painting of 3-bedroom house</p>
+                        <p><strong>Project Size:</strong> Medium</p>
+                        <p><strong>Specific Requirements:</strong> Neutral colors, eco-friendly paint</p>
+                        <p><strong>Budget:</strong> $3,000 - $5,000</p>
+                        <p><strong>Timeline:</strong> Within 2 months</p>
+                        <p><strong>Date Received:</strong> <span id="current-date"></span></p>
+                    </div>
+                    
+                    <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                        <h4>🎯 Next Steps</h4>
+                        <p><strong>Please contact the customer directly to discuss this project and prepare your quote.</strong></p>
+                        <ul>
+                            <li>Review the project requirements carefully</li>
+                            <li>Contact the customer within 24 hours</li>
+                            <li>Prepare a detailed quote with pricing</li>
+                            <li>Submit your quote through the system</li>
+                        </ul>
+                    </div>
+                    
+                    <p style="margin-top: 30px;">If you have any questions, please don't hesitate to contact the admin team.</p>
+                    
+                    <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade Team</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Test Controls</h3>
+            <button onclick="resetTest()">Reset Test</button>
+            <button onclick="testQuoteSent()">Simulate Quote Sent</button>
+            <button onclick="testQuoteAccepted()">Simulate Quote Accepted</button>
+            <button onclick="testQuoteDeclined()">Simulate Quote Declined</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+
+        <div class="api-info">
+            <h3>🔗 API Endpoint</h3>
+            <p><strong>POST /api/update-tradesman-progress</strong></p>
+            <p>This endpoint handles tradesman progress updates and sends notifications to admin.</p>
+            <p><strong>Request Body:</strong></p>
+            <pre>{
+  "customerEmail": "john.doe@example.com",
+  "service": "Painting",
+  "step": "quote_sent" | "quote_decision",
+  "status": "completed" | "accepted" | "declined"
+}</pre>
+        </div>
+
+        <div class="log" id="log">
+            <strong>Test Log:</strong><br>
+            <span id="log-content">Ready to test...</span>
+        </div>
+    </div>
+
+    <script>
+        // Set current date
+        document.getElementById('current-date').textContent = new Date().toLocaleString();
+
+        function log(message) {
+            const logContent = document.getElementById('log-content');
+            const timestamp = new Date().toLocaleTimeString();
+            logContent.innerHTML += `<br>[${timestamp}] ${message}`;
+            document.getElementById('log').scrollTop = document.getElementById('log').scrollHeight;
+        }
+
+        function simulateQuoteSent() {
+            const quoteSentStep = document.getElementById('quote-sent-step');
+            const quoteSentIcon = document.getElementById('quote-sent-icon');
+            const progressFill = document.getElementById('progress-fill');
+            
+            // Update the UI
+            quoteSentIcon.innerHTML = '✓';
+            quoteSentIcon.classList.add('completed');
+            quoteSentStep.classList.add('completed');
+            
+            // Update progress bar to 66%
+            progressFill.style.width = '66%';
+            
+            // Update the step text
+            const stepText = quoteSentStep.querySelector('p');
+            stepText.innerHTML = 'Quote has been sent to the customer.';
+            
+            log('✅ Quote Sent automatically completed');
+            log('📊 Progress updated to 66%');
+            
+            // Simulate API call
+            simulateAPI('quote_sent', 'completed');
+        }
+        
+        function simulateQuoteDecision(decision) {
+            const quoteDecisionStep = document.getElementById('quote-decision-step');
+            const quoteDecisionIcon = document.getElementById('quote-decision-icon');
+            const progressFill = document.getElementById('progress-fill');
+            
+            if (decision === 'accepted') {
+                // Update UI for accepted
+                quoteDecisionIcon.innerHTML = '✓';
+                quoteDecisionIcon.classList.add('completed');
+                quoteDecisionStep.classList.add('completed');
+                log('✅ Quote Decision: Automatically accepted');
+            } else {
+                // Update UI for declined
+                quoteDecisionIcon.innerHTML = '✗';
+                quoteDecisionIcon.classList.add('declined');
+                quoteDecisionStep.classList.add('declined');
+                log('❌ Quote Decision: Automatically declined');
+            }
+            
+            // Update progress bar to 100%
+            progressFill.style.width = '100%';
+            
+            // Update the step text
+            const stepText = quoteDecisionStep.querySelector('p');
+            stepText.innerHTML = `Quote has been ${decision === 'accepted' ? 'accepted' : 'declined'} by the customer.`;
+            
+            log('📊 Progress updated to 100%');
+            
+            // Simulate API call
+            simulateAPI('quote_decision', decision);
+        }
+
+        function simulateAPI(step, status) {
+            log(`🔄 Simulating API call: ${step} - ${status}`);
+            
+            // Simulate the actual API call that would happen in the email
+            fetch('/api/update-tradesman-progress', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    customerEmail: 'john.doe@example.com',
+                    service: 'Painting',
+                    step: step,
+                    status: status
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    log(`✅ API Response: ${data.message}`);
+                    if (step === 'quote_sent') {
+                        log('📧 Admin notification sent: Quote Sent');
+                    } else if (step === 'quote_decision') {
+                        log(`📧 Admin notification sent: Quote ${status === 'accepted' ? 'Accepted' : 'Declined'}`);
+                    }
+                } else {
+                    log(`❌ API Error: ${data.message}`);
+                }
+            })
+            .catch(error => {
+                log(`❌ API Call Failed: ${error.message}`);
+                log('💡 This is expected if the server is not running');
+            });
+        }
+
+        function resetTest() {
+            // Reset progress bar
+            document.getElementById('progress-fill').style.width = '33%';
+            
+            // Reset quote sent step
+            const quoteSentStep = document.getElementById('quote-sent-step');
+            const quoteSentIcon = document.getElementById('quote-sent-icon');
+            quoteSentStep.classList.remove('completed');
+            quoteSentIcon.classList.remove('completed');
+            quoteSentIcon.innerHTML = '○';
+            quoteSentStep.querySelector('p').innerHTML = 'Automatically updated when quote is sent to customer.';
+            
+            // Reset quote decision step
+            const quoteDecisionStep = document.getElementById('quote-decision-step');
+            const quoteDecisionIcon = document.getElementById('quote-decision-icon');
+            quoteDecisionStep.classList.remove('completed', 'declined');
+            quoteDecisionIcon.classList.remove('completed', 'declined');
+            quoteDecisionIcon.innerHTML = '○';
+            quoteDecisionStep.querySelector('p').innerHTML = 'Automatically updated when customer makes decision.';
+            
+            log('🔄 Test reset to initial state');
+        }
+
+        function testQuoteSent() {
+            log('🧪 Simulating Quote Sent event...');
+            simulateQuoteSent();
+        }
+        
+        function testQuoteAccepted() {
+            log('🧪 Simulating Quote Accepted event...');
+            simulateQuoteDecision('accepted');
+        }
+        
+        function testQuoteDeclined() {
+            log('🧪 Simulating Quote Declined event...');
+            simulateQuoteDecision('declined');
+        }
+
+        function clearLog() {
+            document.getElementById('log-content').innerHTML = 'Log cleared...';
+        }
+
+        // Initialize
+        log('🚀 Tradesman Gamified Email Test initialized');
+        log('💡 Use the test buttons to simulate automatic progress updates');
+        log('💡 Progress updates happen automatically based on system events');
+    </script>
+</body>
+</html>

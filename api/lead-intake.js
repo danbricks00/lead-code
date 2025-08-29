@@ -102,10 +102,15 @@ export default async function handler(req, res) {
         try {
             // Send customer confirmation email
             const customerTransporter = nodemailer.default.createTransporter({
-                service: 'gmail',
+                host: 'smtp.gmail.com',
+                port: 587,
+                secure: false,
                 auth: {
                     user: process.env.GMAIL_USER || 'danbricks18@gmail.com',
                     pass: process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom'
+                },
+                tls: {
+                    rejectUnauthorized: false
                 }
             });
 
@@ -138,10 +143,15 @@ export default async function handler(req, res) {
 
             // Send admin notification email
             const adminTransporter = nodemailer.default.createTransporter({
-                service: 'gmail',
+                host: 'smtp.gmail.com',
+                port: 587,
+                secure: false,
                 auth: {
                     user: process.env.GMAIL_USER || 'danbricks18@gmail.com',
                     pass: process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom'
+                },
+                tls: {
+                    rejectUnauthorized: false
                 }
             });
 

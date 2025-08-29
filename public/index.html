@@ -1023,12 +1023,18 @@
                 const response = await fetch('/api/get-zone-data');
                 console.log('📊 Response status:', response.status);
                 
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const result = await response.json();
                 console.log('📊 API response:', result);
                 
-                if (result.success) {
+                if (result.success && result.data) {
                     zoneData = result.data;
                     console.log('✅ Zone data loaded successfully:', zoneData);
+                    console.log('📊 Available areas:', zoneData.areas);
+                    console.log('📊 Grouped data keys:', Object.keys(zoneData.groupedData || {}));
                     showAddressSelection();
                 } else {
                     console.error('❌ Failed to load Zone data:', result.error);
@@ -1084,8 +1090,8 @@
             
             const selectedArea = areaSelect.value;
             
-            if (selectedArea && zoneData.suburbsByArea[selectedArea]) {
-                const suburbs = zoneData.suburbsByArea[selectedArea];
+            if (selectedArea && zoneData.groupedData[selectedArea]) {
+                const suburbs = zoneData.groupedData[selectedArea];
                 
                 suburbList.innerHTML = suburbs.map(suburb => 
                     `<div class="suburb-item" onclick="selectSuburb('${suburb}')">${suburb}</div>`

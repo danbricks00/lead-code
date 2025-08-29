@@ -168,6 +168,11 @@ export default async function handler(req, res) {
         });
 
         console.log('✅ Zone data processed successfully');
+        console.log('📊 Final response data:', {
+            areas: Array.from(areas).sort(),
+            groupedDataKeys: Object.keys(groupedData),
+            totalEntries: zoneData.length
+        });
 
         res.json({
             success: true,

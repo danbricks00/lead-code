@@ -39,7 +39,7 @@ export default async function handler(req, res) {
                 type: 'service_account',
                 project_id: process.env.GOOGLE_PROJECT_ID,
                 private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-                private_key: privateKey.replace(/\\n/g, '\n'),
+                private_key: privateKey?.replace(/\\n/g, '\n') || privateKey,
                 client_email: serviceAccountEmail,
                 client_id: process.env.GOOGLE_CLIENT_ID,
                 auth_uri: 'https://accounts.google.com/o/oauth2/auth',
@@ -53,6 +53,20 @@ export default async function handler(req, res) {
         console.log('🔐 Google Auth initialized');
 
         const sheets = google.sheets({ version: 'v4', auth });
+        
+        // Test authentication first
+        try {
+            console.log('🔐 Testing authentication...');
+            await auth.getClient();
+            console.log('✅ Authentication successful');
+        } catch (authError) {
+            console.error('❌ Authentication failed:', authError);
+            return res.status(500).json({
+                success: false,
+                error: 'Google authentication failed',
+                details: authError.message
+            });
+        }
         
         // Get available sheets to find the Zone sheet
         console.log('📋 Fetching spreadsheet metadata...');

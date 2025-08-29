@@ -6,7 +6,7 @@
     "build": "echo 'no build step needed'"
   },
   "engines": {
-    "node": "18.x"
+    "node": "22.x"
   },
   "dependencies": {
     "googleapis": "^128.0.0",

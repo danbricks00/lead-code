@@ -1,4 +1,4 @@
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
     console.log('🧪 Test CJS API - Request received');
     console.log('📊 Method:', req.method);
     console.log('📊 URL:', req.url);
@@ -10,4 +10,4 @@ module.exports = async (req, res) => {
         method: req.method,
         url: req.url
     });
-};
+}

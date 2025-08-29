@@ -1,5 +1,3 @@
-import { google } from 'googleapis';
-
 // Helper function to format timestamp in NZT
 function formatNZTTime(timestamp) {
   try {
@@ -61,6 +59,9 @@ export default async function handler(req, res) {
       // 1. Check current quote status in Google Sheets
       if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {
         try {
+          // Use dynamic import for googleapis
+          const { google } = await import('googleapis');
+          
           const auth = new google.auth.GoogleAuth({
             credentials: {
               client_email: process.env.GOOGLE_CLIENT_EMAIL,
@@ -109,6 +110,9 @@ export default async function handler(req, res) {
         let acceptedTime = 'Unknown time';
         if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {
           try {
+            // Use dynamic import for googleapis
+            const { google } = await import('googleapis');
+            
             const auth = new google.auth.GoogleAuth({
               credentials: {
                 client_email: process.env.GOOGLE_CLIENT_EMAIL,
@@ -181,6 +185,9 @@ export default async function handler(req, res) {
         let declinedTime = 'Unknown time';
         if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {
           try {
+            // Use dynamic import for googleapis
+            const { google } = await import('googleapis');
+            
             const auth = new google.auth.GoogleAuth({
               credentials: {
                 client_email: process.env.GOOGLE_CLIENT_EMAIL,
@@ -250,6 +257,9 @@ export default async function handler(req, res) {
       // 3. Update quote status to 'accepted' in Google Sheets
       if (quoteData && process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID) {
         try {
+          // Use dynamic import for googleapis
+          const { google } = await import('googleapis');
+          
           const auth = new google.auth.GoogleAuth({
             credentials: {
               client_email: process.env.GOOGLE_CLIENT_EMAIL,
@@ -287,7 +297,8 @@ export default async function handler(req, res) {
       // 4. Send notification email to tradesman
       if (quoteData && quoteData.tradesmanEmail) {
         try {
-          const nodemailer = await import('nodemailer');
+          // Use dynamic import for nodemailer
+          const { nodemailer } = await import('nodemailer');
           const transporter = nodemailer.default.createTransport({
             service: 'gmail',
             auth: {

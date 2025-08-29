@@ -1,11 +1,10 @@
-export default async (req, res) => {
+const { google } = require('googleapis');
+
+module.exports = async (req, res) => {
     try {
-        console.log('🔍 Fetching Zone sheet data for address selection...');
+        console.log('🔍 Fetching Zone sheet data for address selection (CommonJS)...');
         console.log('📊 Request method:', req.method);
         console.log('📊 Request headers:', req.headers);
-        
-        // Use dynamic import for googleapis
-        const { google } = await import('googleapis');
         
         // Check if we have the required environment variables
         const serviceAccountEmail = process.env.GOOGLE_CLIENT_EMAIL;
@@ -126,17 +125,9 @@ export default async (req, res) => {
             header.toLowerCase().includes('zone')
         );
 
-        // Also check for postcode column (though we don't use it for now)
-        const postcodeColumnIndex = headers.findIndex(header =>
-            header.toLowerCase().includes('postcode') ||
-            header.toLowerCase().includes('post code') ||
-            header.toLowerCase().includes('zip')
-        );
-
         console.log('🔍 Column indices:');
         console.log('- Suburb column index:', suburbColumnIndex);
         console.log('- Area column index:', areaColumnIndex);
-        console.log('- Postcode column index:', postcodeColumnIndex);
 
         if (areaColumnIndex === -1 || suburbColumnIndex === -1) {
             console.log('⚠️ Could not find Area or Suburb columns in Zone sheet');

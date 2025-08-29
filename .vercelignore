@@ -1,0 +1,13 @@
+# Don't ignore node_modules and package files
+!node_modules/
+!package.json
+!package-lock.json
+
+# Ignore other files
+.git
+.vscode
+*.log
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

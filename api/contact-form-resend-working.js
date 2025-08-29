@@ -32,6 +32,7 @@ export default async function handler(req, res) {
         let adminEmailSent = false;
 
         try {
+            // Use dynamic import for nodemailer
             const nodemailer = await import('nodemailer');
             const transporter = nodemailer.default.createTransport({
                 service: 'gmail',
@@ -70,6 +71,7 @@ export default async function handler(req, res) {
         }
 
         try {
+            // Use dynamic import for nodemailer
             const nodemailer = await import('nodemailer');
             const transporter = nodemailer.default.createTransport({
                 service: 'gmail',

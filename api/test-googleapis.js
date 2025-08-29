@@ -1,23 +1,26 @@
-export default async (req, res) => {
+export default async function handler(req, res) {
+    if (req.method !== 'GET') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
     try {
-        console.log('🧪 Testing googleapis import...');
+        console.log('🧪 Testing Google APIs...');
         
-        // Try to import googleapis
+        // Test if googleapis can be imported
         const { google } = await import('googleapis');
-        console.log('✅ googleapis imported successfully');
+        console.log('✅ Google APIs imported successfully');
         
         res.json({
             success: true,
-            message: 'googleapis module is working!',
-            timestamp: new Date().toISOString()
+            message: 'Google APIs test successful!',
+            timestamp: new Date().toISOString(),
+            googleapisVersion: google.version || 'unknown'
         });
-        
     } catch (error) {
-        console.error('❌ Error importing googleapis:', error);
+        console.error('❌ Google APIs test failed:', error);
         res.status(500).json({
             success: false,
-            error: error.message,
-            stack: error.stack
+            error: error.message
         });
     }
-};
+}

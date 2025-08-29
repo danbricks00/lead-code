@@ -1,10 +1,10 @@
-export default async (req, res) => {
+export default async function handler(req, res) {
+    console.log('🧪 Test deployment API - Request received');
+    
     res.json({
         success: true,
-        message: 'API deployment is working!',
+        message: 'Deployment test successful!',
         timestamp: new Date().toISOString(),
-        method: req.method,
-        url: req.url,
-        headers: req.headers
+        environment: process.env.NODE_ENV || 'development'
     });
-};
+}

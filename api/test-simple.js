@@ -1,20 +1,13 @@
-export default async (req, res) => {
-    try {
-        console.log('🧪 Simple test API working...');
-        
-        res.json({
-            success: true,
-            message: 'Simple API is working!',
-            timestamp: new Date().toISOString(),
-            method: req.method,
-            url: req.url
-        });
-        
-    } catch (error) {
-        console.error('❌ Error in simple test:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
-    }
-};
+export default async function handler(req, res) {
+    console.log('🧪 Test simple API - Request received');
+    console.log('📊 Method:', req.method);
+    console.log('📊 URL:', req.url);
+    
+    res.json({
+        success: true,
+        message: 'Simple test API is working!',
+        timestamp: new Date().toISOString(),
+        method: req.method,
+        url: req.url
+    });
+}

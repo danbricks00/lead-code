@@ -486,6 +486,90 @@
                 display: flex;
             }
         }
+
+        /* Address Selection Styles */
+        .address-selection {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .dropdown-group {
+            margin-bottom: 15px;
+        }
+
+        .dropdown-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .dropdown-select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .dropdown-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .suburb-list {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+        }
+
+        .suburb-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s ease;
+        }
+
+        .suburb-item:hover {
+            background: #f8f9fa;
+        }
+
+        .suburb-item.selected {
+            background: #667eea;
+            color: white;
+        }
+
+        .suburb-item:last-child {
+            border-bottom: none;
+        }
+
+        .address-confirm {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .address-confirm:hover:not(:disabled) {
+            background: #5a6fd8;
+        }
+
+        .address-confirm:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -586,9 +670,9 @@
                     <span class="tick-icon">✓</span>
                     <span class="tick-text">Personal Details</span>
                 </li>
-                <li class="tick" data-step="quote-sent">
+                <li class="tick" data-step="details-sent">
                     <span class="tick-icon">✓</span>
-                    <span class="tick-text">Quote Sent</span>
+                    <span class="tick-text">Details Sent</span>
                 </li>
             </ul>
         </div>
@@ -606,11 +690,14 @@
 
     <script>
         // Enhanced Chatbot with Progress Tracking
-        const steps = ["Room Details", "Timeframe", "Personal Details", "Quote Sent"];
+        const steps = ["Room Details", "Timeframe", "Personal Details", "Details Sent"];
         let currentStep = 0;
         let totalRooms = 0;
         let currentRoom = 0;
         let roomDetails = [];
+        let zoneData = null;
+        let selectedArea = '';
+        let selectedSuburb = '';
         
         let chatState = {
             step: 'welcome',
@@ -620,7 +707,9 @@
             location: '',
             areasCount: '',
             areaSizes: '',
-            timeframe: ''
+            timeframe: '',
+            selectedArea: '',
+            selectedSuburb: ''
         };
 
         function openChat() {
@@ -760,10 +849,27 @@
                         
                     case 'location':
                         chatState.location = message;
-                        chatState.step = 'customer_email';
+                        chatState.step = 'address_selection';
                         setTimeout(() => {
-                            addMessage("Finally, what's your email address?");
+                            fetchZoneDataAndShowAddressSelection();
                         }, 1500);
+                        break;
+                        
+                    case 'address_selection':
+                        // Handle address selection response
+                        if (message.toLowerCase().includes('confirm') || message.toLowerCase().includes('yes')) {
+                            if (chatState.selectedArea && chatState.selectedSuburb) {
+                                chatState.location = `${chatState.selectedSuburb}, ${chatState.selectedArea}`;
+                                chatState.step = 'customer_email';
+                                setTimeout(() => {
+                                    addMessage("Finally, what's your email address?");
+                                }, 1500);
+                            } else {
+                                addMessage("Please select both an area and suburb first.");
+                            }
+                        } else {
+                            addMessage("Please confirm your address selection or select an area and suburb.");
+                        }
                         break;
                         
                     case 'customer_email':
@@ -862,13 +968,18 @@
                         location: '',
                         areasCount: '',
                         areaSizes: '',
-                        timeframe: ''
+                        timeframe: '',
+                        selectedArea: '',
+                        selectedSuburb: ''
                     };
                     
                     currentStep = 0;
                     totalRooms = 0;
                     currentRoom = 0;
                     roomDetails = [];
+                    zoneData = null;
+                    selectedArea = '';
+                    selectedSuburb = '';
                     
                     // Reset progress bar and checklist
                     updateProgress();
@@ -904,6 +1015,131 @@
                  }
              });
          });
+
+        // Zone API Functions
+        async function fetchZoneDataAndShowAddressSelection() {
+            try {
+                console.log('🔍 Fetching Zone data from API...');
+                const response = await fetch('/api/get-zone-data');
+                console.log('📊 Response status:', response.status);
+                
+                const result = await response.json();
+                console.log('📊 API response:', result);
+                
+                if (result.success) {
+                    zoneData = result.data;
+                    console.log('✅ Zone data loaded successfully:', zoneData);
+                    showAddressSelection();
+                } else {
+                    console.error('❌ Failed to load Zone data:', result.error);
+                    addMessage(`Sorry, I'm having trouble loading the address options. Please try again or contact support. Error: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('❌ Network error fetching Zone data:', error);
+                addMessage(`Sorry, I'm having trouble connecting to the address service. Please try again or contact support.`);
+            }
+        }
+
+        function showAddressSelection() {
+            const messagesContainer = document.getElementById('chatMessages');
+            
+            if (!zoneData || !zoneData.areas || zoneData.areas.length === 0) {
+                console.error('❌ Zone data not available for address selection');
+                addMessage('Sorry, the address options are not available right now. Please try again in a moment.');
+                return;
+            }
+            
+            console.log('🎯 Showing address selection with data:', zoneData);
+            
+            const addressDiv = document.createElement('div');
+            addressDiv.className = 'address-selection';
+            addressDiv.innerHTML = `
+                <div class="dropdown-group">
+                    <label for="area-select">Select Area:</label>
+                    <select id="area-select" class="dropdown-select" onchange="onAreaChange()">
+                        <option value="">Choose an area...</option>
+                        ${zoneData.areas.map(area => `<option value="${area}">${area}</option>`).join('')}
+                    </select>
+                </div>
+                
+                <div class="dropdown-group" id="suburb-group" style="display: none;">
+                    <label for="suburb-list">Select Suburb:</label>
+                    <div id="suburb-list" class="suburb-list"></div>
+                </div>
+                
+                <button id="address-confirm" class="address-confirm" onclick="confirmAddress()" disabled>
+                    Confirm Address Selection
+                </button>
+            `;
+            
+            messagesContainer.appendChild(addressDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function onAreaChange() {
+            const areaSelect = document.getElementById('area-select');
+            const suburbGroup = document.getElementById('suburb-group');
+            const suburbList = document.getElementById('suburb-list');
+            const confirmBtn = document.getElementById('address-confirm');
+            
+            const selectedArea = areaSelect.value;
+            
+            if (selectedArea && zoneData.suburbsByArea[selectedArea]) {
+                const suburbs = zoneData.suburbsByArea[selectedArea];
+                
+                suburbList.innerHTML = suburbs.map(suburb => 
+                    `<div class="suburb-item" onclick="selectSuburb('${suburb}')">${suburb}</div>`
+                ).join('');
+                
+                suburbGroup.style.display = 'block';
+                confirmBtn.disabled = true;
+                chatState.selectedArea = selectedArea;
+                chatState.selectedSuburb = '';
+            } else {
+                suburbGroup.style.display = 'none';
+                confirmBtn.disabled = true;
+                chatState.selectedArea = '';
+                chatState.selectedSuburb = '';
+            }
+        }
+
+        function selectSuburb(suburb) {
+            chatState.selectedSuburb = suburb;
+            const confirmBtn = document.getElementById('address-confirm');
+            confirmBtn.disabled = false;
+            
+            // Highlight selected suburb
+            const suburbItems = document.querySelectorAll('.suburb-item');
+            suburbItems.forEach(item => {
+                item.classList.remove('selected');
+                if (item.textContent === suburb) {
+                    item.classList.add('selected');
+                }
+            });
+        }
+
+        function confirmAddress() {
+            if (chatState.selectedArea && chatState.selectedSuburb) {
+                addMessage(`Address confirmed: ${chatState.selectedSuburb}, ${chatState.selectedArea}`);
+                
+                // Remove address selection interface
+                const addressSelection = document.querySelector('.address-selection');
+                if (addressSelection) {
+                    addressSelection.remove();
+                }
+                
+                // Move to next step
+                chatState.step = 'customer_email';
+                setTimeout(() => {
+                    addMessage("Finally, what's your email address?");
+                }, 1500);
+            }
+        }
+
+        // Make functions globally accessible
+        window.onAreaChange = onAreaChange;
+        window.selectSuburb = selectSuburb;
+        window.confirmAddress = confirmAddress;
      </script>
 </body>
 </html>

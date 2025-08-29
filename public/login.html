@@ -226,7 +226,7 @@
             <p style="color: #666; margin-bottom: 1rem;">If you're already registered, you'll be logged in. If not, you'll be prompted to complete registration.</p>
             
             <div id="g_id_onload"
-                 data-client_id="715560457951-4ti03g5176854alkdku3slr1sufbue0l.apps.googleusercontent.com"
+                 data-client_id="YOUR_GOOGLE_OAUTH_CLIENT_ID_HERE"
                  data-callback="handleCredentialResponse"
                  data-auto_prompt="false">
             </div>
@@ -304,6 +304,26 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
         let currentUser = null;
+
+        // Initialize Google Sign-In
+        function initializeGoogleSignIn() {
+            google.accounts.id.initialize({
+                client_id: 'YOUR_GOOGLE_OAUTH_CLIENT_ID_HERE', // Replace with your actual client ID
+                callback: handleCredentialResponse,
+                auto_select: false,
+                cancel_on_tap_outside: true
+            });
+
+            google.accounts.id.renderButton(
+                document.getElementById('googleSignInButton'), 
+                { 
+                    theme: 'outline', 
+                    size: 'large',
+                    width: '100%',
+                    text: 'signin_with'
+                }
+            );
+        }
 
         // Handle Google Sign-In response
         async function handleCredentialResponse(response) {
@@ -454,6 +474,15 @@
 
         // Initialize when page loads
         window.addEventListener('load', function() {
+            // Initialize Google Sign-In
+            if (typeof google !== 'undefined' && google.accounts) {
+                initializeGoogleSignIn();
+            } else {
+                // Fallback if Google API doesn't load
+                console.warn('Google Sign-In API not loaded, retrying...');
+                setTimeout(initializeGoogleSignIn, 1000);
+            }
+            
             // Check if user is already logged in
             checkAuthStatus();
         });

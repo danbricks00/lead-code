@@ -1,10 +1,22 @@
-import { google } from 'googleapis';
+export default async function handler(req, res) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
 
-export default async (req, res) => {
     try {
         const { leadId, step, emailType, customerEmail } = req.body;
         
         console.log('🎮 Email progress update:', { leadId, step, emailType, customerEmail });
+        
+        // Check for required environment variables
+        if (!process.env.GOOGLE_SPREADSHEET_ID) {
+            return res.status(500).json({ 
+                error: 'Missing env var GOOGLE_SPREADSHEET_ID' 
+            });
+        }
+
+        // Import required modules
+        const { google } = await import('googleapis');
         
         // Update the Zone sheet with progress information
         await updateZoneSheetProgress(leadId, step, emailType, customerEmail);
@@ -22,10 +34,12 @@ export default async (req, res) => {
         console.error('❌ Error updating email progress:', error);
         res.status(500).json({ success: false, error: error.message });
     }
-};
+}
 
 async function updateZoneSheetProgress(leadId, step, emailType, customerEmail) {
     try {
+        const { google } = await import('googleapis');
+
         const auth = new google.auth.GoogleAuth({
             credentials: {
                 type: 'service_account',
@@ -100,127 +114,72 @@ async function updateZoneSheetProgress(leadId, step, emailType, customerEmail) {
                 range: updateRange,
                 valueInputOption: 'RAW',
                 resource: {
-                    values: [['✅ Completed']]
+                    values: [['TRUE']]
                 }
             });
+            
+            console.log(`✅ Updated progress for ${emailType} in ${updateRange}`);
         }
         
-        console.log('✅ Zone sheet progress updated');
-        
     } catch (error) {
-        console.error('❌ Error updating Zone sheet:', error);
+        console.error('❌ Error updating Zone sheet progress:', error);
         throw error;
     }
 }
 
 async function sendNextEmail(leadId, step, emailType, customerEmail) {
     try {
-        // Get customer name from the sheet
-        const customerName = await getCustomerName(leadId);
-        
-        // Determine the next email type to send
+        // Determine the next email type based on current step
         const nextEmailType = getNextEmailType(emailType);
         
         if (nextEmailType) {
-            // Send the next email in the sequence
-            const response = await fetch(`${process.env.BASE_URL || 'http://localhost:3000'}/api/send-gamified-email`, {
+            // Import the send-gamified-email API
+            const sendGamifiedEmail = await import('./send-gamified-email.js');
+            
+            // Call the next email API
+            const response = await fetch(`${process.env.SITE_URL || 'https://lead-code.vercel.app'}/api/send-gamified-email`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({
-                    customerEmail,
-                    customerName,
-                    leadId,
+                    customerEmail: customerEmail,
+                    customerName: 'Customer', // You might want to get this from the lead data
+                    leadId: leadId,
                     emailType: nextEmailType
                 })
             });
             
-            const result = await response.json();
-            if (result.success) {
-                console.log('✅ Next email sent:', nextEmailType);
+            if (response.ok) {
+                console.log(`✅ Sent next email: ${nextEmailType}`);
             } else {
-                console.error('❌ Failed to send next email:', result.error);
+                console.error(`❌ Failed to send next email: ${nextEmailType}`);
             }
         }
         
     } catch (error) {
         console.error('❌ Error sending next email:', error);
+        // Don't throw error here as it's not critical
     }
 }
 
-async function getCustomerName(leadId) {
-    try {
-        const auth = new google.auth.GoogleAuth({
-            credentials: {
-                type: 'service_account',
-                project_id: process.env.GOOGLE_PROJECT_ID,
-                private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-                private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-                client_email: process.env.GOOGLE_CLIENT_EMAIL,
-                client_id: process.env.GOOGLE_CLIENT_ID,
-                auth_uri: 'https://accounts.google.com/o/oauth2/auth',
-                token_uri: 'https://oauth2.googleapis.com/token',
-                auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
-                client_x509_cert_url: process.env.GOOGLE_CLIENT_CER_URL
-            },
-            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly']
-        });
-
-        const sheets = google.sheets({ version: 'v4', auth });
-        const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
-        
-        // Find the Zone sheet
-        const metadata = await sheets.spreadsheets.get({ spreadsheetId });
-        const availableSheets = metadata.data.sheets.map(s => s.properties.title);
-        
-        let targetSheet = 'Sheet1';
-        if (availableSheets.includes('Zone')) {
-            targetSheet = 'Zone';
-        } else if (availableSheets.includes('Leads')) {
-            targetSheet = 'Leads';
-        }
-        
-        const range = `${targetSheet}!A:Z`;
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId,
-            range
-        });
-        
-        const rows = response.data.values;
-        if (!rows || rows.length === 0) {
-            return 'Customer';
-        }
-        
-        // Find the row with matching leadId (assuming leadId is in column B, customer name in column C)
-        const leadIdColumnIndex = 1; // Column B
-        const customerNameColumnIndex = 2; // Column C
-        
-        for (let i = 1; i < rows.length; i++) {
-            if (rows[i][leadIdColumnIndex] === leadId) {
-                return rows[i][customerNameColumnIndex] || 'Customer';
-            }
-        }
-        
-        return 'Customer';
-        
-    } catch (error) {
-        console.error('❌ Error getting customer name:', error);
-        return 'Customer';
+function getNextStep(currentStep) {
+    const steps = ['welcome', 'quote_prepared', 'quote_decision'];
+    const currentIndex = steps.indexOf(currentStep);
+    
+    if (currentIndex >= 0 && currentIndex < steps.length - 1) {
+        return steps[currentIndex + 1];
     }
+    
+    return null;
 }
 
 function getNextEmailType(currentEmailType) {
     const emailSequence = {
         'welcome': 'quote_prepared',
-        'quote_prepared': 'tradesman_assigned',
-        'tradesman_assigned': 'project_started',
-        'project_started': 'project_completed',
-        'project_completed': null // End of sequence
+        'quote_prepared': 'quote_decision',
+        'quote_decision': null // End of sequence
     };
     
     return emailSequence[currentEmailType] || null;
-}
-
-function getNextStep(currentStep) {
-    const nextStep = parseInt(currentStep) + 1;
-    return nextStep <= 5 ? nextStep : null;
 }

@@ -1,5 +1,3 @@
-import { google } from 'googleapis';
-
 // Utility function to coerce numeric fields
 export function coerceNumeric(value) {
   if (value === null || value === undefined || value === '') {
@@ -21,6 +19,8 @@ export async function fetchQuoteData(quoteId) {
       console.log('⚠️ Google Sheets credentials not found');
       return null;
     }
+
+    const { google } = await import('googleapis');
 
     const auth = new google.auth.GoogleAuth({
       credentials: {
@@ -121,32 +121,33 @@ export async function fetchQuoteData(quoteId) {
           breakdown: row[25] || '', // Column Z
           notes: row[26] || '', // Column AA
           validUntil: row[27] || '', // Column AB
-          status: row[28] || 'Pending', // Column AC
+          status: row[28] || 'pending', // Column AC
           onlineQuoteUrl: row[29] || '', // Column AD
           acceptUrl: row[30] || '', // Column AE
           declineUrl: row[31] || '' // Column AF
         };
-        
-        console.log(`📋 Mapped quote data:`, {
+
+        console.log('✅ Quote data mapped successfully:', {
           quoteId: mappedData.quoteId,
-          leadId: mappedData.leadId,
           customerName: mappedData.customerName,
-          customerEmail: mappedData.customerEmail,
-          quoteAmount: mappedData.quoteAmount
+          quoteAmount: mappedData.quoteAmount,
+          status: mappedData.status
         });
-        
+
         return mappedData;
       }
     }
 
+    console.log('❌ Quote not found in any row');
     return null;
+
   } catch (error) {
-    console.error('Error fetching quote data:', error);
+    console.error('❌ Error fetching quote data:', error);
     return null;
   }
 }
 
-// Unified function to fetch lead data
+// Unified function to fetch lead data with proper error handling
 export async function fetchLeadData(leadId) {
   try {
     // Check if we have the required environment variables
@@ -158,6 +159,8 @@ export async function fetchLeadData(leadId) {
       console.log('⚠️ Google Sheets credentials not found');
       return null;
     }
+
+    const { google } = await import('googleapis');
 
     const auth = new google.auth.GoogleAuth({
       credentials: {
@@ -205,37 +208,60 @@ export async function fetchLeadData(leadId) {
       return null;
     }
 
-    // Find the leadId column (second column)
-    const leadIdIndex = 1; // Lead ID is the second column (B)
+    // Search for the lead across ALL columns in each row
+    console.log(`🔍 Searching for lead ID: "${leadId}" across all columns`);
 
-    // Search for the lead with matching leadId
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      const rowLeadId = row[leadIdIndex];
       
-      if (rowLeadId === leadId) {
-        // Found the lead, map it to the expected structure with numeric coercion
-        return {
+      // Search for the leadId in ANY column of this row
+      let foundLeadId = null;
+      let foundColumnIndex = -1;
+      
+      for (let colIndex = 0; colIndex < row.length; colIndex++) {
+        const cellValue = row[colIndex];
+        if (cellValue === leadId) {
+          foundLeadId = cellValue;
+          foundColumnIndex = colIndex;
+          break;
+        }
+      }
+      
+      if (foundLeadId === leadId) {
+        console.log(`✅ Found lead in row ${i + 1}, column ${foundColumnIndex} (${String.fromCharCode(65 + foundColumnIndex)})`);
+        
+        // Found the lead! Now map the data using exact column indices from lead intake
+        // Based on the lead intake order: timestamp, leadId, customerName, customerEmail, customerPhone, selectedService, projectDetails, projectSize, location, budget, timeline, specificDetails
+        const mappedData = {
           timestamp: row[0] || '',
-          leadId: row[1] || '',
-          customerName: row[2] || '',
-          customerEmail: row[3] || '',
-          customerPhone: row[4] || '',
-          selectedService: row[5] || '',
-          projectDetails: row[6] || '',
-          projectSize: row[7] || '',
-          budget: coerceNumeric(row[8]),
-          timeline: row[9] || '',
-          location: row[10] || '',
-          specificDetails: row[11] || '',
-          status: row[14] || 'New'
+          leadId: foundLeadId,
+          customerName: row[2] || '', // Column C
+          customerEmail: row[3] || '', // Column D
+          customerPhone: row[4] || '', // Column E
+          selectedService: row[5] || '', // Column F
+          projectDetails: row[6] || '', // Column G
+          projectSize: row[7] || '', // Column H
+          location: row[8] || '', // Column I
+          budget: row[9] || '', // Column J
+          timeline: row[10] || '', // Column K
+          specificDetails: row[11] || '' // Column L
         };
+
+        console.log('✅ Lead data mapped successfully:', {
+          leadId: mappedData.leadId,
+          customerName: mappedData.customerName,
+          selectedService: mappedData.selectedService
+        });
+
+        return mappedData;
       }
     }
 
+    console.log('❌ Lead not found in any row');
     return null;
+
   } catch (error) {
-    console.error('Error fetching lead data:', error);
+    console.error('❌ Error fetching lead data:', error);
     return null;
   }
 }
@@ -280,6 +306,8 @@ export async function updateQuoteStatus(quoteId, status) {
       console.log('⚠️ Google Sheets credentials not found');
       return false;
     }
+
+    const { google } = await import('googleapis');
 
     const auth = new google.auth.GoogleAuth({
       credentials: {

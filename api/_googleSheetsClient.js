@@ -1,9 +1,5 @@
-import { google } from 'googleapis';
-
-export const config = { runtime: 'nodejs' };
-
 // Get authenticated Google Sheets client
-function getSheetsClient() {
+async function getSheetsClient() {
   const serviceAccountEmail = process.env.GOOGLE_CLIENT_EMAIL;
   const privateKey = process.env.GOOGLE_PRIVATE_KEY;
   const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
@@ -11,6 +7,8 @@ function getSheetsClient() {
   if (!serviceAccountEmail || !privateKey || !spreadsheetId) {
     throw new Error('Google Sheets credentials not found');
   }
+
+  const { google } = await import('googleapis');
 
   const auth = new google.auth.GoogleAuth({
     credentials: {
@@ -34,7 +32,7 @@ function getSheetsClient() {
 
 // Append a row to a sheet
 export async function appendRow({ range, values }) {
-  const { sheets, spreadsheetId } = getSheetsClient();
+  const { sheets, spreadsheetId } = await getSheetsClient();
   
   await sheets.spreadsheets.values.append({
     spreadsheetId,
@@ -47,7 +45,7 @@ export async function appendRow({ range, values }) {
 
 // Read a range from a sheet
 export async function getRange({ range }) {
-  const { sheets, spreadsheetId } = getSheetsClient();
+  const { sheets, spreadsheetId } = await getSheetsClient();
   
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
@@ -60,7 +58,7 @@ export async function getRange({ range }) {
 
 // Ensure a sheet exists and has the correct header
 export async function ensureSheetAndHeader({ sheetTitle, headerValues }) {
-  const { sheets, spreadsheetId } = getSheetsClient();
+  const { sheets, spreadsheetId } = await getSheetsClient();
 
   // 1) Read spreadsheet metadata
   const meta = await sheets.spreadsheets.get({ spreadsheetId });

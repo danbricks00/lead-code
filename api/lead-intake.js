@@ -1,6 +1,8 @@
-import { sendToSheets } from '../src/server/integrations/google/send-to-sheets-helper.js';
+export default async function handler(req, res) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
 
-export default async (req, res) => {
     try {
         const leadData = req.body;
         console.log('📝 Lead intake request received:', leadData);
@@ -10,6 +12,14 @@ export default async (req, res) => {
             return res.status(400).json({ 
                 ok: false, 
                 error: 'Missing required fields: name, email, phone' 
+            });
+        }
+
+        // Check for required environment variables
+        if (!process.env.GOOGLE_SHEETS_ID) {
+            return res.status(500).json({ 
+                ok: false, 
+                error: 'Missing env var GOOGLE_SHEETS_ID' 
             });
         }
 
@@ -29,22 +39,31 @@ export default async (req, res) => {
 
         console.log('📝 Processed lead data:', processedLeadData);
 
-        // Send to Google Sheets and handle notifications
-        const result = await sendToSheets(processedLeadData);
-        
-        if (result.success) {
-            console.log('✅ Lead processed successfully:', result.details);
-            res.json({ 
-                ok: true, 
-                leadId: result.details.leadId,
-                quoteLink: `/quote/${result.details.leadId}`,
-                message: 'Lead submitted successfully. A qualified tradesman will contact you within 24 hours.'
-            });
-        } else {
-            console.error('❌ Lead processing failed:', result.error);
+        // Import and use the sheets helper
+        try {
+            const { sendToSheets } = await import('../src/server/integrations/google/send-to-sheets-helper.js');
+            const result = await sendToSheets(processedLeadData);
+            
+            if (result.success) {
+                console.log('✅ Lead processed successfully:', result.details);
+                res.json({ 
+                    ok: true, 
+                    leadId: result.details.leadId,
+                    quoteLink: `/quote/${result.details.leadId}`,
+                    message: 'Lead submitted successfully. A qualified tradesman will contact you within 24 hours.'
+                });
+            } else {
+                console.error('❌ Lead processing failed:', result.error);
+                res.status(500).json({ 
+                    ok: false, 
+                    error: result.error || 'Failed to process lead' 
+                });
+            }
+        } catch (importError) {
+            console.error('❌ Import error:', importError);
             res.status(500).json({ 
                 ok: false, 
-                error: result.error || 'Failed to process lead' 
+                error: 'Failed to load sheets integration' 
             });
         }
     } catch (error) {
@@ -54,4 +73,4 @@ export default async (req, res) => {
             error: 'Internal server error' 
         });
     }
-};
+}

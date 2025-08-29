@@ -1,4 +1,8 @@
-export default async (req, res) => {
+export default async function handler(req, res) {
+    if (req.method !== 'GET') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
     try {
         console.log('🔍 Fetching Zone sheet data for address selection...');
         console.log('📊 Request method:', req.method);
@@ -103,103 +107,83 @@ export default async (req, res) => {
             });
         }
 
-        console.log('📊 Zone sheet data retrieved, processing...');
-        console.log('📊 Total rows:', rows.length);
+        console.log(`📊 Found ${rows.length} rows in Zone sheet`);
 
-        // Process the data to extract areas and suburbs
-        // Assuming first row contains headers
+        // Parse the data - assuming structure: Suburb, Area, Postcode
         const headers = rows[0];
-        const dataRows = rows.slice(1);
+        console.log('📋 Headers:', headers);
 
-        console.log('📋 Headers found:', headers);
+        // Find column indices
+        const suburbColumnIndex = headers.findIndex(h => h.toLowerCase().includes('suburb'));
+        const areaColumnIndex = headers.findIndex(h => h.toLowerCase().includes('area'));
+        const postcodeColumnIndex = headers.findIndex(h => h.toLowerCase().includes('postcode'));
 
-        // Find the relevant columns (Zone sheet structure: Suburb, Area, Postcode)
-        const suburbColumnIndex = headers.findIndex(header =>
-            header.toLowerCase().includes('suburb') ||
-            header.toLowerCase().includes('location') ||
-            header.toLowerCase().includes('city')
-        );
+        console.log('🔍 Column indices:', {
+            suburb: suburbColumnIndex,
+            area: areaColumnIndex,
+            postcode: postcodeColumnIndex
+        });
 
-        const areaColumnIndex = headers.findIndex(header =>
-            header.toLowerCase().includes('area') ||
-            header.toLowerCase().includes('region') ||
-            header.toLowerCase().includes('zone')
-        );
-
-        // Also check for postcode column (though we don't use it for now)
-        const postcodeColumnIndex = headers.findIndex(header =>
-            header.toLowerCase().includes('postcode') ||
-            header.toLowerCase().includes('post code') ||
-            header.toLowerCase().includes('zip')
-        );
-
-        console.log('🔍 Column indices:');
-        console.log('- Suburb column index:', suburbColumnIndex);
-        console.log('- Area column index:', areaColumnIndex);
-        console.log('- Postcode column index:', postcodeColumnIndex);
-
-        if (areaColumnIndex === -1 || suburbColumnIndex === -1) {
-            console.log('⚠️ Could not find Area or Suburb columns in Zone sheet');
-            console.log('📋 Available headers:', headers);
-            return res.status(400).json({
-                success: false,
-                error: 'Zone sheet does not contain required Area and Suburb columns',
-                headers: headers,
-                suburbColumnIndex: suburbColumnIndex,
-                areaColumnIndex: areaColumnIndex
+        if (suburbColumnIndex === -1 || areaColumnIndex === -1) {
+            console.log('❌ Required columns not found');
+            return res.status(500).json({ 
+                success: false, 
+                error: 'Required columns (Suburb, Area) not found in Zone sheet',
+                headers: headers
             });
         }
 
-        // Group suburbs by areas
-        const areasData = {};
+        // Process the data
+        const zoneData = [];
+        const areas = new Set();
 
-        dataRows.forEach((row, index) => {
-            if (row[areaColumnIndex] && row[suburbColumnIndex]) {
-                const area = row[areaColumnIndex].trim();
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (row[suburbColumnIndex] && row[areaColumnIndex]) {
                 const suburb = row[suburbColumnIndex].trim();
+                const area = row[areaColumnIndex].trim();
+                const postcode = postcodeColumnIndex !== -1 ? row[postcodeColumnIndex] : '';
 
-                if (!areasData[area]) {
-                    areasData[area] = [];
+                if (suburb && area) {
+                    zoneData.push({
+                        suburb: suburb,
+                        area: area,
+                        postcode: postcode
+                    });
+                    areas.add(area);
                 }
-
-                if (!areasData[area].includes(suburb)) {
-                    areasData[area].push(suburb);
-                }
-            } else {
-                console.log(`⚠️ Row ${index + 2} missing data:`, row);
             }
-        });
+        }
 
-        // Convert to the format expected by the frontend
-        const areas = Object.keys(areasData).sort();
-        const suburbsByArea = {};
+        console.log(`📊 Processed ${zoneData.length} entries`);
+        console.log(`📊 Found ${areas.size} unique areas`);
 
-        areas.forEach(area => {
-            suburbsByArea[area] = areasData[area].sort();
+        // Group by area
+        const groupedData = {};
+        Array.from(areas).sort().forEach(area => {
+            groupedData[area] = zoneData
+                .filter(entry => entry.area === area)
+                .map(entry => entry.suburb)
+                .sort();
         });
 
         console.log('✅ Zone data processed successfully');
-        console.log('📊 Areas found:', areas.length);
-        console.log('📊 Areas:', areas);
 
         res.json({
             success: true,
             data: {
-                areas: areas,
-                suburbsByArea: suburbsByArea
+                areas: Array.from(areas).sort(),
+                groupedData: groupedData,
+                rawData: zoneData
             }
         });
 
     } catch (error) {
         console.error('❌ Error fetching Zone data:', error);
-        console.error('❌ Error stack:', error.stack);
-
-        // Return more detailed error information
         res.status(500).json({
             success: false,
             error: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-            type: error.name
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
-};
+}

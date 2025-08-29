@@ -1,4 +1,4 @@
-import { checkIfUserExists } from "../../lib/userStore";
+// Import functions will be defined inline to avoid path issues
 
 const allowGoogleAuth = process.env.ALLOW_GOOGLE_AUTH === 'true';
 

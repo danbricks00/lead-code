@@ -7,10 +7,10 @@ export default async function handler(req, res) {
         // Import required modules
         const { google } = await import('googleapis');
         
-        const { name, email, phone, service, location, suburbs } = req.body;
+        const { email, suburbs } = req.body;
         
-        if (!name || !email || !service) {
-            return res.status(400).json({ error: 'Missing required fields: name, email, and service' });
+        if (!email) {
+            return res.status(400).json({ error: 'Missing required field: email' });
         }
 
         if (!suburbs || !Array.isArray(suburbs) || suburbs.length === 0) {
@@ -36,56 +36,50 @@ export default async function handler(req, res) {
 
         const sheets = google.sheets({ version: 'v4', auth });
         
-        // Generate unique ID
-        const registrationId = `REG-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        
+        // First, find the tradesman by email
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+            range: 'Tradesmen!A:I',
+        });
+
+        const rows = response.data.values;
+        if (!rows || rows.length === 0) {
+            return res.status(404).json({ error: 'No tradesmen found' });
+        }
+
+        // Find the row with matching email (email is in column C, index 2)
+        let rowIndex = -1;
+        for (let i = 1; i < rows.length; i++) { // Start from 1 to skip header
+            if (rows[i][2] === email) { // Email is in column C (index 2)
+                rowIndex = i + 1; // +1 because sheets rows are 1-indexed
+                break;
+            }
+        }
+
+        if (rowIndex === -1) {
+            return res.status(404).json({ error: 'Tradesman not found with this email' });
+        }
+
         // Prepare suburbs data as JSON string
         const suburbsJson = JSON.stringify(suburbs);
         
-        // Prepare registration data
-        const registrationData = [
-            registrationId,
-            name,
-            email,
-            phone || '',
-            service,
-            location || '',
-            suburbsJson, // Add suburbs as JSON string
-            new Date().toISOString(),
-            'New'
-        ];
-        
-        // Append to Tradesmen sheet
-        await sheets.spreadsheets.values.append({
+        // Update the suburbs column (column G, index 6)
+        await sheets.spreadsheets.values.update({
             spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-            range: 'Tradesmen!A:I', // Updated range to include suburbs column
+            range: `Tradesmen!G${rowIndex}`,
             valueInputOption: 'RAW',
-            insertDataOption: 'INSERT_ROWS',
             resource: {
-                values: [registrationData]
+                values: [[suburbsJson]]
             }
         });
         
-        // Return user data for frontend storage
-        const userData = {
-            name: name,
-            email: email,
-            tradeType: service,
-            businessName: name, // Using name as business name for now
-            phone: phone || '',
-            location: location || '',
-            suburbs: suburbs,
-            status: 'New'
-        };
-
         res.json({ 
             success: true, 
-            message: 'Registration successful! We\'ll contact you within 24 hours.',
-            registrationId,
-            user: userData
+            message: 'Service areas updated successfully!',
+            suburbs: suburbs
         });
     } catch (error) {
-        console.error('Error in register API:', error);
+        console.error('Error in update-tradesman-suburbs API:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 }

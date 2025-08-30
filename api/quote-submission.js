@@ -112,7 +112,7 @@ export default async function handler(req, res) {
           });
         }
       }
-
+      
       // Continue with quote submission...
       // (The rest of the function would continue here)
 
@@ -131,7 +131,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Quote submission error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Internal server error',
       message: error.message 
     });

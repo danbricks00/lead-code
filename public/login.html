@@ -278,6 +278,55 @@
                     <input type="text" id="location" placeholder="e.g., Auckland,New Zealand" required>
                 </div>
 
+                <div class="form-group">
+                    <label>Service Suburbs (Select at least one)</label>
+                    <div id="suburbSelection" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
+                        <div style="margin-bottom: 10px;">
+                            <strong>Central Auckland:</strong>
+                            <div style="margin-left: 15px;">
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Auckland CBD" data-area="Central Auckland"> Auckland CBD</label>
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Grey Lynn" data-area="Central Auckland"> Grey Lynn</label>
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Ponsonby" data-area="Central Auckland"> Ponsonby</label>
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Mount Eden" data-area="Central Auckland"> Mount Eden</label>
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Remuera" data-area="Central Auckland"> Remuera</label>
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Newmarket" data-area="Central Auckland"> Newmarket</label>
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Epsom" data-area="Central Auckland"> Epsom</label>
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Onehunga" data-area="Central Auckland"> Onehunga</label>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <strong>North Shore:</strong>
+                            <div style="margin-left: 15px;">
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Takapuna" data-area="North Shore"> Takapuna</label>
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Devonport" data-area="North Shore"> Devonport</label>
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Milford" data-area="North Shore"> Milford</label>
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Albany" data-area="North Shore"> Albany</label>
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Browns Bay" data-area="North Shore"> Browns Bay</label>
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Glenfield" data-area="North Shore"> Glenfield</label>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <strong>West Auckland:</strong>
+                            <div style="margin-left: 15px;">
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Henderson" data-area="West Auckland"> Henderson</label>
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="New Lynn" data-area="West Auckland"> New Lynn</label>
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Glen Eden" data-area="West Auckland"> Glen Eden</label>
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Te Atatu" data-area="West Auckland"> Te Atatu</label>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <strong>South Auckland:</strong>
+                            <div style="margin-left: 15px;">
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Manukau" data-area="South Auckland"> Manukau</label>
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Papatoetoe" data-area="South Auckland"> Papatoetoe</label>
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Otahuhu" data-area="South Auckland"> Otahuhu</label>
+                                <label style="display: block; margin: 5px 0;"><input type="checkbox" name="suburbs" value="Mangere" data-area="South Auckland"> Mangere</label>
+                            </div>
+                        </div>
+                    </div>
+                    <small style="color: #666;">Select all suburbs where you provide services. You can update these later in your profile.</small>
+                </div>
+
                 <button type="submit" class="register-btn">Complete Registration</button>
             </form>
             <button class="back-btn" onclick="showLogin()">Back to Login</button>
@@ -402,12 +451,30 @@
         document.getElementById('registrationForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            // Get selected suburbs
+            const selectedSuburbs = [];
+            const suburbCheckboxes = document.querySelectorAll('input[name="suburbs"]:checked');
+            suburbCheckboxes.forEach(checkbox => {
+                selectedSuburbs.push({
+                    suburb: checkbox.value,
+                    area: checkbox.getAttribute('data-area')
+                });
+            });
+
+            // Validate that at least one suburb is selected
+            if (selectedSuburbs.length === 0) {
+                showMessage('Please select at least one suburb where you provide services.', 'error');
+                return;
+            }
+
             const formData = {
+                name: window.registrationName || 'Tradesman',
                 email: window.registrationEmail || 'test@example.com',
-                tradeType: document.getElementById('tradeType').value,
+                service: document.getElementById('tradeType').value,
                 businessName: document.getElementById('businessName').value,
                 phone: document.getElementById('phone').value,
-                location: document.getElementById('location').value
+                location: document.getElementById('location').value,
+                suburbs: selectedSuburbs
             };
 
             console.log('Submitting registration with data:', JSON.stringify(formData, null, 2));

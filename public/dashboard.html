@@ -551,6 +551,18 @@
                 <div class="loading">Loading leads...</div>
             </div>
         </div>
+
+        <!-- Profile Section -->
+        <div class="leads-section" style="margin-top: 2rem;">
+            <div class="section-header">
+                <h2 class="section-title">Profile & Service Areas</h2>
+                <button class="refresh-btn" onclick="loadProfile()">🔄 Refresh</button>
+            </div>
+            
+            <div id="profileContent" style="padding: 2rem;">
+                <div class="loading">Loading profile...</div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -947,6 +959,187 @@
             setTimeout(() => {
                 messageDiv.classList.add('hidden');
             }, 5000);
+        }
+
+        // Load and display profile information
+        async function loadProfile() {
+            const profileContent = document.getElementById('profileContent');
+            profileContent.innerHTML = '<div class="loading">Loading profile...</div>';
+
+            try {
+                // For now, we'll create a profile form with the current user data
+                // In the future, this could fetch from an API
+                displayProfileForm();
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                profileContent.innerHTML = `
+                    <div class="error">
+                        Error loading profile. Please try again.
+                    </div>
+                `;
+            }
+        }
+
+        // Display profile form with current user data
+        function displayProfileForm() {
+            const profileContent = document.getElementById('profileContent');
+            
+            const profileHTML = `
+                <div style="max-width: 800px; margin: 0 auto;">
+                    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+                        <h3 style="margin: 0 0 1rem 0; color: #333;">📋 Current Profile Information</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <strong>Name:</strong> ${currentUser.name || 'Not set'}<br>
+                                <strong>Email:</strong> ${currentUser.email || 'Not set'}<br>
+                                <strong>Trade Type:</strong> ${currentUser.tradeType || 'Not set'}
+                            </div>
+                            <div>
+                                <strong>Business Name:</strong> ${currentUser.businessName || 'Not set'}<br>
+                                <strong>Phone:</strong> ${currentUser.phone || 'Not set'}<br>
+                                <strong>Location:</strong> ${currentUser.location || 'Not set'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="background: white; padding: 2rem; border-radius: 8px; border: 1px solid #e9ecef;">
+                        <h3 style="margin: 0 0 1.5rem 0; color: #333;">📍 Service Areas Management</h3>
+                        <p style="color: #666; margin-bottom: 1.5rem;">Select the suburbs where you provide services. You can add or remove suburbs at any time.</p>
+                        
+                        <form id="suburbsForm">
+                            <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem;">
+                                <div style="margin-bottom: 1.5rem;">
+                                    <h4 style="margin: 0 0 0.5rem 0; color: #333;">Central Auckland:</h4>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.5rem;">
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Auckland CBD" data-area="Central Auckland"> Auckland CBD</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Grey Lynn" data-area="Central Auckland"> Grey Lynn</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Ponsonby" data-area="Central Auckland"> Ponsonby</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Mount Eden" data-area="Central Auckland"> Mount Eden</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Remuera" data-area="Central Auckland"> Remuera</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Newmarket" data-area="Central Auckland"> Newmarket</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Epsom" data-area="Central Auckland"> Epsom</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Onehunga" data-area="Central Auckland"> Onehunga</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Ellerslie" data-area="Central Auckland"> Ellerslie</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Greenlane" data-area="Central Auckland"> Greenlane</label>
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-bottom: 1.5rem;">
+                                    <h4 style="margin: 0 0 0.5rem 0; color: #333;">North Shore:</h4>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.5rem;">
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Takapuna" data-area="North Shore"> Takapuna</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Devonport" data-area="North Shore"> Devonport</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Milford" data-area="North Shore"> Milford</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Albany" data-area="North Shore"> Albany</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Browns Bay" data-area="North Shore"> Browns Bay</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Glenfield" data-area="North Shore"> Glenfield</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Birkenhead" data-area="North Shore"> Birkenhead</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Northcote" data-area="North Shore"> Northcote</label>
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-bottom: 1.5rem;">
+                                    <h4 style="margin: 0 0 0.5rem 0; color: #333;">West Auckland:</h4>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.5rem;">
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Henderson" data-area="West Auckland"> Henderson</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="New Lynn" data-area="West Auckland"> New Lynn</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Glen Eden" data-area="West Auckland"> Glen Eden</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Te Atatu" data-area="West Auckland"> Te Atatu</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Waitakere" data-area="West Auckland"> Waitakere</label>
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-bottom: 1.5rem;">
+                                    <h4 style="margin: 0 0 0.5rem 0; color: #333;">South Auckland:</h4>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.5rem;">
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Manukau" data-area="South Auckland"> Manukau</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Papatoetoe" data-area="South Auckland"> Papatoetoe</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Otahuhu" data-area="South Auckland"> Otahuhu</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Mangere" data-area="South Auckland"> Mangere</label>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem;"><input type="checkbox" name="suburbs" value="Manurewa" data-area="South Auckland"> Manurewa</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 1rem; align-items: center;">
+                                <button type="submit" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px;">💾 Save Service Areas</button>
+                                <button type="button" onclick="loadProfile()" style="background: #6c757d; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px;">🔄 Reset</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            
+            profileContent.innerHTML = profileHTML;
+            
+            // Add form submission handler
+            document.getElementById('suburbsForm').addEventListener('submit', handleSuburbsUpdate);
+        }
+
+        // Handle suburbs form submission
+        async function handleSuburbsUpdate(e) {
+            e.preventDefault();
+            
+            // Get selected suburbs
+            const selectedSuburbs = [];
+            const suburbCheckboxes = document.querySelectorAll('input[name="suburbs"]:checked');
+            suburbCheckboxes.forEach(checkbox => {
+                selectedSuburbs.push({
+                    suburb: checkbox.value,
+                    area: checkbox.getAttribute('data-area')
+                });
+            });
+
+            // Validate that at least one suburb is selected
+            if (selectedSuburbs.length === 0) {
+                showMessage('Please select at least one suburb where you provide services.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/update-tradesman-suburbs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: currentUser.email,
+                        suburbs: selectedSuburbs
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('✅ Service areas updated successfully!', 'success');
+                    // Update current user data
+                    currentUser.suburbs = selectedSuburbs;
+                    localStorage.setItem('leadbot_user', JSON.stringify(currentUser));
+                } else {
+                    showMessage(`❌ Failed to update service areas: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error updating suburbs:', error);
+                showMessage('❌ Error updating service areas', 'error');
+            }
+        }
+
+        // Initialize profile section when dashboard loads
+        function updateDashboard() {
+            if (!currentUser) return;
+
+            document.getElementById('welcomeName').textContent = currentUser.name || 'Tradesman';
+            document.getElementById('userName').textContent = currentUser.name || 'User';
+            document.getElementById('userTrade').textContent = currentUser.tradeType || 'Not specified';
+            
+            // Set avatar initial
+            const avatar = document.getElementById('userAvatar');
+            if (currentUser.name) {
+                avatar.textContent = currentUser.name.charAt(0).toUpperCase();
+            }
+
+            // Load profile section
+            loadProfile();
         }
     </script>
 </body>

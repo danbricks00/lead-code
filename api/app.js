@@ -110,49 +110,68 @@ export default async function handler(req, res) {
     // 🔹 Zone Lookup Action
     //
     if (action === "zone") {
-      const { address } = req.query;
-      if (!address) {
-        return res.status(400).json({ ok: false, error: "Missing address parameter" });
+      try {
+        const { address } = req.query;
+        if (!address) {
+          return res.status(400).json({ ok: false, error: "Missing address parameter" });
+        }
+
+        // Handle private key properly
+        const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+        if (!privateKey) {
+          return res.status(500).json({ ok: false, error: "GOOGLE_PRIVATE_KEY not configured" });
+        }
+
+        // Clean up private key - handle both formats
+        const cleanPrivateKey = privateKey.includes('\\n') 
+          ? privateKey.replace(/\\n/g, '\n')
+          : privateKey;
+
+        const auth = new google.auth.JWT(
+          process.env.GOOGLE_CLIENT_EMAIL,
+          null,
+          cleanPrivateKey,
+          ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+        );
+        const sheets = google.sheets({ version: "v4", auth });
+
+        const sheetId = process.env.GOOGLE_SPREADSHEET_ID;
+        if (!sheetId) {
+          return res.status(500).json({ ok: false, error: "GOOGLE_SPREADSHEET_ID not configured" });
+        }
+
+        const range = "Zone!A:C";
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId: sheetId,
+          range,
+        });
+
+        const rows = response.data.values;
+        if (!rows || rows.length === 0) {
+          return res.status(404).json({ ok: false, error: "No data found in sheet" });
+        }
+
+        const suburbRow = rows.find(
+          (row) => row[0]?.toLowerCase() === address.toLowerCase()
+        );
+
+        if (!suburbRow) {
+          return res.status(404).json({ ok: false, error: "No matching suburb found" });
+        }
+
+        return res.status(200).json({
+          ok: true,
+          suburb: suburbRow[0],
+          area: suburbRow[1],
+          postcode: suburbRow[2],
+        });
+      } catch (zoneError) {
+        console.error("Zone lookup error:", zoneError);
+        return res.status(500).json({ 
+          ok: false, 
+          error: `Zone lookup error: ${zoneError.message}` 
+        });
       }
-
-      const auth = new google.auth.JWT(
-        process.env.GOOGLE_CLIENT_EMAIL,
-        null,
-        process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-        ["https://www.googleapis.com/auth/spreadsheets.readonly"]
-      );
-      const sheets = google.sheets({ version: "v4", auth });
-
-      const sheetId = process.env.GOOGLE_SPREADSHEET_ID;
-      if (!sheetId) {
-        return res.status(500).json({ ok: false, error: "GOOGLE_SPREADSHEET_ID not configured" });
-      }
-
-      const range = "Zone!A:C";
-      const response = await sheets.spreadsheets.values.get({
-        spreadsheetId: sheetId,
-        range,
-      });
-
-      const rows = response.data.values;
-      if (!rows || rows.length === 0) {
-        return res.status(404).json({ ok: false, error: "No data found in sheet" });
-      }
-
-      const suburbRow = rows.find(
-        (row) => row[0]?.toLowerCase() === address.toLowerCase()
-      );
-
-      if (!suburbRow) {
-        return res.status(404).json({ ok: false, error: "No matching suburb found" });
-      }
-
-      return res.status(200).json({
-        ok: true,
-        suburb: suburbRow[0],
-        area: suburbRow[1],
-        postcode: suburbRow[2],
-      });
     }
 
     //
@@ -223,11 +242,21 @@ export default async function handler(req, res) {
       // Calculate total project size
       const totalRooms = rooms.length;
 
-      // Initialize Google Sheets API
+      // Initialize Google Sheets API with proper private key handling
+      const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+      if (!privateKey) {
+        return res.status(500).json({ ok: false, error: "GOOGLE_PRIVATE_KEY not configured" });
+      }
+
+      // Clean up private key - handle both formats
+      const cleanPrivateKey = privateKey.includes('\\n') 
+        ? privateKey.replace(/\\n/g, '\n')
+        : privateKey;
+
       const auth = new google.auth.JWT(
         process.env.GOOGLE_CLIENT_EMAIL,
         null,
-        process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+        cleanPrivateKey,
         ["https://www.googleapis.com/auth/spreadsheets"]
       );
       const sheets = google.sheets({ version: "v4", auth });

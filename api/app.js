@@ -26,7 +26,11 @@ export default async function handler(req, res) {
       );
       const sheets = google.sheets({ version: "v4", auth });
 
-      const sheetId = process.env.GOOGLE_SHEET_ID;
+      const sheetId = process.env.GOOGLE_SPREADSHEET_ID;
+      if (!sheetId) {
+        return res.status(500).json({ ok: false, error: "GOOGLE_SPREADSHEET_ID not configured" });
+      }
+
       const range = "Zone!A:C";
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId: sheetId,
@@ -60,12 +64,15 @@ export default async function handler(req, res) {
     if (action === "contact") {
       if (req.method !== "POST") {
         res.setHeader("Allow", ["POST"]);
-        return res.status(405).end(`Method ${req.method} Not Allowed for Contact Form`);
+        return res.status(405).json({ 
+          ok: false, 
+          error: `Method ${req.method} Not Allowed for Contact Form. Use POST method.` 
+        });
       }
 
       const { name, email, message } = req.body;
       if (!name || !email || !message) {
-        return res.status(400).json({ ok: false, error: "Missing required fields" });
+        return res.status(400).json({ ok: false, error: "Missing required fields: name, email, message" });
       }
 
       const transporter = nodemailer.createTransporter({

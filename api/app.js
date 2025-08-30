@@ -28,6 +28,39 @@ export default async function handler(req, res) {
     //
     if (action === "zones") {
       try {
+        // TEMPORARY: Return stub data while debugging Google Sheets auth
+        console.log("Zones API called - returning stub data");
+        
+        const stubData = {
+          ok: true,
+          areas: ["Central Auckland", "North Shore", "West Auckland", "South Auckland"],
+          groupedData: {
+            "Central Auckland": [
+              { suburb: "Auckland CBD", postcode: "1010" },
+              { suburb: "Grey Lynn", postcode: "1021" },
+              { suburb: "Ponsonby", postcode: "1021" }
+            ],
+            "North Shore": [
+              { suburb: "Takapuna", postcode: "0622" },
+              { suburb: "Devonport", postcode: "0624" },
+              { suburb: "Milford", postcode: "0620" }
+            ],
+            "West Auckland": [
+              { suburb: "Henderson", postcode: "0610" },
+              { suburb: "New Lynn", postcode: "0600" },
+              { suburb: "Glen Eden", postcode: "0602" }
+            ],
+            "South Auckland": [
+              { suburb: "Manukau", postcode: "2104" },
+              { suburb: "Papatoetoe", postcode: "2025" },
+              { suburb: "Otahuhu", postcode: "1640" }
+            ]
+          }
+        };
+
+        return res.status(200).json(stubData);
+
+        /* ORIGINAL GOOGLE SHEETS CODE (commented out for debugging):
         // Handle private key properly
         const privateKey = process.env.GOOGLE_PRIVATE_KEY;
         if (!privateKey) {
@@ -97,6 +130,7 @@ export default async function handler(req, res) {
           areas: sortedAreas,
           groupedData: organizedData
         });
+        */
       } catch (zoneError) {
         console.error("Zone data error:", zoneError);
         return res.status(500).json({ 

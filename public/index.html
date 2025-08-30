@@ -910,7 +910,7 @@
                 specificDetails: `Customer requires underfloor heating installation for ${totalRooms} room(s): ${roomDetailsText}. Timeframe: ${chatState.timeframe || 'Flexible'}`
             };
 
-            fetch('/api/lead-intake', {
+            fetch('/api/app?action=chatbot', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(leadData)
@@ -1042,42 +1042,28 @@
         function showAddressSelection() {
             const messagesContainer = document.getElementById('chatMessages');
             
-            console.log('🎯 Showing suburb selection dropdown');
+            console.log('🎯 Showing area selection first');
             
-            let optionsHtml = '<option value="">Choose a suburb...</option>';
+            let areaOptionsHtml = '<option value="">Choose an area first...</option>';
             
             // Use API data if available, otherwise use fallback
             if (zoneData && zoneData.areas && zoneData.groupedData) {
                 console.log('Using API zone data');
                 zoneData.areas.forEach(area => {
-                    if (zoneData.groupedData[area]) {
-                        zoneData.groupedData[area].forEach(suburbData => {
-                            optionsHtml += `<option value="${suburbData.suburb}" data-area="${area}">${suburbData.suburb}</option>`;
-                        });
-                    }
+                    areaOptionsHtml += `<option value="${area}">${area}</option>`;
                 });
             } else {
                 console.log('Using fallback hardcoded data');
-                // Fallback hardcoded data (alphabetically ordered)
-                const fallbackData = [
-                    { suburb: "Auckland CBD", area: "Central Auckland" },
-                    { suburb: "Devonport", area: "North Shore" },
-                    { suburb: "Glen Eden", area: "West Auckland" },
-                    { suburb: "Grey Lynn", area: "Central Auckland" },
-                    { suburb: "Henderson", area: "West Auckland" },
-                    { suburb: "Manukau", area: "South Auckland" },
-                    { suburb: "Milford", area: "North Shore" },
-                    { suburb: "Mt Eden", area: "Central Auckland" },
-                    { suburb: "New Lynn", area: "West Auckland" },
-                    { suburb: "Otahuhu", area: "South Auckland" },
-                    { suburb: "Papatoetoe", area: "South Auckland" },
-                    { suburb: "Ponsonby", area: "Central Auckland" },
-                    { suburb: "Takapuna", area: "North Shore" },
-                    { suburb: "Te Atatu", area: "West Auckland" }
+                // Fallback hardcoded areas (alphabetically ordered)
+                const fallbackAreas = [
+                    "Central Auckland",
+                    "North Shore", 
+                    "South Auckland",
+                    "West Auckland"
                 ];
                 
-                fallbackData.forEach(item => {
-                    optionsHtml += `<option value="${item.suburb}" data-area="${item.area}">${item.suburb}</option>`;
+                fallbackAreas.forEach(area => {
+                    areaOptionsHtml += `<option value="${area}">${area}</option>`;
                 });
             }
             
@@ -1085,14 +1071,21 @@
             addressDiv.className = 'address-selection';
             addressDiv.innerHTML = `
                 <div class="dropdown-group">
-                    <label for="suburb-select">Select your suburb:</label>
+                    <label for="area-select">First, select your area:</label>
+                    <select id="area-select" class="dropdown-select" onchange="onAreaChange()">
+                        ${areaOptionsHtml}
+                    </select>
+                </div>
+                
+                <div class="dropdown-group" id="suburb-group" style="display: none;">
+                    <label for="suburb-select">Now select your suburb:</label>
                     <select id="suburb-select" class="dropdown-select" onchange="onSuburbChange()">
-                        ${optionsHtml}
+                        <option value="">Choose a suburb...</option>
                     </select>
                 </div>
                 
                 <button id="address-confirm" class="address-confirm" onclick="confirmAddress()" disabled>
-                    Confirm Suburb Selection
+                    Confirm Selection
                 </button>
             `;
             
@@ -1100,22 +1093,66 @@
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
+        function onAreaChange() {
+            const areaSelect = document.getElementById('area-select');
+            const suburbGroup = document.getElementById('suburb-group');
+            const suburbSelect = document.getElementById('suburb-select');
+            const confirmBtn = document.getElementById('address-confirm');
+            
+            const selectedArea = areaSelect.value;
+            
+            if (selectedArea) {
+                // Show suburb selection
+                suburbGroup.style.display = 'block';
+                
+                // Populate suburbs for selected area
+                let suburbOptionsHtml = '<option value="">Choose a suburb...</option>';
+                
+                if (zoneData && zoneData.groupedData && zoneData.groupedData[selectedArea]) {
+                    // Use API data
+                    zoneData.groupedData[selectedArea].forEach(suburbData => {
+                        suburbOptionsHtml += `<option value="${suburbData.suburb}">${suburbData.suburb}</option>`;
+                    });
+                } else {
+                    // Use fallback hardcoded data
+                    const fallbackSuburbs = {
+                        "Central Auckland": ["Auckland CBD", "Grey Lynn", "Mt Eden", "Ponsonby"],
+                        "North Shore": ["Devonport", "Milford", "Takapuna"],
+                        "South Auckland": ["Manukau", "Otahuhu", "Papatoetoe"],
+                        "West Auckland": ["Glen Eden", "Henderson", "New Lynn", "Te Atatu"]
+                    };
+                    
+                    if (fallbackSuburbs[selectedArea]) {
+                        fallbackSuburbs[selectedArea].forEach(suburb => {
+                            suburbOptionsHtml += `<option value="${suburb}">${suburb}</option>`;
+                        });
+                    }
+                }
+                
+                suburbSelect.innerHTML = suburbOptionsHtml;
+                chatState.selectedArea = selectedArea;
+                chatState.selectedSuburb = '';
+                confirmBtn.disabled = true;
+            } else {
+                suburbGroup.style.display = 'none';
+                chatState.selectedArea = '';
+                chatState.selectedSuburb = '';
+                confirmBtn.disabled = true;
+            }
+        }
+
         function onSuburbChange() {
             const suburbSelect = document.getElementById('suburb-select');
             const confirmBtn = document.getElementById('address-confirm');
             
-            const selectedOption = suburbSelect.options[suburbSelect.selectedIndex];
             const selectedSuburb = suburbSelect.value;
-            const selectedArea = selectedOption.getAttribute('data-area');
             
             if (selectedSuburb) {
                 confirmBtn.disabled = false;
                 chatState.selectedSuburb = selectedSuburb;
-                chatState.selectedArea = selectedArea;
             } else {
                 confirmBtn.disabled = true;
                 chatState.selectedSuburb = '';
-                chatState.selectedArea = '';
             }
         }
 
@@ -1138,6 +1175,7 @@
         }
 
         // Make functions globally accessible
+        window.onAreaChange = onAreaChange;
         window.onSuburbChange = onSuburbChange;
         window.confirmAddress = confirmAddress;
      </script>

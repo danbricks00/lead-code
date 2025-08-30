@@ -182,10 +182,12 @@ export default async function handler(req, res) {
 
         const rows = response.data.values;
         if (!rows || rows.length === 0) {
-          return res.status(404).json({ ok: false, error: "No data found in sheet" });
+          return res.status(404).json({ ok: false, error: "No data found in Zone sheet" });
         }
 
-        const suburbRow = rows.find(
+        // Skip header row and search for suburb match
+        const dataRows = rows.slice(1);
+        const suburbRow = dataRows.find(
           (row) => row[0]?.toLowerCase() === address.toLowerCase()
         );
 
@@ -323,7 +325,36 @@ export default async function handler(req, res) {
         return res.status(500).json({ ok: false, error: "GOOGLE_SPREADSHEET_ID not configured" });
       }
 
-      // Append lead data to Google Sheets
+      // Perform zone lookup to get area and suburb
+      let area = "";
+      let suburb = "";
+      
+      try {
+        const zoneRange = "Zone!A:C";
+        const zoneResponse = await sheets.spreadsheets.values.get({
+          spreadsheetId: sheetId,
+          range: zoneRange,
+        });
+
+        const zoneRows = zoneResponse.data.values;
+        if (zoneRows && zoneRows.length > 1) {
+          // Skip header row and search for location match
+          const zoneDataRows = zoneRows.slice(1);
+          const matchingZoneRow = zoneDataRows.find(
+            (row) => row[0]?.toLowerCase() === location.toLowerCase()
+          );
+
+          if (matchingZoneRow) {
+            suburb = matchingZoneRow[0];
+            area = matchingZoneRow[1];
+          }
+        }
+      } catch (zoneLookupError) {
+        console.error("Zone lookup error during lead logging:", zoneLookupError);
+        // Continue with empty area/suburb if lookup fails
+      }
+
+      // Append lead data to Google Sheets with Area and Suburb
       const leadRow = [
         new Date().toISOString(), // Date
         name || "",
@@ -337,12 +368,14 @@ export default async function handler(req, res) {
         timeline || "",
         location || "",
         specificDetails || "",
-        "" // Empty column for future use
+        area, // Area
+        suburb, // Suburb
+        "New" // Status
       ];
 
       await sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
-        range: "Leads!A:M",
+        range: "Leads!A:O", // Updated range to include Area and Suburb
         valueInputOption: "RAW",
         insertDataOption: "INSERT_ROWS",
         requestBody: {

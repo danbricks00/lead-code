@@ -1,5 +1,4 @@
 import { google } from "googleapis";
-import nodemailer from "nodemailer";
 
 // Import existing email helper
 import { sendEmailViaGmailAPI } from "../src/server/integrations/google/gmail-api-helper.js";
@@ -168,28 +167,23 @@ export default async function handler(req, res) {
         });
       }
 
-      const { name, email, message } = req.body;
+      const { name, email, message, subject } = req.body;
       if (!name || !email || !message) {
         return res.status(400).json({ ok: false, error: "Missing required fields: name, email, message" });
       }
 
-      const transporter = nodemailer.createTransporter({
-        service: "gmail",
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
-        },
-      });
+      // Send email using existing Gmail API helper
+      const emailSubject = subject ? `Contact Form: ${subject}` : "New Contact Form Submission";
+      const emailHtml = `
+        <h2>New Contact Form Submission</h2>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Subject:</strong> ${subject || 'Not specified'}</p>
+        <p><strong>Message:</strong></p>
+        <p>${message.replace(/\n/g, "<br/>")}</p>
+      `;
 
-      await transporter.sendMail({
-        from: `"${name}" <${email}>`,
-        to: process.env.CONTACT_TO,
-        subject: "New Contact Form Submission",
-        text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
-        html: `<p><b>Name:</b> ${name}</p>
-               <p><b>Email:</b> ${email}</p>
-               <p><b>Message:</b><br/>${message.replace(/\n/g, "<br/>")}</p>`,
-      });
+      await sendEmailViaGmailAPI(process.env.CONTACT_TO, emailSubject, emailHtml);
 
       return res.status(200).json({
         ok: true,

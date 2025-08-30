@@ -130,9 +130,25 @@
         <p><strong>Customer:</strong> <span id="customerNameDisplay"></span></p>
         <p><strong>Service:</strong> <span id="serviceTypeDisplay"></span></p>
         <p><strong>Location:</strong> <span id="locationDisplay"></span></p>
+        <p><strong>Area:</strong> <span id="areaDisplay"></span></p>
+        <p><strong>Suburb:</strong> <span id="suburbDisplay"></span></p>
         <p><strong>Project Size:</strong> <span id="projectSizeDisplay"></span></p>
         <p><strong>Budget:</strong> <span id="budgetDisplay"></span></p>
         <p><strong>Timeline:</strong> <span id="timelineDisplay"></span></p>
+    </div>
+
+    <div class="form-group">
+        <h3>📝 Lead Details (Editable)</h3>
+        <div class="breakdown-row">
+            <div class="breakdown-col">
+                <label for="areaInput">Area:</label>
+                <input type="text" id="areaInput" name="areaInput" placeholder="e.g., Central Auckland">
+            </div>
+            <div class="breakdown-col">
+                <label for="suburbInput">Suburb:</label>
+                <input type="text" id="suburbInput" name="suburbInput" placeholder="e.g., Grey Lynn">
+            </div>
+        </div>
     </div>
 
     <form id="quoteForm">
@@ -149,6 +165,8 @@
         <input type="hidden" id="budget" name="budget">
         <input type="hidden" id="timeline" name="timeline">
         <input type="hidden" id="location" name="location">
+        <input type="hidden" id="area" name="area">
+        <input type="hidden" id="suburb" name="suburb">
         <input type="hidden" id="specificDetails" name="specificDetails">
 
         <div class="form-group">
@@ -555,6 +573,8 @@
                             document.getElementById('budget').value = lead.budget || '';
                             document.getElementById('timeline').value = lead.timeline || '';
                             document.getElementById('location').value = lead.location || 'Auckland';
+                            document.getElementById('area').value = lead.area || '';
+                            document.getElementById('suburb').value = lead.suburb || '';
                             document.getElementById('specificDetails').value = lead.specificDetails || '';
                     
                     // Show customer info section
@@ -562,9 +582,15 @@
                     document.getElementById('customerNameDisplay').textContent = lead.customerName || 'Not provided';
                     document.getElementById('serviceTypeDisplay').textContent = lead.selectedService || 'Not specified';
                     document.getElementById('locationDisplay').textContent = lead.location || 'Not specified';
+                    document.getElementById('areaDisplay').textContent = lead.area || 'Not specified';
+                    document.getElementById('suburbDisplay').textContent = lead.suburb || 'Not specified';
                     document.getElementById('projectSizeDisplay').textContent = lead.projectSize || 'Not specified';
                     document.getElementById('budgetDisplay').textContent = lead.budget || 'Not specified';
                     document.getElementById('timelineDisplay').textContent = lead.timeline || 'Not specified';
+                    
+                    // Populate editable Area and Suburb fields
+                    document.getElementById('areaInput').value = lead.area || '';
+                    document.getElementById('suburbInput').value = lead.suburb || '';
                     
                     console.log('✅ Lead data loaded successfully');
                 } else {
@@ -717,6 +743,10 @@
              
              const formData = new FormData(e.target);
              const data = Object.fromEntries(formData.entries());
+             
+             // Add area and suburb from editable fields
+             data.area = document.getElementById('areaInput').value;
+             data.suburb = document.getElementById('suburbInput').value;
              
              // Clean and validate data
              if (data.totalAmount) {

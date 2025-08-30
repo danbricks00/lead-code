@@ -1139,7 +1139,7 @@
             addressDiv.innerHTML = `
                 <div class="dropdown-group">
                     <label for="area-select">First, select your area:</label>
-                    <select id="area-select" class="dropdown-select" onchange="onAreaChange()">
+                    <select id="area-select" class="dropdown-select" onchange="window.onAreaChange()">
                         ${areaOptionsHtml}
                     </select>
                 </div>
@@ -1147,7 +1147,6 @@
                 <div class="dropdown-group" id="suburb-group" style="display: none;">
                     <label for="suburb-select">Now select your suburb:</label>
                     <select id="suburb-select" class="dropdown-select" onchange="onSuburbChange()">
-                        <option value="">Choose a suburb...</option>
                     </select>
                 </div>
                 
@@ -1160,7 +1159,7 @@
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
-        function onAreaChange() {
+        async function onAreaChange() {
             const areaSelect = document.getElementById('area-select');
             const suburbGroup = document.getElementById('suburb-group');
             const suburbSelect = document.getElementById('suburb-select');
@@ -1181,19 +1180,22 @@
                         suburbOptionsHtml += `<option value="${suburbData.suburb}">${suburbData.suburb}</option>`;
                     });
                 } else {
-                    console.log('Using fallback hardcoded data');
-                    // Use basic fallback data
-                    const fallbackSuburbs = {
-                        "Central Auckland": ["Auckland CBD", "Grey Lynn", "Mt Eden", "Ponsonby"],
-                        "North Shore": ["Devonport", "Milford", "Takapuna"],
-                        "South Auckland": ["Manukau", "Otahuhu", "Papatoetoe"],
-                        "West Auckland": ["Glen Eden", "Henderson", "New Lynn", "Te Atatu"]
-                    };
-                    
-                    if (fallbackSuburbs[selectedArea]) {
-                        fallbackSuburbs[selectedArea].forEach(suburb => {
-                            suburbOptionsHtml += `<option value="${suburb}">${suburb}</option>`;
+                    console.log('Using fallback HTML data');
+                    // Load from fallback HTML file
+                    try {
+                        const res = await fetch("/zone-fallback-dropdown.html");
+                        const html = await res.text();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const options = doc.querySelectorAll('option');
+                        
+                        options.forEach(option => {
+                            if (option.dataset.area === selectedArea) {
+                                suburbOptionsHtml += `<option value="${option.value}" data-area="${option.dataset.area}">${option.textContent}</option>`;
+                            }
                         });
+                    } catch (err) {
+                        console.warn('Failed to load fallback HTML:', err);
                     }
                 }
                 

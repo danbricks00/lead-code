@@ -577,7 +577,7 @@
             
             try {
                                  // Send data to API
-                 const response = await fetch('/api/contact-form', {
+                 const response = await fetch('/api/app?action=contact', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

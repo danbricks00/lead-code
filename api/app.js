@@ -28,63 +28,83 @@ export default async function handler(req, res) {
     // 🔹 Zones Action (GET method for chatbot area/suburb selection)
     //
     if (action === "zones") {
-      const auth = new google.auth.JWT(
-        process.env.GOOGLE_CLIENT_EMAIL,
-        null,
-        process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-        ["https://www.googleapis.com/auth/spreadsheets.readonly"]
-      );
-      const sheets = google.sheets({ version: "v4", auth });
-
-      const sheetId = process.env.GOOGLE_SPREADSHEET_ID;
-      if (!sheetId) {
-        return res.status(500).json({ ok: false, error: "GOOGLE_SPREADSHEET_ID not configured" });
-      }
-
-      const range = "Zone!A:C";
-      const response = await sheets.spreadsheets.values.get({
-        spreadsheetId: sheetId,
-        range,
-      });
-
-      const rows = response.data.values;
-      if (!rows || rows.length === 0) {
-        return res.status(404).json({ ok: false, error: "No data found in Zone sheet" });
-      }
-
-      // Skip header row and organize data
-      const dataRows = rows.slice(1);
-      const zonesData = {};
-
-      dataRows.forEach(row => {
-        const suburb = row[0];
-        const area = row[1];
-        const postcode = row[2];
-
-        if (suburb && area) {
-          if (!zonesData[area]) {
-            zonesData[area] = [];
-          }
-          zonesData[area].push({
-            suburb: suburb,
-            postcode: postcode || ""
-          });
+      try {
+        // Handle private key properly
+        const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+        if (!privateKey) {
+          return res.status(500).json({ ok: false, error: "GOOGLE_PRIVATE_KEY not configured" });
         }
-      });
 
-      // Sort areas alphabetically and suburbs within each area
-      const sortedAreas = Object.keys(zonesData).sort();
-      const organizedData = {};
+        // Clean up private key - handle both formats
+        const cleanPrivateKey = privateKey.includes('\\n') 
+          ? privateKey.replace(/\\n/g, '\n')
+          : privateKey;
 
-      sortedAreas.forEach(area => {
-        organizedData[area] = zonesData[area].sort((a, b) => a.suburb.localeCompare(b.suburb));
-      });
+        const auth = new google.auth.JWT(
+          process.env.GOOGLE_CLIENT_EMAIL,
+          null,
+          cleanPrivateKey,
+          ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+        );
 
-      return res.status(200).json({
-        ok: true,
-        areas: sortedAreas,
-        groupedData: organizedData
-      });
+        const sheets = google.sheets({ version: "v4", auth });
+
+        const sheetId = process.env.GOOGLE_SPREADSHEET_ID;
+        if (!sheetId) {
+          return res.status(500).json({ ok: false, error: "GOOGLE_SPREADSHEET_ID not configured" });
+        }
+
+        const range = "Zone!A:C";
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId: sheetId,
+          range,
+        });
+
+        const rows = response.data.values;
+        if (!rows || rows.length === 0) {
+          return res.status(404).json({ ok: false, error: "No data found in Zone sheet" });
+        }
+
+        // Skip header row and organize data
+        const dataRows = rows.slice(1);
+        const zonesData = {};
+
+        dataRows.forEach(row => {
+          const suburb = row[0];
+          const area = row[1];
+          const postcode = row[2];
+
+          if (suburb && area) {
+            if (!zonesData[area]) {
+              zonesData[area] = [];
+            }
+            zonesData[area].push({
+              suburb: suburb,
+              postcode: postcode || ""
+            });
+          }
+        });
+
+        // Sort areas alphabetically and suburbs within each area
+        const sortedAreas = Object.keys(zonesData).sort();
+        const organizedData = {};
+
+        sortedAreas.forEach(area => {
+          organizedData[area] = zonesData[area].sort((a, b) => a.suburb.localeCompare(b.suburb));
+        });
+
+        return res.status(200).json({
+          ok: true,
+          areas: sortedAreas,
+          groupedData: organizedData
+        });
+      } catch (zoneError) {
+        console.error("Zone data error:", zoneError);
+        return res.status(500).json({ 
+          ok: false, 
+          error: `Zone data error: ${zoneError.message}` 
+        });
+      }
     }
 
     //

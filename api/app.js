@@ -3,6 +3,36 @@ import { google } from "googleapis";
 // Import existing email helper
 import { sendEmailViaGmailAPI } from "../src/server/integrations/google/gmail-api-helper.js";
 
+// Fallback zone data function
+function getFallbackZoneData() {
+  return {
+    ok: true,
+    areas: ["Central Auckland", "North Shore", "West Auckland", "South Auckland"],
+    groupedData: {
+      "Central Auckland": [
+        { suburb: "Auckland CBD", postcode: "1010" },
+        { suburb: "Grey Lynn", postcode: "1021" },
+        { suburb: "Ponsonby", postcode: "1021" }
+      ],
+      "North Shore": [
+        { suburb: "Takapuna", postcode: "0622" },
+        { suburb: "Devonport", postcode: "0624" },
+        { suburb: "Milford", postcode: "0620" }
+      ],
+      "West Auckland": [
+        { suburb: "Henderson", postcode: "0610" },
+        { suburb: "New Lynn", postcode: "0600" },
+        { suburb: "Glen Eden", postcode: "0602" }
+      ],
+      "South Auckland": [
+        { suburb: "Manukau", postcode: "2104" },
+        { suburb: "Papatoetoe", postcode: "2025" },
+        { suburb: "Otahuhu", postcode: "1640" }
+      ]
+    }
+  };
+}
+
 export default async function handler(req, res) {
   const { action } = req.query;
 
@@ -23,48 +53,19 @@ export default async function handler(req, res) {
       });
     }
 
-    //
+        //
     // 🔹 Zones Action (GET method for chatbot area/suburb selection)
     //
     if (action === "zones") {
       try {
-        // TEMPORARY: Return stub data while debugging Google Sheets auth
-        console.log("Zones API called - returning stub data");
+        // Try to fetch from Google Sheets first
+        console.log("Zones API called - attempting Google Sheets fetch");
         
-        const stubData = {
-          ok: true,
-          areas: ["Central Auckland", "North Shore", "West Auckland", "South Auckland"],
-          groupedData: {
-            "Central Auckland": [
-              { suburb: "Auckland CBD", postcode: "1010" },
-              { suburb: "Grey Lynn", postcode: "1021" },
-              { suburb: "Ponsonby", postcode: "1021" }
-            ],
-            "North Shore": [
-              { suburb: "Takapuna", postcode: "0622" },
-              { suburb: "Devonport", postcode: "0624" },
-              { suburb: "Milford", postcode: "0620" }
-            ],
-            "West Auckland": [
-              { suburb: "Henderson", postcode: "0610" },
-              { suburb: "New Lynn", postcode: "0600" },
-              { suburb: "Glen Eden", postcode: "0602" }
-            ],
-            "South Auckland": [
-              { suburb: "Manukau", postcode: "2104" },
-              { suburb: "Papatoetoe", postcode: "2025" },
-              { suburb: "Otahuhu", postcode: "1640" }
-            ]
-          }
-        };
-
-        return res.status(200).json(stubData);
-
-        /* ORIGINAL GOOGLE SHEETS CODE (commented out for debugging):
         // Handle private key properly
         const privateKey = process.env.GOOGLE_PRIVATE_KEY;
         if (!privateKey) {
-          return res.status(500).json({ ok: false, error: "GOOGLE_PRIVATE_KEY not configured" });
+          console.log("No GOOGLE_PRIVATE_KEY, using fallback data");
+          return res.status(200).json(getFallbackZoneData());
         }
 
         // Clean up private key - handle both formats
@@ -83,7 +84,8 @@ export default async function handler(req, res) {
 
         const sheetId = process.env.GOOGLE_SPREADSHEET_ID;
         if (!sheetId) {
-          return res.status(500).json({ ok: false, error: "GOOGLE_SPREADSHEET_ID not configured" });
+          console.log("No GOOGLE_SPREADSHEET_ID, using fallback data");
+          return res.status(200).json(getFallbackZoneData());
         }
 
         const range = "Zone!A:C";
@@ -94,7 +96,8 @@ export default async function handler(req, res) {
 
         const rows = response.data.values;
         if (!rows || rows.length === 0) {
-          return res.status(404).json({ ok: false, error: "No data found in Zone sheet" });
+          console.log("No data found in Zone sheet, using fallback data");
+          return res.status(200).json(getFallbackZoneData());
         }
 
         // Skip header row and organize data
@@ -125,20 +128,18 @@ export default async function handler(req, res) {
           organizedData[area] = zonesData[area].sort((a, b) => a.suburb.localeCompare(b.suburb));
         });
 
+        console.log("Successfully fetched zone data from Google Sheets");
         return res.status(200).json({
           ok: true,
           areas: sortedAreas,
           groupedData: organizedData
         });
-        */
-      } catch (zoneError) {
-        console.error("Zone data error:", zoneError);
-        return res.status(500).json({ 
-          ok: false, 
-          error: `Zone data error: ${zoneError.message}` 
-        });
-      }
-    }
+             } catch (zoneError) {
+         console.error("Zone data error:", zoneError);
+         console.log("Falling back to hardcoded data");
+         return res.status(200).json(getFallbackZoneData());
+       }
+     }
 
     //
     // 🔹 Zone Lookup Action

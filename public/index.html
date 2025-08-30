@@ -910,7 +910,7 @@
                 specificDetails: `Customer requires underfloor heating installation for ${totalRooms} room(s): ${roomDetailsText}. Timeframe: ${chatState.timeframe || 'Flexible'}`
             };
 
-            fetch('/api/app?action=chatbot', {
+            fetch('/api/lead-intake', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(leadData)
@@ -1123,8 +1123,11 @@
                     "Central Auckland",
                     "North Shore", 
                     "South Auckland",
-                    "West Auckland"
-                ];
+                    "West Auckland",
+                    "Waiheke Island",
+                    "Rodney",
+                    "Papakura",
+","                ];
                 
                 fallbackAreas.forEach(area => {
                     areaOptionsHtml += `<option value="${area}">${area}</option>`;

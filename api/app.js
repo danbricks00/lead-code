@@ -283,7 +283,7 @@ export default async function handler(req, res) {
 
       const { 
         name, customerName, customerEmail, customerPhone, serviceType, 
-        rooms, budget, timeline, location, specificDetails 
+        rooms, budget, timeline, area, suburb, specificDetails 
       } = req.body;
 
       if (!customerName || !customerEmail || !serviceType || !rooms || !Array.isArray(rooms)) {
@@ -325,34 +325,9 @@ export default async function handler(req, res) {
         return res.status(500).json({ ok: false, error: "GOOGLE_SPREADSHEET_ID not configured" });
       }
 
-      // Perform zone lookup to get area and suburb
-      let area = "";
-      let suburb = "";
-      
-      try {
-        const zoneRange = "Zone!A:C";
-        const zoneResponse = await sheets.spreadsheets.values.get({
-          spreadsheetId: sheetId,
-          range: zoneRange,
-        });
-
-        const zoneRows = zoneResponse.data.values;
-        if (zoneRows && zoneRows.length > 1) {
-          // Skip header row and search for location match
-          const zoneDataRows = zoneRows.slice(1);
-          const matchingZoneRow = zoneDataRows.find(
-            (row) => row[0]?.toLowerCase() === location.toLowerCase()
-          );
-
-          if (matchingZoneRow) {
-            suburb = matchingZoneRow[0];
-            area = matchingZoneRow[1];
-          }
-        }
-      } catch (zoneLookupError) {
-        console.error("Zone lookup error during lead logging:", zoneLookupError);
-        // Continue with empty area/suburb if lookup fails
-      }
+      // Use area and suburb from POST body (no lookup needed)
+      const areaValue = area || "";
+      const suburbValue = suburb || "";
 
       // Append lead data to Google Sheets with Area and Suburb
       const leadRow = [
@@ -366,10 +341,8 @@ export default async function handler(req, res) {
         roomsString, // Project Size
         budget || "",
         timeline || "",
-        location || "",
-        specificDetails || "",
-        area, // Area
-        suburb, // Suburb
+        areaValue, // Area
+        suburbValue, // Suburb
         "New" // Status
       ];
 
@@ -388,39 +361,41 @@ export default async function handler(req, res) {
         `<li><strong>${room.roomName}:</strong> ${room.dimensions}</li>`
       ).join("");
 
-      // Send team notification email
-      const teamSubject = `🆕 New Lead: ${serviceType} - ${customerName} (${totalRooms} rooms)`;
-      const teamHtml = `
-        <h2>New Lead Received</h2>
-        <p><strong>Customer:</strong> ${customerName}</p>
-        <p><strong>Email:</strong> ${customerEmail}</p>
-        <p><strong>Phone:</strong> ${customerPhone || 'Not provided'}</p>
-        <p><strong>Service:</strong> ${serviceType}</p>
-        <p><strong>Number of Rooms:</strong> ${totalRooms}</p>
-        <p><strong>Room Details:</strong></p>
-        <ul>${roomsEmailList}</ul>
-        <p><strong>Location:</strong> ${location || 'Not specified'}</p>
-        <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
-        <p><strong>Budget:</strong> ${budget || 'Not specified'}</p>
-        <p><strong>Additional Details:</strong> ${specificDetails || 'None'}</p>
-      `;
+             // Send team notification email
+       const teamSubject = `🆕 New Lead: ${serviceType} - ${customerName} (${totalRooms} rooms)`;
+       const teamHtml = `
+         <h2>New Lead Received</h2>
+         <p><strong>Customer Name:</strong> ${customerName}</p>
+         <p><strong>Customer Email:</strong> ${customerEmail}</p>
+         <p><strong>Customer Phone:</strong> ${customerPhone || 'Not provided'}</p>
+         <p><strong>Service Type:</strong> ${serviceType}</p>
+         <p><strong>Area:</strong> ${areaValue || 'Not specified'}</p>
+         <p><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</p>
+         <p><strong>Number of Rooms:</strong> ${totalRooms}</p>
+         <p><strong>Room Details:</strong></p>
+         <ul>${roomsEmailList}</ul>
+         <p><strong>Budget:</strong> ${budget || 'Not specified'}</p>
+         <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
+         <p><strong>Specific Details:</strong> ${specificDetails || 'None'}</p>
+       `;
 
       await sendEmailViaGmailAPI(process.env.CONTACT_TO, teamSubject, teamHtml);
 
-      // Send confirmation email to customer
-      const customerSubject = `Thank you for your ${serviceType} enquiry`;
-      const customerHtml = `
-        <h2>Thank you for your enquiry!</h2>
-        <p>Hi ${customerName},</p>
-        <p>We've received your ${serviceType} enquiry for ${totalRooms} room(s) and will be in touch within 24 hours.</p>
-        <p><strong>Your enquiry details:</strong></p>
-        <ul>
-          <li><strong>Service:</strong> ${serviceType}</li>
-          <li><strong>Rooms:</strong> ${roomsString}</li>
-          <li><strong>Location:</strong> ${location || 'Not specified'}</li>
-        </ul>
-        <p>Best regards,<br>The Kiwi Trade Team</p>
-      `;
+             // Send confirmation email to customer
+       const customerSubject = `Thank you for your ${serviceType} enquiry`;
+       const customerHtml = `
+         <h2>Thank you for your enquiry!</h2>
+         <p>Hi ${customerName},</p>
+         <p>We've received your ${serviceType} enquiry for ${totalRooms} room(s) and will be in touch within 24 hours.</p>
+         <p><strong>Your enquiry details:</strong></p>
+         <ul>
+           <li><strong>Service:</strong> ${serviceType}</li>
+           <li><strong>Rooms:</strong> ${roomsString}</li>
+           <li><strong>Area:</strong> ${areaValue || 'Not specified'}</li>
+           <li><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</li>
+         </ul>
+         <p>Best regards,<br>The Kiwi Trade Team</p>
+       `;
 
       await sendEmailViaGmailAPI(customerEmail, customerSubject, customerHtml);
 

@@ -841,14 +841,6 @@
                         
                     case 'customer_phone':
                         chatState.customerPhone = message;
-                        chatState.step = 'location';
-                        setTimeout(() => {
-                            addMessage("What's the address of the job?");
-                        }, 1500);
-                        break;
-                        
-                    case 'location':
-                        chatState.location = message;
                         chatState.step = 'address_selection';
                         setTimeout(() => {
                             fetchZoneDataAndShowAddressSelection();
@@ -906,12 +898,13 @@
                 customerName: chatState.customerName,
                 customerEmail: chatState.customerEmail,
                 customerPhone: chatState.customerPhone,
-                selectedService: 'underfloor_heating',
-                projectDetails: `Underfloor heating installation - ${totalRooms} room(s): ${roomDetailsText}`,
-                projectSize: roomDetailsText,
-                location: chatState.location,
-                areasCount: totalRooms.toString(),
-                areaSizes: roomDetailsText,
+                serviceType: 'Underfloor Heating',
+                rooms: roomDetails.map(room => ({
+                    roomName: room.name,
+                    dimensions: room.dimensions
+                })),
+                area: chatState.selectedArea,
+                suburb: chatState.selectedSuburb,
                 budget: 'To be quoted',
                 timeline: chatState.timeframe || 'Flexible',
                 specificDetails: `Customer requires underfloor heating installation for ${totalRooms} room(s): ${roomDetailsText}. Timeframe: ${chatState.timeframe || 'Flexible'}`
@@ -965,9 +958,6 @@
                         customerName: '',
                         customerEmail: '',
                         customerPhone: '',
-                        location: '',
-                        areasCount: '',
-                        areaSizes: '',
                         timeframe: '',
                         selectedArea: '',
                         selectedSuburb: ''
@@ -1052,32 +1042,33 @@
         function showAddressSelection() {
             const messagesContainer = document.getElementById('chatMessages');
             
-            if (!zoneData || !zoneData.areas || zoneData.areas.length === 0) {
-                console.error('❌ Zone data not available for address selection');
-                addMessage('Sorry, the address options are not available right now. Please try again in a moment.');
-                return;
-            }
-            
-            console.log('🎯 Showing address selection with data:', zoneData);
+            console.log('🎯 Showing suburb selection dropdown');
             
             const addressDiv = document.createElement('div');
             addressDiv.className = 'address-selection';
             addressDiv.innerHTML = `
                 <div class="dropdown-group">
-                    <label for="area-select">Select Area:</label>
-                    <select id="area-select" class="dropdown-select" onchange="onAreaChange()">
-                        <option value="">Choose an area...</option>
-                        ${zoneData.areas.map(area => `<option value="${area}">${area}</option>`).join('')}
+                    <label for="suburb-select">Select your suburb:</label>
+                    <select id="suburb-select" class="dropdown-select" onchange="onSuburbChange()">
+                        <option value="">Choose a suburb...</option>
+                        <option value="Grey Lynn" data-area="Central Auckland">Grey Lynn</option>
+                        <option value="Ponsonby" data-area="Central Auckland">Ponsonby</option>
+                        <option value="Mt Eden" data-area="Central Auckland">Mt Eden</option>
+                        <option value="Auckland CBD" data-area="Central Auckland">Auckland CBD</option>
+                        <option value="Henderson" data-area="West Auckland">Henderson</option>
+                        <option value="Te Atatu" data-area="West Auckland">Te Atatu</option>
+                        <option value="New Lynn" data-area="West Auckland">New Lynn</option>
+                        <option value="Takapuna" data-area="North Shore">Takapuna</option>
+                        <option value="Devonport" data-area="North Shore">Devonport</option>
+                        <option value="Milford" data-area="North Shore">Milford</option>
+                        <option value="Manukau" data-area="South Auckland">Manukau</option>
+                        <option value="Papatoetoe" data-area="South Auckland">Papatoetoe</option>
+                        <option value="Otahuhu" data-area="South Auckland">Otahuhu</option>
                     </select>
                 </div>
                 
-                <div class="dropdown-group" id="suburb-group" style="display: none;">
-                    <label for="suburb-list">Select Suburb:</label>
-                    <div id="suburb-list" class="suburb-list"></div>
-                </div>
-                
                 <button id="address-confirm" class="address-confirm" onclick="confirmAddress()" disabled>
-                    Confirm Address Selection
+                    Confirm Suburb Selection
                 </button>
             `;
             
@@ -1085,51 +1076,28 @@
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
-        function onAreaChange() {
-            const areaSelect = document.getElementById('area-select');
-            const suburbGroup = document.getElementById('suburb-group');
-            const suburbList = document.getElementById('suburb-list');
+        function onSuburbChange() {
+            const suburbSelect = document.getElementById('suburb-select');
             const confirmBtn = document.getElementById('address-confirm');
             
-            const selectedArea = areaSelect.value;
+            const selectedOption = suburbSelect.options[suburbSelect.selectedIndex];
+            const selectedSuburb = suburbSelect.value;
+            const selectedArea = selectedOption.getAttribute('data-area');
             
-            if (selectedArea && zoneData.groupedData[selectedArea]) {
-                const suburbs = zoneData.groupedData[selectedArea];
-                
-                suburbList.innerHTML = suburbs.map(suburb => 
-                    `<div class="suburb-item" onclick="selectSuburb('${suburb}')">${suburb}</div>`
-                ).join('');
-                
-                suburbGroup.style.display = 'block';
-                confirmBtn.disabled = true;
+            if (selectedSuburb) {
+                confirmBtn.disabled = false;
+                chatState.selectedSuburb = selectedSuburb;
                 chatState.selectedArea = selectedArea;
-                chatState.selectedSuburb = '';
             } else {
-                suburbGroup.style.display = 'none';
                 confirmBtn.disabled = true;
-                chatState.selectedArea = '';
                 chatState.selectedSuburb = '';
+                chatState.selectedArea = '';
             }
-        }
-
-        function selectSuburb(suburb) {
-            chatState.selectedSuburb = suburb;
-            const confirmBtn = document.getElementById('address-confirm');
-            confirmBtn.disabled = false;
-            
-            // Highlight selected suburb
-            const suburbItems = document.querySelectorAll('.suburb-item');
-            suburbItems.forEach(item => {
-                item.classList.remove('selected');
-                if (item.textContent === suburb) {
-                    item.classList.add('selected');
-                }
-            });
         }
 
         function confirmAddress() {
             if (chatState.selectedArea && chatState.selectedSuburb) {
-                addMessage(`Address confirmed: ${chatState.selectedSuburb}, ${chatState.selectedArea}`);
+                addMessage(`Suburb confirmed: ${chatState.selectedSuburb}, ${chatState.selectedArea}`);
                 
                 // Remove address selection interface
                 const addressSelection = document.querySelector('.address-selection');
@@ -1146,8 +1114,7 @@
         }
 
         // Make functions globally accessible
-        window.onAreaChange = onAreaChange;
-        window.selectSuburb = selectSuburb;
+        window.onSuburbChange = onSuburbChange;
         window.confirmAddress = confirmAddress;
      </script>
 </body>

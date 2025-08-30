@@ -1020,7 +1020,7 @@
         async function fetchZoneDataAndShowAddressSelection() {
             try {
                 console.log('🔍 Fetching Zone data from API...');
-                const response = await fetch('/api/get-zone-data');
+                const response = await fetch('/api/app?action=zones');
                 console.log('📊 Response status:', response.status);
                 
                 if (!response.ok) {
@@ -1030,8 +1030,11 @@
                 const result = await response.json();
                 console.log('📊 API response:', result);
                 
-                if (result.success && result.data) {
-                    zoneData = result.data;
+                if (result.ok && result.areas) {
+                    zoneData = {
+                        areas: result.areas,
+                        groupedData: result.groupedData
+                    };
                     console.log('✅ Zone data loaded successfully:', zoneData);
                     console.log('📊 Available areas:', zoneData.areas);
                     console.log('📊 Grouped data keys:', Object.keys(zoneData.groupedData || {}));

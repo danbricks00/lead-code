@@ -234,6 +234,24 @@
                 </div>
             </div>
 
+            <div class="breakdown-section">
+                <h4>Travel</h4>
+                <div class="breakdown-row">
+                    <div class="breakdown-col">
+                        <label for="travelAmount">Travel Cost ($):</label>
+                        <input type="number" id="travelAmount" name="travelAmount" step="0.01" min="0" placeholder="e.g., 150.00">
+                    </div>
+                    <div class="breakdown-col">
+                        <label>&nbsp;</label>
+                        <div style="height: 38px;"></div>
+                    </div>
+                    <div class="breakdown-col">
+                        <label for="travelSubtotal">Subtotal ($):</label>
+                        <input type="text" id="travelSubtotal" name="travelSubtotal" readonly>
+                    </div>
+                </div>
+            </div>
+
             <div class="total-section">
                 <h4>Total Amount</h4>
                 <div class="total-row">
@@ -316,7 +334,7 @@
             }
             
             // Numeric field validation
-            const numericFields = ['labourRate', 'labourHours', 'materialRate', 'materialSQM', 'installationAmount'];
+            const numericFields = ['labourRate', 'labourHours', 'materialRate', 'materialSQM', 'installationAmount', 'travelAmount'];
             numericFields.forEach(fieldId => {
                 const field = document.getElementById(fieldId);
                 if (field) {
@@ -341,16 +359,18 @@
                 const materialRate = parseFloat(document.getElementById('materialRate').value) || 0;
                 const materialSQM = parseFloat(document.getElementById('materialSQM').value) || 0;
                 const installationAmount = parseFloat(document.getElementById('installationAmount').value) || 0;
+                const travelAmount = parseFloat(document.getElementById('travelAmount').value) || 0;
                 
-                console.log('📊 Values:', { labourRate, labourHours, materialRate, materialSQM, installationAmount });
+                console.log('📊 Values:', { labourRate, labourHours, materialRate, materialSQM, installationAmount, travelAmount });
                 
                 // Calculate subtotals
                 const labourSubtotal = labourRate * labourHours;
                 const materialSubtotal = materialRate * materialSQM;
                 const installationSubtotal = installationAmount;
+                const travelSubtotal = travelAmount;
                 
                 // Calculate total
-                const total = labourSubtotal + materialSubtotal + installationSubtotal;
+                const total = labourSubtotal + materialSubtotal + installationSubtotal + travelSubtotal;
                 
                 console.log('💰 Subtotals:', { labourSubtotal, materialSubtotal, installationSubtotal, total });
                 
@@ -358,6 +378,7 @@
                 const labourSubtotalEl = document.getElementById('labourSubtotal');
                 const materialSubtotalEl = document.getElementById('materialSubtotal');
                 const installationSubtotalEl = document.getElementById('installationSubtotal');
+                const travelSubtotalEl = document.getElementById('travelSubtotal');
                 const totalAmountEl = document.getElementById('totalAmount');
                 
                 if (labourSubtotalEl) {
@@ -372,12 +393,16 @@
                     installationSubtotalEl.value = installationSubtotal.toFixed(2);
                 }
                 
+                if (travelSubtotalEl) {
+                    travelSubtotalEl.value = travelSubtotal.toFixed(2);
+                }
+                
                 if (totalAmountEl) {
                     totalAmountEl.value = total.toFixed(2);
                 }
                 
                 // Generate item breakdown
-                generateItemBreakdown(labourRate, labourHours, labourSubtotal, materialRate, materialSQM, materialSubtotal, installationAmount);
+                generateItemBreakdown(labourRate, labourHours, labourSubtotal, materialRate, materialSQM, materialSubtotal, installationAmount, travelAmount);
                 
             } catch (error) {
                 console.error('❌ Error in calculateTotals:', error);
@@ -385,7 +410,7 @@
         }
         
         // Function to generate item breakdown
-        function generateItemBreakdown(labourRate, labourHours, labourSubtotal, materialRate, materialSQM, materialSubtotal, installationAmount) {
+        function generateItemBreakdown(labourRate, labourHours, labourSubtotal, materialRate, materialSQM, materialSubtotal, installationAmount, travelAmount) {
             try {
                 let breakdown = '';
                 
@@ -401,6 +426,10 @@
                     breakdown += 'Installation: $' + installationAmount.toFixed(2) + '\n';
                 }
                 
+                if (travelAmount > 0) {
+                    breakdown += 'Travel: $' + travelAmount.toFixed(2) + '\n';
+                }
+                
                 const itemBreakdownEl = document.getElementById('itemBreakdown');
                 if (itemBreakdownEl) {
                     itemBreakdownEl.value = breakdown;
@@ -414,12 +443,13 @@
         function addEventListeners() {
             console.log('🔧 Adding event listeners...');
             
-            const elements = [
+                        const elements = [
                 'labourRate',
-                'labourHours', 
+                'labourHours',
                 'materialRate',
                 'materialSQM',
-                'installationAmount'
+                'installationAmount',
+                'travelAmount'
             ];
             
             elements.forEach(id => {

@@ -1031,11 +1031,75 @@
                     showAddressSelection();
                 } else {
                     console.error('❌ Failed to load Zone data:', result.error);
-                    addMessage(`Sorry, I'm having trouble loading the address options. Please try again or contact support. Error: ${result.error}`);
+                    // Fallback to reading from HTML file
+                    console.log('🔄 Falling back to HTML file data...');
+                    loadZoneDataFromHTML();
                 }
             } catch (error) {
                 console.error('❌ Network error fetching Zone data:', error);
-                addMessage(`Sorry, I'm having trouble connecting to the address service. Please try again or contact support.`);
+                // Fallback to reading from HTML file
+                console.log('🔄 Falling back to HTML file data...');
+                loadZoneDataFromHTML();
+            }
+        }
+
+        // Load zone data from HTML file
+        async function loadZoneDataFromHTML() {
+            try {
+                console.log('📁 Loading zone data from HTML file...');
+                const response = await fetch('/.vscode/zone-fallback-dropdown.html');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const htmlContent = await response.text();
+                console.log('📄 HTML content loaded, parsing...');
+                
+                // Parse the HTML to extract suburb and area data
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlContent, 'text/html');
+                const options = doc.querySelectorAll('option[data-area]');
+                
+                const zonesData = {};
+                const areas = new Set();
+                
+                options.forEach(option => {
+                    const suburb = option.value;
+                    const area = option.getAttribute('data-area');
+                    
+                    if (suburb && area) {
+                        areas.add(area);
+                        if (!zonesData[area]) {
+                            zonesData[area] = [];
+                        }
+                        zonesData[area].push({
+                            suburb: suburb,
+                            postcode: "" // No postcode in HTML file
+                        });
+                    }
+                });
+                
+                // Sort areas alphabetically and suburbs within each area
+                const sortedAreas = Array.from(areas).sort();
+                const organizedData = {};
+                
+                sortedAreas.forEach(area => {
+                    organizedData[area] = zonesData[area].sort((a, b) => a.suburb.localeCompare(b.suburb));
+                });
+                
+                zoneData = {
+                    areas: sortedAreas,
+                    groupedData: organizedData
+                };
+                
+                console.log('✅ Zone data loaded from HTML file successfully:', zoneData);
+                console.log('📊 Available areas:', zoneData.areas);
+                showAddressSelection();
+                
+            } catch (error) {
+                console.error('❌ Error loading zone data from HTML file:', error);
+                addMessage(`Sorry, I'm having trouble loading the address options. Please try again or contact support.`);
             }
         }
 
@@ -1058,11 +1122,7 @@
                 const fallbackAreas = [
                     "Central Auckland",
                     "North Shore", 
-                    "Papakure",
-                    "Pukekohe",
-                    "Rodney",
                     "South Auckland",
-                    "Waiheke Island",
                     "West Auckland"
                 ];
                 
@@ -1118,17 +1178,14 @@
                         suburbOptionsHtml += `<option value="${suburbData.suburb}">${suburbData.suburb}</option>`;
                     });
                 } else {
-                                    // Use complete Auckland suburbs data
-                const fallbackSuburbs = {
-                    "Central Auckland": ["Arch Hill", "Auckland CBD", "Avondale", "Blockhouse Bay", "Balmoral", "Blackpool", "Eden Terrace", "Eden Valley", "Ellerslie", "Epsom", "Freemans Bay", "Glendowie", "Glen Innes", "Grafton", "Greenlane", "Greenwoods Corner", "Grey Lynn", "Herne Bay", "Hillsborough", "Kingsland", "Kohimarama", "Lynfield", "Meadowbank", "Mission Bay", "Morningside", "Mount Albert", "Mount Eden", "Mount Roskill", "Mount Wellington", "Newmarket", "Newton", "New Windsor", "Onehunga", "One Tree Hill", "Ōrākei", "Oranga", "Ōtāhuhu", "Owairaka", "Palm Beach", "Panmure", "Parnell", "Penrose", "Point England", "Point Chevalier", "Ponsonby", "Remuera", "Royal Oak", "Saint Heliers", "St Johns", "Saint Marys Bay", "Sandringham", "Stonefields", "Surfdale", "Tāmaki", "Te Papapa", "Three Kings", "Waikowhai", "Wai o Taiki Bay", "Waterview", "Wesley", "Western Springs", "Westfield", "Westmere"],
-                    "North Shore": ["Albany", "Bayswater", "Bayview", "Beach Haven", "Belmont", "Birkdale", "Birkenhead", "Browns Bay", "Campbells Bay", "Castor Bay", "Chatswood", "Cheltenham", "Crown Hill", "Devonport", "Fairview Heights", "Forrest Hill", "Glenfield", "Greenhithe", "Hauraki", "Highbury", "Hillcrest", "Long Bay", "Lucas Height", "Mairangi Bay", "Marlborough", "Milford", "Murrays Bay", "Narrow Neck", "Northcote", "Northcote Point", "North Harbour", "Northcross", "Okura", "Oteha", "Paremoremo", "Pinehill", "Rosedale", "Shelly Beach", "Rothesay Bay", "Schnapper Rock", "Stanley Bay", "Stanley Point", "Sunnynook", "Takapuna", "Torbay", "Totara Vale", "Unsworth Heights", "Waiake", "Wairau Valley", "Westlake", "Windsor Park"],
-                    "South Auckland": ["Airport Oaks", "Beachlands", "Botany Downs", "Brookby", "Bucklands Beach", "Burswood", "Chapel Downs", "Clendon Park", "Clevedon", "Clover Park", "Cockle Bay", "Dannemora", "East Tāmaki", "East Tāmaki Heights", "Eastern Beach", "Farm Cove", "Favona", "Flat Bush", "Golflands", "Goodwood Heights", "Greenmeadows", "Half Moon Bay", "Highland Park", "Hillpark", "Howick", "Huntington Park", "Kawakawa Bay", "Mahia Park", "Māngere", "Māngere Bridge", "Māngere East", "Manukau", "Manukau Heights", "Manurewa", "Manurewa East", "Maraetai", "Meadowlands", "Mellons Bay", "Middlemore", "Murphys Heights", "Northpark", "Orere Point", "Ormiston", "Ōtara", "Pakuranga", "Pakuranga Heights", "Papatoetoe", "Randwick Park", "Settlers Cove", "Shamrock Park", "Shelly Park", "Silkwood Heights", "Somerville", "Sunnyhills", "The Gardens", "Totara Heights", "Tuscany Estate", "Waimahia Landing", "Wattle Cove", "Wattle Downs", "Weymouth", "Whitford"],
-                    "West Auckland": ["Anawhata", "Cornwallis", "Bethells Beach", "Glen Eden", "Glendene", "Green Bay", "Henderson", "Henderson Valley", "Herald Island", "Hobsonville", "Huia", "Karekare", "Kaurilands", "Kelston", "Konini", "Laingholm", "Lincoln", "McLaren Park", "Massey", "New Lynn", "Oratia", "Parau", "Piha", "Rānui", "Royal Heights", "Sunnyvale", "Swanson", "Te Atatū Peninsula", "Te Atatū South", "Titirangi", "Waiatarua", "Westgate", "West Harbour", "Western Heights"],
-                    "Waiheke Island": ["Oneroa", "Onetangi", "Ostend"],
-                    "Papakure": ["Wiri", "Alfriston", "Ardmore", "Conifer Grove", "Drury", "Longford Park", "Ōpaheke", "Pahurehure", "Papakura", "Runciman", "Red Hill", "Rosehill"],
-                    "Pukekohe": ["Takanini", "Ararimu", "Āwhitu", "Bombay", "Buckland", "Clarks Beach", "Hunua", "Karaka", "Karaka Harbourside", "Kingseat", "Manukau Heads", "Paerata", "Paparimu", "Patumahoe", "Pollok", "Pukekohe", "Waiau Pa", "Waiuku"],
-                    "Rodney": ["Whenuapai", "Algies Bay", "Arkles Bay", "Army Bay", "Big Omaha", "Dairy Flat", "Dome Forest", "Dome Valley", "Glorit", "Gulf Harbour", "Hatfields Beach", "Helensville", "Huapai", "Kaipara Flats", "Kaukapakapa", "Kumeū", "Leigh", "Mahurangi East", "Mahurangi West", "Mangakura", "Manly", "Makarau", "Matakana", "Matakatia", "Millwater", "Muriwai", "Omaha", "Orewa", "Parakai", "Pakiri", "Point Wells", "Port Albert", "Puhoi", "Red Beach", "Redvale", "Riverhead", "Sandspit", "Shelly Beach", "Silverdale", "Snells Beach", "South Head", "Stanmore Bay", "Tapora", "Tauhoa", "Taupaki", "Tāwharanui Peninsula", "Te Arai", "Te Hana", "Ti Point", "Tindalls Beach", "Tomarata", "Wade Heads", "Waimauku", "Wainui", "Waitoki", "Waiwera", "Warkworth", "Whangaparaoa", "Whangaripo", "Whangateau", "Wharehine", "Wellsford", "Woodhill Forest"]
-                };
+                    console.log('Using fallback hardcoded data');
+                    // Use basic fallback data
+                    const fallbackSuburbs = {
+                        "Central Auckland": ["Auckland CBD", "Grey Lynn", "Mt Eden", "Ponsonby"],
+                        "North Shore": ["Devonport", "Milford", "Takapuna"],
+                        "South Auckland": ["Manukau", "Otahuhu", "Papatoetoe"],
+                        "West Auckland": ["Glen Eden", "Henderson", "New Lynn", "Te Atatu"]
+                    };
                     
                     if (fallbackSuburbs[selectedArea]) {
                         fallbackSuburbs[selectedArea].forEach(suburb => {

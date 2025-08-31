@@ -74,7 +74,7 @@ export default async function handler(req, res) {
           : privateKey;
 
         const auth = new google.auth.JWT(
-          process.env.GOOGLE_CLIENT_EMAIL,
+          process.env.GOOGLE_CLIENT,
           null,
           cleanPrivateKey,
           ["https://www.googleapis.com/auth/spreadsheets.readonly"]
@@ -82,7 +82,7 @@ export default async function handler(req, res) {
 
         const sheets = google.sheets({ version: "v4", auth });
 
-        const sheetId = process.env.GOOGLE_SPREADSHEET_ID;
+        const sheetId = process.env.GOOGLE_SPREADSHEET;
         if (!sheetId) {
           console.log("No GOOGLE_SPREADSHEET_ID, using fallback data");
           return res.status(200).json(getFallbackZoneData());
@@ -163,14 +163,14 @@ export default async function handler(req, res) {
           : privateKey;
 
         const auth = new google.auth.JWT(
-          process.env.GOOGLE_CLIENT_EMAIL,
+          process.env.GOOGLE_CLIENT,
           null,
           cleanPrivateKey,
           ["https://www.googleapis.com/auth/spreadsheets.readonly"]
         );
         const sheets = google.sheets({ version: "v4", auth });
 
-        const sheetId = process.env.GOOGLE_SPREADSHEET_ID;
+        const sheetId = process.env.GOOGLE_SPREADSHEET;
         if (!sheetId) {
           return res.status(500).json({ ok: false, error: "GOOGLE_SPREADSHEET_ID not configured" });
         }
@@ -236,15 +236,15 @@ export default async function handler(req, res) {
         const transporter = nodemailer.default.createTransport({
           service: 'gmail',
           auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
+            user: process.env.GMAIL_USER,
+            pass: process.env.GMAIL_PASS,
           },
         });
 
         // Send email
         await transporter.sendMail({
           from: `"${name}" <${email}>`,
-          to: process.env.CONTACT_TO,
+          to: process.env.ADMIN_EMAIL,
           subject: subject ? `Contact Form: ${subject}` : "New Contact Form Submission",
           text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
           html: `
@@ -314,14 +314,14 @@ export default async function handler(req, res) {
         : privateKey;
 
       const auth = new google.auth.JWT(
-        process.env.GOOGLE_CLIENT_EMAIL,
+        process.env.GOOGLE_CLIENT,
         null,
         cleanPrivateKey,
         ["https://www.googleapis.com/auth/spreadsheets"]
       );
       const sheets = google.sheets({ version: "v4", auth });
 
-      const sheetId = process.env.GOOGLE_SPREADSHEET_ID;
+      const sheetId = process.env.GOOGLE_SPREADSHEET;
       if (!sheetId) {
         return res.status(500).json({ ok: false, error: "GOOGLE_SPREADSHEET_ID not configured" });
       }
@@ -380,7 +380,7 @@ export default async function handler(req, res) {
          <p><strong>Specific Details:</strong> ${specificDetails || 'None'}</p>
        `;
 
-      await sendEmailViaGmailAPI(process.env.CONTACT_TO, teamSubject, teamHtml);
+      await sendEmailViaGmailAPI(process.env.ADMIN_EMAIL, teamSubject, teamHtml);
 
              // Send confirmation email to customer
        const customerSubject = `Thank you for your ${serviceType} enquiry`;

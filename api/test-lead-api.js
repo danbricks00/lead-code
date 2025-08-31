@@ -2,14 +2,14 @@ export default async function handler(req, res) {
   try {
     console.log('🔍 Testing Lead API environment variables...');
     
-    const requiredVars = [
-      'GOOGLE_PRIVATE_KEY',
-      'GOOGLE_CLIENT_EMAIL', 
-      'GOOGLE_SPREADSHEET_ID',
-      'CONTACT_TO',
-      'SMTP_USER',
-      'SMTP_PASS'
-    ];
+         const requiredVars = [
+       'GOOGLE_PRIVATE_KEY',
+       'GOOGLE_CLIENT', 
+       'GOOGLE_SPREADSHEET',
+       'ADMIN_EMAIL',
+       'GMAIL_USER',
+       'GMAIL_PASS'
+     ];
     
     const missingVars = [];
     const presentVars = {};

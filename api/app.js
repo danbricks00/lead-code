@@ -3,34 +3,21 @@ import { google } from "googleapis";
 // Import existing email helper
 import { sendEmailViaGmailAPI } from "../src/server/integrations/google/gmail-api-helper.js";
 
-// Fallback zone data function
-function getFallbackZoneData() {
-  return {
-    ok: true,
-    areas: ["Central Auckland", "North Shore", "West Auckland", "South Auckland"],
-    groupedData: {
-      "Central Auckland": [
-        { suburb: "Auckland CBD", postcode: "1010" },
-        { suburb: "Grey Lynn", postcode: "1021" },
-        { suburb: "Ponsonby", postcode: "1021" }
-      ],
-      "North Shore": [
-        { suburb: "Takapuna", postcode: "0622" },
-        { suburb: "Devonport", postcode: "0624" },
-        { suburb: "Milford", postcode: "0620" }
-      ],
-      "West Auckland": [
-        { suburb: "Henderson", postcode: "0610" },
-        { suburb: "New Lynn", postcode: "0600" },
-        { suburb: "Glen Eden", postcode: "0602" }
-      ],
-      "South Auckland": [
-        { suburb: "Manukau", postcode: "2104" },
-        { suburb: "Papatoetoe", postcode: "2025" },
-        { suburb: "Otahuhu", postcode: "1640" }
-      ]
-    }
-  };
+// Helper function to load fallback zones from HTML file
+function loadFallbackZonesFromHTML() {
+  try {
+    const path = require("path");
+    const fs = require("fs");
+    const filePath = path.join(process.cwd(), "public", "zone-fallback-dropdown.html");
+    const html = fs.readFileSync(filePath, "utf8");
+    
+    // Parse <option> tags into JSON
+    const matches = [...html.matchAll(/<option value="([^"]+)" data-area="([^"]+)">/g)];
+    return matches.map(m => ({ suburb: m[1], area: m[2] }));
+  } catch (e) {
+    console.error("❌ Failed to load fallback HTML file:", e.message);
+    return [];
+  }
 }
 
 export default async function handler(req, res) {
@@ -84,7 +71,7 @@ export default async function handler(req, res) {
           area: row[1]
         }));
         
-        console.log(`✅ Zone API: fetched ${zones.length} zones from Sheets`);
+        console.log(`✅ Zone API: Loaded ${zones.length} suburbs from Google Sheets`);
         return res.status(200).json(zones);
         
       } catch (err) {
@@ -101,7 +88,7 @@ export default async function handler(req, res) {
           const matches = [...html.matchAll(/<option value="([^"]+)" data-area="([^"]+)">/g)];
           const fallbackZones = matches.map(m => ({ suburb: m[1], area: m[2] }));
           
-          console.warn(`⚠️ Zone API: Sheets failed, loaded ${fallbackZones.length} zones from fallback HTML`);
+          console.warn(`⚠️ Zone API fallback: Loaded ${fallbackZones.length} suburbs from fallback HTML file`);
           return res.status(200).json(fallbackZones);
           
         } catch (e) {
@@ -123,7 +110,13 @@ export default async function handler(req, res) {
         const privateKey = process.env.GOOGLE_PRIVATE_KEY;
         if (!privateKey) {
           console.log("No GOOGLE_PRIVATE_KEY, using fallback data");
-          return res.status(200).json(getFallbackZoneData());
+          const fallbackZones = loadFallbackZonesFromHTML();
+          const areas = [...new Set(fallbackZones.map(z => z.area))].sort();
+          const groupedData = {};
+          areas.forEach(area => {
+            groupedData[area] = fallbackZones.filter(z => z.area === area).map(z => ({ suburb: z.suburb }));
+          });
+          return res.status(200).json({ ok: true, areas, groupedData });
         }
 
         // Clean up private key - handle both formats
@@ -143,7 +136,13 @@ export default async function handler(req, res) {
         const sheetId = process.env.GOOGLE_SPREADSHEET;
         if (!sheetId) {
           console.log("No GOOGLE_SPREADSHEET_ID, using fallback data");
-          return res.status(200).json(getFallbackZoneData());
+          const fallbackZones = loadFallbackZonesFromHTML();
+          const areas = [...new Set(fallbackZones.map(z => z.area))].sort();
+          const groupedData = {};
+          areas.forEach(area => {
+            groupedData[area] = fallbackZones.filter(z => z.area === area).map(z => ({ suburb: z.suburb }));
+          });
+          return res.status(200).json({ ok: true, areas, groupedData });
         }
 
         const range = "Zone!A:C";
@@ -155,7 +154,13 @@ export default async function handler(req, res) {
         const rows = response.data.values;
         if (!rows || rows.length === 0) {
           console.log("No data found in Zone sheet, using fallback data");
-          return res.status(200).json(getFallbackZoneData());
+          const fallbackZones = loadFallbackZonesFromHTML();
+          const areas = [...new Set(fallbackZones.map(z => z.area))].sort();
+          const groupedData = {};
+          areas.forEach(area => {
+            groupedData[area] = fallbackZones.filter(z => z.area === area).map(z => ({ suburb: z.suburb }));
+          });
+          return res.status(200).json({ ok: true, areas, groupedData });
         }
 
         // Skip header row and organize data
@@ -192,11 +197,17 @@ export default async function handler(req, res) {
           areas: sortedAreas,
           groupedData: organizedData
         });
-             } catch (zoneError) {
-         console.error("Zone data error:", zoneError);
-         console.log("Falling back to hardcoded data");
-         return res.status(200).json(getFallbackZoneData());
-       }
+                     } catch (zoneError) {
+          console.error("Zone data error:", zoneError);
+          console.log("Falling back to HTML file data");
+          const fallbackZones = loadFallbackZonesFromHTML();
+          const areas = [...new Set(fallbackZones.map(z => z.area))].sort();
+          const groupedData = {};
+          areas.forEach(area => {
+            groupedData[area] = fallbackZones.filter(z => z.area === area).map(z => ({ suburb: z.suburb }));
+          });
+          return res.status(200).json({ ok: true, areas, groupedData });
+        }
      }
 
     //

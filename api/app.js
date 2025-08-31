@@ -58,10 +58,12 @@ export default async function handler(req, res) {
     //
     if (action === "zone-list") {
       try {
-        // Attempt Google Sheets fetch
+        // Check if Google Sheets environment variables are configured
         const privateKey = process.env.GOOGLE_PRIVATE_KEY;
-        if (!privateKey) {
-          throw new Error("GOOGLE_PRIVATE_KEY not configured");
+        const spreadsheetId = process.env.GOOGLE_SPREADSHEET;
+        
+        if (!privateKey || !spreadsheetId) {
+          throw new Error("Google Sheets not configured - using fallback");
         }
 
         const auth = new google.auth.JWT(
@@ -73,7 +75,7 @@ export default async function handler(req, res) {
         
         const sheets = google.sheets({ version: "v4", auth });
         const response = await sheets.spreadsheets.values.get({
-          spreadsheetId: process.env.GOOGLE_SPREADSHEET,
+          spreadsheetId: spreadsheetId,
           range: "Zone!A:C"
         });
         
@@ -82,7 +84,7 @@ export default async function handler(req, res) {
           area: row[1]
         }));
         
-        console.log(`✅ Zone API: Loaded ${zones.length} zones from Google Sheets`);
+        console.log(`✅ Zone API: fetched ${zones.length} zones from Sheets`);
         return res.status(200).json(zones);
         
       } catch (err) {
@@ -99,7 +101,7 @@ export default async function handler(req, res) {
           const matches = [...html.matchAll(/<option value="([^"]+)" data-area="([^"]+)">/g)];
           const fallbackZones = matches.map(m => ({ suburb: m[1], area: m[2] }));
           
-          console.warn(`⚠️ Zone API fallback: Loaded ${fallbackZones.length} zones from fallback HTML file`);
+          console.warn(`⚠️ Zone API: Sheets failed, loaded ${fallbackZones.length} zones from fallback HTML`);
           return res.status(200).json(fallbackZones);
           
         } catch (e) {

@@ -1151,7 +1151,7 @@
             }
         }
 
-        function showAddressSelection() {
+        async function showAddressSelection() {
             const messagesContainer = document.getElementById('chatMessages');
             
             console.log('🎯 Showing area selection first');
@@ -1165,21 +1165,23 @@
                     areaOptionsHtml += `<option value="${area}">${area}</option>`;
                 });
             } else {
-                console.log('Using fallback hardcoded data');
-                // Fallback hardcoded areas (alphabetically ordered)
-                const fallbackAreas = [
-                    "Central Auckland",
-                    "North Shore", 
-                    "South Auckland",
-                    "West Auckland",
-                    "Waiheke Island",
-                    "Rodney",
-                    "Papakura",
-","                ];
-                
-                fallbackAreas.forEach(area => {
-                    areaOptionsHtml += `<option value="${area}">${area}</option>`;
-                });
+                console.log('Using fallback HTML data');
+                // Load areas from fallback HTML file
+                try {
+                    const res = await fetch("/zone-fallback-dropdown.html");
+                    const html = await res.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const options = doc.querySelectorAll('option');
+                    
+                    // Extract unique areas
+                    const areas = [...new Set([...options].map(option => option.dataset.area).filter(Boolean))].sort();
+                    areas.forEach(area => {
+                        areaOptionsHtml += `<option value="${area}">${area}</option>`;
+                    });
+                } catch (err) {
+                    console.warn('Failed to load fallback HTML:', err);
+                }
             }
             
             const addressDiv = document.createElement('div');

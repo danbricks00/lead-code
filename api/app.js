@@ -47,9 +47,9 @@ export default async function handler(req, res) {
       try {
         // Check if Google Sheets environment variables are configured
         const privateKey = process.env.GOOGLE_PRIVATE_KEY;
-        const spreadsheetId = process.env.GOOGLE_SPREADSHEET;
+        const sheetId = process.env.GOOGLE_SHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
         
-        if (!privateKey || !spreadsheetId) {
+        if (!privateKey || !sheetId) {
           throw new Error("Google Sheets not configured - using fallback");
         }
 
@@ -62,7 +62,7 @@ export default async function handler(req, res) {
         
         const sheets = google.sheets({ version: "v4", auth });
         const response = await sheets.spreadsheets.values.get({
-          spreadsheetId: spreadsheetId,
+          spreadsheetId: sheetId,
           range: "Zone!A:C"
         });
         
@@ -71,7 +71,7 @@ export default async function handler(req, res) {
           area: row[1]
         }));
         
-        console.log(`✅ Zone API: Loaded ${zones.length} suburbs from Google Sheets`);
+        console.log(`✅ Zone API: Loaded ${zones.length} from Sheets`);
         return res.status(200).json(zones);
         
       } catch (err) {
@@ -88,7 +88,7 @@ export default async function handler(req, res) {
           const matches = [...html.matchAll(/<option value="([^"]+)" data-area="([^"]+)">/g)];
           const fallbackZones = matches.map(m => ({ suburb: m[1], area: m[2] }));
           
-          console.warn(`⚠️ Zone API fallback: Loaded ${fallbackZones.length} suburbs from fallback HTML file`);
+          console.warn(`⚠️ Zone API fallback: Loaded ${fallbackZones.length} from HTML`);
           return res.status(200).json(fallbackZones);
           
         } catch (e) {
@@ -371,60 +371,55 @@ export default async function handler(req, res) {
       // Calculate total project size
       const totalRooms = rooms.length;
 
-      // Initialize Google Sheets API with proper private key handling
-      const privateKey = process.env.GOOGLE_PRIVATE_KEY;
-      if (!privateKey) {
-        return res.status(500).json({ ok: false, error: "GOOGLE_PRIVATE_KEY not configured" });
-      }
+             // Use area and suburb from POST body (no lookup needed)
+       const areaValue = area || "";
+       const suburbValue = suburb || "";
 
-      // Clean up private key - handle both formats
-      const cleanPrivateKey = privateKey.includes('\\n') 
-        ? privateKey.replace(/\\n/g, '\n')
-        : privateKey;
+       // Try to log to Google Sheets (but don't fail if it doesn't work)
+       try {
+         const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+         const sheetId = process.env.GOOGLE_SHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
+         
+         if (privateKey && sheetId) {
+           const auth = new google.auth.JWT(
+             process.env.GOOGLE_CLIENT,
+             null,
+             privateKey.replace(/\\n/g, "\n"),
+             ["https://www.googleapis.com/auth/spreadsheets"]
+           );
+           const sheets = google.sheets({ version: "v4", auth });
 
-      const auth = new google.auth.JWT(
-        process.env.GOOGLE_CLIENT,
-        null,
-        cleanPrivateKey,
-        ["https://www.googleapis.com/auth/spreadsheets"]
-      );
-      const sheets = google.sheets({ version: "v4", auth });
+           // Append lead data to Google Sheets
+           const leadRow = [
+             new Date().toISOString(), // Timestamp
+             name || "", // Name
+             customerEmail, // Email
+             customerPhone || "", // Phone
+             serviceType, // ServiceType
+             areaValue, // Area
+             suburbValue, // Suburb
+             budget || "", // Budget
+             timeline || "", // Timeline
+             specificDetails || "", // SpecificDetails
+             "New" // Status
+           ];
 
-      const sheetId = process.env.GOOGLE_SPREADSHEET;
-      if (!sheetId) {
-        return res.status(500).json({ ok: false, error: "GOOGLE_SPREADSHEET_ID not configured" });
-      }
-
-      // Use area and suburb from POST body (no lookup needed)
-      const areaValue = area || "";
-      const suburbValue = suburb || "";
-
-      // Append lead data to Google Sheets with Area and Suburb
-      const leadRow = [
-        new Date().toISOString(), // Date
-        name || "",
-        customerName,
-        customerEmail,
-        customerPhone || "",
-        serviceType,
-        `${serviceType} - ${totalRooms} room(s): ${roomsString}`, // Project Details
-        roomsString, // Project Size
-        budget || "",
-        timeline || "",
-        areaValue, // Area
-        suburbValue, // Suburb
-        "New" // Status
-      ];
-
-      await sheets.spreadsheets.values.append({
-        spreadsheetId: sheetId,
-        range: "Leads!A:O", // Updated range to include Area and Suburb
-        valueInputOption: "RAW",
-        insertDataOption: "INSERT_ROWS",
-        requestBody: {
-          values: [leadRow]
-        }
-      });
+           await sheets.spreadsheets.values.append({
+             spreadsheetId: sheetId,
+             range: "Leads!A:Z",
+             valueInputOption: "RAW",
+             insertDataOption: "INSERT_ROWS",
+             requestBody: {
+               values: [leadRow]
+             }
+           });
+           
+           console.log("✅ Lead logged to Google Sheets successfully");
+         }
+       } catch (sheetsError) {
+         console.warn("⚠️ Failed to log lead to Google Sheets:", sheetsError.message);
+         // Continue with email sending regardless of Sheets failure
+       }
 
       // Format rooms for email
       const roomsEmailList = rooms.map(room => 

@@ -1099,184 +1099,55 @@
                 
             } catch (error) {
                 console.error('❌ Error loading zone data from HTML file:', error);
-                console.log('🔄 Using hardcoded fallback data...');
+                console.log('🔄 Using fallback HTML file...');
                 
-                // Hardcoded fallback data - matching zone-fallback-dropdown.html exactly
-                zoneData = {
-                    areas: ["Central Auckland", "North Shore", "West Auckland", "South Auckland", "Waiheke Island", "Papakure", "Pukekohe", "Rodney"],
-                    groupedData: {
-                        "Central Auckland": [
-                            { suburb: "Auckland CBD", postcode: "1010" },
-                            { suburb: "Grey Lynn", postcode: "1021" },
-                            { suburb: "Ponsonby", postcode: "1021" },
-                            { suburb: "Mt Eden", postcode: "1024" },
-                            { suburb: "Epsom", postcode: "1023" },
-                            { suburb: "Remuera", postcode: "1050" },
-                            { suburb: "Newmarket", postcode: "1023" },
-                            { suburb: "Parnell", postcode: "1052" },
-                            { suburb: "Arch Hill", postcode: "1021" },
-                            { suburb: "Kingsland", postcode: "1021" },
-                            { suburb: "Sandringham", postcode: "1025" },
-                            { suburb: "Morningside", postcode: "1025" },
-                            { suburb: "Balmoral", postcode: "1025" },
-                            { suburb: "Mt Albert", postcode: "1025" },
-                            { suburb: "Pt Chevalier", postcode: "1022" },
-                            { suburb: "Westmere", postcode: "1022" },
-                            { suburb: "Herne Bay", postcode: "1011" },
-                            { suburb: "St Marys Bay", postcode: "1011" },
-                            { suburb: "Freemans Bay", postcode: "1011" },
-                            { suburb: "Newton", postcode: "1010" },
-                            { suburb: "Grafton", postcode: "1010" },
-                            { suburb: "Parnell", postcode: "1052" },
-                            { suburb: "Orakei", postcode: "1071" },
-                            { suburb: "Meadowbank", postcode: "1072" },
-                            { suburb: "St Johns", postcode: "1072" },
-                            { suburb: "Glendowie", postcode: "1071" },
-                            { suburb: "Kohimarama", postcode: "1071" },
-                            { suburb: "Mission Bay", postcode: "1071" },
-                            { suburb: "St Heliers", postcode: "1071" },
-                            { suburb: "Tamaki", postcode: "1072" },
-                            { suburb: "Panmure", postcode: "1741" },
-                            { suburb: "Glen Innes", postcode: "1743" },
-                            { suburb: "Point England", postcode: "1743" }
-                        ],
-                        "North Shore": [
-                            { suburb: "Takapuna", postcode: "0622" },
-                            { suburb: "Devonport", postcode: "0624" },
-                            { suburb: "Milford", postcode: "0620" },
-                            { suburb: "Castor Bay", postcode: "0620" },
-                            { suburb: "Campbells Bay", postcode: "0620" },
-                            { suburb: "Mairangi Bay", postcode: "0630" },
-                            { suburb: "Murrays Bay", postcode: "0630" },
-                            { suburb: "Browns Bay", postcode: "0630" },
-                            { suburb: "Torbay", postcode: "0630" },
-                            { suburb: "Long Bay", postcode: "0630" },
-                            { suburb: "Albany", postcode: "0632" },
-                            { suburb: "Northcote", postcode: "0627" },
-                            { suburb: "Birkenhead", postcode: "0626" },
-                            { suburb: "Highbury", postcode: "0626" },
-                            { suburb: "Glenfield", postcode: "0629" },
-                            { suburb: "Wairau Valley", postcode: "0629" },
-                            { suburb: "Sunset Road", postcode: "0629" },
-                            { suburb: "Beach Haven", postcode: "0626" },
-                            { suburb: "Birkdale", postcode: "0626" },
-                            { suburb: "Bayview", postcode: "0626" },
-                            { suburb: "Greenhithe", postcode: "0632" },
-                            { suburb: "Hobsonville", postcode: "0618" },
-                            { suburb: "Whenuapai", postcode: "0618" },
-                            { suburb: "Kumeu", postcode: "0810" },
-                            { suburb: "Huapai", postcode: "0810" },
-                            { suburb: "Riverhead", postcode: "0810" }
-                        ],
-                        "West Auckland": [
-                            { suburb: "Henderson", postcode: "0610" },
-                            { suburb: "New Lynn", postcode: "0600" },
-                            { suburb: "Glen Eden", postcode: "0602" },
-                            { suburb: "Kelston", postcode: "0602" },
-                            { suburb: "Te Atatu Peninsula", postcode: "0610" },
-                            { suburb: "Te Atatu South", postcode: "0610" },
-                            { suburb: "Lincoln", postcode: "0610" },
-                            { suburb: "West Harbour", postcode: "0618" },
-                            { suburb: "Massey", postcode: "0614" },
-                            { suburb: "Ranui", postcode: "0612" },
-                            { suburb: "Swanson", postcode: "0612" },
-                            { suburb: "Waitakere", postcode: "0612" },
-                            { suburb: "Titirangi", postcode: "0604" },
-                            { suburb: "Laingholm", postcode: "0604" },
-                            { suburb: "Waiatarua", postcode: "0604" },
-                            { suburb: "Oratia", postcode: "0604" },
-                            { suburb: "Piha", postcode: "0772" },
-                            { suburb: "Karekare", postcode: "0772" },
-                            { suburb: "Bethells Beach", postcode: "0772" },
-                            { suburb: "Muriwai", postcode: "0881" },
-                            { suburb: "Helensville", postcode: "0800" },
-                            { suburb: "Parakai", postcode: "0814" },
-                            { suburb: "Waimauku", postcode: "0812" }
-                        ],
-                        "South Auckland": [
-                            { suburb: "Manukau", postcode: "2104" },
-                            { suburb: "Papatoetoe", postcode: "2025" },
-                            { suburb: "Otahuhu", postcode: "1640" },
-                            { suburb: "Mangere", postcode: "2022" },
-                            { suburb: "Mangere Bridge", postcode: "2022" },
-                            { suburb: "Mangere East", postcode: "2024" },
-                            { suburb: "Favona", postcode: "2024" },
-                            { suburb: "Otara", postcode: "2023" },
-                            { suburb: "Flat Bush", postcode: "2016" },
-                            { suburb: "Botany", postcode: "2016" },
-                            { suburb: "Howick", postcode: "2014" },
-                            { suburb: "Pakuranga", postcode: "2010" },
-                            { suburb: "Highland Park", postcode: "2010" },
-                            { suburb: "Cockle Bay", postcode: "2010" },
-                            { suburb: "Shelly Park", postcode: "2010" },
-                            { suburb: "Somerville", postcode: "2014" },
-                            { suburb: "Mellons Bay", postcode: "2014" },
-                            { suburb: "Bucklands Beach", postcode: "2012" },
-                            { suburb: "Eastern Beach", postcode: "2012" },
-                            { suburb: "Half Moon Bay", postcode: "2012" },
-                            { suburb: "Whitford", postcode: "2571" },
-                            { suburb: "Clevedon", postcode: "2582" },
-                            { suburb: "Waiuku", postcode: "2123" },
-                            { suburb: "Pukekohe", postcode: "2120" },
-                            { suburb: "Tuakau", postcode: "2121" },
-                            { suburb: "Drury", postcode: "2113" },
-                            { suburb: "Karaka", postcode: "2113" },
-                            { suburb: "Takanini", postcode: "2112" },
-                            { suburb: "Papakura", postcode: "2110" },
-                            { suburb: "Alfriston", postcode: "2110" },
-                            { suburb: "Clendon", postcode: "2103" },
-                            { suburb: "Manurewa", postcode: "2102" },
-                            { suburb: "Weymouth", postcode: "2102" },
-                            { suburb: "Clendon Park", postcode: "2103" },
-                            { suburb: "Randwick Park", postcode: "2102" },
-                            { suburb: "Red Hill", postcode: "2102" },
-                            { suburb: "Takanini", postcode: "2112" },
-                            { suburb: "Conifer Grove", postcode: "2112" },
-                            { suburb: "Beachlands", postcode: "2018" },
-                            { suburb: "Maraetai", postcode: "2018" }
-                        ],
-                        "East Auckland": [
-                            { suburb: "St Heliers", postcode: "1071" },
-                            { suburb: "Glendowie", postcode: "1071" },
-                            { suburb: "Kohimarama", postcode: "1071" },
-                            { suburb: "Mission Bay", postcode: "1071" },
-                            { suburb: "Tamaki", postcode: "1072" },
-                            { suburb: "Panmure", postcode: "1741" },
-                            { suburb: "Glen Innes", postcode: "1743" },
-                            { suburb: "Point England", postcode: "1743" },
-                            { suburb: "Meadowbank", postcode: "1072" },
-                            { suburb: "St Johns", postcode: "1072" },
-                            { suburb: "Orakei", postcode: "1071" },
-                            { suburb: "Ellerslie", postcode: "1051" },
-                            { suburb: "Greenlane", postcode: "1051" },
-                            { suburb: "One Tree Hill", postcode: "1051" },
-                            { suburb: "Royal Oak", postcode: "1051" },
-                            { suburb: "Three Kings", postcode: "1051" },
-                            { suburb: "Mt Roskill", postcode: "1041" },
-                            { suburb: "Lynfield", postcode: "1041" },
-                            { suburb: "Hillsborough", postcode: "1041" },
-                            { suburb: "Blockhouse Bay", postcode: "0600" },
-                            { suburb: "New Windsor", postcode: "0600" },
-                            { suburb: "Avondale", postcode: "1026" },
-                            { suburb: "Waterview", postcode: "1026" },
-                            { suburb: "Mt Albert", postcode: "1025" },
-                            { suburb: "Owairaka", postcode: "1025" },
-                            { suburb: "Wesley", postcode: "1025" },
-                            { suburb: "Morningside", postcode: "1025" },
-                            { suburb: "Balmoral", postcode: "1025" },
-                            { suburb: "Sandringham", postcode: "1025" },
-                            { suburb: "Kingsland", postcode: "1021" },
-                            { suburb: "Arch Hill", postcode: "1021" },
-                            { suburb: "Grey Lynn", postcode: "1021" },
-                            { suburb: "Ponsonby", postcode: "1021" },
-                            { suburb: "Westmere", postcode: "1022" },
-                            { suburb: "Pt Chevalier", postcode: "1022" }
-                        ]
-                    }
-                };
-                
-                console.log('✅ Hardcoded zone data loaded successfully:', zoneData);
-                showAddressSelection();
+                // Load from fallback HTML file
+                try {
+                    const res = await fetch("/zone-fallback-dropdown.html");
+                    const html = await res.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const options = doc.querySelectorAll('option[data-area]');
+                    
+                    const zonesData = {};
+                    const areas = new Set();
+                    
+                    options.forEach(option => {
+                        const suburb = option.value;
+                        const area = option.getAttribute('data-area');
+                        
+                        if (suburb && area) {
+                            areas.add(area);
+                            if (!zonesData[area]) {
+                                zonesData[area] = [];
+                            }
+                            zonesData[area].push({
+                                suburb: suburb,
+                                postcode: "" // No postcode in HTML file
+                            });
+                        }
+                    });
+                    
+                    // Sort areas alphabetically and suburbs within each area
+                    const sortedAreas = Array.from(areas).sort();
+                    const organizedData = {};
+                    
+                    sortedAreas.forEach(area => {
+                        organizedData[area] = zonesData[area].sort((a, b) => a.suburb.localeCompare(b.suburb));
+                    });
+                    
+                    zoneData = {
+                        areas: sortedAreas,
+                        groupedData: organizedData
+                    };
+                    
+                    console.log('✅ Zone data loaded from fallback HTML file successfully:', zoneData);
+                    showAddressSelection();
+                    
+                } catch (fallbackError) {
+                    console.error('❌ Failed to load fallback HTML:', fallbackError);
+                    addMessage(`Sorry, I'm having trouble loading the address options. Please try again or contact support.`);
+                }
             }
         }
 
@@ -1425,6 +1296,42 @@
         window.onAreaChange = onAreaChange;
         window.onSuburbChange = onSuburbChange;
         window.confirmAddress = confirmAddress;
+     </script>
+
+     <script>
+     async function loadZones() {
+       const zoneSelect = document.getElementById("suburb");
+       zoneSelect.innerHTML = "<option>Loading zones...</option>";
+
+       try {
+         // Try API first
+         const res = await fetch("/api/app?action=zone-list");
+         if (res.ok) {
+           const zones = await res.json();
+           zoneSelect.innerHTML = "";
+           zones.forEach(z => {
+             const opt = document.createElement("option");
+             opt.value = z.suburb;
+             opt.dataset.area = z.area;
+             opt.textContent = z.suburb;
+             zoneSelect.appendChild(opt);
+           });
+           return;
+         }
+       } catch (err) {
+         console.warn("Zone API failed, falling back to static HTML");
+       }
+
+       try {
+         // Fallback: load the file from /public/
+         const res = await fetch("/zone-fallback-dropdown.html");
+         const html = await res.text();
+         zoneSelect.innerHTML = html;
+       } catch (e) {
+         zoneSelect.innerHTML = "<option value=''>Error loading zones</option>";
+       }
+     }
+     document.addEventListener("DOMContentLoaded", loadZones);
      </script>
 </body>
 </html>

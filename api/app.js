@@ -375,51 +375,51 @@ export default async function handler(req, res) {
        const areaValue = area || "";
        const suburbValue = suburb || "";
 
-       // Try to log to Google Sheets (but don't fail if it doesn't work)
-       try {
-         const privateKey = process.env.GOOGLE_PRIVATE_KEY;
-         const sheetId = process.env.GOOGLE_SHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
-         
-         if (privateKey && sheetId) {
-           const auth = new google.auth.JWT(
-             process.env.GOOGLE_CLIENT,
-             null,
-             privateKey.replace(/\\n/g, "\n"),
-             ["https://www.googleapis.com/auth/spreadsheets"]
-           );
-           const sheets = google.sheets({ version: "v4", auth });
+               // Try to log to Google Sheets (but don't fail if it doesn't work)
+        try {
+          const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+          const sheetId = process.env.GOOGLE_SHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
+          
+          if (privateKey && sheetId) {
+            const auth = new google.auth.JWT(
+              process.env.GOOGLE_CLIENT,
+              null,
+              privateKey.replace(/\\n/g, "\n"),
+              ["https://www.googleapis.com/auth/spreadsheets"]
+            );
+            const sheets = google.sheets({ version: "v4", auth });
 
-           // Append lead data to Google Sheets
-           const leadRow = [
-             new Date().toISOString(), // Timestamp
-             name || "", // Name
-             customerEmail, // Email
-             customerPhone || "", // Phone
-             serviceType, // ServiceType
-             areaValue, // Area
-             suburbValue, // Suburb
-             budget || "", // Budget
-             timeline || "", // Timeline
-             specificDetails || "", // SpecificDetails
-             "New" // Status
-           ];
+            // Append lead data to Google Sheets
+            const leadRow = [
+              new Date().toISOString(), // Timestamp
+              name || "", // Name
+              customerEmail, // Email
+              customerPhone || "", // Phone
+              serviceType, // ServiceType
+              areaValue, // Area
+              suburbValue, // Suburb
+              budget || "", // Budget
+              timeline || "", // Timeline
+              specificDetails || "", // SpecificDetails
+              "New" // Status
+            ];
 
-           await sheets.spreadsheets.values.append({
-             spreadsheetId: sheetId,
-             range: "Leads!A:Z",
-             valueInputOption: "RAW",
-             insertDataOption: "INSERT_ROWS",
-             requestBody: {
-               values: [leadRow]
-             }
-           });
-           
-           console.log("✅ Lead logged to Google Sheets successfully");
-         }
-       } catch (sheetsError) {
-         console.warn("⚠️ Failed to log lead to Google Sheets:", sheetsError.message);
-         // Continue with email sending regardless of Sheets failure
-       }
+            await sheets.spreadsheets.values.append({
+              spreadsheetId: sheetId,
+              range: "Leads!A:Z",
+              valueInputOption: "RAW",
+              insertDataOption: "INSERT_ROWS",
+              requestBody: {
+                values: [leadRow]
+              }
+            });
+            
+            console.log("✅ Lead logged to Sheets");
+          }
+        } catch (sheetsError) {
+          console.warn("⚠️ Lead logging failed, emails still sent:", sheetsError.message);
+          // Continue with email sending regardless of Sheets failure
+        }
 
       // Format rooms for email
       const roomsEmailList = rooms.map(room => 
@@ -444,25 +444,27 @@ export default async function handler(req, res) {
          <p><strong>Specific Details:</strong> ${specificDetails || 'None'}</p>
        `;
 
-      await sendEmailViaGmailAPI(process.env.ADMIN_EMAIL, teamSubject, teamHtml);
+             await sendEmailViaGmailAPI(process.env.ADMIN_EMAIL, teamSubject, teamHtml);
 
-             // Send confirmation email to customer
-       const customerSubject = `Thank you for your ${serviceType} enquiry`;
-       const customerHtml = `
-         <h2>Thank you for your enquiry!</h2>
-         <p>Hi ${customerName},</p>
-         <p>We've received your ${serviceType} enquiry for ${totalRooms} room(s) and will be in touch within 24 hours.</p>
-         <p><strong>Your enquiry details:</strong></p>
-         <ul>
-           <li><strong>Service:</strong> ${serviceType}</li>
-           <li><strong>Rooms:</strong> ${roomsString}</li>
-           <li><strong>Area:</strong> ${areaValue || 'Not specified'}</li>
-           <li><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</li>
-         </ul>
-         <p>Best regards,<br>The Kiwi Trade Team</p>
-       `;
+              // Send confirmation email to customer
+        const customerSubject = `Thank you for your ${serviceType} enquiry`;
+        const customerHtml = `
+          <h2>Thank you for your enquiry!</h2>
+          <p>Hi ${customerName},</p>
+          <p>We've received your ${serviceType} enquiry for ${totalRooms} room(s) and will be in touch within 24 hours.</p>
+          <p><strong>Your enquiry details:</strong></p>
+          <ul>
+            <li><strong>Service:</strong> ${serviceType}</li>
+            <li><strong>Rooms:</strong> ${roomsString}</li>
+            <li><strong>Area:</strong> ${areaValue || 'Not specified'}</li>
+            <li><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</li>
+          </ul>
+          <p>Best regards,<br>The Kiwi Trade Team</p>
+        `;
 
-      await sendEmailViaGmailAPI(customerEmail, customerSubject, customerHtml);
+       await sendEmailViaGmailAPI(customerEmail, customerSubject, customerHtml);
+       
+       console.log("📧 Emails sent to team + customer");
 
       return res.status(200).json({
         ok: true,

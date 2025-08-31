@@ -133,9 +133,9 @@ export default async function handler(req, res) {
 
         const sheets = google.sheets({ version: "v4", auth });
 
-        const sheetId = process.env.GOOGLE_SPREADSHEET;
-        if (!sheetId) {
-          console.log("No GOOGLE_SPREADSHEET_ID, using fallback data");
+                 const sheetId = process.env.GOOGLE_SHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
+         if (!sheetId) {
+           console.log("No Google Sheet ID configured, using fallback data");
           const fallbackZones = loadFallbackZonesFromHTML();
           const areas = [...new Set(fallbackZones.map(z => z.area))].sort();
           const groupedData = {};
@@ -239,10 +239,10 @@ export default async function handler(req, res) {
         );
         const sheets = google.sheets({ version: "v4", auth });
 
-        const sheetId = process.env.GOOGLE_SPREADSHEET;
-        if (!sheetId) {
-          return res.status(500).json({ ok: false, error: "GOOGLE_SPREADSHEET_ID not configured" });
-        }
+                 const sheetId = process.env.GOOGLE_SHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
+         if (!sheetId) {
+           return res.status(500).json({ ok: false, error: "Google Sheet ID not configured" });
+         }
 
         const range = "Zone!A:C";
         const response = await sheets.spreadsheets.values.get({

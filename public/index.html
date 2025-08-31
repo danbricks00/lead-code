@@ -1304,7 +1304,6 @@
        zoneSelect.innerHTML = "<option>Loading zones...</option>";
 
        try {
-         // Try API first
          const res = await fetch("/api/app?action=zone-list");
          if (res.ok) {
            const zones = await res.json();
@@ -1316,18 +1315,10 @@
              opt.textContent = z.suburb;
              zoneSelect.appendChild(opt);
            });
-           return;
+         } else {
+           zoneSelect.innerHTML = "<option value=''>Error loading zones</option>";
          }
-       } catch (err) {
-         console.warn("Zone API failed, falling back to static HTML");
-       }
-
-       try {
-         // Fallback: load the file from /public/
-         const res = await fetch("/zone-fallback-dropdown.html");
-         const html = await res.text();
-         zoneSelect.innerHTML = html;
-       } catch (e) {
+       } catch {
          zoneSelect.innerHTML = "<option value=''>Error loading zones</option>";
        }
      }

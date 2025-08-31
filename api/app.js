@@ -53,6 +53,62 @@ export default async function handler(req, res) {
       });
     }
 
+    //
+    // 🔹 Zone List Action (GET method for frontend dropdown)
+    //
+    if (action === "zone-list") {
+      try {
+        // Attempt Google Sheets fetch
+        const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+        if (!privateKey) {
+          throw new Error("GOOGLE_PRIVATE_KEY not configured");
+        }
+
+        const auth = new google.auth.JWT(
+          process.env.GOOGLE_CLIENT,
+          null,
+          privateKey.replace(/\\n/g, "\n"),
+          ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+        );
+        
+        const sheets = google.sheets({ version: "v4", auth });
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId: process.env.GOOGLE_SPREADSHEET,
+          range: "Zone!A:C"
+        });
+        
+        const zones = response.data.values.slice(1).map(row => ({
+          suburb: row[0],
+          area: row[1]
+        }));
+        
+        console.log(`✅ Zone API: Loaded ${zones.length} zones from Google Sheets`);
+        return res.status(200).json(zones);
+        
+      } catch (err) {
+        console.error("❌ Zone API Google Sheets error:", err.message);
+        
+        try {
+          // Fallback to static HTML file
+          const path = require("path");
+          const fs = require("fs");
+          const filePath = path.join(process.cwd(), "public", "zone-fallback-dropdown.html");
+          const html = fs.readFileSync(filePath, "utf8");
+          
+          // Parse <option> tags into JSON
+          const matches = [...html.matchAll(/<option value="([^"]+)" data-area="([^"]+)">/g)];
+          const fallbackZones = matches.map(m => ({ suburb: m[1], area: m[2] }));
+          
+          console.warn(`⚠️ Zone API fallback: Loaded ${fallbackZones.length} zones from fallback HTML file`);
+          return res.status(200).json(fallbackZones);
+          
+        } catch (e) {
+          console.error("❌ Zone API failed to load fallback file:", e.message);
+          return res.status(500).json({ error: "Zones unavailable" });
+        }
+      }
+    }
+
         //
     // 🔹 Zones Action (GET method for chatbot area/suburb selection)
     //

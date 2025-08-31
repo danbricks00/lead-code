@@ -1047,7 +1047,7 @@
         async function loadZoneDataFromHTML() {
             try {
                 console.log('📁 Loading zone data from HTML file...');
-                const response = await fetch('/.vscode/zone-fallback-dropdown.html');
+                const response = await fetch('/zone-fallback-dropdown.html');
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);

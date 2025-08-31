@@ -389,35 +389,70 @@ export default async function handler(req, res) {
             );
             const sheets = google.sheets({ version: "v4", auth });
 
-            // Append lead data to Google Sheets
-            const leadRow = [
-              new Date().toISOString(), // Timestamp
-              name || "", // Name
-              customerEmail, // Email
-              customerPhone || "", // Phone
-              serviceType, // ServiceType
-              areaValue, // Area
-              suburbValue, // Suburb
-              budget || "", // Budget
-              timeline || "", // Timeline
-              specificDetails || "", // SpecificDetails
-              "New" // Status
-            ];
+            // Try to append to Leads sheet first
+            try {
+              const leadRow = [
+                new Date().toISOString(), // Timestamp
+                name || "", // Name
+                customerEmail, // Email
+                customerPhone || "", // Phone
+                serviceType, // ServiceType
+                areaValue, // Area
+                suburbValue, // Suburb
+                budget || "", // Budget
+                timeline || "", // Timeline
+                specificDetails || "", // SpecificDetails
+                "New" // Status
+              ];
 
-            await sheets.spreadsheets.values.append({
-              spreadsheetId: sheetId,
-              range: "Leads!A:Z",
-              valueInputOption: "RAW",
-              insertDataOption: "INSERT_ROWS",
-              requestBody: {
-                values: [leadRow]
-              }
-            });
-            
-            console.log("✅ Lead logged to Sheets");
+              await sheets.spreadsheets.values.append({
+                spreadsheetId: sheetId,
+                range: "Leads!A:Z",
+                valueInputOption: "RAW",
+                insertDataOption: "INSERT_ROWS",
+                requestBody: {
+                  values: [leadRow]
+                }
+              });
+              
+              console.log("✅ Lead logged to Leads sheet");
+            } catch (leadsError) {
+              console.warn("⚠️ Leads sheet failed, trying Quotes sheet:", leadsError.message);
+              
+              // Fallback: append to Quotes sheet for admin/tradesman access
+              const quoteRow = [
+                new Date().toISOString(), // Date
+                customerName, // Customer Name
+                customerEmail, // Email
+                customerPhone || "", // Phone
+                serviceType, // Service Type
+                `${serviceType} - ${totalRooms} room(s): ${roomsString}`, // Project Details
+                roomsString, // Project Size
+                budget || "", // Budget
+                timeline || "", // Timeline
+                areaValue, // Area
+                suburbValue, // Suburb
+                specificDetails || "", // Additional Details
+                "New Lead from Chatbot", // Status
+                "Chatbot Lead", // Source
+                name || "" // Agent Name
+              ];
+
+              await sheets.spreadsheets.values.append({
+                spreadsheetId: sheetId,
+                range: "Quotes!A:Z",
+                valueInputOption: "RAW",
+                insertDataOption: "INSERT_ROWS",
+                requestBody: {
+                  values: [quoteRow]
+                }
+              });
+              
+              console.log("✅ Lead logged to Quotes sheet as fallback");
+            }
           }
         } catch (sheetsError) {
-          console.warn("⚠️ Lead logging failed, emails still sent:", sheetsError.message);
+          console.warn("⚠️ All Google Sheets failed, emails still sent:", sheetsError.message);
           // Continue with email sending regardless of Sheets failure
         }
 

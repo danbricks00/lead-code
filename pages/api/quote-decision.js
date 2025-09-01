@@ -27,7 +27,7 @@ export default async function handler(req, res) {
         }
 
         // Import required modules
-        const { appendRow, getRange, ensureSheetAndHeader } = await import('./_googleSheetsClient.js');
+        const { getGoogleSheetsClient } = await import('../../lib/_googleSheetsClient.js');
         const nodemailer = await import('nodemailer');
         const { fetchQuoteData, fetchLeadData } = await import('./quote-utils.js');
         const { google } = await import('googleapis');
@@ -102,7 +102,14 @@ export default async function handler(req, res) {
         async function ensureOnce() {
             if (ensured) return;
             try {
-                await ensureSheetAndHeader({ sheetTitle: DECISIONS_TAB, headerValues: HEADER });
+                const sheets = getGoogleSheetsClient();
+                const spreadsheetId = process.env.GOOGLE_SHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
+                
+                // Try to get the sheet to see if it exists
+                await sheets.spreadsheets.values.get({
+                    spreadsheetId: spreadsheetId,
+                    range: `${DECISIONS_TAB}!A1:E1`
+                });
                 ensured = true;
             } catch (e) {
                 console.warn('quote-decision: ensureSheet failed (continuing):', e?.message || e);
@@ -119,7 +126,15 @@ export default async function handler(req, res) {
 
         async function findExistingDecision({ quoteId, leadId }) {
             try {
-                const rows = await getRange({ range: `${DECISIONS_TAB}!A:E` });
+                const sheets = getGoogleSheetsClient();
+                const spreadsheetId = process.env.GOOGLE_SHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
+                
+                const response = await sheets.spreadsheets.values.get({
+                    spreadsheetId: spreadsheetId,
+                    range: `${DECISIONS_TAB}!A:E`
+                });
+                
+                const rows = response.data.values || [];
                 for (let i = 0; i < rows.length; i++) {
                     const [ts, qid, lid, status] = rows[i];
                     if (status !== 'ACCEPTED' && status !== 'DECLINED') continue;
@@ -141,8 +156,19 @@ export default async function handler(req, res) {
         }
 
         async function recordDecision({ quoteId, leadId, status, decidedBy }) {
+            const sheets = getGoogleSheetsClient();
+            const spreadsheetId = process.env.GOOGLE_SHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
             const values = [new Date().toISOString(), quoteId, leadId, status, decidedBy || ''];
-            await appendRow({ range: `${DECISIONS_TAB}!A1`, values });
+            
+            await sheets.spreadsheets.values.append({
+                spreadsheetId: spreadsheetId,
+                range: `${DECISIONS_TAB}!A1`,
+                valueInputOption: 'RAW',
+                insertDataOption: 'INSERT_ROWS',
+                requestBody: {
+                    values: [values]
+                }
+            });
         }
 
         // Send email notifications

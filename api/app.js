@@ -339,7 +339,7 @@ export default async function handler(req, res) {
       }
     }
 
-    //
+        //
     // 🔹 Chatbot Action
     //
     if (action === "chatbot") {
@@ -371,142 +371,148 @@ export default async function handler(req, res) {
       // Calculate total project size
       const totalRooms = rooms.length;
 
-             // Use area and suburb from POST body (no lookup needed)
-       const areaValue = area || "";
-       const suburbValue = suburb || "";
+      // Use area and suburb from POST body (no lookup needed)
+      const areaValue = area || "";
+      const suburbValue = suburb || "";
 
-               // Try to log to Google Sheets (but don't fail if it doesn't work)
-        try {
-          const privateKey = process.env.GOOGLE_PRIVATE_KEY;
-          const sheetId = process.env.GOOGLE_SHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
-          
-          if (privateKey && sheetId) {
-            const auth = new google.auth.JWT(
-              process.env.GOOGLE_CLIENT,
-              null,
-              privateKey.replace(/\\n/g, "\n"),
-              ["https://www.googleapis.com/auth/spreadsheets"]
-            );
-            const sheets = google.sheets({ version: "v4", auth });
+      // Try to log to Google Sheets (but don't fail if it doesn't work)
+      try {
+        const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+        const sheetId = process.env.GOOGLE_SHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
+        
+        if (privateKey && sheetId) {
+          const auth = new google.auth.JWT(
+            process.env.GOOGLE_CLIENT,
+            null,
+            privateKey.replace(/\\n/g, "\n"),
+            ["https://www.googleapis.com/auth/spreadsheets"]
+          );
+          const sheets = google.sheets({ version: "v4", auth });
 
-            // Try to append to Leads sheet first
-            try {
-              const leadRow = [
-                new Date().toISOString(), // Timestamp
-                name || "", // Name
-                customerEmail, // Email
-                customerPhone || "", // Phone
-                serviceType, // ServiceType
-                areaValue, // Area
-                suburbValue, // Suburb
-                budget || "", // Budget
-                timeline || "", // Timeline
-                specificDetails || "", // SpecificDetails
-                "New" // Status
-              ];
+          // Try to append to Leads sheet first
+          try {
+            const leadRow = [
+              new Date().toISOString(), // Timestamp
+              name || "", // Name
+              customerEmail, // Email
+              customerPhone || "", // Phone
+              serviceType, // ServiceType
+              areaValue, // Area
+              suburbValue, // Suburb
+              budget || "", // Budget
+              timeline || "", // Timeline
+              specificDetails || "", // SpecificDetails
+              "New" // Status
+            ];
 
-              await sheets.spreadsheets.values.append({
-                spreadsheetId: sheetId,
-                range: "Leads!A:Z",
-                valueInputOption: "RAW",
-                insertDataOption: "INSERT_ROWS",
-                requestBody: {
-                  values: [leadRow]
-                }
-              });
-              
-              console.log("✅ Lead logged to Leads sheet");
-            } catch (leadsError) {
-              console.warn("⚠️ Leads sheet failed, trying Quotes sheet:", leadsError.message);
-              
-              // Fallback: append to Quotes sheet for admin/tradesman access
-              const quoteRow = [
-                new Date().toISOString(), // Date
-                customerName, // Customer Name
-                customerEmail, // Email
-                customerPhone || "", // Phone
-                serviceType, // Service Type
-                `${serviceType} - ${totalRooms} room(s): ${roomsString}`, // Project Details
-                roomsString, // Project Size
-                budget || "", // Budget
-                timeline || "", // Timeline
-                areaValue, // Area
-                suburbValue, // Suburb
-                specificDetails || "", // Additional Details
-                "New Lead from Chatbot", // Status
-                "Chatbot Lead", // Source
-                name || "" // Agent Name
-              ];
-
-              await sheets.spreadsheets.values.append({
-                spreadsheetId: sheetId,
-                range: "Quotes!A:Z",
-                valueInputOption: "RAW",
-                insertDataOption: "INSERT_ROWS",
-                requestBody: {
-                  values: [quoteRow]
-                }
-              });
-              
-              console.log("✅ Lead logged to Quotes sheet as fallback");
-            }
+            await sheets.spreadsheets.values.append({
+              spreadsheetId: sheetId,
+              range: "Leads!A:Z",
+              valueInputOption: "RAW",
+              insertDataOption: "INSERT_ROWS",
+              requestBody: {
+                values: [leadRow]
+              }
+            });
+            
+            console.log("✅ Lead logged to Google Sheets");
+          } catch (leadsError) {
+            console.warn("⚠️ Lead logging failed, sending emails anyway:", leadsError.message);
           }
-        } catch (sheetsError) {
-          console.warn("⚠️ All Google Sheets failed, emails still sent:", sheetsError.message);
-          // Continue with email sending regardless of Sheets failure
         }
+      } catch (sheetsError) {
+        console.warn("⚠️ Lead logging failed, sending emails anyway:", sheetsError.message);
+      }
 
-      // Format rooms for email
-      const roomsEmailList = rooms.map(room => 
-        `<li><strong>${room.roomName}:</strong> ${room.dimensions}</li>`
-      ).join("");
+             // Always send emails regardless of Sheets success
+       try {
+         // Import nodemailer dynamically
+         const nodemailer = await import('nodemailer');
+         
+         // Create transporter with Gmail SMTP
+         const transporter = nodemailer.default.createTransport({
+           service: "gmail",
+           auth: {
+             user: process.env.GMAIL_USER,
+             pass: process.env.GMAIL_PASS
+           }
+         });
 
-             // Send team notification email
-       const teamSubject = `🆕 New Lead: ${serviceType} - ${customerName} (${totalRooms} rooms)`;
-       const teamHtml = `
-         <h2>New Lead Received</h2>
-         <p><strong>Customer Name:</strong> ${customerName}</p>
-         <p><strong>Customer Email:</strong> ${customerEmail}</p>
-         <p><strong>Customer Phone:</strong> ${customerPhone || 'Not provided'}</p>
-         <p><strong>Service Type:</strong> ${serviceType}</p>
-         <p><strong>Area:</strong> ${areaValue || 'Not specified'}</p>
-         <p><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</p>
-         <p><strong>Number of Rooms:</strong> ${totalRooms}</p>
-         <p><strong>Room Details:</strong></p>
-         <ul>${roomsEmailList}</ul>
-         <p><strong>Budget:</strong> ${budget || 'Not specified'}</p>
-         <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
-         <p><strong>Specific Details:</strong> ${specificDetails || 'None'}</p>
-       `;
+        // Format rooms for email
+        const roomsEmailList = rooms.map(room => 
+          `<li><strong>${room.roomName}:</strong> ${room.dimensions}</li>`
+        ).join("");
 
-             await sendEmailViaGmailAPI(process.env.ADMIN_EMAIL, teamSubject, teamHtml);
+                 // Team + Admin email content
+         const teamSubject = `📋 New Lead - ${serviceType}`;
+        const teamHtml = `
+          <h2>New Lead Received</h2>
+          <p><strong>Customer Name:</strong> ${customerName}</p>
+          <p><strong>Customer Email:</strong> ${customerEmail}</p>
+          <p><strong>Customer Phone:</strong> ${customerPhone || 'Not provided'}</p>
+          <p><strong>Service Type:</strong> ${serviceType}</p>
+          <p><strong>Area:</strong> ${areaValue || 'Not specified'}</p>
+          <p><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</p>
+          <p><strong>Number of Rooms:</strong> ${totalRooms}</p>
+          <p><strong>Room Details:</strong></p>
+          <ul>${roomsEmailList}</ul>
+          <p><strong>Budget:</strong> ${budget || 'Not specified'}</p>
+          <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
+          <p><strong>Specific Details:</strong> ${specificDetails || 'None'}</p>
+        `;
 
-              // Send confirmation email to customer
-        const customerSubject = `Thank you for your ${serviceType} enquiry`;
+                 // Send to team and admin
+         if (process.env.TEAM_EMAIL) {
+           await transporter.sendMail({
+             from: process.env.GMAIL_USER,
+             to: process.env.TEAM_EMAIL,
+             subject: teamSubject,
+             html: teamHtml
+           });
+         }
+
+         if (process.env.ADMIN_EMAIL) {
+           await transporter.sendMail({
+             from: process.env.GMAIL_USER,
+             to: process.env.ADMIN_EMAIL,
+             subject: teamSubject,
+             html: teamHtml
+           });
+         }
+
+        // Customer confirmation email
+        const customerSubject = `✅ We received your request for ${serviceType}`;
         const customerHtml = `
           <h2>Thank you for your enquiry!</h2>
           <p>Hi ${customerName},</p>
-          <p>We've received your ${serviceType} enquiry for ${totalRooms} room(s) and will be in touch within 24 hours.</p>
+          <p>We've received your ${serviceType} enquiry and will be in touch within 24 hours.</p>
           <p><strong>Your enquiry details:</strong></p>
           <ul>
             <li><strong>Service:</strong> ${serviceType}</li>
             <li><strong>Rooms:</strong> ${roomsString}</li>
             <li><strong>Area:</strong> ${areaValue || 'Not specified'}</li>
             <li><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</li>
+            <li><strong>Budget:</strong> ${budget || 'Not specified'}</li>
+            <li><strong>Timeline:</strong> ${timeline || 'Not specified'}</li>
           </ul>
           <p>Best regards,<br>The Kiwi Trade Team</p>
         `;
 
-       await sendEmailViaGmailAPI(customerEmail, customerSubject, customerHtml);
-       
-       console.log("📧 Emails sent to team + customer");
+                 await transporter.sendMail({
+           from: process.env.GMAIL_USER,
+           to: customerEmail,
+           subject: customerSubject,
+           html: customerHtml
+         });
 
-      return res.status(200).json({
-        ok: true,
-        message: "Lead logged successfully and emails sent",
-        leadId: new Date().toISOString(),
-        roomsProcessed: totalRooms
-      });
+        console.log("📧 Emails sent to team + admin + customer");
+
+      } catch (emailError) {
+        console.error("❌ Email sending failed:", emailError.message);
+        return res.status(500).json({ error: "Email send failed" });
+      }
+
+      return res.status(200).json({ success: true });
     }
 
     //

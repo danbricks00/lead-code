@@ -78,7 +78,6 @@ export default async function handler(req, res) {
   const issuedAt = Date.now().toString();
   const token = signToken(quoteId, issuedAt);
 
-  // --- Properly construct and validate the base URL ---
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
   if (!baseUrl) {
     console.error("NEXT_PUBLIC_BASE_URL is not defined");
@@ -99,12 +98,12 @@ export default async function handler(req, res) {
     token,
     ts: issuedAt,
   }).toString();
-
-  const quoteLink = `${baseUrl}/quote-submit/${quoteId}?${queryParams}`;
-  console.log("[Lead Intake] Constructed quote link:", quoteLink); // Log for debugging
+  
+  // Construct and log the full quote submission URL
+  const quoteLink = `https://${baseUrl}/quote-submit/${quoteId}?${queryParams}`;
+  console.log("[Lead Intake] Constructed quote link:", quoteLink);
 
   try {
-    // Append lead info to "Leads" tab
     await appendRowToSheet("Leads", [
       leadId,
       customerName,
@@ -120,24 +119,20 @@ export default async function handler(req, res) {
       new Date().toISOString(),
     ]);
 
-    // Append initial quote info to "Quotes" tab
     await appendRowToSheet("Quotes", [
       quoteId,
       leadId,
       customerName,
       customerEmail,
-      "Tradeperson Name",
-      "quangbui0600@gmail.com",
+      "Tradeperson Name", // Placeholder
+      "quangbui0600@gmail.com", // Hardcoded tradesperson email
       quoteLink,
       "Confirmation Request",
       "Lead Request",
       "Pending Review",
-      "No",
-      "", "", "", "", "", "", "", "",
-      "", "",
+      "No", // Resubmission Allowed
     ]);
 
-    // Setup Nodemailer
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -146,29 +141,68 @@ export default async function handler(req, res) {
       },
     });
 
-    // Emails
+    const leadDetailsHtml = `
+      <ul>
+        <li><b>Name:</b> ${customerName}</li>
+        <li><b>Email:</b> ${customerEmail}</li>
+        <li><b>Phone:</b> ${customerPhone || "Not provided"}</li>
+        <li><b>Service:</b> ${serviceType}</li>
+        <li><b>Area/Suburb:</b> ${suburb || area || "Not specified"}</li>
+        <li><b>Budget:</b> ${budget || "Not specified"}</li>
+        <li><b>Timeline:</b> ${timeline || "Not specified"}</li>
+        <li><b>Rooms:</b> ${rooms ? JSON.stringify(rooms) : "Not specified"}</li>
+        <li><b>Details:</b> ${specificDetails || "No extra details"}</li>
+      </ul>
+    `;
+
     const customerMail = {
       from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
       to: customerEmail,
       subject: "✅ We received your request",
-      html: `<p>Hi ${customerName},</p><p>Thanks for reaching out about <b>${serviceType}</b>. A trade professional will prepare a quote.</p>`,
+      html: `
+        <p>Hi ${customerName},</p>
+        <p>Thanks for reaching out about <b>${serviceType}</b>. A trade professional will prepare a quote and send it to you shortly.</p>
+        <p><small>Request ID: ${leadId}</small></p>
+        <hr>
+        <p><b>Here is a summary of your request:</b></p>
+        ${leadDetailsHtml}
+        <hr>
+        <p><b>Status:</b></p>
+        <p>
+          <span style="color:green;">✅ Confirmation Request</span> &nbsp;&nbsp;
+          <span>⚪ Quote Received</span> &nbsp;&nbsp;
+          <span>⚪ Decision</span>
+        </p>
+      `,
     };
 
     const tradepersonMail = {
       from: `"Kiwi Trade Leads" <${process.env.GMAIL_USER}>`,
       to: "quangbui0600@gmail.com",
-      subject: `🔔 New Lead: ${serviceType}`,
-      html: `<p>You have a new lead for ${customerName}.</p><p><b>Prepare a quote here:</b> <a href="${quoteLink}">${quoteLink}</a></p>`,
+      subject: `🔔 New Lead: ${serviceType} (${suburb || area || "Unknown location"})`,
+      html: `
+        <p>You have a new lead for a ${serviceType} job.</p>
+        <p><b>Customer Details:</b></p>
+        ${leadDetailsHtml}
+        <p><b>Please prepare a quote here:</b> <a href="${quoteLink}" style="font-weight:bold;color:#007bff;">Submit Quote Now</a></p>
+        <p><small>This link is unique and signed; no login is required.</small></p>
+        <hr>
+        <p><b>Status:</b></p>
+        <p>
+          <span style="color:green;">✅ Lead Received</span> &nbsp;&nbsp;
+          <span>⚪ Quote Sent</span> &nbsp;&nbsp;
+          <span>⚪ Quote Decision</span>
+        </p>
+      `,
     };
 
     const adminMail = {
       from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
       to: "danbricks18@gmail.com",
-      subject: `Lead recorded: #${leadId}`,
-      text: `New lead recorded for ${customerName}. Quote Link: ${quoteLink}`,
+      subject: `Lead recorded on site: #${leadId}`,
+      text: `A new lead has been recorded:\n\n${leadDetailsHtml.replace(/<li><b>/g, '').replace(/<\/b>:/g, ':').replace(/<\/li>/g, '\n').replace(/<ul>/g, '').replace(/<\/ul>/g, '')}\nQuote Link: ${quoteLink}`,
     };
 
-    // Send emails
     const customerResult = await sendEmail(transporter, customerMail);
     const tradepersonResult = await sendEmail(transporter, tradepersonMail);
     const adminResult = await sendEmail(transporter, adminMail);

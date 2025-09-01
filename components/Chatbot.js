@@ -1,26 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ChatMessage from './ChatMessage';
 
-// A simple "Typing..." indicator component
-const TypingIndicator = () => (
-  <div style={{ alignSelf: 'flex-start', margin: '8px' }}>
-    <div style={{
-      display: 'inline-block',
-      padding: '12px 16px',
-      borderRadius: '16px',
-      backgroundColor: '#FFFFFF',
-      border: "1px solid #E0E0E0",
-      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <span style={styles.typingDot}></span>
-        <span style={styles.typingDot}></span>
-        <span style={styles.typingDot}></span>
-      </div>
-    </div>
-  </div>
-);
-
 const chatFlow = [
   { key: 'customerName', question: 'To start, what is your full name?' },
   { key: 'customerEmail', question: 'Thanks! What is your email address?' },
@@ -129,7 +109,7 @@ const Chatbot = () => {
         {messages.map((message) => (
           <ChatMessage key={message.id} message={message.content} isUser={message.isUser} />
         ))}
-        {isLoading && <TypingIndicator />}
+        {isLoading && <ChatMessage isTyping={true} />}
         <div ref={messagesEndRef} />
       </div>
       
@@ -207,47 +187,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  // Style for the typing indicator dots
-  typingDot: {
-    width: '8px',
-    height: '8px',
-    backgroundColor: '#8e8e8e',
-    borderRadius: '50%',
-    margin: '0 2px',
-    animation: 'typing 1.4s infinite ease-in-out both',
-    '@keyframes typing': {
-      '0%, 80%, 100%': { transform: 'scale(0)' },
-      '40%': { transform: 'scale(1.0)' },
-    },
-    '&:nth-child(1)': {
-      animationDelay: '-0.32s',
-    },
-    '&:nth-child(2)': {
-      animationDelay: '-0.16s',
-    },
   }
 };
 
 export default Chatbot;
-
-// We need to inject the keyframes for the animation into the document head
-const styleSheet = document.createElement("style");
-styleSheet.type = "text/css";
-styleSheet.innerText = `
-@keyframes typing {
-  0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1.0); }
-}
-.typing-dot {
-  width: 8px;
-  height: 8px;
-  background-color: #8e8e8e;
-  border-radius: 50%;
-  margin: 0 2px;
-  animation: typing 1.4s infinite ease-in-out both;
-}
-.typing-dot:nth-child(1) { animation-delay: -0.32s; }
-.typing-dot:nth-child(2) { animation-delay: -0.16s; }
-`;
-document.head.appendChild(styleSheet);

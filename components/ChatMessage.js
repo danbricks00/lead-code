@@ -19,12 +19,13 @@ export default function ChatMessage({ message, isUser }) {
     margin: "8px",
     padding: "12px 16px",
     borderRadius: "16px",
-    backgroundColor: "#333",
-    color: "#fff",
+    backgroundColor: "#FFFFFF",
+    color: "#000",
     alignSelf: "flex-start",
     fontSize: "16px",
     lineHeight: "1.4",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+    border: "1px solid #E0E0E0",
   };
 
   return <div style={isUser ? userStyle : systemStyle}>{message}</div>;

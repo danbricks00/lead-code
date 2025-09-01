@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quote View - Kiwi Trade</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #007bff;
+            margin: 0;
+        }
+        .quote-details {
+            margin-bottom: 30px;
+        }
+        .quote-details h2 {
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #555;
+        }
+        .detail-value {
+            color: #333;
+        }
+        .quote-amount {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+            border: 2px solid #007bff;
+        }
+        .quote-amount h3 {
+            margin: 0 0 10px 0;
+            color: #007bff;
+        }
+        .amount {
+            font-size: 2em;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .action-buttons {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 0 10px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-accepted {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-declined {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="loading" class="loading">
+            <h2>Loading Quote...</h2>
+            <p>Please wait while we fetch your quote details.</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;">
+            <h3>Error Loading Quote</h3>
+            <p id="error-message"></p>
+        </div>
+
+        <div id="quote-content" style="display: none;">
+            <div class="header">
+                <h1>Kiwi Trade Quote</h1>
+                <p>Professional Trade Services</p>
+            </div>
+
+            <div class="quote-details">
+                <h2>Quote Information</h2>
+                <div class="detail-row">
+                    <span class="detail-label">Quote ID:</span>
+                    <span class="detail-value" id="leadId"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Customer Name:</span>
+                    <span class="detail-value" id="customerName"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Service Type:</span>
+                    <span class="detail-value" id="service"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Location:</span>
+                    <span class="detail-value" id="location"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Timeline:</span>
+                    <span class="detail-value" id="timeline"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Status:</span>
+                    <span class="detail-value">
+                        <span id="status-badge" class="status-badge"></span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="quote-amount">
+                <h3>Total Quote Amount</h3>
+                <div class="amount" id="quoteAmount"></div>
+            </div>
+
+            <div class="quote-details">
+                <h2>Project Details</h2>
+                <div id="projectDetails"></div>
+            </div>
+
+            <div class="quote-details">
+                <h2>Tradesman Information</h2>
+                <div class="detail-row">
+                    <span class="detail-label">Name:</span>
+                    <span class="detail-value" id="tradesmanName"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Email:</span>
+                    <span class="detail-value" id="tradesmanEmail"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Quote Date:</span>
+                    <span class="detail-value" id="quoteDate"></span>
+                </div>
+            </div>
+
+            <div class="action-buttons" id="action-buttons">
+                <a href="#" class="btn btn-primary" id="view-pdf">Download PDF</a>
+                <a href="#" class="btn btn-success" id="accept-quote">Accept Quote</a>
+                <a href="#" class="btn btn-danger" id="decline-quote">Decline Quote</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get leadId from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const leadId = urlParams.get('leadId');
+
+        if (!leadId) {
+            showError('No quote ID provided in URL');
+        } else {
+            loadQuote(leadId);
+        }
+
+        async function loadQuote(leadId) {
+            try {
+                const response = await fetch(`/api/get-quote?leadId=${leadId}`);
+                const data = await response.json();
+
+                if (!data.ok) {
+                    showError(data.error || 'Failed to load quote');
+                    return;
+                }
+
+                displayQuote(data.quote);
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            }
+        }
+
+        function displayQuote(quote) {
+            // Hide loading, show content
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('quote-content').style.display = 'block';
+
+            // Populate quote details
+            document.getElementById('leadId').textContent = quote.leadId || 'N/A';
+            document.getElementById('customerName').textContent = quote.customerName || 'N/A';
+            document.getElementById('service').textContent = quote.service || 'N/A';
+            document.getElementById('location').textContent = `${quote.area || ''} ${quote.suburb || ''}`.trim() || 'N/A';
+            document.getElementById('timeline').textContent = quote.timeline || 'Not specified';
+            document.getElementById('quoteAmount').textContent = quote.quoteAmount ? `$${quote.quoteAmount}` : 'N/A';
+            document.getElementById('tradesmanName').textContent = quote.tradesmanName || 'N/A';
+            document.getElementById('tradesmanEmail').textContent = quote.tradesmanEmail || 'N/A';
+            
+            // Format quote date
+            const quoteDate = quote.quoteDate ? new Date(quote.quoteDate).toLocaleDateString() : 'N/A';
+            document.getElementById('quoteDate').textContent = quoteDate;
+
+            // Display project details
+            const projectDetailsDiv = document.getElementById('projectDetails');
+            if (quote.details) {
+                projectDetailsDiv.innerHTML = `<p>${quote.details}</p>`;
+            } else {
+                projectDetailsDiv.innerHTML = '<p>No additional details provided.</p>';
+            }
+
+            // Set status badge
+            const statusBadge = document.getElementById('status-badge');
+            statusBadge.textContent = quote.status || 'Pending';
+            statusBadge.className = `status-badge status-${(quote.status || 'pending').toLowerCase()}`;
+
+            // Set up action buttons
+            const acceptUrl = `/api/quote-decision?leadId=${quote.leadId}&action=accept`;
+            const declineUrl = `/api/quote-decision?leadId=${quote.leadId}&action=decline`;
+            const pdfUrl = `/api/quote-pdf?leadId=${quote.leadId}`;
+
+            document.getElementById('accept-quote').href = acceptUrl;
+            document.getElementById('decline-quote').href = declineUrl;
+            document.getElementById('view-pdf').href = pdfUrl;
+
+            // Hide action buttons if quote is already decided
+            if (quote.status === 'accepted' || quote.status === 'declined') {
+                document.getElementById('action-buttons').style.display = 'none';
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error-message').textContent = message;
+        }
+    </script>
+</body>
+</html>

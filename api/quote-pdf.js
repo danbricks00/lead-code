@@ -27,29 +27,54 @@ export default async function handler(req, res) {
 
     console.log('🔍 Generating quote document for:', { leadId, quoteId });
 
+    // Use the unified /api/get-quote endpoint to fetch quote data
+    const SITE_URL = process.env.SITE_URL || 'https://lead-code.vercel.app';
     let quoteData = null;
-    let leadData = null;
 
-    // First, try to get the actual quote data if quoteId is provided
-    if (quoteId) {
-      console.log('🔍 Fetching quote data for quote ID:', quoteId);
-      quoteData = await fetchQuoteData(quoteId);
-      console.log('📋 Quote data result:', quoteData ? 'Found' : 'Not found');
+    try {
+      const quoteResponse = await fetch(`${SITE_URL}/api/get-quote?leadId=${leadId || quoteId}`);
+      const quoteResult = await quoteResponse.json();
+      
+      if (quoteResult.ok && quoteResult.quote) {
+        quoteData = quoteResult.quote;
+        console.log('🌐 Quote data served from unified /api/get-quote');
+      } else {
+        console.warn('⚠️ Could not fetch quote from unified endpoint, falling back to legacy methods');
+        
+        // Fallback to legacy methods
+        if (quoteId) {
+          quoteData = await fetchQuoteData(quoteId);
+        }
+        
+        if (!quoteData) {
+          const leadData = await fetchLeadData(leadId);
+          if (leadData) {
+            quoteData = leadData;
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Error fetching from unified endpoint, using legacy methods:', error.message);
+      
+      // Fallback to legacy methods
+      if (quoteId) {
+        quoteData = await fetchQuoteData(quoteId);
+      }
+      
+      if (!quoteData) {
+        const leadData = await fetchLeadData(leadId);
+        if (leadData) {
+          quoteData = leadData;
+        }
+      }
     }
 
-    // If no quote data found, or no quoteId provided, get lead data
     if (!quoteData) {
-      console.log('🔍 Fetching lead data for lead ID:', leadId);
-      leadData = await fetchLeadData(leadId);
-      console.log('📋 Lead data result:', leadData ? 'Found' : 'Not found');
-    }
-
-    if (!quoteData && !leadData) {
-      return res.status(404).json({ error: 'Neither quote nor lead data found' });
+      return res.status(404).json({ error: 'Quote data not found' });
     }
 
     // Generate HTML content using the unified function
-    const htmlContent = generateQuotePdfContent(leadData || quoteData, quoteData);
+    const htmlContent = generateQuotePdfContent(quoteData, quoteData);
 
     if (download === '1') {
       // Set headers for file download

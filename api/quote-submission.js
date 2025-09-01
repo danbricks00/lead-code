@@ -51,6 +51,43 @@ export default async function handler(req, res) {
     const nodemailer = await import('nodemailer');
     const { generateQuotePdfBuffer, coerceNumeric } = await import('./quote-utils.js');
 
+    // Gamified status renderer function
+    function renderStatus(stage) {
+      const baseStyle = "font-family: Arial, Helvetica, sans-serif; font-size: 14px; margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;";
+      const checkStyle = "color: #28a745; font-weight: bold;";
+      const pendingStyle = "color: #ffc107; font-weight: bold;";
+      const crossStyle = "color: #dc3545; font-weight: bold;";
+      
+      let statusHtml = `<div style="${baseStyle}">`;
+      statusHtml += `<h3 style="margin: 0 0 15px 0; color: #333;">Project Status</h3>`;
+      
+      switch(stage) {
+        case "lead":
+          statusHtml += `<p style="margin: 5px 0;"><span style="${checkStyle}">✔</span> Lead Received</p>`;
+          statusHtml += `<p style="margin: 5px 0;"><span style="${pendingStyle}">⏳</span> Awaiting Quote</p>`;
+          statusHtml += `<p style="margin: 5px 0;"><span style="${pendingStyle}">⏳</span> Awaiting Decision</p>`;
+          break;
+        case "quote":
+          statusHtml += `<p style="margin: 5px 0;"><span style="${checkStyle}">✔</span> Lead Received</p>`;
+          statusHtml += `<p style="margin: 5px 0;"><span style="${checkStyle}">✔</span> Quote Sent</p>`;
+          statusHtml += `<p style="margin: 5px 0;"><span style="${pendingStyle}">⏳</span> Awaiting Decision</p>`;
+          break;
+        case "accepted":
+          statusHtml += `<p style="margin: 5px 0;"><span style="${checkStyle}">✔</span> Lead Received</p>`;
+          statusHtml += `<p style="margin: 5px 0;"><span style="${checkStyle}">✔</span> Quote Sent</p>`;
+          statusHtml += `<p style="margin: 5px 0;"><span style="${checkStyle}">✔</span> Quote Accepted</p>`;
+          break;
+        case "declined":
+          statusHtml += `<p style="margin: 5px 0;"><span style="${checkStyle}">✔</span> Lead Received</p>`;
+          statusHtml += `<p style="margin: 5px 0;"><span style="${checkStyle}">✔</span> Quote Sent</p>`;
+          statusHtml += `<p style="margin: 5px 0;"><span style="${crossStyle}">✘</span> Quote Declined</p>`;
+          break;
+      }
+      
+      statusHtml += `</div>`;
+      return statusHtml;
+    }
+
     const SITE_URL = process.env.SITE_URL || 'https://lead-code.vercel.app';
 
     // STRICT: Check if this tradesman has already submitted a quote for this lead
@@ -113,12 +150,147 @@ export default async function handler(req, res) {
         }
       }
       
-      // Continue with quote submission...
-      // (The rest of the function would continue here)
+      // Save quote to Google Sheets
+      const quoteRow = [
+        new Date().toISOString(), // Timestamp
+        leadId, // LeadId
+        customerName, // CustomerName
+        serviceType, // Service
+        quoteAmount, // QuoteAmount
+        projectDetails, // Details
+        'Pending', // Status
+        timeline, // Timeline
+        location?.area || '', // Area
+        location?.suburb || '', // Suburb
+        budget, // Budget
+        specificDetails, // SpecificDetails
+        tradesmanName, // TradesmanName
+        tradesmanEmail, // TradesmanEmail
+        tradesmanPhone || '', // TradesmanPhone
+        projectSize, // ProjectSize
+        breakdown, // Breakdown
+        notes || '' // Notes
+      ];
+
+      // Append to Quotes sheet
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+        range: 'Quotes!A:Z',
+        valueInputOption: 'RAW',
+        insertDataOption: 'INSERT_ROWS',
+        requestBody: {
+          values: [quoteRow]
+        }
+      });
+
+      console.log(`✅ Quote saved for lead ${leadId}`);
+
+      // Get the saved quote data for confirmation
+      const quoteResponse = await fetch(`${SITE_URL}/api/get-quote?leadId=${leadId}`);
+      const quoteData = await quoteResponse.json();
+      
+      if (!quoteData.ok) {
+        console.warn(`⚠️ Could not fetch saved quote data for lead ${leadId}`);
+      }
+
+      // Send Stage 2 emails with unified quote data
+      const transporter = nodemailer.default.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.GMAIL_USER,
+          pass: process.env.GMAIL_PASS
+        }
+      });
+
+      // Generate PDF using the same quote data
+      const pdfBuffer = await generateQuotePdfBuffer(quoteData.quote || {
+        leadId,
+        customerName,
+        service: serviceType,
+        quoteAmount,
+        details: projectDetails,
+        status: 'Pending',
+        timeline,
+        area: location?.area || '',
+        suburb: location?.suburb || '',
+        budget,
+        specificDetails,
+        tradesmanName,
+        tradesmanEmail,
+        quoteDate: new Date().toISOString()
+      });
+
+      // Customer email with web link and PDF
+      const customerSubject = `📋 Your Quote for ${serviceType} - ${leadId}`;
+      const quoteViewUrl = `${SITE_URL}/quote-view?leadId=${leadId}`;
+      const acceptUrl = `${SITE_URL}/api/quote-decision?leadId=${leadId}&action=accept`;
+      const declineUrl = `${SITE_URL}/api/quote-decision?leadId=${leadId}&action=decline`;
+
+      const customerHtml = `
+        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+          ${renderStatus("quote")}
+          <h2 style="color: #333; margin: 20px 0;">Your Quote is Ready!</h2>
+          <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+            <p>Hi ${customerName},</p>
+            <p>Your quote for ${serviceType} is ready for review.</p>
+            <p><strong>Quote Amount:</strong> $${quoteAmount}</p>
+            <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
+            <p><strong>Project Details:</strong> ${projectDetails}</p>
+          </div>
+          <div style="margin: 30px 0; text-align: center;">
+            <a href="${quoteViewUrl}" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 0 10px;">View Quote</a>
+            <a href="${acceptUrl}" style="background: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 0 10px;">Accept Quote</a>
+            <a href="${declineUrl}" style="background: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 0 10px;">Decline Quote</a>
+          </div>
+        </div>
+      `;
+
+      await transporter.sendMail({
+        from: process.env.GMAIL_USER,
+        to: customerEmail,
+        subject: customerSubject,
+        html: customerHtml,
+        attachments: [{
+          filename: `quote-${leadId}.pdf`,
+          content: pdfBuffer
+        }]
+      });
+
+      // Admin/Tradesperson confirmation email
+      const teamSubject = `📋 Quote Submitted - ${serviceType} - ${leadId}`;
+      const teamHtml = `
+        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+          ${renderStatus("quote")}
+          <h2 style="color: #333; margin: 20px 0;">Quote Submitted Successfully</h2>
+          <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+            <p><strong>Lead ID:</strong> ${leadId}</p>
+            <p><strong>Customer:</strong> ${customerName}</p>
+            <p><strong>Service:</strong> ${serviceType}</p>
+            <p><strong>Quote Amount:</strong> $${quoteAmount}</p>
+            <p><strong>Tradesman:</strong> ${tradesmanName}</p>
+          </div>
+          <div style="margin: 30px 0; text-align: center;">
+            <a href="${quoteViewUrl}" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">View Quote</a>
+          </div>
+        </div>
+      `;
+
+      if (process.env.ADMIN_EMAIL) {
+        await transporter.sendMail({
+          from: process.env.GMAIL_USER,
+          to: process.env.ADMIN_EMAIL,
+          subject: teamSubject,
+          html: teamHtml
+        });
+      }
+
+      console.log(`📧 Stage 2 quote emails sent with PDF + web link for lead ${leadId}`);
 
       res.json({ 
         success: true, 
-        message: 'Quote submitted successfully' 
+        message: 'Quote submitted successfully',
+        leadId,
+        quoteViewUrl
       });
 
     } catch (error) {

@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import ChatMessage from './ChatMessage'; // Ensure this component is imported
 
 const Chatbot = () => {
   const [messages, setMessages] = useState([
     {
       id: 1,
-      type: 'text',
       content: '👋 Welcome to Kiwi Trade! We\'ll ask a couple of quick questions to prepare your quote.',
-      isBot: true
+      isUser: false // Use isUser consistently
     }
   ]);
   const [inputValue, setInputValue] = useState('');
@@ -19,297 +19,133 @@ const Chatbot = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, isLoading]);
 
-  // Function to add a message to the chat
-  const addMessage = (content, isBot = false, type = 'text', options = null) => {
+  // Unified function to add a message to the chat
+  const addMessage = (content, isUser) => {
     const newMessage = {
       id: Date.now(),
-      type,
       content,
-      isBot,
-      options
+      isUser,
     };
     setMessages(prev => [...prev, newMessage]);
   };
 
-  // Function to handle option selection
-  const handleOptionSelect = (value) => {
-    console.log("✅ Selected option:", value);
-    
-    // Add user's selection as a message
-    addMessage(value, false, 'text');
-    
-    // Send the selection to the backend
-    sendMessageToBackend(value);
-  };
-
-  // Function to send message to backend
+  // This function would contain your logic for handling backend communication
   const sendMessageToBackend = async (message) => {
     setIsLoading(true);
-    
-    try {
-      const response = await fetch('/api/chatbot', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message })
-      });
+    addMessage(message, true); // Add user message immediately
+    setInputValue('');
 
-      const data = await response.json();
-      
-      if (data.success) {
-        // Handle different response types
-        if (data.type === 'timeline' || data.type === 'options' || data.type === 'budget') {
-          console.log("📋 Rendering option buttons for type:", data.type);
-          addMessage(data.question, true, data.type, data.options);
-        } else {
-          addMessage(data.response, true);
-        }
-      } else {
-        addMessage('Sorry, I encountered an error. Please try again.', true);
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      addMessage('Sorry, I encountered an error. Please try again.', true);
-    } finally {
+    // Simulate backend response
+    setTimeout(() => {
+      addMessage("Thank you for your message. We'll be in touch shortly.", false);
       setIsLoading(false);
-    }
+    }, 1200);
   };
 
   // Function to handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
-    
-    const message = inputValue.trim();
-    setInputValue('');
-    
-    // Add user message
-    addMessage(message, false);
-    
-    // Send to backend
-    sendMessageToBackend(message);
-  };
-
-  // Function to render message content
-  const renderMessage = (message) => {
-    if (message.type === 'timeline' || message.type === 'options' || message.type === 'budget') {
-      return (
-        <div className="message-content">
-          <div className="message-text">{message.content}</div>
-          <div className="message-options">
-            {message.options?.map((option, index) => (
-              <button
-                key={index}
-                className="option-button"
-                onClick={() => handleOptionSelect(option.value)}
-                disabled={isLoading}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      );
-    }
-    
-    return <div className="message-text">{message.content}</div>;
+    sendMessageToBackend(inputValue.trim());
   };
 
   return (
-    <div className="chatbot-container">
-      <div className="chatbot-header">
+    <div style={styles.chatbotContainer}>
+      <div style={styles.chatbotHeader}>
         <h3>Kiwi Trade Chatbot</h3>
       </div>
       
-      <div className="chatbot-messages">
+      <div style={styles.chatbotMessages} ref={messagesEndRef}>
         {messages.map((message) => (
-          <div
+          // Use the ChatMessage component here
+          <ChatMessage
             key={message.id}
-            className={`message ${message.isBot ? 'bot-message' : 'user-message'}`}
-          >
-            {renderMessage(message)}
-          </div>
+            message={message.content}
+            isUser={message.isUser}
+          />
         ))}
         {isLoading && (
-          <div className="message bot-message">
-            <div className="loading-spinner">⏳</div>
-            <div className="message-text">Typing...</div>
-          </div>
+            <ChatMessage message="..." isUser={false} />
         )}
         <div ref={messagesEndRef} />
       </div>
       
-      <form onSubmit={handleSubmit} className="chatbot-input">
+      <form onSubmit={handleSubmit} style={styles.chatbotInput}>
         <input
           type="text"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
+          style={styles.inputField}
           placeholder="Type your message..."
           disabled={isLoading}
         />
-        <button type="submit" disabled={isLoading || !inputValue.trim()}>
+        <button type="submit" style={styles.sendButton} disabled={isLoading || !inputValue.trim()}>
           ➤
         </button>
       </form>
-
-      <style jsx>{`
-        .chatbot-container {
-          width: 100%;
-          max-width: 400px;
-          height: 500px;
-          border: 1px solid #ddd;
-          border-radius: 10px;
-          display: flex;
-          flex-direction: column;
-          background: white;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .chatbot-header {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          padding: 15px;
-          border-radius: 10px 10px 0 0;
-          text-align: center;
-        }
-
-        .chatbot-header h3 {
-          margin: 0;
-          font-size: 1.1rem;
-        }
-
-        .chatbot-messages {
-          flex: 1;
-          overflow-y: auto;
-          padding: 15px;
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-
-        .message {
-          max-width: 80%;
-          padding: 10px 15px;
-          border-radius: 18px;
-          word-wrap: break-word;
-        }
-
-        .chatbot-messages .message.bot-message {
-          align-self: flex-start;
-          background: #f8f9fa !important;
-          color: #2c3e50 !important;
-          border: 1px solid #e9ecef !important;
-          border-radius: 18px 18px 18px 4px !important;
-          padding: 12px 16px !important;
-          margin: 4px 0 !important;
-          max-width: 70% !important;
-          word-wrap: break-word !important;
-          position: relative !important;
-        }
-
-        .chatbot-messages .message.user-message {
-          align-self: flex-end !important;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-          color: #ffffff !important;
-          border-radius: 18px 18px 4px 18px !important;
-          padding: 12px 16px !important;
-          margin: 4px 0 !important;
-          max-width: 70% !important;
-          word-wrap: break-word !important;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-          position: relative !important;
-        }
-
-        .message-content {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-
-        .message-text {
-          margin-bottom: 5px;
-        }
-
-        .message-options {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .option-button {
-          background: white;
-          border: 2px solid #667eea;
-          color: #667eea;
-          padding: 8px 16px;
-          border-radius: 20px;
-          cursor: pointer;
-          font-size: 14px;
-          transition: all 0.2s ease;
-          text-align: left;
-        }
-
-        .option-button:hover {
-          background: #667eea;
-          color: white;
-        }
-
-        .option-button:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .chatbot-input {
-          display: flex;
-          padding: 15px;
-          gap: 10px;
-          border-top: 1px solid #eee;
-        }
-
-        .chatbot-input input {
-          flex: 1;
-          padding: 10px;
-          border: 1px solid #ddd;
-          border-radius: 20px;
-          outline: none;
-          font-size: 14px;
-        }
-
-        .chatbot-input button {
-          width: 35px;
-          height: 35px;
-          border: none;
-          background: linear-gradient(135deg, #667eea, #764ba2);
-          color: white;
-          border-radius: 50%;
-          cursor: pointer;
-          font-size: 16px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .chatbot-input button:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .loading-spinner {
-          animation: spin 1s linear infinite;
-          display: inline-block;
-          font-size: 16px;
-          margin-bottom: 4px;
-        }
-
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
+};
+
+// --- STYLES ---
+const styles = {
+  chatbotContainer: {
+    width: '100%',
+    maxWidth: '400px',
+    height: '500px',
+    border: '1px solid #ddd',
+    borderRadius: '10px',
+    display: 'flex',
+    flexDirection: 'column',
+    background: 'white',
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+    fontFamily: 'Arial, sans-serif'
+  },
+  chatbotHeader: {
+    background: '#333',
+    color: 'white',
+    padding: '15px',
+    borderRadius: '10px 10px 0 0',
+    textAlign: 'center',
+  },
+  chatbotMessages: {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '15px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+    backgroundColor: '#f9f9f9'
+  },
+  chatbotInput: {
+    display: 'flex',
+    padding: '15px',
+    gap: '10px',
+    borderTop: '1px solid #eee',
+  },
+  inputField: {
+    flex: 1,
+    padding: '10px',
+    border: '1px solid #ddd',
+    borderRadius: '20px',
+    outline: 'none',
+    fontSize: '14px',
+  },
+  sendButton: {
+    width: '35px',
+    height: '35px',
+    border: 'none',
+    background: '#333',
+    color: 'white',
+    borderRadius: '50%',
+    cursor: 'pointer',
+    fontSize: '16px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }
 };
 
 export default Chatbot;

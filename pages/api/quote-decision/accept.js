@@ -4,19 +4,13 @@ import crypto from 'crypto';
 
 // --- HELPER FUNCTIONS ---
 
-// Verifies the token from the decision link
 function verifyToken(quoteId, ts, token) {
   const secret = process.env.QUOTE_LINK_SECRET;
-  if (!secret) {
-    console.error('❌ QUOTE_LINK_SECRET is not set. Cannot verify token.');
-    return false;
-  }
   const payload = `${quoteId}|${ts}`;
   const expectedToken = crypto.createHmac('sha256', secret).update(payload).digest('hex');
   return crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expectedToken));
 }
 
-// Gets an authenticated Google Sheets client
 async function getSheetsClient() {
   const auth = new google.auth.GoogleAuth({
     credentials: {
@@ -28,133 +22,115 @@ async function getSheetsClient() {
   return google.sheets({ version: 'v4', auth });
 }
 
-// Sends notification emails
-async function sendNotificationEmails(quoteDetails) {
+async function sendNotificationEmails(details) {
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
     secure: true,
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD,
-    },
+    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
   });
 
-  const { quoteId, customerEmail, tradespersonEmail, customerName, tradespersonName } = quoteDetails;
-  console.log(`📧 Sending "Accepted" notifications for quote #${quoteId}`);
+  const { customer, tradesperson, admin, quoteId } = details;
 
-  // 1. To Customer
+  // Email to Customer
   await transporter.sendMail({
-    from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
-    to: customerEmail,
-    subject: `✅ Quote Accepted: #${quoteId}`,
-    html: `<p>Hi ${customerName},</p><p>Thank you for accepting the quote. The tradesperson (${tradespersonName}) will contact you shortly to arrange the work.</p>`,
+    to: customer.email,
+    subject: `✅ Quote Accepted (#${quoteId})`,
+    html: `<p>Hi ${customer.name},</p><p>Thank you for accepting the quote. ${tradesperson.name} will be in touch shortly to arrange the work.</p>`,
   });
 
-  // 2. To Tradesperson
+  // Email to Tradesperson
   await transporter.sendMail({
-    from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
-    to: tradespersonEmail,
-    subject: `🎉 Customer ACCEPTED Quote #${quoteId}`,
-    html: `<p>Great news! The customer, ${customerName}, has ACCEPTED your quote for lead #${quoteId}.</p><p>Please contact them at ${customerEmail} to schedule the work.</p>`,
+    to: tradesperson.email,
+    subject: `🎉 Quote ACCEPTED by Customer (#${quoteId})`,
+    html: `<p>Great news! The customer, ${customer.name}, has ACCEPTED your quote. Please contact them at ${customer.email} to proceed.</p>`,
   });
 
-  // 3. To Admin
+  // Email to Admin
   await transporter.sendMail({
-    from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
-    to: 'danbricks18@gmail.com',
-    subject: `[Decision] Quote ACCEPTED: #${quoteId}`,
-    text: `Quote #${quoteId} has been accepted by the customer. The assigned tradesperson was ${tradespersonName} (${tradespersonEmail}).`,
+    to: admin.email,
+    subject: `[Decision] Quote ACCEPTED (#${quoteId})`,
+    text: `The quote #${quoteId} has been accepted by ${customer.name}.`,
   });
 }
 
-
 // --- API HANDLER ---
-
 export default async function handler(req, res) {
+  const renderPage = (title, message) => res.status(200).send(`<html>...<h1>${title}</h1><p>${message}</p>...</html>`);
+
   if (req.method !== 'GET') {
-    res.setHeader('Allow', ['GET']);
-    return res.status(405).send('<h1>Method Not Allowed</h1>');
+    return res.status(405).send(renderPage('Method Not Allowed', ''));
   }
 
   try {
     const { quoteId, ts, token } = req.query;
 
-    // 1. Security: Validate the token and timestamp
     if (!verifyToken(quoteId, ts, token)) {
-      console.error(`❌ Invalid token for quoteId ${quoteId}`);
-      return res.status(403).send('<h1>Invalid Link</h1><p>This link is either invalid or has been tampered with.</p>');
+      return res.status(403).send(renderPage('Invalid Link', 'This link is invalid or has been tampered with.'));
+    }
+    if (Date.now() - parseInt(ts, 10) > 7 * 24 * 60 * 60 * 1000) {
+      return res.status(410).send(renderPage('Link Expired', 'This decision link has expired.'));
     }
 
-    const LINK_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-    if (Date.now() - parseInt(ts, 10) > LINK_EXPIRY_MS) {
-      console.error(`❌ Expired link used for quoteId ${quoteId}`);
-      return res.status(410).send('<h1>Link Expired</h1><p>This decision link has expired.</p>');
-    }
-
-    // 2. Google Sheets: Find the quote and check its status
     const sheets = await getSheetsClient();
+    const spreadsheetId = process.env.GOOGLE_SHEET_ID;
     const range = 'Quotes!A:Z';
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range,
-    });
-
+    const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
     const rows = response.data.values || [];
-    const header = rows.shift() || []; // Assumes first row is the header
+    const header = rows.shift() || [];
+    
+    const col = {
+      quoteId: header.indexOf('Quote ID'),
+      decision: header.indexOf('Decision'),
+      customerStatus: header.indexOf('Customer Status'),
+      tradespersonStatus: header.indexOf('Tradesperson Status'),
+      adminStatus: header.indexOf('Admin Status'),
+      customerName: header.indexOf('Customer Name'),
+      customerEmail: header.indexOf('Customer Email'),
+      tradespersonName: header.indexOf('Tradesperson Name'),
+      tradespersonEmail: header.indexOf('Tradesperson Email'),
+    };
+    if (Object.values(col).some(i => i === -1)) throw new Error("A required column is missing in the 'Quotes' sheet.");
 
-    // Dynamically find column indices
-    const quoteIdIndex = header.indexOf('LeadId');
-    const decisionIndex = header.indexOf('Decision');
-    const decisionTsIndex = header.indexOf('Decision Timestamp');
-    const customerEmailIndex = header.indexOf('CustomerEmail');
-    const tradespersonEmailIndex = header.indexOf('TradesmanEmail');
-    const customerNameIndex = header.indexOf('CustomerName');
-    const tradespersonNameIndex = header.indexOf('TradesmanName');
-
-    if ([quoteIdIndex, decisionIndex, decisionTsIndex, customerEmailIndex, tradespersonEmailIndex, customerNameIndex, tradespersonNameIndex].some(i => i === -1)) {
-        console.error("❌ A required column is missing from the 'Quotes' sheet header.");
-        throw new Error("Sheet is not configured correctly.");
-    }
-
-    const quoteRowIndex = rows.findIndex(row => row[quoteIdIndex] === quoteId);
-
+    const quoteRowIndex = rows.findIndex(row => row[col.quoteId] === quoteId);
     if (quoteRowIndex === -1) {
-      return res.status(404).send('<h1>Quote Not Found</h1><p>The specified quote could not be found.</p>');
+      return res.status(404).send(renderPage('Quote Not Found', ''));
     }
 
     const quoteRow = rows[quoteRowIndex];
-    if (quoteRow[decisionIndex] && quoteRow[decisionIndex].trim() !== '') {
-      console.warn(`🔒 Attempted to re-use decision link for quote #${quoteId}`);
-      return res.status(409).send('<h1>Link Already Used</h1><p>A decision has already been recorded for this quote.</p>');
+    if (quoteRow[col.decision] && quoteRow[col.decision] !== "") {
+      return res.status(409).send(renderPage('Link Already Used', 'A decision has already been recorded for this quote.'));
     }
 
-    // 3. Google Sheets: Update the decision
-    const updateRange = `Quotes!${String.fromCharCode(65 + decisionIndex)}${quoteRowIndex + 2}:${String.fromCharCode(65 + decisionTsIndex)}${quoteRowIndex + 2}`;
+    // Update statuses and decision
+    const updateData = [
+      "Quote Decision", // Customer Status
+      "Quote Decision", // Tradesperson Status
+      "Accepted",       // Admin Status
+      ...new Array(8).fill(''), // Skip 8 cost columns + resubmission
+      "Accepted",       // Decision
+      new Date().toISOString() // Decision Timestamp
+    ];
     await sheets.spreadsheets.values.update({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: updateRange,
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values: [['Accepted', new Date().toISOString()]],
-      },
+        spreadsheetId,
+        range: `Quotes!H${quoteRowIndex + 2}`, // Start update at Customer Status (H)
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values: [updateData] },
     });
-    console.log(`✅ "Accepted" status written to sheet for quote #${quoteId}`);
-    
-    // 4. Send notification emails
+    console.log(`[Accept] Updated sheet for quote #${quoteId}`);
+
     await sendNotificationEmails({
       quoteId,
-      customerEmail: quoteRow[customerEmailIndex],
-      tradespersonEmail: quoteRow[tradespersonEmailIndex],
-      customerName: quoteRow[customerNameIndex],
-      tradespersonName: quoteRow[tradespersonNameIndex],
+      customer: { name: quoteRow[col.customerName], email: quoteRow[col.customerEmail] },
+      tradesperson: { name: quoteRow[col.tradespersonName], email: quoteRow[col.tradespersonEmail] },
+      admin: { email: 'danbricks18@gmail.com' },
     });
+    console.log(`[Accept] Dispatched emails for quote #${quoteId}`);
 
-    // 5. Return success page to the user
-    return res.send('<h1>Thank You!</h1><p>Your acceptance has been recorded and all parties have been notified.</p>');
+    return renderPage('Thank You!', 'Your acceptance has been recorded.');
 
   } catch (error) {
-    console.error('❌ A critical error occurred in /quote-decision/accept:', error);
-    return res.status(500).send('<h1>Error</h1><p>An unexpected error occurred. The administrator has been notified.</p>');
+    console.error('[Accept] CRITICAL ERROR:', error);
+    return res.status(500).send(renderPage('Error', 'An unexpected error occurred.'));
   }
 }

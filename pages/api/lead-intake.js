@@ -1,149 +1,130 @@
-import nodemailer from "nodemailer";
-import crypto from "crypto";
+import { google } from 'googleapis';
+import nodemailer from 'nodemailer';
+import crypto from 'crypto';
 
-// Helper: generate unique IDs
-function generateId() {
-  return `lead-${crypto.randomBytes(6).toString("hex")}`;
+// --- HELPER: GOOGLE SHEETS ---
+async function getSheetsClient() {
+  const auth = new google.auth.GoogleAuth({
+    credentials: {
+      client_email: process.env.GOOGLE_CLIENT_EMAIL,
+      private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    },
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  });
+  return google.sheets({ version: 'v4', auth });
 }
 
-// Helper: sign tokens for secure links
-function generateSignedQuoteLink(leadData) {
+// --- HELPER: CRYPTO & LINKS ---
+function generateId(prefix) {
+  return `${prefix}-${crypto.randomBytes(8).toString('hex')}`;
+}
+
+function generateSignedQuoteLink(leadId, quoteId, customerEmail) {
   const secret = process.env.QUOTE_LINK_SECRET;
-  if (!secret) {
-    console.error("❌ QUOTE_LINK_SECRET is not set. Cannot generate secure link.");
-    // In production, you might want to throw an error or handle this differently
-    return null;
-  }
-
-  const payload = JSON.stringify(leadData);
-  const signature = crypto.createHmac("sha256", secret).update(payload).digest("hex");
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-
-  // The link points to a frontend page where the tradesperson will fill out the quote
-  return `${baseUrl}/submit-quote?payload=${encodeURIComponent(payload)}&sig=${signature}`;
+  const payload = JSON.stringify({ leadId, quoteId, customerEmail });
+  const token = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  return `${baseUrl}/quote-form.html?payload=${encodeURIComponent(payload)}&token=${token}`;
 }
 
+// --- HELPER: NODEMAILER ---
+async function sendInitialEmails(details) {
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
+  });
 
-// Helper: create a robust email transporter
-async function createTransporter() {
-  // This helper remains the same as before
-  console.log("🔧 Creating email transporter...");
-  try {
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true, // use SSL
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-      },
-    });
-    console.log("✅ Email transporter created successfully.");
-    return transporter;
-  } catch (error) {
-    console.error("❌ Failed to create email transporter:", error);
-    throw new Error("Failed to create email transporter.");
-  }
+  const { customer, tradesperson, admin, quoteLink } = details;
+
+  // Email to Customer
+  await transporter.sendMail({
+    from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
+    to: customer.email,
+    subject: `✅ We've received your request for ${customer.service}`,
+    html: `<p>Hi ${customer.name},</p><p>Thanks for your request. We have assigned a tradesperson who will prepare a quote for you shortly.</p><p>Your Lead ID is: ${customer.leadId}</p>`,
+  });
+
+  // Email to Tradesperson
+  await transporter.sendMail({
+    from: `"Kiwi Trade Leads" <${process.env.GMAIL_USER}>`,
+    to: tradesperson.email,
+    subject: `🔔 New Lead: ${customer.service} in ${customer.suburb || customer.area}`,
+    html: `<p>You have a new lead. Please prepare a quote for the customer.</p>
+           <ul><li><b>Lead ID:</b> ${customer.leadId}</li><li><b>Customer:</b> ${customer.name}</li></ul>
+           <a href="${quoteLink}" style="padding:10px 15px; background-color:#007bff; color:white; text-decoration:none; border-radius:5px;">Submit Quote Now</a>`,
+  });
+
+  // Email to Admin
+  await transporter.sendMail({
+    from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
+    to: admin.email,
+    subject: `[Review] New Lead: ${customer.service} (#${customer.leadId})`,
+    text: `New lead received for ${customer.service}. Awaiting tradesperson quote submission.`,
+  });
 }
 
-// Helper: send email with logging
-async function sendEmail(transporter, mailOptions) {
-  // This helper remains the same as before
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent to ${mailOptions.to}: ${info.response}`);
-    return { success: true };
-  } catch (err) {
-    console.error(`❌ Failed to send email to ${mailOptions.to}:`, err);
-    throw err;
-  }
-}
-
+// --- API HANDLER ---
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method not allowed" });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, error: 'Method Not Allowed' });
   }
 
   try {
-    const {
-      name,
-      email,
-      phone,
-      service,
-      details,
-      area,
-      suburb,
-    } = req.body;
-
+    const { name, email, phone, service, details, area, suburb } = req.body;
     if (!name || !email || !service) {
-      return res.status(400).json({ success: false, error: "Missing required fields" });
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
     }
 
-    const leadId = generateId();
-    console.log("📩 [Stage 1] Lead Intake Received:", { leadId, name, email, service });
+    console.log('[Lead Intake] Processing new lead...');
+    const leadId = generateId('lead');
+    const quoteId = generateId('quote');
+    const sheets = await getSheetsClient();
+    const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+    const tradesmanInfo = { name: 'Quang Bui', email: 'quangbui0600@gmail.com' }; // Hardcoded for this example
 
-    const leadData = { leadId, name, email, phone, service, details, area, suburb };
+    // 1. Write to "Leads" Tab
+    await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: 'Leads!A:Z',
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: [[new Date().toISOString(), leadId, name, email, phone, service, details, area, suburb]] },
+    });
+    console.log(`[Lead Intake] Logged to "Leads" tab for lead #${leadId}`);
 
-    // Generate the unique, secure link for the tradesperson
-    const quoteLink = generateSignedQuoteLink(leadData);
-    if (!quoteLink) {
-        throw new Error("Could not generate a secure quote link. Check server logs for QUOTE_LINK_SECRET.");
-    }
-    console.log("🔗 [Stage 1] Generated secure quote link for tradesperson.");
+    // 2. Write initial data to "Quotes" Tab
+    const quoteLink = generateSignedQuoteLink(leadId, quoteId, email);
+    const quoteRow = [
+      quoteId, leadId, name, email, tradesmanInfo.name, tradesmanInfo.email, quoteLink,
+      "Confirmation Request", // Customer Status
+      "Lead Request",         // Tradesperson Status
+      "Pending Review",       // Admin Status
+      "No",                   // Resubmission Allowed
+      '', '', '', '', '', '', '', '', // Cost fields
+      '', ''                    // Decision, Decision Timestamp
+    ];
+    await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: 'Quotes!A:Z',
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: [quoteRow] },
+    });
+    console.log(`[Lead Intake] Created initial record in "Quotes" tab for quote #${quoteId}`);
 
+    // 3. Send Emails
+    await sendInitialEmails({
+      customer: { name, email, phone, service, leadId, area, suburb },
+      tradesperson: tradesmanInfo,
+      admin: { email: 'danbricks18@gmail.com' },
+      quoteLink,
+    });
+    console.log(`[Lead Intake] Dispatched initial emails for lead #${leadId}`);
 
-    const transporter = await createTransporter();
-
-    // --- Stage 1 Email Contents ---
-    const customerMail = {
-      from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
-      to: email,
-      subject: "✅ We've received your service request!",
-      html: `<p>Hi ${name},</p>
-             <p>Thanks for reaching out about <b>${service}</b>. We are assigning a trade professional who will prepare a quote for you shortly.</p>
-             <p>Your Request ID is: <b>${leadId}</b></p>`,
-    };
-
-    const tradepersonMail = {
-      from: `"Kiwi Trade Leads" <${process.env.GMAIL_USER}>`,
-      to: "quangbui0600@gmail.com", // This would typically be dynamic
-      subject: `🔔 New Lead: ${service} in ${suburb || area || "Unknown location"}`,
-      html: `<p>You have a new lead:</p>
-             <ul>
-               <li><b>Lead ID:</b> ${leadId}</li>
-               <li><b>Name:</b> ${name}</li>
-               <li><b>Email:</b> ${email}</li>
-               <li><b>Phone:</b> ${phone || "Not provided"}</li>
-               <li><b>Area/Suburb:</b> ${suburb || area || "Not specified"}</li>
-               <li><b>Details:</b> ${details || "No extra details"}</li>
-             </ul>
-             <hr>
-             <p><b>Next Step:</b> Please prepare a quote for the customer by clicking the link below. This link is unique and secure.</p>
-             <p><a href="${quoteLink}" style="font-size: 16px; font-weight: bold; padding: 10px 15px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">Prepare Quote Now</a></p>`,
-    };
-
-    const adminMail = {
-      from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
-      to: "danbricks18@gmail.com",
-      subject: `[Stage 1] New Lead Recorded: #${leadId}`,
-      text: `A new lead has been recorded:\n\nLead ID: ${leadId}\nName: ${name}\nEmail: ${email}\nService: ${service}\nLocation: ${suburb || area || "N/A"}`,
-    };
-
-    // --- Send Stage 1 Emails ---
-    console.log("📧 [Stage 1] Sending initial lead notifications...");
-    await sendEmail(transporter, customerMail);
-    await sendEmail(transporter, tradepersonMail);
-    await sendEmail(transporter, adminMail);
-    console.log("✅ [Stage 1] All lead intake emails sent successfully.");
-
-    return res.status(200).json({ success: true, leadId });
+    return res.status(200).json({ success: true, leadId, quoteId });
 
   } catch (error) {
-    console.error("❌ [Stage 1] A critical error occurred:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Failed to process lead intake. Please check server logs.",
-      details: error.message,
-    });
+    console.error('[Lead Intake] CRITICAL ERROR:', error);
+    return res.status(500).json({ success: false, error: 'Internal Server Error', details: error.message });
   }
 }

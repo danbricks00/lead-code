@@ -173,12 +173,23 @@ export default async function handler(req, res) {
 
         // Send email notifications
         async function sendNotifications({ quoteId, leadId, action, quoteData, leadData }) {
+            console.log("📧 STAGE 3: Starting quote decision email notifications...");
+            
+            // Environment checks
+            console.log("🔧 Environment variables check:", {
+                GMAIL_USER: process.env.GMAIL_USER || "MISSING",
+                GMAIL_PASS: process.env.GMAIL_PASS ? "SET" : "MISSING",
+                ADMIN_EMAIL: process.env.ADMIN_EMAIL || "MISSING",
+                CUSTOMER_EMAIL: leadData?.customerEmail || "MISSING",
+                TRADESPERSON_EMAIL: quoteData?.tradesmanEmail || "MISSING"
+            });
+            
             try {
                 const transporter = nodemailer.default.createTransport({
                     service: 'gmail',
                     auth: {
-                        user: process.env.GMAIL_USER || 'danbricks18@gmail.com',
-                        pass: process.env.GMAIL_PASS || 'ptmcojqgthvjbqom'
+                        user: process.env.GMAIL_USER,
+                        pass: process.env.GMAIL_PASS
                     }
                 });
 
@@ -274,12 +285,18 @@ export default async function handler(req, res) {
                             </div>`;
                     }
 
-                    await transporter.sendMail({
-                        from: process.env.GMAIL_USER || 'danbricks18@gmail.com',
-                        to: leadData.customerEmail,
-                        subject: customerSubject,
-                        html: customerHtml
-                    });
+                    try {
+                        console.log(`📤 Sending customer ${action} email to: ${leadData.customerEmail}`);
+                        const customerResult = await transporter.sendMail({
+                            from: process.env.GMAIL_USER,
+                            to: leadData.customerEmail,
+                            subject: customerSubject,
+                            html: customerHtml
+                        });
+                        console.log(`✅ Email sent to customer, msgId: ${customerResult.messageId}`);
+                    } catch (error) {
+                        console.error(`❌ Email failed to customer, err: ${error.message}`);
+                    }
                 }
 
                 // 2. Send admin notification
@@ -306,14 +323,24 @@ export default async function handler(req, res) {
                         </div>
                     </div>`;
 
-                await transporter.sendMail({
-                    from: process.env.GMAIL_USER || 'danbricks18@gmail.com',
-                    to: process.env.ADMIN_EMAIL || 'danbricks18@gmail.com',
-                    subject: adminSubject,
-                    html: adminHtml
-                });
+                if (process.env.ADMIN_EMAIL) {
+                    try {
+                        console.log(`📤 Sending admin notification email to: ${process.env.ADMIN_EMAIL}`);
+                        const adminResult = await transporter.sendMail({
+                            from: process.env.GMAIL_USER,
+                            to: process.env.ADMIN_EMAIL,
+                            subject: adminSubject,
+                            html: adminHtml
+                        });
+                        console.log(`✅ Email sent to admin, msgId: ${adminResult.messageId}`);
+                    } catch (error) {
+                        console.error(`❌ Email failed to admin, err: ${error.message}`);
+                    }
+                } else {
+                    console.log("⚠️ ADMIN_EMAIL not configured, skipping admin notification");
+                }
 
-                // 3. Send tradesperson notification (if accepted and tradesperson email available)
+                // 3. Send tradesperson notification
                 if (action === 'accept' && fullQuoteData.tradesmanEmail) {
                     const tradespersonSubject = `🎉 CUSTOMER ACCEPTED - FOLLOW UP REQUIRED - ${leadId}`;
                     const tradespersonHtml = `
@@ -335,15 +362,54 @@ export default async function handler(req, res) {
                             </div>
                         </div>`;
 
-                    await transporter.sendMail({
-                        from: process.env.GMAIL_USER || 'danbricks18@gmail.com',
-                        to: fullQuoteData.tradesmanEmail,
-                        subject: tradespersonSubject,
-                        html: tradespersonHtml
-                    });
+                    try {
+                        console.log(`📤 Sending tradesperson ${action} email to: ${fullQuoteData.tradesmanEmail}`);
+                        const tradespersonResult = await transporter.sendMail({
+                            from: process.env.GMAIL_USER,
+                            to: fullQuoteData.tradesmanEmail,
+                            subject: tradespersonSubject,
+                            html: tradespersonHtml
+                        });
+                        console.log(`✅ Email sent to tradesperson, msgId: ${tradespersonResult.messageId}`);
+                    } catch (error) {
+                        console.error(`❌ Email failed to tradesperson, err: ${error.message}`);
+                    }
+                } else if (action === 'decline' && fullQuoteData.tradesmanEmail) {
+                    // Send decline notification to tradesperson
+                    const tradespersonSubject = `Quote Declined - ${leadId}`;
+                    const tradespersonHtml = `
+                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+                            ${renderStatus("declined")}
+                            <h2 style="color: #333; margin: 20px 0;">Quote Declined</h2>
+                            <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+                                <p>Hi ${fullQuoteData.tradesmanName || 'there'},</p>
+                                <p>Your quote for ${leadData?.customerName || 'the customer'}'s ${quoteData.service || 'project'} has been declined.</p>
+                                <p><strong>Quote Details:</strong></p>
+                                <ul>
+                                    <li><strong>Lead ID:</strong> ${leadId}</li>
+                                    <li><strong>Customer:</strong> ${leadData?.customerName || 'N/A'}</li>
+                                    <li><strong>Service:</strong> ${quoteData.service || 'N/A'}</li>
+                                    <li><strong>Quote Amount:</strong> $${quoteData.quoteAmount || 'N/A'}</li>
+                                </ul>
+                                <p>Consider politely following up with the customer if appropriate.</p>
+                            </div>
+                        </div>`;
+
+                    try {
+                        console.log(`📤 Sending tradesperson ${action} email to: ${fullQuoteData.tradesmanEmail}`);
+                        const tradespersonResult = await transporter.sendMail({
+                            from: process.env.GMAIL_USER,
+                            to: fullQuoteData.tradesmanEmail,
+                            subject: tradespersonSubject,
+                            html: tradespersonHtml
+                        });
+                        console.log(`✅ Email sent to tradesperson, msgId: ${tradespersonResult.messageId}`);
+                    } catch (error) {
+                        console.error(`❌ Email failed to tradesperson, err: ${error.message}`);
+                    }
                 }
 
-                console.log(`📧 Stage 3 ${action === 'accept' ? 'Accepted' : 'Declined'} email sent with ${action === 'accept' ? 'tradesperson details' : 'generic message'} for lead ${leadId}`);
+                console.log(`📧 Stage 3: Quote ${leadId} ${action === 'accept' ? 'ACCEPTED' : 'DECLINED'} emails delivered.`);
 
             } catch (error) {
                 console.error('Email notification error:', error);
@@ -376,7 +442,9 @@ export default async function handler(req, res) {
 
         res.json({ 
             success: true, 
+            stage: "quote-decision",
             message: `Quote ${action === 'accept' ? 'accepted' : 'declined'} successfully`,
+            leadId,
             status 
         });
 

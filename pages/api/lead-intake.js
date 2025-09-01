@@ -150,7 +150,17 @@ export default async function handler(req, res) {
   }
 
   // Step 2: Always send emails (backup system)
-  console.log("📧 Starting email notifications...");
+  console.log("📧 STAGE 1: Starting lead intake email notifications...");
+  
+  // Environment checks
+  console.log("🔧 Environment variables check:", {
+    GMAIL_USER: process.env.GMAIL_USER || "MISSING",
+    GMAIL_PASS: process.env.GMAIL_PASS ? "SET" : "MISSING",
+    TEAM_EMAIL: process.env.TEAM_EMAIL || "MISSING",
+    ADMIN_EMAIL: process.env.ADMIN_EMAIL || "MISSING",
+    CUSTOMER_EMAIL: customerEmail || "MISSING"
+  });
+  
   try {
     const nodemailer = await import('nodemailer');
     console.log("✅ Nodemailer imported successfully");
@@ -171,12 +181,58 @@ export default async function handler(req, res) {
       `<li><strong>${room.roomName}:</strong> ${room.dimensions}</li>`
     ).join("");
 
-    // Team + Admin email content
-    const teamSubject = `📋 New Lead - ${serviceType}`;
-    const teamHtml = `
+    // 1. Customer confirmation email
+    const customerSubject = `✅ We've received your request – ${serviceType}`;
+    const customerHtml = `
+      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+        ${renderStatus("lead")}
+        <h2 style="color: #333; margin: 20px 0;">Thank you for your enquiry!</h2>
+        <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+          <p>Hi ${customerName},</p>
+          <p>We've received your ${serviceType} enquiry and will be in touch within 24 hours.</p>
+          <p><strong>Your enquiry details:</strong></p>
+          <ul>
+            <li><strong>Service:</strong> ${serviceType}</li>
+            <li><strong>Timeline:</strong> ${timeline || 'Not specified'}</li>
+            <li><strong>Budget:</strong> ${budget || 'Not specified'}</li>
+            <li><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</li>
+            <li><strong>Rooms:</strong> ${roomsString}</li>
+          </ul>
+          <p>Best regards,<br>The Kiwi Trade Team</p>
+        </div>
+      </div>
+    `;
+
+    // 2. Admin notification email
+    const adminSubject = `🆕 New Lead Submitted – ${serviceType}`;
+    const adminHtml = `
       <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
         ${renderStatus("lead")}
         <h2 style="color: #333; margin: 20px 0;">New Lead Received</h2>
+        <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+          <p><strong>Lead ID:</strong> ${leadId}</p>
+          <p><strong>Customer Name:</strong> ${customerName}</p>
+          <p><strong>Customer Email:</strong> ${customerEmail}</p>
+          <p><strong>Customer Phone:</strong> ${customerPhone || 'Not provided'}</p>
+          <p><strong>Service Type:</strong> ${serviceType}</p>
+          <p><strong>Area:</strong> ${areaValue || 'Not specified'}</p>
+          <p><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</p>
+          <p><strong>Number of Rooms:</strong> ${totalRooms}</p>
+          <p><strong>Room Details:</strong></p>
+          <ul>${roomsEmailList}</ul>
+          <p><strong>Budget:</strong> ${budget || 'Not specified'}</p>
+          <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
+          <p><strong>Specific Details:</strong> ${specificDetails || 'None'}</p>
+        </div>
+      </div>
+    `;
+
+    // 3. Tradesperson notification email
+    const tradespersonSubject = `🆕 New Lead Available – ${serviceType} in ${suburbValue || 'your area'}`;
+    const tradespersonHtml = `
+      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+        ${renderStatus("lead")}
+        <h2 style="color: #333; margin: 20px 0;">New Lead Available</h2>
         <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
           <p><strong>Lead ID:</strong> ${leadId}</p>
           <p><strong>Customer Name:</strong> ${customerName}</p>
@@ -198,67 +254,65 @@ export default async function handler(req, res) {
       </div>
     `;
 
-    // Send to team and admin
-    if (process.env.TEAM_EMAIL) {
-      console.log(`📤 Sending email to team: ${process.env.TEAM_EMAIL}`);
-      await transporter.sendMail({
+    // Send all three emails
+    let emailsSent = 0;
+    const totalEmails = 3;
+
+    // 1. Send customer confirmation email
+    try {
+      console.log(`📤 Sending customer confirmation email to: ${customerEmail}`);
+      const customerResult = await transporter.sendMail({
         from: process.env.GMAIL_USER,
-        to: process.env.TEAM_EMAIL,
-        subject: teamSubject,
-        html: teamHtml
+        to: customerEmail,
+        subject: customerSubject,
+        html: customerHtml
       });
-      console.log("✅ Team email sent successfully");
-    } else {
-      console.log("⚠️ TEAM_EMAIL not configured, skipping team notification");
+      console.log(`✅ Email sent to customer, msgId: ${customerResult.messageId}`);
+      emailsSent++;
+    } catch (error) {
+      console.error(`❌ Email failed to customer, err: ${error.message}`);
     }
 
+    // 2. Send admin notification email
     if (process.env.ADMIN_EMAIL) {
-      console.log(`📤 Sending email to admin: ${process.env.ADMIN_EMAIL}`);
-      await transporter.sendMail({
-        from: process.env.GMAIL_USER,
-        to: process.env.ADMIN_EMAIL,
-        subject: teamSubject,
-        html: teamHtml
-      });
-      console.log("✅ Admin email sent successfully");
+      try {
+        console.log(`📤 Sending admin notification email to: ${process.env.ADMIN_EMAIL}`);
+        const adminResult = await transporter.sendMail({
+          from: process.env.GMAIL_USER,
+          to: process.env.ADMIN_EMAIL,
+          subject: adminSubject,
+          html: adminHtml
+        });
+        console.log(`✅ Email sent to admin, msgId: ${adminResult.messageId}`);
+        emailsSent++;
+      } catch (error) {
+        console.error(`❌ Email failed to admin, err: ${error.message}`);
+      }
     } else {
       console.log("⚠️ ADMIN_EMAIL not configured, skipping admin notification");
     }
 
-    // Customer confirmation email
-    const customerSubject = `✅ We received your request for ${serviceType}`;
-    const customerHtml = `
-      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
-        ${renderStatus("lead")}
-        <h2 style="color: #333; margin: 20px 0;">Thank you for your enquiry!</h2>
-        <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-          <p>Hi ${customerName},</p>
-          <p>We've received your ${serviceType} enquiry and will be in touch within 24 hours.</p>
-          <p><strong>Your enquiry details:</strong></p>
-          <ul>
-            <li><strong>Service:</strong> ${serviceType}</li>
-            <li><strong>Rooms:</strong> ${roomsString}</li>
-            <li><strong>Area:</strong> ${areaValue || 'Not specified'}</li>
-            <li><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</li>
-            <li><strong>Budget:</strong> ${budget || 'Not specified'}</li>
-            <li><strong>Timeline:</strong> ${timeline || 'Not specified'}</li>
-          </ul>
-          <p>Best regards,<br>The Kiwi Trade Team</p>
-        </div>
-      </div>
-    `;
+    // 3. Send tradesperson notification email
+    if (process.env.TEAM_EMAIL) {
+      try {
+        console.log(`📤 Sending tradesperson notification email to: ${process.env.TEAM_EMAIL}`);
+        const tradespersonResult = await transporter.sendMail({
+          from: process.env.GMAIL_USER,
+          to: process.env.TEAM_EMAIL,
+          subject: tradespersonSubject,
+          html: tradespersonHtml
+        });
+        console.log(`✅ Email sent to tradesperson, msgId: ${tradespersonResult.messageId}`);
+        emailsSent++;
+      } catch (error) {
+        console.error(`❌ Email failed to tradesperson, err: ${error.message}`);
+      }
+    } else {
+      console.log("⚠️ TEAM_EMAIL not configured, skipping tradesperson notification");
+    }
 
-    console.log(`📤 Sending confirmation email to customer: ${customerEmail}`);
-    await transporter.sendMail({
-      from: process.env.GMAIL_USER,
-      to: customerEmail,
-      subject: customerSubject,
-      html: customerHtml
-    });
-    console.log("✅ Customer email sent successfully");
-
-    console.log(`📧 Lead ${leadId} email notifications sent.`);
-    emailSuccess = true;
+    console.log(`📧 Stage 1: Lead intake emails sent to customer, admin, tradesperson. (${emailsSent}/${totalEmails} emails sent)`);
+    emailSuccess = emailsSent > 0;
 
   } catch (emailError) {
     console.error("❌ Email sending failed:", emailError.message);
@@ -269,6 +323,7 @@ export default async function handler(req, res) {
     console.log(`✅ Lead ${leadId} processed successfully - emails sent`);
     return res.status(200).json({ 
       success: true, 
+      stage: "lead-intake",
       leadId,
       message: sheetsSuccess ? "Lead saved to database and emails sent" : "Emails sent (database logging failed)"
     });

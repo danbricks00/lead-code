@@ -367,6 +367,17 @@ export default async function handler(req, res) {
       }
 
       // Send Stage 2 emails with unified quote data
+      console.log("📧 STAGE 2: Starting quote submission email notifications...");
+      
+      // Environment checks
+      console.log("🔧 Environment variables check:", {
+        GMAIL_USER: process.env.GMAIL_USER || "MISSING",
+        GMAIL_PASS: process.env.GMAIL_PASS ? "SET" : "MISSING",
+        ADMIN_EMAIL: process.env.ADMIN_EMAIL || "MISSING",
+        CUSTOMER_EMAIL: customerEmail || "MISSING",
+        TRADESPERSON_EMAIL: tradesmanEmail || "MISSING"
+      });
+      
       const transporter = nodemailer.default.createTransport({
         service: 'gmail',
         auth: {
@@ -418,20 +429,32 @@ export default async function handler(req, res) {
         </div>
       `;
 
-      await transporter.sendMail({
-        from: process.env.GMAIL_USER,
-        to: customerEmail,
-        subject: customerSubject,
-        html: customerHtml,
-        attachments: [{
-          filename: `quote-${leadId}.pdf`,
-          content: pdfBuffer
-        }]
-      });
+      // Send all three emails
+      let emailsSent = 0;
+      const totalEmails = 3;
 
-      // Admin/Tradesperson confirmation email
-      const teamSubject = `📋 Quote Submitted - ${serviceType} - ${leadId}`;
-      const teamHtml = `
+      // 1. Send customer email with quote details and decision links
+      try {
+        console.log(`📤 Sending customer quote email to: ${customerEmail}`);
+        const customerResult = await transporter.sendMail({
+          from: process.env.GMAIL_USER,
+          to: customerEmail,
+          subject: customerSubject,
+          html: customerHtml,
+          attachments: [{
+            filename: `quote-${leadId}.pdf`,
+            content: pdfBuffer
+          }]
+        });
+        console.log(`✅ Email sent to customer, msgId: ${customerResult.messageId}`);
+        emailsSent++;
+      } catch (error) {
+        console.error(`❌ Email failed to customer, err: ${error.message}`);
+      }
+
+      // 2. Send admin notification email
+      const adminSubject = `📋 Quote Submitted - ${serviceType} - ${leadId}`;
+      const adminHtml = `
         <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
           ${renderStatus("quote")}
           <h2 style="color: #333; margin: 20px 0;">Quote Submitted Successfully</h2>
@@ -441,6 +464,8 @@ export default async function handler(req, res) {
             <p><strong>Service:</strong> ${serviceType}</p>
             <p><strong>Quote Amount:</strong> $${quoteAmount}</p>
             <p><strong>Tradesman:</strong> ${tradesmanName}</p>
+            <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
+            <p><strong>Budget:</strong> ${budget || 'Not specified'}</p>
           </div>
           <div style="margin: 30px 0; text-align: center;">
             <a href="${quoteViewUrl}" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">View Quote</a>
@@ -449,18 +474,67 @@ export default async function handler(req, res) {
       `;
 
       if (process.env.ADMIN_EMAIL) {
-        await transporter.sendMail({
-          from: process.env.GMAIL_USER,
-          to: process.env.ADMIN_EMAIL,
-          subject: teamSubject,
-          html: teamHtml
-        });
+        try {
+          console.log(`📤 Sending admin notification email to: ${process.env.ADMIN_EMAIL}`);
+          const adminResult = await transporter.sendMail({
+            from: process.env.GMAIL_USER,
+            to: process.env.ADMIN_EMAIL,
+            subject: adminSubject,
+            html: adminHtml
+          });
+          console.log(`✅ Email sent to admin, msgId: ${adminResult.messageId}`);
+          emailsSent++;
+        } catch (error) {
+          console.error(`❌ Email failed to admin, err: ${error.message}`);
+        }
+      } else {
+        console.log("⚠️ ADMIN_EMAIL not configured, skipping admin notification");
       }
 
-      console.log(`📧 Stage 2 quote emails sent with PDF + web link for lead ${leadId}`);
+      // 3. Send tradesperson confirmation email
+      const tradespersonSubject = `📋 Quote Sent Successfully - ${serviceType} - ${leadId}`;
+      const tradespersonHtml = `
+        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+          ${renderStatus("quote")}
+          <h2 style="color: #333; margin: 20px 0;">Your Quote Has Been Sent</h2>
+          <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+            <p>Hi ${tradesmanName},</p>
+            <p>Your quote for ${customerName}'s ${serviceType} project has been sent successfully.</p>
+            <p><strong>Quote Details:</strong></p>
+            <ul>
+              <li><strong>Lead ID:</strong> ${leadId}</li>
+              <li><strong>Customer:</strong> ${customerName}</li>
+              <li><strong>Service:</strong> ${serviceType}</li>
+              <li><strong>Quote Amount:</strong> $${quoteAmount}</li>
+              <li><strong>Timeline:</strong> ${timeline || 'Not specified'}</li>
+            </ul>
+            <p>The customer will receive an email with your quote and can accept or decline it.</p>
+          </div>
+          <div style="margin: 30px 0; text-align: center;">
+            <a href="${quoteViewUrl}" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">View Quote</a>
+          </div>
+        </div>
+      `;
+
+      try {
+        console.log(`📤 Sending tradesperson confirmation email to: ${tradesmanEmail}`);
+        const tradespersonResult = await transporter.sendMail({
+          from: process.env.GMAIL_USER,
+          to: tradesmanEmail,
+          subject: tradespersonSubject,
+          html: tradespersonHtml
+        });
+        console.log(`✅ Email sent to tradesperson, msgId: ${tradespersonResult.messageId}`);
+        emailsSent++;
+      } catch (error) {
+        console.error(`❌ Email failed to tradesperson, err: ${error.message}`);
+      }
+
+      console.log(`📧 Stage 2: Quote sent emails delivered (customer, admin, tradesperson). (${emailsSent}/${totalEmails} emails sent)`);
 
       res.json({ 
         success: true, 
+        stage: "quote-sent",
         message: 'Quote submitted successfully',
         leadId,
         quoteViewUrl

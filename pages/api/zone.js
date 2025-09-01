@@ -77,7 +77,7 @@ export default async function handler(req, res) {
     // Fallback to static JSON
     console.log("📄 Using zone fallback JSON...");
     try {
-      const zoneFallback = await import('../../../data/zones (2).json');
+      const zoneFallback = await import('../../lib/zones.json');
       const zones = zoneFallback.default || zoneFallback;
       
       // Filter zones based on query

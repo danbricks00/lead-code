@@ -12,8 +12,8 @@ export default async function handler(req, res) {
 
   try {
     console.log("📄 Returning zone fallback JSON for debugging...");
-    
-    const zoneFallback = await import('../../../data/zones (2).json');
+
+    const zoneFallback = await import('../../lib/zones.json');
     const zones = zoneFallback.default || zoneFallback;
     
     console.log(`✅ Returning ${zones.length} zones from fallback JSON`);

@@ -5,7 +5,7 @@ function loadFallbackZonesFromJSON() {
   try {
     const path = require("path");
     const fs = require("fs");
-    const filePath = path.join(process.cwd(), "public", "zone-data.json");
+    const filePath = path.join(process.cwd(), "lib", "zones.json");
     const jsonData = fs.readFileSync(filePath, "utf8");
     return JSON.parse(jsonData);
   } catch (e) {
@@ -15,11 +15,13 @@ function loadFallbackZonesFromJSON() {
 }
 
 export default async function handler(req, res) {
+  console.log("✅ Loaded API zones.js");
+
   if (req.method !== "GET") {
     res.setHeader("Allow", ["GET"]);
-    return res.status(405).json({ 
-      ok: false, 
-      error: `Method ${req.method} Not Allowed for Zones. Use GET method.` 
+    return res.status(405).json({
+      ok: false,
+      error: `Method ${req.method} Not Allowed for Zones. Use GET method.`
     });
   }
 

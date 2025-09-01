@@ -90,12 +90,12 @@ export default async function handler(req, res) {
           throw new Error("Google Sheets not configured - using fallback");
         }
 
-        const auth = new google.auth.JWT(
-          process.env.GOOGLE_CLIENT,
-          null,
-          privateKey.replace(/\\n/g, "\n"),
-          ["https://www.googleapis.com/auth/spreadsheets.readonly"]
-        );
+                 const auth = new google.auth.JWT(
+           process.env.GOOGLE_CLIENT_EMAIL,
+           null,
+           privateKey.replace(/\\n/g, "\n"),
+           ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+         );
         
         const sheets = google.sheets({ version: "v4", auth });
         const response = await sheets.spreadsheets.values.get({
@@ -162,7 +162,7 @@ export default async function handler(req, res) {
           : privateKey;
 
         const auth = new google.auth.JWT(
-          process.env.GOOGLE_CLIENT,
+          process.env.GOOGLE_CLIENT_EMAIL,
           null,
           cleanPrivateKey,
           ["https://www.googleapis.com/auth/spreadsheets.readonly"]
@@ -269,7 +269,7 @@ export default async function handler(req, res) {
           : privateKey;
 
         const auth = new google.auth.JWT(
-          process.env.GOOGLE_CLIENT,
+          process.env.GOOGLE_CLIENT_EMAIL,
           null,
           cleanPrivateKey,
           ["https://www.googleapis.com/auth/spreadsheets.readonly"]
@@ -422,7 +422,7 @@ export default async function handler(req, res) {
          
          if (privateKey && sheetId) {
            const auth = new google.auth.JWT(
-             process.env.GOOGLE_CLIENT,
+             process.env.GOOGLE_CLIENT_EMAIL,
              null,
              privateKey.replace(/\\n/g, "\n"),
              ["https://www.googleapis.com/auth/spreadsheets"]

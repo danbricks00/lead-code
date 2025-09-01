@@ -195,7 +195,7 @@ async function handleLeadCreate(req, res) {
       console.log("⚠️ TEAM_EMAIL not configured, skipping tradesperson notification");
     }
 
-    console.log(`📧 Stage 1: Lead intake emails sent. (${emailsSent}/${totalEmails} emails sent)`);
+    console.log(`📧 Stage 1 Lead intake emails sent for leadId ${leadId}`);
     emailSuccess = emailsSent > 0;
 
   } catch (emailError) {
@@ -409,7 +409,7 @@ async function handleSubmitQuote(req, res) {
       console.error(`❌ Email failed to tradesperson: ${error.message}`);
     }
 
-    console.log(`📧 Stage 2: Quote submission emails sent. (${emailsSent}/${totalEmails} emails sent)`);
+    console.log(`📧 Stage 2 Quote sent emails sent for leadId ${leadId}`);
 
   } catch (emailError) {
     console.error("❌ Email sending failed:", emailError.message);
@@ -426,7 +426,7 @@ async function handleSubmitQuote(req, res) {
 async function handleDecision(req, res) {
   console.log("📥 Stage 3: Quote decision request received");
   
-  const { quoteId, leadId, action } = req.body;
+  const { quoteId, leadId, action, decisionType } = req.body;
 
   if (!quoteId || !action) {
     return res.status(400).json({ 
@@ -441,6 +441,9 @@ async function handleDecision(req, res) {
       error: 'Invalid action. Must be "accept" or "decline"' 
     });
   }
+
+  // Use decisionType if provided, otherwise default to action
+  const finalAction = decisionType || action;
 
   // Check for required environment variables
   if (!getSpreadsheetId()) {
@@ -496,7 +499,7 @@ async function handleDecision(req, res) {
   try {
     const sheets = getGoogleSheetsClient();
     const sheetId = getSpreadsheetId();
-    const status = action === 'accept' ? 'ACCEPTED' : 'DECLINED';
+    const status = finalAction === 'accept' ? 'ACCEPTED' : 'DECLINED';
     const values = [new Date().toISOString(), quoteId, leadId, status, 'customer'];
     
     await sheets.spreadsheets.values.append({
@@ -582,7 +585,7 @@ async function handleDecision(req, res) {
 
   try {
     const decisionData = {
-      action, leadId, quoteId, 
+      action: finalAction, leadId, quoteId, 
       customerName: leadData?.customerName,
       customerEmail: leadData?.customerEmail,
       serviceType: quoteData?.service,
@@ -599,7 +602,7 @@ async function handleDecision(req, res) {
     // Send customer email
     if (leadData?.customerEmail) {
       try {
-        console.log(`📤 Sending customer ${action} email to: ${leadData.customerEmail}`);
+        console.log(`📤 Sending customer ${finalAction} email to: ${leadData.customerEmail}`);
         const customerResult = await sendEmail(leadData.customerEmail, emails.customer.subject, emails.customer.html);
         if (customerResult.success) emailsSent++;
       } catch (error) {
@@ -623,7 +626,7 @@ async function handleDecision(req, res) {
     // Send tradesperson email
     if (emails.tradesperson && fullQuoteData?.tradesmanEmail) {
       try {
-        console.log(`📤 Sending tradesperson ${action} email to: ${fullQuoteData.tradesmanEmail}`);
+        console.log(`📤 Sending tradesperson ${finalAction} email to: ${fullQuoteData.tradesmanEmail}`);
         const tradespersonResult = await sendEmail(fullQuoteData.tradesmanEmail, emails.tradesperson.subject, emails.tradesperson.html);
         if (tradespersonResult.success) emailsSent++;
       } catch (error) {
@@ -631,17 +634,17 @@ async function handleDecision(req, res) {
       }
     }
 
-    console.log(`📧 Stage 3: Quote ${leadId} ${action === 'accept' ? 'ACCEPTED' : 'DECLINED'} emails sent. (${emailsSent} emails sent)`);
+    console.log(`📧 Stage 3 Decision=${finalAction} emails sent for leadId ${leadId}`);
 
   } catch (emailError) {
     console.error("❌ Email sending failed:", emailError.message);
   }
 
-  const status = action === 'accept' ? 'ACCEPTED' : 'DECLINED';
+  const status = finalAction === 'accept' ? 'ACCEPTED' : 'DECLINED';
   return res.json({ 
     success: true, 
     stage: "quote-decision",
-    message: `Quote ${action === 'accept' ? 'accepted' : 'declined'} successfully`,
+    message: `Quote ${finalAction === 'accept' ? 'accepted' : 'declined'} successfully`,
     leadId,
     status 
   });

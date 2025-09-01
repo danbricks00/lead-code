@@ -46,12 +46,37 @@ export default async function handler(req, res) {
     });
   }
 
+  // Log incoming request data
+  console.log("📥 Lead intake request received:", {
+    name: req.body.name,
+    customerName: req.body.customerName,
+    customerEmail: req.body.customerEmail,
+    customerPhone: req.body.customerPhone,
+    serviceType: req.body.serviceType,
+    roomsCount: req.body.rooms?.length,
+    budget: req.body.budget,
+    timeline: req.body.timeline,
+    area: req.body.area,
+    suburb: req.body.suburb
+  });
+
+  // Log environment variables presence
+  console.log("🔧 Environment variables check:", {
+    GMAIL_USER: !!process.env.GMAIL_USER,
+    GMAIL_PASS: !!process.env.GMAIL_PASS,
+    TEAM_EMAIL: !!process.env.TEAM_EMAIL,
+    ADMIN_EMAIL: !!process.env.ADMIN_EMAIL,
+    GOOGLE_PRIVATE_KEY: !!process.env.GOOGLE_PRIVATE_KEY,
+    GOOGLE_SHEET_ID: !!process.env.GOOGLE_SHEET_ID
+  });
+
   const { 
     name, customerName, customerEmail, customerPhone, serviceType, 
     rooms, budget, timeline, area, suburb, specificDetails 
   } = req.body;
 
   if (!customerName || !customerEmail || !serviceType || !rooms || !Array.isArray(rooms)) {
+    console.log("❌ Validation failed - missing required fields");
     return res.status(400).json({ 
       ok: false, 
       error: "Missing required fields: customerName, customerEmail, serviceType, rooms (must be array)" 
@@ -77,11 +102,13 @@ export default async function handler(req, res) {
   let emailSuccess = false;
 
   // Step 1: Try to log to Google Sheets
+  console.log("🔄 Attempting Google Sheets logging...");
   try {
     const privateKey = process.env.GOOGLE_PRIVATE_KEY;
     const sheetId = process.env.GOOGLE_SHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
     
     if (privateKey && sheetId) {
+      console.log("✅ Google Sheets credentials found, proceeding with logging");
       const auth = new google.auth.JWT(
         process.env.GOOGLE_CLIENT_EMAIL,
         null,
@@ -123,8 +150,10 @@ export default async function handler(req, res) {
   }
 
   // Step 2: Always send emails (backup system)
+  console.log("📧 Starting email notifications...");
   try {
     const nodemailer = await import('nodemailer');
+    console.log("✅ Nodemailer imported successfully");
     
     const transporter = nodemailer.default.createTransport({
       service: "gmail",
@@ -171,21 +200,29 @@ export default async function handler(req, res) {
 
     // Send to team and admin
     if (process.env.TEAM_EMAIL) {
+      console.log(`📤 Sending email to team: ${process.env.TEAM_EMAIL}`);
       await transporter.sendMail({
         from: process.env.GMAIL_USER,
         to: process.env.TEAM_EMAIL,
         subject: teamSubject,
         html: teamHtml
       });
+      console.log("✅ Team email sent successfully");
+    } else {
+      console.log("⚠️ TEAM_EMAIL not configured, skipping team notification");
     }
 
     if (process.env.ADMIN_EMAIL) {
+      console.log(`📤 Sending email to admin: ${process.env.ADMIN_EMAIL}`);
       await transporter.sendMail({
         from: process.env.GMAIL_USER,
         to: process.env.ADMIN_EMAIL,
         subject: teamSubject,
         html: teamHtml
       });
+      console.log("✅ Admin email sent successfully");
+    } else {
+      console.log("⚠️ ADMIN_EMAIL not configured, skipping admin notification");
     }
 
     // Customer confirmation email
@@ -211,14 +248,16 @@ export default async function handler(req, res) {
       </div>
     `;
 
+    console.log(`📤 Sending confirmation email to customer: ${customerEmail}`);
     await transporter.sendMail({
       from: process.env.GMAIL_USER,
       to: customerEmail,
       subject: customerSubject,
       html: customerHtml
     });
+    console.log("✅ Customer email sent successfully");
 
-    console.log(`📧 Stage 1 emails sent for lead ${leadId}`);
+    console.log(`📧 Lead ${leadId} email notifications sent.`);
     emailSuccess = true;
 
   } catch (emailError) {
@@ -226,17 +265,18 @@ export default async function handler(req, res) {
   }
 
   // Step 3: Determine response based on success/failure
-  if (sheetsSuccess && emailSuccess) {
-    console.log(`✅ Lead ${leadId} saved to Sheets & email sent`);
-    return res.status(200).json({ success: true, leadId });
-  } else if (!sheetsSuccess && emailSuccess) {
-    console.log(`⚠️ Lead logging failed, fallback email sent for ${leadId}`);
-    return res.status(200).json({ success: true, leadId, warning: "Sheets logging failed, but email sent" });
+  if (emailSuccess) {
+    console.log(`✅ Lead ${leadId} processed successfully - emails sent`);
+    return res.status(200).json({ 
+      success: true, 
+      leadId,
+      message: sheetsSuccess ? "Lead saved to database and emails sent" : "Emails sent (database logging failed)"
+    });
   } else {
-    console.log(`❌ Lead submission fully failed for ${leadId}`);
+    console.log(`❌ Lead submission failed - no emails sent for ${leadId}`);
     return res.status(500).json({ 
       success: false, 
-      error: "Failed to process lead. Please try again or contact us directly." 
+      error: "Failed to send email notifications. Please try again or contact us directly." 
     });
   }
 }

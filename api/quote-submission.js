@@ -184,6 +184,82 @@ export default async function handler(req, res) {
         }
       });
 
+      console.log(`✅ Quote saved for lead ${leadId} - Awaiting admin review`);
+
+      // Send notification to admin about new quote for review
+      const adminSubject = `📋 New Quote for Review - ${serviceType} - ${leadId}`;
+      const adminHtml = `
+        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333; margin: 20px 0;">New Quote Requires Review</h2>
+          <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+            <p><strong>Quote ID:</strong> ${leadId}</p>
+            <p><strong>Customer:</strong> ${customerName}</p>
+            <p><strong>Service:</strong> ${serviceType}</p>
+            <p><strong>Quote Amount:</strong> $${quoteAmount}</p>
+            <p><strong>Tradesperson:</strong> ${tradesmanName}</p>
+            <p><strong>Status:</strong> Pending Review</p>
+          </div>
+          <div style="margin: 30px 0; text-align: center;">
+            <a href="${SITE_URL}/admin-quote-review.html" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Review Quote</a>
+          </div>
+        </div>
+      `;
+
+      if (process.env.ADMIN_EMAIL) {
+        await transporter.sendMail({
+          from: process.env.GMAIL_USER,
+          to: process.env.ADMIN_EMAIL,
+          subject: adminSubject,
+          html: adminHtml
+        });
+      }
+
+      // Send confirmation to tradesperson that quote is submitted for review
+      const tradespersonSubject = `📋 Quote Submitted for Review - ${leadId}`;
+      const tradespersonHtml = `
+        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333; margin: 20px 0;">Quote Submitted Successfully</h2>
+          <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+            <p>Hi ${tradesmanName},</p>
+            <p>Your quote for ${customerName} has been submitted and is now awaiting admin review.</p>
+            <p><strong>Quote Details:</strong></p>
+            <ul>
+              <li><strong>Quote ID:</strong> ${leadId}</li>
+              <li><strong>Customer:</strong> ${customerName}</li>
+              <li><strong>Service:</strong> ${serviceType}</li>
+              <li><strong>Amount:</strong> $${quoteAmount}</li>
+            </ul>
+            <p>You will be notified once the quote has been reviewed and approved.</p>
+          </div>
+        </div>
+      `;
+
+      await transporter.sendMail({
+        from: process.env.GMAIL_USER,
+        to: tradesmanEmail,
+        subject: tradespersonSubject,
+        html: tradespersonHtml
+      });
+
+      console.log(`📧 Quote submission notifications sent for lead ${leadId}`);
+
+      res.json({ 
+        success: true, 
+        message: 'Quote submitted successfully and sent for admin review',
+        leadId
+      });
+
+      // Append to Quotes sheet
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+        range: 'Quotes!A:Z',
+        valueInputOption: 'RAW',
+        insertDataOption: 'INSERT_ROWS',
+        requestBody: {
+          values: [quoteRow]
+        }
+      });
+
       console.log(`✅ Quote saved for lead ${leadId}`);
 
       // Get the saved quote data for confirmation

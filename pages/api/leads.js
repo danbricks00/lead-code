@@ -90,23 +90,16 @@ async function handleLeadCreate(req, res) {
   // Step 1: Try to log to Google Sheets
   console.log("🔄 Attempting Google Sheets logging...");
   try {
-    const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+    const sheets = getGoogleSheetsClient();
     const sheetId = getSpreadsheetId();
     
-    if (privateKey && sheetId) {
-      console.log("✅ Google Sheets credentials found, proceeding with logging");
-      const auth = new google.auth.JWT(
-        process.env.GOOGLE_CLIENT_EMAIL,
-        null,
-        privateKey.replace(/\\n/g, "\n"),
-        ["https://www.googleapis.com/auth/spreadsheets"]
-      );
-      const sheets = google.sheets({ version: "v4", auth });
-
+    if (sheetId) {
+      console.log("✅ Google Sheets client ready, proceeding with logging");
+      
       const leadRow = [
         new Date().toISOString(), // Timestamp
         leadId, // Lead ID
-        name || "", // Name
+        customerName, // Customer Name
         customerEmail, // Email
         customerPhone || "", // Phone
         serviceType, // ServiceType
@@ -128,11 +121,13 @@ async function handleLeadCreate(req, res) {
         }
       });
       
-      console.log(`✅ Lead ${leadId} saved to Sheets`);
+      console.log(`✅ Lead ${leadId} saved to Sheets successfully`);
       sheetsSuccess = true;
+    } else {
+      console.error("❌ Google Sheets ID not configured");
     }
   } catch (sheetsError) {
-    console.warn(`⚠️ Sheets logging failed for lead ${leadId}:`, sheetsError.message);
+    console.error(`❌ Sheets logging failed for lead ${leadId}:`, sheetsError.message);
   }
 
   // Step 2: Send emails
@@ -142,41 +137,56 @@ async function handleLeadCreate(req, res) {
   console.log("🔧 Environment variables check:", {
     GMAIL_USER: process.env.GMAIL_USER || "MISSING",
     GMAIL_PASS: process.env.GMAIL_PASS ? "SET" : "MISSING",
-    TEAM_EMAIL: process.env.TEAM_EMAIL || "MISSING",
     ADMIN_EMAIL: process.env.ADMIN_EMAIL || "MISSING",
-    CUSTOMER_EMAIL: customerEmail || "MISSING"
+    TEAM_EMAIL: process.env.TEAM_EMAIL || "MISSING"
   });
 
   try {
-    const leadData = {
-      leadId, customerName, customerEmail, customerPhone, serviceType,
-      timeline, budget, suburbValue, roomsString, totalRooms, roomsEmailList,
-      specificDetails, quoteFormUrl
-    };
-
-    const emails = createLeadIntakeEmails(leadData);
-    console.log("📧 Built Stage 1 email templates");
+    // Create Nodemailer transporter
+    const nodemailer = await import('nodemailer');
+    const transporter = nodemailer.default.createTransporter({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS
+      }
+    });
 
     let emailsSent = 0;
-    const totalEmails = 3;
-
-    // Send customer confirmation email
-    try {
-      console.log(`📤 Sending customer confirmation email to: ${customerEmail}`);
-      const customerResult = await sendEmail(customerEmail, emails.customer.subject, emails.customer.html);
-      if (customerResult.success) emailsSent++;
-    } catch (error) {
-      console.error(`❌ Email failed to customer: ${error.message}`);
-    }
 
     // Send admin notification email
     if (process.env.ADMIN_EMAIL) {
       try {
+        const adminSubject = `🆕 New Lead Submitted - ${serviceType}`;
+        const adminHtml = `
+          <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333; margin: 20px 0;">New Lead Received</h2>
+            <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+              <p><strong>Lead ID:</strong> ${leadId}</p>
+              <p><strong>Customer:</strong> ${customerName}</p>
+              <p><strong>Email:</strong> ${customerEmail}</p>
+              <p><strong>Phone:</strong> ${customerPhone || 'Not provided'}</p>
+              <p><strong>Service:</strong> ${serviceType}</p>
+              <p><strong>Budget:</strong> ${budget || 'Not specified'}</p>
+              <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
+              <p><strong>Location:</strong> ${suburbValue}, ${areaValue}</p>
+              <p><strong>Rooms:</strong> ${roomsString}</p>
+              <p><strong>Details:</strong> ${specificDetails || 'Not provided'}</p>
+            </div>
+          </div>
+        `;
+
         console.log(`📤 Sending admin notification email to: ${process.env.ADMIN_EMAIL}`);
-        const adminResult = await sendEmail(process.env.ADMIN_EMAIL, emails.admin.subject, emails.admin.html);
-        if (adminResult.success) emailsSent++;
+        const adminResult = await transporter.sendMail({
+          from: process.env.GMAIL_USER,
+          to: process.env.ADMIN_EMAIL,
+          subject: adminSubject,
+          html: adminHtml
+        });
+        console.log(`✅ Admin email sent successfully, msgId: ${adminResult.messageId}`);
+        emailsSent++;
       } catch (error) {
-        console.error(`❌ Email failed to admin: ${error.message}`);
+        console.error(`❌ Admin email failed: ${error.message}`);
       }
     } else {
       console.log("⚠️ ADMIN_EMAIL not configured, skipping admin notification");
@@ -185,17 +195,43 @@ async function handleLeadCreate(req, res) {
     // Send tradesperson notification email
     if (process.env.TEAM_EMAIL) {
       try {
+        const tradespersonSubject = `🆕 New Lead Available - ${serviceType} in ${suburbValue}`;
+        const tradespersonHtml = `
+          <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333; margin: 20px 0;">New Lead Available</h2>
+            <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+              <p><strong>Lead ID:</strong> ${leadId}</p>
+              <p><strong>Customer:</strong> ${customerName}</p>
+              <p><strong>Service:</strong> ${serviceType}</p>
+              <p><strong>Budget:</strong> ${budget || 'Not specified'}</p>
+              <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
+              <p><strong>Location:</strong> ${suburbValue}, ${areaValue}</p>
+              <p><strong>Rooms:</strong> ${roomsString}</p>
+              <p><strong>Details:</strong> ${specificDetails || 'Not provided'}</p>
+            </div>
+            <div style="margin: 30px 0; text-align: center;">
+              <a href="${quoteFormUrl}" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Submit Quote</a>
+            </div>
+          </div>
+        `;
+
         console.log(`📤 Sending tradesperson notification email to: ${process.env.TEAM_EMAIL}`);
-        const tradespersonResult = await sendEmail(process.env.TEAM_EMAIL, emails.tradesperson.subject, emails.tradesperson.html);
-        if (tradespersonResult.success) emailsSent++;
+        const tradespersonResult = await transporter.sendMail({
+          from: process.env.GMAIL_USER,
+          to: process.env.TEAM_EMAIL,
+          subject: tradespersonSubject,
+          html: tradespersonHtml
+        });
+        console.log(`✅ Tradesperson email sent successfully, msgId: ${tradespersonResult.messageId}`);
+        emailsSent++;
       } catch (error) {
-        console.error(`❌ Email failed to tradesperson: ${error.message}`);
+        console.error(`❌ Tradesperson email failed: ${error.message}`);
       }
     } else {
       console.log("⚠️ TEAM_EMAIL not configured, skipping tradesperson notification");
     }
 
-    console.log(`📧 Stage 1 Lead intake emails sent for leadId ${leadId}`);
+    console.log(`📧 Stage 1 Lead intake emails sent for leadId ${leadId} (${emailsSent} emails sent)`);
     emailSuccess = emailsSent > 0;
 
   } catch (emailError) {
@@ -203,19 +239,22 @@ async function handleLeadCreate(req, res) {
   }
 
   // Step 3: Determine response
-  if (emailSuccess) {
-    console.log(`✅ Lead ${leadId} processed successfully - emails sent`);
+  if (sheetsSuccess || emailSuccess) {
+    console.log(`✅ Lead intake complete for ${leadId} - Sheets: ${sheetsSuccess}, Emails: ${emailSuccess}`);
     return res.status(200).json({ 
       success: true, 
-      stage: "lead-create",
       leadId,
-      message: sheetsSuccess ? "Lead saved to database and emails sent" : "Emails sent (database logging failed)"
+      message: sheetsSuccess && emailSuccess 
+        ? "Lead saved to database and emails sent" 
+        : sheetsSuccess 
+        ? "Lead saved to database (email notifications failed)" 
+        : "Emails sent (database logging failed)"
     });
   } else {
-    console.log(`❌ Lead submission failed - no emails sent for ${leadId}`);
+    console.log(`❌ Lead intake failed for ${leadId} - both Sheets and emails failed`);
     return res.status(500).json({ 
       success: false, 
-      error: "Failed to send email notifications. Please try again or contact us directly." 
+      error: "Failed to process lead. Please try again or contact us directly." 
     });
   }
 }

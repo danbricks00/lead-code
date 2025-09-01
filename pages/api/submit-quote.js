@@ -17,10 +17,13 @@ function verifySignedPayload(payload, signature) {
 // Generate a secure, single-use link for customer decisions (Accept/Decline)
 function generateDecisionLink(leadId, decision, tradespersonEmail) {
     const secret = process.env.QUOTE_LINK_SECRET;
-    const payload = `${leadId}|${decision}|${tradespersonEmail}`; // Use a simple payload
-    const signature = crypto.createHmac("sha256", secret).update(payload).digest("hex");
+    const ts = Date.now();
+    const payload = `${leadId}|${ts}|${tradespersonEmail}`; // Include tradesperson email for notifications
+    const token = crypto.createHmac("sha256", secret).update(payload).digest("hex");
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    return `${baseUrl}/api/submit-quote?action=decision&payload=${encodeURIComponent(payload)}&sig=${signature}`;
+    
+    // Point to the new, separate endpoints
+    return `${baseUrl}/api/quote-decision/${decision}?quoteId=${leadId}&ts=${ts}&token=${token}`;
 }
 
 // --- EMAIL HELPERS ---
@@ -57,11 +60,9 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'POST' && action === 'submit') {
       return await handleQuoteSubmission(req, res);
-    } else if (req.method === 'GET' && action === 'decision') {
-      return await handleQuoteDecision(req, res);
     } else {
-      res.setHeader("Allow", ["POST", "GET"]);
-      return res.status(405).json({ success: false, error: `Method ${req.method} Not Allowed` });
+      res.setHeader("Allow", ["POST"]);
+      return res.status(405).json({ success: false, error: `Method ${req.method} Not Allowed for this action` });
     }
   } catch (error) {
     console.error(`❌ A critical error occurred in submit-quote API for action "${action}":`, error);
@@ -85,9 +86,9 @@ async function handleQuoteSubmission(req, res) {
   console.log("📩 [Stage 2] Quote Submission Received:", { leadId, tradespersonName });
 
 
-  // 2. Generate unique Accept/Decline links for the customer
-  const acceptLink = generateDecisionLink(leadId, 'accepted', tradespersonEmail);
-  const declineLink = generateDecisionLink(leadId, 'declined', tradespersonEmail);
+  // 2. Generate unique Accept/Decline links for the customer, pointing to the new endpoints
+  const acceptLink = generateDecisionLink(leadId, 'accept', tradespersonEmail);
+  const declineLink = generateDecisionLink(leadId, 'decline', tradespersonEmail);
 
   // 3. Create the HTML quote to be emailed
   const htmlQuote = `
@@ -137,59 +138,15 @@ async function handleQuoteSubmission(req, res) {
   });
   
   console.log("✅ [Stage 2] All quote emails sent successfully.");
+
+  // TODO: Save the quote data, including customer email, to Google Sheets here.
+  // This step is critical for the decision endpoints to be able to look up the necessary info.
+  console.warn(`⚠️ [Stage 2] IMPORTANT: Google Sheets logging is not implemented in this step. The decision links will not work without it.`);
+
+
   return res.status(200).json({ success: true, message: "Quote submitted and emails sent." });
 }
 
 // --- STAGE 3: HANDLE CUSTOMER DECISION ---
-
-async function handleQuoteDecision(req, res) {
-  const { payload, sig } = req.query;
-
-  // 1. Security Check: Verify signature
-  const secret = process.env.QUOTE_LINK_SECRET;
-  const expectedSignature = crypto.createHmac("sha256", secret).update(payload).digest("hex");
-  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSignature))) {
-      return res.status(403).send("<h1>Invalid Link</h1><p>This decision link is invalid or has been tampered with.</p>");
-  }
-
-  const [leadId, decision, tradespersonEmail] = decodeURIComponent(payload).split('|');
-  console.log(`📩 [Stage 3] Decision Received: ${decision.toUpperCase()} for lead #${leadId}`);
-
-  // TODO: Implement single-use link logic here
-  // This is where you would check a database or Google Sheet to see if a decision for this `leadId` has already been recorded.
-  // If it has, you would show a message like "A decision has already been made for this quote." and stop.
-  console.warn(`⚠️ [Stage 3] IMPORTANT: Single-use link logic is not implemented. A database is required to prevent link reuse.`);
-  
-  // 2. Send the 3 "Stage 3" notification emails
-  const transporter = await createTransporter();
-  console.log("📧 [Stage 3] Sending decision notification emails...");
-  const decisionText = decision === 'accepted' ? 'Accepted' : 'Declined';
-
-  // To Customer
-  await sendEmail(transporter, {
-    from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
-    to: "customer-email-needs-lookup@example.com", // You would look up the customer's email using the leadId
-    subject: `Confirmation: Quote ${decisionText}`,
-    html: `<p>Thank you for your decision. We have recorded that you have <b>${decisionText}</b> the quote for lead #${leadId}.</p><p>${decision === 'accepted' ? 'The tradesperson will be in touch shortly to arrange the work.' : 'We hope to assist you in the future.'}</p>`,
-  });
-
-  // To Tradesperson
-  await sendEmail(transporter, {
-    from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
-    to: tradespersonEmail,
-    subject: `[Decision] Customer ${decisionText} quote #${leadId}`,
-    html: `<p>The customer has <b>${decisionText}</b> your quote for lead #${leadId}.</p><p>${decision === 'accepted' ? 'Please contact them to schedule the work.' : 'No further action is required.'}</p>`,
-  });
-  
-  // To Admin
-  await sendEmail(transporter, {
-    from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
-    to: "danbricks18@gmail.com",
-    subject: `[Stage 3] Customer ${decisionText} Quote #${leadId}`,
-    text: `The customer has ${decisionText} the quote from ${tradespersonEmail} for lead #${leadId}.`,
-  });
-
-  console.log("✅ [Stage 3] All decision emails sent successfully.");
-  // 3. Redirect user to a thank you page
-  return res.send(`<h1>Thank You!</h1><p>Your decision of <b>${decisionText}</b> has been recorded.</p>`);
-}
+// This logic is now being moved to /pages/api/quote-decision/accept.js and decline.js
+// The handler for this has been removed from the main export.

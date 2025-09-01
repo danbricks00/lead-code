@@ -197,28 +197,30 @@ const Chatbot = () => {
           word-wrap: break-word;
         }
 
-        .bot-message {
+        .chatbot-messages .message.bot-message {
           align-self: flex-start;
-          background: #f8f9fa;
-          color: #2c3e50;
-          border: 1px solid #e9ecef;
-          border-radius: 18px 18px 18px 4px;
-          padding: 12px 16px;
-          margin: 4px 0;
-          max-width: 70%;
-          word-wrap: break-word;
+          background: #f8f9fa !important;
+          color: #2c3e50 !important;
+          border: 1px solid #e9ecef !important;
+          border-radius: 18px 18px 18px 4px !important;
+          padding: 12px 16px !important;
+          margin: 4px 0 !important;
+          max-width: 70% !important;
+          word-wrap: break-word !important;
+          position: relative !important;
         }
 
-        .user-message {
-          align-self: flex-end;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: #ffffff;
-          border-radius: 18px 18px 4px 18px;
-          padding: 12px 16px;
-          margin: 4px 0;
-          max-width: 70%;
-          word-wrap: break-word;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .chatbot-messages .message.user-message {
+          align-self: flex-end !important;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+          color: #ffffff !important;
+          border-radius: 18px 18px 4px 18px !important;
+          padding: 12px 16px !important;
+          margin: 4px 0 !important;
+          max-width: 70% !important;
+          word-wrap: break-word !important;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+          position: relative !important;
         }
 
         .message-content {

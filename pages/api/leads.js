@@ -93,12 +93,14 @@ async function handleLeadCreate(req, res) {
   // Step 1: Try to log to Google Sheets
   console.log("🔄 Attempting Google Sheets logging...");
   try {
-    const sheets = getGoogleSheetsClient();
     const sheetId = getSpreadsheetId();
-    
+    console.log("📊 Sheet ID check:", sheetId ? "SET" : "NOT_SET");
+
     if (sheetId) {
-      console.log("✅ Google Sheets client ready, proceeding with logging");
-      
+      console.log("✅ Sheet ID configured, creating Google Sheets client...");
+      const sheets = getGoogleSheetsClient();
+      console.log("✅ Google Sheets client created, preparing data...");
+
       const leadRow = [
         new Date().toISOString(), // Timestamp
         leadId, // Lead ID
@@ -114,6 +116,8 @@ async function handleLeadCreate(req, res) {
         "New" // Status
       ];
 
+      console.log("📝 Lead data prepared:", leadRow);
+
       await sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
         range: "Leads!A:Z",
@@ -123,7 +127,7 @@ async function handleLeadCreate(req, res) {
           values: [leadRow]
         }
       });
-      
+
       console.log(`✅ Lead ${leadId} saved to Sheets successfully`);
       sheetsSuccess = true;
     } else {
@@ -131,6 +135,7 @@ async function handleLeadCreate(req, res) {
     }
   } catch (sheetsError) {
     console.error(`❌ Sheets logging failed for lead ${leadId}:`, sheetsError.message);
+    console.error(`❌ Sheets error details:`, sheetsError);
   }
 
   // Step 2: Send emails
@@ -145,6 +150,7 @@ async function handleLeadCreate(req, res) {
   });
 
   try {
+    console.log("📧 Creating email transporter...");
     // Create Nodemailer transporter
     const nodemailer = await import('nodemailer');
     const transporter = nodemailer.default.createTransport({
@@ -157,6 +163,7 @@ async function handleLeadCreate(req, res) {
       }
     });
 
+    console.log("✅ Email transporter created");
     let emailsSent = 0;
 
     // Send admin notification email

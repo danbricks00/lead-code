@@ -1,81 +1,89 @@
-import NextAuth from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-import { checkIfUserExists } from "../../../lib/userStore";
-
-// Environment variable controls
-const allowGoogleAuth = process.env.ALLOW_GOOGLE_AUTH === 'true';
+// pages/api/auth/[...nextauth].js - NextAuth Configuration
+import NextAuth from 'next-auth';
+import GoogleProvider from 'next-auth/providers/google';
 
 export default NextAuth({
   providers: [
-    // Only add Google provider if auth is enabled
-    ...(allowGoogleAuth ? [
-      GoogleProvider({
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      })
-    ] : []),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
   ],
-  
+  secret: process.env.NEXTAUTH_SECRET,
+  session: {
+    strategy: 'jwt',
+  },
   callbacks: {
-    async signIn({ user, account, profile }) {
-      console.log('🔐 Sign-in attempt:', { 
-        email: user.email, 
-        provider: account?.provider,
-        allowGoogleAuth 
-      });
-
-      // Handle Google sign-in
-      if (account?.provider === 'google') {
-        // Check global kill switch
-        if (!allowGoogleAuth) {
-          console.log('❌ Google auth blocked by global kill switch');
-          return false;
-        }
-        
-        // Check if user is registered in Google Sheets
-        const exists = await checkIfUserExists(user.email);
-        if (!exists) {
-          console.log(`❌ User ${user.email} not found in registered users`);
-          return false;
-        }
-        
-        console.log(`✅ User ${user.email} authenticated successfully`);
-        return true;
-      }
-      
-      // Allow other providers (if any)
-      return true;
-    },
-    
     async jwt({ token, user, account }) {
-      // Add custom claims to JWT
-      if (account?.provider === 'google') {
-        token.provider = 'google';
-        token.isRegistered = await checkIfUserExists(token.email);
+      // Initial sign in
+      if (account && user) {
+        return {
+          ...token,
+          accessToken: account.access_token,
+          refreshToken: account.refresh_token,
+          accessTokenExpires: account.expires_at * 1000,
+          user,
+        };
       }
-      return token;
+
+      // Return previous token if the access token has not expired yet
+      if (Date.now() < token.accessTokenExpires) {
+        return token;
+      }
+
+      // Access token has expired, try to update it
+      return refreshAccessToken(token);
     },
-    
     async session({ session, token }) {
-      // Add custom claims to session
-      if (token) {
-        session.user.provider = token.provider;
-        session.user.isRegistered = token.isRegistered;
-      }
+      session.user = token.user;
+      session.accessToken = token.accessToken;
+      session.error = token.error;
+
       return session;
     },
   },
-  
   pages: {
     signIn: '/auth/signin',
-    error: '/auth/error',
     signOut: '/auth/signout',
+    error: '/auth/error',
   },
-  
-  session: {
-    strategy: 'jwt',
-    maxAge: 24 * 60 * 60, // 24 hours
-  },
-  
   debug: process.env.NODE_ENV === 'development',
 });
+
+async function refreshAccessToken(token) {
+  try {
+    const url =
+      "https://oauth2.googleapis.com/token?" +
+      new URLSearchParams({
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        grant_type: "refresh_token",
+        refresh_token: token.refreshToken,
+      });
+
+    const response = await fetch(url, {
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      method: "POST",
+    });
+
+    const refreshedTokens = await response.json();
+
+    if (!response.ok) {
+      throw refreshedTokens;
+    }
+
+    return {
+      ...token,
+      accessToken: refreshedTokens.access_token,
+      accessTokenExpires: Date.now() + refreshedTokens.expires_in * 1000,
+      refreshToken: refreshedTokens.refresh_token ?? token.refreshToken,
+    };
+  } catch (error) {
+    console.error("Error refreshing access token:", error);
+
+    return {
+      ...token,
+      error: "RefreshAccessTokenError",
+    };
+  }
+}

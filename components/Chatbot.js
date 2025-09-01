@@ -135,9 +135,8 @@ const Chatbot = () => {
         ))}
         {isLoading && (
           <div className="message bot-message">
-            <div className="message-text">
-              <span className="loading-spinner">⏳</span> Typing...
-            </div>
+            <div className="loading-spinner">⏳</div>
+            <div className="message-text">Typing...</div>
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -200,14 +199,26 @@ const Chatbot = () => {
 
         .bot-message {
           align-self: flex-start;
-          background: #f1f1f1;
-          color: #222;
+          background: #f8f9fa;
+          color: #2c3e50;
+          border: 1px solid #e9ecef;
+          border-radius: 18px 18px 18px 4px;
+          padding: 12px 16px;
+          margin: 4px 0;
+          max-width: 70%;
+          word-wrap: break-word;
         }
 
         .user-message {
           align-self: flex-end;
-          background: #007bff;
-          color: #fff;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: #ffffff;
+          border-radius: 18px 18px 4px 18px;
+          padding: 12px 16px;
+          margin: 4px 0;
+          max-width: 70%;
+          word-wrap: break-word;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .message-content {
@@ -286,6 +297,8 @@ const Chatbot = () => {
         .loading-spinner {
           animation: spin 1s linear infinite;
           display: inline-block;
+          font-size: 16px;
+          margin-bottom: 4px;
         }
 
         @keyframes spin {

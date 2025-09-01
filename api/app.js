@@ -375,54 +375,58 @@ export default async function handler(req, res) {
       const areaValue = area || "";
       const suburbValue = suburb || "";
 
-      // Try to log to Google Sheets (but don't fail if it doesn't work)
-      try {
-        const privateKey = process.env.GOOGLE_PRIVATE_KEY;
-        const sheetId = process.env.GOOGLE_SHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
-        
-        if (privateKey && sheetId) {
-          const auth = new google.auth.JWT(
-            process.env.GOOGLE_CLIENT,
-            null,
-            privateKey.replace(/\\n/g, "\n"),
-            ["https://www.googleapis.com/auth/spreadsheets"]
-          );
-          const sheets = google.sheets({ version: "v4", auth });
+             // Generate unique lead ID
+       const leadId = `LEAD-${Date.now()}-${Math.floor(Math.random()*10000)}`;
 
-          // Try to append to Leads sheet first
-          try {
-            const leadRow = [
-              new Date().toISOString(), // Timestamp
-              name || "", // Name
-              customerEmail, // Email
-              customerPhone || "", // Phone
-              serviceType, // ServiceType
-              areaValue, // Area
-              suburbValue, // Suburb
-              budget || "", // Budget
-              timeline || "", // Timeline
-              specificDetails || "", // SpecificDetails
-              "New" // Status
-            ];
+       // Try to log to Google Sheets (but don't fail if it doesn't work)
+       try {
+         const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+         const sheetId = process.env.GOOGLE_SHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
+         
+         if (privateKey && sheetId) {
+           const auth = new google.auth.JWT(
+             process.env.GOOGLE_CLIENT,
+             null,
+             privateKey.replace(/\\n/g, "\n"),
+             ["https://www.googleapis.com/auth/spreadsheets"]
+           );
+           const sheets = google.sheets({ version: "v4", auth });
 
-            await sheets.spreadsheets.values.append({
-              spreadsheetId: sheetId,
-              range: "Leads!A:Z",
-              valueInputOption: "RAW",
-              insertDataOption: "INSERT_ROWS",
-              requestBody: {
-                values: [leadRow]
-              }
-            });
-            
-            console.log("✅ Lead logged to Google Sheets");
-          } catch (leadsError) {
-            console.warn("⚠️ Lead logging failed, sending emails anyway:", leadsError.message);
-          }
-        }
-      } catch (sheetsError) {
-        console.warn("⚠️ Lead logging failed, sending emails anyway:", sheetsError.message);
-      }
+           // Try to append to Leads sheet first
+           try {
+             const leadRow = [
+               new Date().toISOString(), // Timestamp
+               leadId, // Lead ID
+               name || "", // Name
+               customerEmail, // Email
+               customerPhone || "", // Phone
+               serviceType, // ServiceType
+               areaValue, // Area
+               suburbValue, // Suburb
+               budget || "", // Budget
+               timeline || "", // Timeline
+               specificDetails || "", // SpecificDetails
+               "New" // Status
+             ];
+
+             await sheets.spreadsheets.values.append({
+               spreadsheetId: sheetId,
+               range: "Leads!A:Z",
+               valueInputOption: "RAW",
+               insertDataOption: "INSERT_ROWS",
+               requestBody: {
+                 values: [leadRow]
+               }
+             });
+             
+             console.log(`✅ Lead ${leadId} saved to Sheets`);
+           } catch (leadsError) {
+             console.warn(`⚠️ Sheets logging failed for lead ${leadId}:`, leadsError.message);
+           }
+         }
+       } catch (sheetsError) {
+         console.warn(`⚠️ Sheets logging failed for lead ${leadId}:`, sheetsError.message);
+       }
 
              // Always send emails regardless of Sheets success
        try {
@@ -438,28 +442,34 @@ export default async function handler(req, res) {
            }
          });
 
-        // Format rooms for email
-        const roomsEmailList = rooms.map(room => 
-          `<li><strong>${room.roomName}:</strong> ${room.dimensions}</li>`
-        ).join("");
+                 // Build quote form URL with lead ID
+         const quoteFormUrl = `${process.env.QUOTE_FORM_URL || "https://yourdomain.vercel.app/quote-form"}?leadId=${leadId}`;
 
-                 // Team + Admin email content
+         // Format rooms for email
+         const roomsEmailList = rooms.map(room => 
+           `<li><strong>${room.roomName}:</strong> ${room.dimensions}</li>`
+         ).join("");
+
+         // Team + Admin email content
          const teamSubject = `📋 New Lead - ${serviceType}`;
-        const teamHtml = `
-          <h2>New Lead Received</h2>
-          <p><strong>Customer Name:</strong> ${customerName}</p>
-          <p><strong>Customer Email:</strong> ${customerEmail}</p>
-          <p><strong>Customer Phone:</strong> ${customerPhone || 'Not provided'}</p>
-          <p><strong>Service Type:</strong> ${serviceType}</p>
-          <p><strong>Area:</strong> ${areaValue || 'Not specified'}</p>
-          <p><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</p>
-          <p><strong>Number of Rooms:</strong> ${totalRooms}</p>
-          <p><strong>Room Details:</strong></p>
-          <ul>${roomsEmailList}</ul>
-          <p><strong>Budget:</strong> ${budget || 'Not specified'}</p>
-          <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
-          <p><strong>Specific Details:</strong> ${specificDetails || 'None'}</p>
-        `;
+         const teamHtml = `
+           <h2>New Lead Received</h2>
+           <p><strong>Lead ID:</strong> ${leadId}</p>
+           <p><strong>Customer Name:</strong> ${customerName}</p>
+           <p><strong>Customer Email:</strong> ${customerEmail}</p>
+           <p><strong>Customer Phone:</strong> ${customerPhone || 'Not provided'}</p>
+           <p><strong>Service Type:</strong> ${serviceType}</p>
+           <p><strong>Area:</strong> ${areaValue || 'Not specified'}</p>
+           <p><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</p>
+           <p><strong>Number of Rooms:</strong> ${totalRooms}</p>
+           <p><strong>Room Details:</strong></p>
+           <ul>${roomsEmailList}</ul>
+           <p><strong>Budget:</strong> ${budget || 'Not specified'}</p>
+           <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
+           <p><strong>Specific Details:</strong> ${specificDetails || 'None'}</p>
+           <br>
+           <p><strong>👉 Create your quote here:</strong> <a href="${quoteFormUrl}">${quoteFormUrl}</a></p>
+         `;
 
                  // Send to team and admin
          if (process.env.TEAM_EMAIL) {
@@ -505,14 +515,14 @@ export default async function handler(req, res) {
            html: customerHtml
          });
 
-        console.log("📧 Emails sent to team + admin + customer");
+                 console.log(`📧 Stage 1 emails sent for lead ${leadId}`);
 
-      } catch (emailError) {
-        console.error("❌ Email sending failed:", emailError.message);
-        return res.status(500).json({ error: "Email send failed" });
-      }
+       } catch (emailError) {
+         console.error("❌ Email sending failed:", emailError.message);
+         return res.status(500).json({ error: "Email send failed" });
+       }
 
-      return res.status(200).json({ success: true });
+       return res.status(200).json({ success: true, leadId });
     }
 
     //

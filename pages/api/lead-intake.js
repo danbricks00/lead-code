@@ -1,127 +1,199 @@
-import { google } from 'googleapis';
-import nodemailer from 'nodemailer';
-import crypto from 'crypto';
+import { google } from "googleapis";
+import nodemailer from "nodemailer";
+import crypto from "crypto";
 
-// --- HELPER: GOOGLE SHEETS ---
-async function getSheetsClient() {
-  try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: {
-        client_email: process.env.GOOGLE_CLIENT_EMAIL,
-        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-      },
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-    });
-    return google.sheets({ version: 'v4', auth });
-  } catch (error) {
-    console.error('[Lead Intake] ERROR: Failed to create Google Sheets client:', error);
-    throw new Error('Failed to authenticate with Google Sheets.');
-  }
+const sheetsId = process.env.GOOGLE_SHEET_ID;
+const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+const privateKey = (process.env.GOOGLE_PRIVATE_KEY || "").replace(/\\n/g, "\n");
+const QUOTE_LINK_SECRET = process.env.QUOTE_LINK_SECRET;
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+
+const auth = new google.auth.JWT(clientEmail, null, privateKey, [
+  "https://www.googleapis.com/auth/spreadsheets",
+]);
+
+const sheets = google.sheets({ version: "v4", auth });
+
+function generateId() {
+  return crypto.randomBytes(6).toString("hex");
 }
 
-// --- HELPER: CRYPTO & LINKS ---
-function generateId(prefix) {
-  return `${prefix}-${crypto.randomBytes(8).toString('hex')}`;
+function signToken(id, ts) {
+  const hmac = crypto.createHmac("sha256", QUOTE_LINK_SECRET);
+  hmac.update(`${id}.${ts}`);
+  return hmac.digest("hex");
 }
 
-function generateSignedQuoteLink(leadId, quoteId, customerEmail) {
-  const secret = process.env.QUOTE_LINK_SECRET;
-  if (!secret) {
-    throw new Error('QUOTE_LINK_SECRET environment variable is not set.');
-  }
-  const payload = JSON.stringify({ leadId, quoteId, customerEmail });
-  const token = crypto.createHmac('sha256', secret).update(payload).digest('hex');
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-  return `${baseUrl}/quote-form.html?payload=${encodeURIComponent(payload)}&token=${token}`;
-}
-
-// --- HELPER: NODEMAILER ---
-async function sendInitialEmails(details) {
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
+async function appendRowToSheet(tab, values) {
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: sheetsId,
+    range: `${tab}!A1`,
+    valueInputOption: "USER_ENTERED",
+    insertDataOption: "INSERT_ROWS",
+    requestBody: { values: [values] },
   });
-
-  const { customer, tradesperson, admin, quoteLink } = details;
-  
-  await Promise.all([
-    transporter.sendMail({
-      to: customer.email,
-      subject: `✅ We've received your request for ${customer.service}`,
-      html: `<p>Hi ${customer.name},</p><p>Thanks for your request. A tradesperson will prepare a quote for you shortly.</p>`,
-    }),
-    transporter.sendMail({
-      to: tradesperson.email,
-      subject: `🔔 New Lead: ${customer.service}`,
-      html: `<p>New lead received. Please prepare a quote.</p><a href="${quoteLink}">Submit Quote Now</a>`,
-    }),
-    transporter.sendMail({
-      to: admin.email,
-      subject: `[Review] New Lead: #${details.customer.leadId}`,
-      text: `New lead received for ${customer.service}.`,
-    })
-  ]);
 }
 
-// --- API HANDLER ---
+async function sendEmail(transporter, mailOptions) {
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Email sent to ${mailOptions.to}: ${info.response}`);
+    return { success: true };
+  } catch (error) {
+    console.error(`❌ Failed to send email to ${mailOptions.to}:`, error);
+    return { success: false, error };
+  }
+}
+
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST']);
-    return res.status(405).json({ success: false, error: 'Method Not Allowed' });
+  console.log("[Lead Intake] Request body:", req.body);
+
+  if (req.method !== "POST") {
+    return res.status(405).json({ success: false, error: "Method not allowed" });
   }
 
+  const {
+    customerName,
+    customerEmail,
+    customerPhone,
+    serviceType,
+    rooms,
+    area,
+    suburb,
+    budget,
+    timeline,
+    specificDetails,
+  } = req.body;
+
+  if (!customerName || !customerEmail || !serviceType) {
+    console.log("[Lead Intake] Validation failed: Missing required fields.", {
+      customerName,
+      customerEmail,
+      serviceType,
+    });
+    return res.status(400).json({ success: false, error: "Missing required fields" });
+  }
+
+  const leadId = generateId();
+  const quoteId = generateId();
+  const issuedAt = Date.now().toString();
+  const token = signToken(quoteId, issuedAt);
+
+  const quoteLink = `${BASE_URL}/quote-submit/${quoteId}?` + new URLSearchParams({
+    customerName,
+    customerEmail,
+    customerPhone: customerPhone || "",
+    serviceType,
+    rooms: JSON.stringify(rooms || []),
+    area: area || "",
+    suburb: suburb || "",
+    budget: budget || "",
+    timeline: timeline || "",
+    specificDetails: specificDetails || "",
+    token,
+    ts: issuedAt,
+  }).toString();
+
   try {
-    // Log the entire request body at the start for debugging
-    console.log("[Lead Intake] Request body:", req.body);
+    // Append lead info to "Leads" tab
+    await appendRowToSheet("Leads", [
+      leadId,
+      customerName,
+      customerEmail,
+      customerPhone || "",
+      serviceType,
+      JSON.stringify(rooms || []),
+      area || "",
+      suburb || "",
+      budget || "",
+      timeline || "",
+      specificDetails || "",
+      new Date().toISOString(),
+    ]);
 
-    const { name, email, phone, service, details, area, suburb } = req.body;
-    
-    // Validate that name, email, and service are present and not undefined
-    if (!name || !email || !service) {
-      console.log("[Lead Intake] Validation failed: Missing required fields.", { name, email, service });
-      return res.status(400).json({ success: false, error: "Missing required fields" });
-    }
-
-    // If validation passes, proceed with the existing lead intake logic
-    const leadId = generateId('lead');
-    const quoteId = generateId('quote');
-    
-    const sheets = await getSheetsClient();
-    const spreadsheetId = process.env.GOOGLE_SHEET_ID;
-
-    // Write to "Leads" Tab
-    await sheets.spreadsheets.values.append({
-      spreadsheetId, range: 'Leads!A:Z', valueInputOption: 'USER_ENTERED',
-      requestBody: { values: [[new Date().toISOString(), leadId, name, email, phone, service, details, area, suburb]] },
-    });
-    
-    // Write to "Quotes" Tab
-    const quoteLink = generateSignedQuoteLink(leadId, quoteId, email);
-    const tradesmanInfo = { name: 'Quang Bui', email: 'quangbui0600@gmail.com' };
-    await sheets.spreadsheets.values.append({
-      spreadsheetId, range: 'Quotes!A:Z', valueInputOption: 'USER_ENTERED',
-      requestBody: { values: [[
-        quoteId, leadId, name, email, tradesmanInfo.name, tradesmanInfo.email, quoteLink,
-        "Confirmation Request", "Lead Request", "Pending Review", "No",
-        '', '', '', '', '', '', '', '', '', ''
-      ]] },
-    });
-
-    // Send Emails
-    await sendInitialEmails({
-      customer: { name, email, service, leadId },
-      tradesperson: tradesmanInfo,
-      admin: { email: 'danbricks18@gmail.com' },
+    // Append initial quote info to "Quotes" tab
+    await appendRowToSheet("Quotes", [
+      quoteId,
+      leadId,
+      customerName,
+      customerEmail,
+      "Tradeperson Name", // Replace with actual tradesman name if available
+      "quangbui0600@gmail.com", // Tradesman contact email
       quoteLink,
+      "Confirmation Request", // Customer Status
+      "Lead Request", // Tradesperson Status
+      "Pending Review", // Admin Status
+      "No", // Resubmission Allowed
+      "", // Labour Cost
+      "", // Labour Hours
+      "", // Labour Rate
+      "", // Materials Cost
+      "", // Materials Quantity
+      "", // Travel Cost
+      "", // Travel Distance
+      "", // Installation Cost
+      "", // Decision
+      "", // Decision Timestamp
+    ]);
+
+    // Setup Nodemailer
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
+      },
     });
 
-    return res.status(200).json({ success: true, leadId, quoteId });
+    // Emails
+    const customerMail = {
+      from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
+      to: customerEmail,
+      subject: "✅ We received your request",
+      html: `<p>Hi ${customerName},</p>
+             <p>Thanks for reaching out about <b>${serviceType}</b>. A trade professional will prepare a quote.</p>
+             <p><small>Request ID: ${leadId}</small></p>`,
+    };
 
+    const tradepersonMail = {
+      from: `"Kiwi Trade Leads" <${process.env.GMAIL_USER}>`,
+      to: "quangbui0600@gmail.com",
+      subject: `🔔 New Lead: ${serviceType} (${suburb || area || "Unknown location"})`,
+      html: `<p>You have a new lead:</p>
+             <ul>
+               <li><b>Name:</b> ${customerName}</li>
+               <li><b>Email:</b> ${customerEmail}</li>
+               <li><b>Phone:</b> ${customerPhone || "Not provided"}</li>
+               <li><b>Area/Suburb:</b> ${suburb || area || "Not specified"}</li>
+               <li><b>Details:</b> ${specificDetails || "No extra details"}</li>
+             </ul>
+             <p><b>Prepare a quote here:</b> <a href="${quoteLink}">${quoteLink}</a></p>
+             <p>This link is unique and signed; no login required.</p>`,
+    };
+
+    const adminMail = {
+      from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
+      to: "danbricks18@gmail.com",
+      subject: `Lead recorded on site: #${leadId}`,
+      text: `Lead recorded:\nName: ${customerName}\nEmail: ${customerEmail}\nService: ${serviceType}\nLocation: ${suburb || area || "N/A"}\nLead ID: ${leadId}\nQuote Link: ${quoteLink}`,
+    };
+
+    // Send emails
+    const customerResult = await sendEmail(transporter, customerMail);
+    const tradepersonResult = await sendEmail(transporter, tradepersonMail);
+    const adminResult = await sendEmail(transporter, adminMail);
+
+    if (customerResult.success && tradepersonResult.success && adminResult.success) {
+      return res.status(200).json({ success: true, leadId, quoteId, quoteLink });
+    } else {
+      return res.status(500).json({
+        success: false,
+        error: "Failed to send one or more emails.",
+        details: { customerResult, tradepersonResult, adminResult },
+      });
+    }
   } catch (error) {
-    // Catch and log any unexpected errors
-    console.error('[Lead Intake] CRITICAL ERROR:', error);
-    return res.status(500).json({ success: false, error: 'Internal Server Error', details: error.message });
+    console.error("[Lead Intake] Error:", error);
+    return res.status(500).json({ success: false, error: "Internal server error" });
   }
 }

@@ -61,7 +61,7 @@ const Chatbot = () => {
       
       if (data.success) {
         // Handle different response types
-        if (data.type === 'timeline' || data.type === 'options') {
+        if (data.type === 'timeline' || data.type === 'options' || data.type === 'budget') {
           console.log("📋 Rendering option buttons for type:", data.type);
           addMessage(data.question, true, data.type, data.options);
         } else {
@@ -95,7 +95,7 @@ const Chatbot = () => {
 
   // Function to render message content
   const renderMessage = (message) => {
-    if (message.type === 'timeline' || message.type === 'options') {
+    if (message.type === 'timeline' || message.type === 'options' || message.type === 'budget') {
       return (
         <div className="message-content">
           <div className="message-text">{message.content}</div>
@@ -135,7 +135,9 @@ const Chatbot = () => {
         ))}
         {isLoading && (
           <div className="message bot-message">
-            <div className="message-text">Typing...</div>
+            <div className="message-text">
+              <span className="loading-spinner">⏳</span> Typing...
+            </div>
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -198,14 +200,14 @@ const Chatbot = () => {
 
         .bot-message {
           align-self: flex-start;
-          background: #f1f3f4;
-          color: #333;
+          background: #f1f1f1;
+          color: #222;
         }
 
         .user-message {
           align-self: flex-end;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
+          background: #007bff;
+          color: #fff;
         }
 
         .message-content {
@@ -279,6 +281,16 @@ const Chatbot = () => {
         .chatbot-input button:disabled {
           opacity: 0.6;
           cursor: not-allowed;
+        }
+
+        .loading-spinner {
+          animation: spin 1s linear infinite;
+          display: inline-block;
+        }
+
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </div>

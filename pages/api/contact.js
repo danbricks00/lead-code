@@ -2,6 +2,7 @@
 import { sendEmail } from '../../lib/emailHelper.js';
 
 export default async function handler(req, res) {
+  console.log("✅ Loaded API contact.js");
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     return res.status(405).json({ 

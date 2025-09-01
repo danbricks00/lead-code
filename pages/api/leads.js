@@ -4,6 +4,8 @@ import { getGoogleSheetsClient, getSpreadsheetId } from '../../lib/googleSheets.
 import { sendEmail, createLeadIntakeEmails, createQuoteSubmissionEmails, createQuoteDecisionEmails } from '../../lib/emailHelper.js';
 
 export default async function handler(req, res) {
+  console.log("✅ Loaded API leads.js");
+  
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     return res.status(405).json({ 
@@ -16,10 +18,11 @@ export default async function handler(req, res) {
     // Parse action from query params or body
     const action = req.query.action || req.body.action;
     
-    if (!action) {
+    // Master switch for action validation
+    if (!action || !['create', 'submit-quote', 'decision'].includes(action)) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required parameter: action. Must be one of: create, submit-quote, decision'
+        error: 'Missing or invalid action. Must be one of: create, submit-quote, decision'
       });
     }
 

@@ -1,76 +1,79 @@
-export default async function handler(req, res) {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+// pages/api/test-email.js - Test email API
+import { sendEmail } from '../../lib/emailHelper.js';
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+export default async function handler(req, res) {
+  console.log("✅ Loaded API test-email.js");
+  
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', ['POST']);
+    return res.status(405).json({ 
+      success: false, 
+      error: `Method ${req.method} Not Allowed. Use POST method.` 
+    });
   }
 
   try {
-    console.log("📧 Testing Nodemailer configuration...");
+    console.log("📧 Starting test email...");
     
-    // Check environment variables
-    const gmailUser = process.env.GMAIL_USER;
-    const gmailPass = process.env.GMAIL_PASS;
-    const adminEmail = process.env.ADMIN_EMAIL;
-    
+    // Environment checks
     console.log("🔧 Environment variables check:", {
-      GMAIL_USER: !!gmailUser,
-      GMAIL_PASS: !!gmailPass,
-      ADMIN_EMAIL: !!adminEmail
+      GMAIL_USER: process.env.GMAIL_USER || "MISSING",
+      GMAIL_PASS: process.env.GMAIL_PASS ? "SET" : "MISSING",
+      ADMIN_EMAIL: process.env.ADMIN_EMAIL || "MISSING"
     });
-    
-    if (!gmailUser || !gmailPass) {
-      throw new Error('Missing GMAIL_USER or GMAIL_PASS environment variables');
+
+    if (!process.env.ADMIN_EMAIL) {
+      console.error("❌ ADMIN_EMAIL not configured");
+      return res.status(500).json({
+        success: false,
+        error: "ADMIN_EMAIL not configured"
+      });
     }
+
+    const testSubject = "🧪 Test Email - Kiwi Trade System";
+    const testHtml = `
+      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333; margin: 20px 0;">Test Email from Kiwi Trade System</h2>
+        <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+          <p><strong>Test Time:</strong> ${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}</p>
+          <p><strong>System:</strong> Kiwi Trade Lead Management</p>
+          <p><strong>Status:</strong> Email system is working correctly</p>
+          <p>If you receive this email, the Gmail SMTP configuration is working properly.</p>
+        </div>
+        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+          <p style="margin: 0; color: #666; font-size: 12px;">
+            This is an automated test email. Please ignore.
+          </p>
+        </div>
+      </div>
+    `;
+
+    console.log(`📤 Sending test email to: ${process.env.ADMIN_EMAIL}`);
+    const result = await sendEmail(process.env.ADMIN_EMAIL, testSubject, testHtml);
     
-    // Import nodemailer
-    const nodemailer = await import('nodemailer');
-    console.log("✅ Nodemailer imported successfully");
-    
-    // Create transporter
-    const transporter = nodemailer.default.createTransport({
-      service: 'gmail',
-      auth: {
-        user: gmailUser,
-        pass: gmailPass
-      }
-    });
-    
-    console.log("✅ Transporter created successfully");
-    
-    // Determine recipient
-    const toEmail = adminEmail || gmailUser;
-    console.log(`📤 Sending test email to: ${toEmail}`);
-    
-    // Send test email
-    const result = await transporter.sendMail({
-      from: gmailUser,
-      to: toEmail,
-      subject: '✅ Test Email From TradeLead',
-      text: 'This is a test email to confirm Nodemailer + Gmail APP Password works.'
-    });
-    
-    console.log(`✅ Test email sent successfully. Message ID: ${result.messageId}`);
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Test email sent successfully',
-      messageId: result.messageId,
-      to: toEmail,
-      timestamp: new Date().toISOString()
-    });
-    
+    if (result.success) {
+      console.log(`✅ Test email sent successfully, msgId: ${result.messageId}`);
+      return res.status(200).json({
+        success: true,
+        message: "Test email sent successfully",
+        messageId: result.messageId,
+        to: process.env.ADMIN_EMAIL
+      });
+    } else {
+      console.error(`❌ Test email failed: ${result.error}`);
+      return res.status(500).json({
+        success: false,
+        error: "Test email failed",
+        details: result.error
+      });
+    }
+
   } catch (error) {
-    console.error("❌ Test email failed:", error.message);
-    
+    console.error('❌ Test email API error:', error.message);
     return res.status(500).json({
       success: false,
-      error: error.message,
-      message: 'Failed to send test email',
-      timestamp: new Date().toISOString()
+      error: 'Test email failed',
+      message: error.message
     });
   }
 }

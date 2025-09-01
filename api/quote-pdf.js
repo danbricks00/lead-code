@@ -75,6 +75,9 @@ export default async function handler(req, res) {
 
     // Generate HTML content using the unified function
     const htmlContent = generateQuotePdfContent(quoteData, quoteData);
+    
+    // Log timeline information
+    console.log(`📝 Quote rendered with timeline: ${quoteData.timeline || 'Not specified'}`);
 
     if (download === '1') {
       // Set headers for file download

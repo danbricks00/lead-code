@@ -635,6 +635,10 @@ export function generateQuotePdfContent(leadData, quoteData = null) {
                 <span class="detail-label">Address:</span>
                 <span class="detail-value">${quoteData?.location || leadData.location || 'Not provided'}</span>
             </div>
+            <div class="detail-row">
+                <span class="detail-label">Timeline:</span>
+                <span class="detail-value">${quoteData?.timeline || leadData.timeline || 'Not specified'}</span>
+            </div>
         </div>
         
         <div class="tradesman-details">

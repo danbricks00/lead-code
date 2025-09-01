@@ -238,52 +238,54 @@ export default async function handler(req, res) {
                         ? '🎉 Quote Accepted - Project Confirmed!' 
                         : 'Quote Decision - Thank You';
 
-                    let customerHtml;
-                    if (action === 'accept') {
-                        customerHtml = `
-                            <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
-                                ${renderStatus("accepted")}
-                                <h2 style="color: #333; margin: 20px 0;">Congratulations! Your Quote Has Been Accepted</h2>
-                                <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-                                    <p>Hi ${leadData.customerName || 'there'},</p>
-                                    <p>Great news! Your quote for ${quoteData.service || 'your project'} has been accepted.</p>
-                                    <p><strong>Project Details:</strong></p>
-                                    <ul>
-                                        <li><strong>Service:</strong> ${quoteData.service || 'N/A'}</li>
-                                        <li><strong>Quote Amount:</strong> $${quoteData.quoteAmount || 'N/A'}</li>
-                                        <li><strong>Timeline:</strong> ${quoteData.timeline || 'To be confirmed'}</li>
-                                    </ul>
-                                </div>`;
+                                         let customerHtml;
+                     if (action === 'accept') {
+                         customerHtml = `
+                             <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+                                 ${renderStatus("accepted")}
+                                 <h2 style="color: #333; margin: 20px 0;">Congratulations! Your Quote Has Been Accepted</h2>
+                                 <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+                                     <p>Hi ${leadData.customerName || 'there'},</p>
+                                     <p>Great news! Your quote for ${quoteData.service || 'your project'} has been accepted.</p>
+                                     <p><strong>Project Details:</strong></p>
+                                     <ul>
+                                         <li><strong>Service:</strong> ${quoteData.service || 'N/A'}</li>
+                                         <li><strong>Quote Amount:</strong> $${quoteData.quoteAmount || 'N/A'}</li>
+                                         <li><strong>Timeline:</strong> ${quoteData.timeline || 'To be confirmed'}</li>
+                                     </ul>
+                                 </div>`;
 
-                        // Add tradesperson details if available
-                        if (fullQuoteData.tradesmanName) {
-                            customerHtml += `
-                                <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-top: 20px;">
-                                    <h3 style="color: #333; margin: 0 0 15px 0;">Your Tradesperson Details</h3>
-                                    <p><strong>Name:</strong> ${fullQuoteData.tradesmanName}</p>
-                                    ${fullQuoteData.companyName ? `<p><strong>Company:</strong> ${fullQuoteData.companyName}</p>` : ''}
-                                    ${fullQuoteData.tradesmanPhone ? `<p><strong>Phone:</strong> ${fullQuoteData.tradesmanPhone}</p>` : ''}
-                                    <p><strong>Email:</strong> ${fullQuoteData.tradesmanEmail}</p>
-                                </div>`;
-                        }
+                         // Add tradesperson details if available
+                         if (fullQuoteData.tradesmanName) {
+                             customerHtml += `
+                                 <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-top: 20px;">
+                                     <h3 style="color: #333; margin: 0 0 15px 0;">Your Tradesperson Details</h3>
+                                     <p><strong>Name:</strong> ${fullQuoteData.tradesmanName || 'Tradesperson'}</p>
+                                     ${fullQuoteData.companyName ? `<p><strong>Company:</strong> ${fullQuoteData.companyName || 'Unknown Company'}</p>` : ''}
+                                     ${fullQuoteData.tradesmanPhone ? `<p><strong>Phone:</strong> ${fullQuoteData.tradesmanPhone || 'N/A'}</p>` : ''}
+                                     <p><strong>Email:</strong> ${fullQuoteData.tradesmanEmail || 'N/A'}</p>
+                                 </div>`;
+                         }
 
-                        customerHtml += `
-                                <p style="margin-top: 20px;">Your tradesperson will be in touch within 24 hours to schedule your project.</p>
-                                <p>Best regards,<br>The Kiwi Trade Team</p>
-                            </div>`;
-                    } else {
-                        customerHtml = `
-                            <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
-                                ${renderStatus("declined")}
-                                <h2 style="color: #333; margin: 20px 0;">Thank You for Your Consideration</h2>
-                                <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-                                    <p>Hi ${leadData.customerName || 'there'},</p>
-                                    <p>Thank you for considering our quote for ${quoteData.service || 'your project'}.</p>
-                                    <p>We hope to work with you in the future.</p>
-                                    <p>Best regards,<br>The Kiwi Trade Team</p>
-                                </div>
-                            </div>`;
-                    }
+                         customerHtml += `
+                                 <p style="margin-top: 20px;">Your tradesperson will be in touch within 24 hours to schedule your project.</p>
+                                 <p>Best regards,<br>The Kiwi Trade Team</p>
+                             </div>`;
+                     } else {
+                         customerHtml = `
+                             <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+                                 ${renderStatus("declined")}
+                                 <h2 style="color: #333; margin: 20px 0;">Thank You for Your Consideration</h2>
+                                 <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+                                     <p>Hi ${leadData.customerName || 'there'},</p>
+                                     <p>Thank you for considering our quote for ${quoteData.service || 'your project'}.</p>
+                                     <p>We hope to work with you in the future.</p>
+                                     <p>Best regards,<br>The Kiwi Trade Team</p>
+                                 </div>
+                             </div>`;
+                     }
+
+                     console.log("📧 Built Stage 3 email template: customer");
 
                     try {
                         console.log(`📤 Sending customer ${action} email to: ${leadData.customerEmail}`);
@@ -299,29 +301,31 @@ export default async function handler(req, res) {
                     }
                 }
 
-                // 2. Send admin notification
-                const adminSubject = `Quote ${status}: ${quoteId} - ${leadId}`;
-                let adminHtml = `
-                    <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
-                        ${renderStatus(action === 'accept' ? "accepted" : "declined")}
-                        <h2 style="color: #333; margin: 20px 0;">Quote ${status}</h2>
-                        <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-                            <p><strong>Quote ID:</strong> ${quoteId}</p>
-                            <p><strong>Lead ID:</strong> ${leadId}</p>
-                            <p><strong>Customer:</strong> ${leadData?.customerName || 'N/A'}</p>
-                            <p><strong>Service:</strong> ${quoteData.service || 'N/A'}</p>
-                            <p><strong>Amount:</strong> $${quoteData.quoteAmount || 'N/A'}</p>`;
+                                 // 2. Send admin notification
+                 const adminSubject = `Quote ${status}: ${quoteId || 'N/A'} - ${leadId || 'N/A'}`;
+                 let adminHtml = `
+                     <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+                         ${renderStatus(action === 'accept' ? "accepted" : "declined")}
+                         <h2 style="color: #333; margin: 20px 0;">Quote ${status}</h2>
+                         <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+                             <p><strong>Quote ID:</strong> ${quoteId || 'N/A'}</p>
+                             <p><strong>Lead ID:</strong> ${leadId || 'N/A'}</p>
+                             <p><strong>Customer:</strong> ${leadData?.customerName || 'N/A'}</p>
+                             <p><strong>Service:</strong> ${quoteData.service || 'N/A'}</p>
+                             <p><strong>Amount:</strong> $${quoteData.quoteAmount || 'N/A'}</p>`;
 
-                if (action === 'accept' && fullQuoteData.tradesmanName) {
-                    adminHtml += `
-                            <p><strong>Tradesperson Assigned:</strong> ${fullQuoteData.tradesmanName}</p>
-                            ${fullQuoteData.companyName ? `<p><strong>Company:</strong> ${fullQuoteData.companyName}</p>` : ''}
-                            ${fullQuoteData.tradesmanPhone ? `<p><strong>Phone:</strong> ${fullQuoteData.tradesmanPhone}</p>` : ''}`;
-                }
+                 if (action === 'accept' && fullQuoteData.tradesmanName) {
+                     adminHtml += `
+                             <p><strong>Tradesperson Assigned:</strong> ${fullQuoteData.tradesmanName || 'Tradesperson'}</p>
+                             ${fullQuoteData.companyName ? `<p><strong>Company:</strong> ${fullQuoteData.companyName || 'Unknown Company'}</p>` : ''}
+                             ${fullQuoteData.tradesmanPhone ? `<p><strong>Phone:</strong> ${fullQuoteData.tradesmanPhone || 'N/A'}</p>` : ''}`;
+                 }
 
-                adminHtml += `
-                        </div>
-                    </div>`;
+                 adminHtml += `
+                         </div>
+                     </div>`;
+
+                 console.log("📧 Built Stage 3 email template: admin");
 
                 if (process.env.ADMIN_EMAIL) {
                     try {
@@ -340,74 +344,78 @@ export default async function handler(req, res) {
                     console.log("⚠️ ADMIN_EMAIL not configured, skipping admin notification");
                 }
 
-                // 3. Send tradesperson notification
-                if (action === 'accept' && fullQuoteData.tradesmanEmail) {
-                    const tradespersonSubject = `🎉 CUSTOMER ACCEPTED - FOLLOW UP REQUIRED - ${leadId}`;
-                    const tradespersonHtml = `
-                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
-                            ${renderStatus("accepted")}
-                            <h2 style="color: #333; margin: 20px 0;">Customer Accepted Your Quote!</h2>
-                            <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-                                <p><strong>Customer Accepted – FOLLOW UP</strong></p>
-                                <p><strong>Customer Name:</strong> ${leadData?.customerName || 'N/A'}</p>
-                                <p><strong>Customer Email:</strong> ${leadData?.customerEmail || 'N/A'}</p>
-                                <p><strong>Customer Phone:</strong> ${leadData?.customerPhone || 'N/A'}</p>
-                                <p><strong>Service:</strong> ${quoteData.service || 'N/A'}</p>
-                                <p><strong>Quote Amount:</strong> $${quoteData.quoteAmount || 'N/A'}</p>
-                                <p><strong>Project Details:</strong> ${quoteData.details || 'N/A'}</p>
-                                <p><strong>Timeline:</strong> ${quoteData.timeline || 'N/A'}</p>
-                            </div>
-                            <div style="background: #28a745; color: white; padding: 15px; border-radius: 8px; margin-top: 20px;">
-                                <p style="margin: 0; font-weight: bold;">⚠️ ACTION REQUIRED: Contact customer within 24 hours to schedule project!</p>
-                            </div>
-                        </div>`;
+                                 // 3. Send tradesperson notification
+                 if (action === 'accept' && fullQuoteData.tradesmanEmail) {
+                     const tradespersonAcceptSubject = `🎉 CUSTOMER ACCEPTED - FOLLOW UP REQUIRED - ${leadId || 'N/A'}`;
+                     const tradespersonAcceptHtml = `
+                         <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+                             ${renderStatus("accepted")}
+                             <h2 style="color: #333; margin: 20px 0;">Customer Accepted Your Quote!</h2>
+                             <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+                                 <p><strong>Customer Accepted – FOLLOW UP</strong></p>
+                                 <p><strong>Customer Name:</strong> ${leadData?.customerName || 'N/A'}</p>
+                                 <p><strong>Customer Email:</strong> ${leadData?.customerEmail || 'N/A'}</p>
+                                 <p><strong>Customer Phone:</strong> ${leadData?.customerPhone || 'N/A'}</p>
+                                 <p><strong>Service:</strong> ${quoteData.service || 'N/A'}</p>
+                                 <p><strong>Quote Amount:</strong> $${quoteData.quoteAmount || 'N/A'}</p>
+                                 <p><strong>Project Details:</strong> ${quoteData.details || 'N/A'}</p>
+                                 <p><strong>Timeline:</strong> ${quoteData.timeline || 'N/A'}</p>
+                             </div>
+                             <div style="background: #28a745; color: white; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                                 <p style="margin: 0; font-weight: bold;">⚠️ ACTION REQUIRED: Contact customer within 24 hours to schedule project!</p>
+                             </div>
+                         </div>`;
 
-                    try {
-                        console.log(`📤 Sending tradesperson ${action} email to: ${fullQuoteData.tradesmanEmail}`);
-                        const tradespersonResult = await transporter.sendMail({
-                            from: process.env.GMAIL_USER,
-                            to: fullQuoteData.tradesmanEmail,
-                            subject: tradespersonSubject,
-                            html: tradespersonHtml
-                        });
-                        console.log(`✅ Email sent to tradesperson, msgId: ${tradespersonResult.messageId}`);
-                    } catch (error) {
-                        console.error(`❌ Email failed to tradesperson, err: ${error.message}`);
-                    }
-                } else if (action === 'decline' && fullQuoteData.tradesmanEmail) {
-                    // Send decline notification to tradesperson
-                    const tradespersonSubject = `Quote Declined - ${leadId}`;
-                    const tradespersonHtml = `
-                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
-                            ${renderStatus("declined")}
-                            <h2 style="color: #333; margin: 20px 0;">Quote Declined</h2>
-                            <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-                                <p>Hi ${fullQuoteData.tradesmanName || 'there'},</p>
-                                <p>Your quote for ${leadData?.customerName || 'the customer'}'s ${quoteData.service || 'project'} has been declined.</p>
-                                <p><strong>Quote Details:</strong></p>
-                                <ul>
-                                    <li><strong>Lead ID:</strong> ${leadId}</li>
-                                    <li><strong>Customer:</strong> ${leadData?.customerName || 'N/A'}</li>
-                                    <li><strong>Service:</strong> ${quoteData.service || 'N/A'}</li>
-                                    <li><strong>Quote Amount:</strong> $${quoteData.quoteAmount || 'N/A'}</li>
-                                </ul>
-                                <p>Consider politely following up with the customer if appropriate.</p>
-                            </div>
-                        </div>`;
+                     console.log("📧 Built Stage 3 (accept) email template: tradesperson");
 
-                    try {
-                        console.log(`📤 Sending tradesperson ${action} email to: ${fullQuoteData.tradesmanEmail}`);
-                        const tradespersonResult = await transporter.sendMail({
-                            from: process.env.GMAIL_USER,
-                            to: fullQuoteData.tradesmanEmail,
-                            subject: tradespersonSubject,
-                            html: tradespersonHtml
-                        });
-                        console.log(`✅ Email sent to tradesperson, msgId: ${tradespersonResult.messageId}`);
-                    } catch (error) {
-                        console.error(`❌ Email failed to tradesperson, err: ${error.message}`);
-                    }
-                }
+                     try {
+                         console.log(`📤 Sending tradesperson ${action} email to: ${fullQuoteData.tradesmanEmail}`);
+                         const tradespersonResult = await transporter.sendMail({
+                             from: process.env.GMAIL_USER,
+                             to: fullQuoteData.tradesmanEmail,
+                             subject: tradespersonAcceptSubject,
+                             html: tradespersonAcceptHtml
+                         });
+                         console.log(`✅ Email sent to tradesperson, msgId: ${tradespersonResult.messageId}`);
+                     } catch (error) {
+                         console.error(`❌ Email failed to tradesperson, err: ${error.message}`);
+                     }
+                 } else if (action === 'decline' && fullQuoteData.tradesmanEmail) {
+                     // Send decline notification to tradesperson
+                     const tradespersonDeclineSubject = `Quote Declined - ${leadId || 'N/A'}`;
+                     const tradespersonDeclineHtml = `
+                         <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+                             ${renderStatus("declined")}
+                             <h2 style="color: #333; margin: 20px 0;">Quote Declined</h2>
+                             <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+                                 <p>Hi ${fullQuoteData.tradesmanName || 'there'},</p>
+                                 <p>Your quote for ${leadData?.customerName || 'the customer'}'s ${quoteData.service || 'project'} has been declined.</p>
+                                 <p><strong>Quote Details:</strong></p>
+                                 <ul>
+                                     <li><strong>Lead ID:</strong> ${leadId || 'N/A'}</li>
+                                     <li><strong>Customer:</strong> ${leadData?.customerName || 'N/A'}</li>
+                                     <li><strong>Service:</strong> ${quoteData.service || 'N/A'}</li>
+                                     <li><strong>Quote Amount:</strong> $${quoteData.quoteAmount || 'N/A'}</li>
+                                 </ul>
+                                 <p>Consider politely following up with the customer if appropriate.</p>
+                             </div>
+                         </div>`;
+
+                     console.log("📧 Built Stage 3 (decline) email template: tradesperson");
+
+                     try {
+                         console.log(`📤 Sending tradesperson ${action} email to: ${fullQuoteData.tradesmanEmail}`);
+                         const tradespersonResult = await transporter.sendMail({
+                             from: process.env.GMAIL_USER,
+                             to: fullQuoteData.tradesmanEmail,
+                             subject: tradespersonDeclineSubject,
+                             html: tradespersonDeclineHtml
+                         });
+                         console.log(`✅ Email sent to tradesperson, msgId: ${tradespersonResult.messageId}`);
+                     } catch (error) {
+                         console.error(`❌ Email failed to tradesperson, err: ${error.message}`);
+                     }
+                 }
 
                 console.log(`📧 Stage 3: Quote ${leadId} ${action === 'accept' ? 'ACCEPTED' : 'DECLINED'} emails delivered.`);
 

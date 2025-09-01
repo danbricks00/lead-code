@@ -181,78 +181,84 @@ export default async function handler(req, res) {
       `<li><strong>${room.roomName}:</strong> ${room.dimensions}</li>`
     ).join("");
 
-    // 1. Customer confirmation email
-    const customerSubject = `✅ We've received your request – ${serviceType}`;
-    const customerHtml = `
-      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
-        ${renderStatus("lead")}
-        <h2 style="color: #333; margin: 20px 0;">Thank you for your enquiry!</h2>
-        <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-          <p>Hi ${customerName},</p>
-          <p>We've received your ${serviceType} enquiry and will be in touch within 24 hours.</p>
-          <p><strong>Your enquiry details:</strong></p>
-          <ul>
-            <li><strong>Service:</strong> ${serviceType}</li>
-            <li><strong>Timeline:</strong> ${timeline || 'Not specified'}</li>
-            <li><strong>Budget:</strong> ${budget || 'Not specified'}</li>
-            <li><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</li>
-            <li><strong>Rooms:</strong> ${roomsString}</li>
-          </ul>
-          <p>Best regards,<br>The Kiwi Trade Team</p>
-        </div>
-      </div>
-    `;
+         // 1. Customer confirmation email
+     const customerSubject = `✅ We've received your request – ${serviceType || 'Not specified'}`;
+     const customerHtml = `
+       <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+         ${renderStatus("lead")}
+         <h2 style="color: #333; margin: 20px 0;">Thank you for your enquiry!</h2>
+         <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+           <p>Hi ${customerName || 'there'},</p>
+           <p>We've received your ${serviceType || 'project'} enquiry and will be in touch within 24 hours.</p>
+           <p><strong>Your enquiry details:</strong></p>
+           <ul>
+             <li><strong>Service:</strong> ${serviceType || 'Not specified'}</li>
+             <li><strong>Timeline:</strong> ${timeline || 'Not specified'}</li>
+             <li><strong>Budget:</strong> ${budget || 'Not specified'}</li>
+             <li><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</li>
+             <li><strong>Rooms:</strong> ${roomsString || 'Not specified'}</li>
+           </ul>
+           <p>Best regards,<br>The Kiwi Trade Team</p>
+         </div>
+       </div>
+     `;
 
-    // 2. Admin notification email
-    const adminSubject = `🆕 New Lead Submitted – ${serviceType}`;
-    const adminHtml = `
-      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
-        ${renderStatus("lead")}
-        <h2 style="color: #333; margin: 20px 0;">New Lead Received</h2>
-        <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-          <p><strong>Lead ID:</strong> ${leadId}</p>
-          <p><strong>Customer Name:</strong> ${customerName}</p>
-          <p><strong>Customer Email:</strong> ${customerEmail}</p>
-          <p><strong>Customer Phone:</strong> ${customerPhone || 'Not provided'}</p>
-          <p><strong>Service Type:</strong> ${serviceType}</p>
-          <p><strong>Area:</strong> ${areaValue || 'Not specified'}</p>
-          <p><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</p>
-          <p><strong>Number of Rooms:</strong> ${totalRooms}</p>
-          <p><strong>Room Details:</strong></p>
-          <ul>${roomsEmailList}</ul>
-          <p><strong>Budget:</strong> ${budget || 'Not specified'}</p>
-          <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
-          <p><strong>Specific Details:</strong> ${specificDetails || 'None'}</p>
-        </div>
-      </div>
-    `;
+     console.log("📧 Built Stage 1 email template: customer");
 
-    // 3. Tradesperson notification email
-    const tradespersonSubject = `🆕 New Lead Available – ${serviceType} in ${suburbValue || 'your area'}`;
-    const tradespersonHtml = `
-      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
-        ${renderStatus("lead")}
-        <h2 style="color: #333; margin: 20px 0;">New Lead Available</h2>
-        <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-          <p><strong>Lead ID:</strong> ${leadId}</p>
-          <p><strong>Customer Name:</strong> ${customerName}</p>
-          <p><strong>Customer Email:</strong> ${customerEmail}</p>
-          <p><strong>Customer Phone:</strong> ${customerPhone || 'Not provided'}</p>
-          <p><strong>Service Type:</strong> ${serviceType}</p>
-          <p><strong>Area:</strong> ${areaValue || 'Not specified'}</p>
-          <p><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</p>
-          <p><strong>Number of Rooms:</strong> ${totalRooms}</p>
-          <p><strong>Room Details:</strong></p>
-          <ul>${roomsEmailList}</ul>
-          <p><strong>Budget:</strong> ${budget || 'Not specified'}</p>
-          <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
-          <p><strong>Specific Details:</strong> ${specificDetails || 'None'}</p>
-        </div>
-        <div style="margin: 30px 0; text-align: center;">
-          <a href="${quoteFormUrl}" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">👉 Create Quote</a>
-        </div>
-      </div>
-    `;
+     // 2. Admin notification email
+     const adminSubject = `🆕 New Lead Submitted – ${serviceType || 'Not specified'}`;
+     const adminHtml = `
+       <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+         ${renderStatus("lead")}
+         <h2 style="color: #333; margin: 20px 0;">New Lead Received</h2>
+         <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+           <p><strong>Lead ID:</strong> ${leadId || 'N/A'}</p>
+           <p><strong>Customer Name:</strong> ${customerName || 'Customer'}</p>
+           <p><strong>Customer Email:</strong> ${customerEmail || 'N/A'}</p>
+           <p><strong>Customer Phone:</strong> ${customerPhone || 'Not provided'}</p>
+           <p><strong>Service Type:</strong> ${serviceType || 'Not specified'}</p>
+           <p><strong>Area:</strong> ${areaValue || 'Not specified'}</p>
+           <p><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</p>
+           <p><strong>Number of Rooms:</strong> ${totalRooms || '0'}</p>
+           <p><strong>Room Details:</strong></p>
+           <ul>${roomsEmailList || '<li>No room details provided</li>'}</ul>
+           <p><strong>Budget:</strong> ${budget || 'Not specified'}</p>
+           <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
+           <p><strong>Specific Details:</strong> ${specificDetails || 'None'}</p>
+         </div>
+       </div>
+     `;
+
+     console.log("📧 Built Stage 1 email template: admin");
+
+     // 3. Tradesperson notification email
+     const tradespersonSubject = `🆕 New Lead Available – ${serviceType || 'Not specified'} in ${suburbValue || 'your area'}`;
+     const tradespersonHtml = `
+       <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+         ${renderStatus("lead")}
+         <h2 style="color: #333; margin: 20px 0;">New Lead Available</h2>
+         <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+           <p><strong>Lead ID:</strong> ${leadId || 'N/A'}</p>
+           <p><strong>Customer Name:</strong> ${customerName || 'Customer'}</p>
+           <p><strong>Customer Email:</strong> ${customerEmail || 'N/A'}</p>
+           <p><strong>Customer Phone:</strong> ${customerPhone || 'Not provided'}</p>
+           <p><strong>Service Type:</strong> ${serviceType || 'Not specified'}</p>
+           <p><strong>Area:</strong> ${areaValue || 'Not specified'}</p>
+           <p><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</p>
+           <p><strong>Number of Rooms:</strong> ${totalRooms || '0'}</p>
+           <p><strong>Room Details:</strong></p>
+           <ul>${roomsEmailList || '<li>No room details provided</li>'}</ul>
+           <p><strong>Budget:</strong> ${budget || 'Not specified'}</p>
+           <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
+           <p><strong>Specific Details:</strong> ${specificDetails || 'None'}</p>
+         </div>
+         <div style="margin: 30px 0; text-align: center;">
+           <a href="${quoteFormUrl}" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">👉 Create Quote</a>
+         </div>
+       </div>
+     `;
+
+     console.log("📧 Built Stage 1 email template: tradesperson");
 
     // Send all three emails
     let emailsSent = 0;

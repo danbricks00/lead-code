@@ -181,16 +181,16 @@ export default async function handler(req, res) {
         console.log(`✅ Quote resubmitted for lead ${leadId} - Awaiting admin review`);
 
         // Send notification to admin about resubmitted quote
-        const adminSubject = `🔄 Quote Resubmitted for Review - ${serviceType} - ${leadId}`;
-        const adminHtml = `
+        const adminResubmitSubject = `🔄 Quote Resubmitted for Review - ${serviceType || 'Not specified'} - ${leadId || 'N/A'}`;
+        const adminResubmitHtml = `
           <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #333; margin: 20px 0;">Quote Resubmitted After Rejection</h2>
             <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-              <p><strong>Quote ID:</strong> ${leadId}</p>
-              <p><strong>Customer:</strong> ${customerName}</p>
-              <p><strong>Service:</strong> ${serviceType}</p>
-              <p><strong>Quote Amount:</strong> $${quoteAmount}</p>
-              <p><strong>Tradesperson:</strong> ${tradesmanName}</p>
+              <p><strong>Quote ID:</strong> ${leadId || 'N/A'}</p>
+              <p><strong>Customer:</strong> ${customerName || 'Customer'}</p>
+              <p><strong>Service:</strong> ${serviceType || 'Not specified'}</p>
+              <p><strong>Quote Amount:</strong> $${quoteAmount || '0'}</p>
+              <p><strong>Tradesperson:</strong> ${tradesmanName || 'Tradesperson'}</p>
               <p><strong>Status:</strong> Pending Review (Resubmitted)</p>
               <p><strong>Previous Status:</strong> Rejected</p>
             </div>
@@ -200,41 +200,59 @@ export default async function handler(req, res) {
           </div>
         `;
 
+        console.log("📧 Built resubmission email template: admin");
+
         if (process.env.ADMIN_EMAIL) {
-          await transporter.sendMail({
-            from: process.env.GMAIL_USER,
-            to: process.env.ADMIN_EMAIL,
-            subject: adminSubject,
-            html: adminHtml
-          });
+          try {
+            console.log(`📤 Sending admin resubmission notification email to: ${process.env.ADMIN_EMAIL}`);
+            const adminResult = await transporter.sendMail({
+              from: process.env.GMAIL_USER,
+              to: process.env.ADMIN_EMAIL,
+              subject: adminResubmitSubject,
+              html: adminResubmitHtml
+            });
+            console.log(`✅ Email sent to admin, msgId: ${adminResult.messageId}`);
+          } catch (error) {
+            console.error(`❌ Email failed to admin: ${error.message}`);
+          }
+        } else {
+          console.log("⚠️ ADMIN_EMAIL not configured, skipping admin notification");
         }
 
         // Send confirmation to tradesperson that resubmitted quote is under review
-        const tradespersonSubject = `🔄 Quote Resubmitted for Review - ${leadId}`;
-        const tradespersonHtml = `
+        const tradespersonResubmitSubject = `🔄 Quote Resubmitted for Review - ${leadId || 'N/A'}`;
+        const tradespersonResubmitHtml = `
           <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #333; margin: 20px 0;">Quote Resubmitted Successfully</h2>
             <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-              <p>Hi ${tradesmanName},</p>
-              <p>Your revised quote for ${customerName} has been resubmitted and is now awaiting admin review.</p>
+              <p>Hi ${tradesmanName || 'there'},</p>
+              <p>Your revised quote for ${customerName || 'the customer'} has been resubmitted and is now awaiting admin review.</p>
               <p><strong>Quote Details:</strong></p>
               <ul>
-                <li><strong>Quote ID:</strong> ${leadId}</li>
-                <li><strong>Customer:</strong> ${customerName}</li>
-                <li><strong>Service:</strong> ${serviceType}</li>
-                <li><strong>Amount:</strong> $${quoteAmount}</li>
+                <li><strong>Quote ID:</strong> ${leadId || 'N/A'}</li>
+                <li><strong>Customer:</strong> ${customerName || 'Customer'}</li>
+                <li><strong>Service:</strong> ${serviceType || 'Not specified'}</li>
+                <li><strong>Amount:</strong> $${quoteAmount || '0'}</li>
               </ul>
               <p>You will be notified once the quote has been reviewed and approved.</p>
             </div>
           </div>
         `;
 
-        await transporter.sendMail({
-          from: process.env.GMAIL_USER,
-          to: tradesmanEmail,
-          subject: tradespersonSubject,
-          html: tradespersonHtml
-        });
+        console.log("📧 Built resubmission email template: tradesperson");
+
+        try {
+          console.log(`📤 Sending tradesperson resubmission email to: ${tradesmanEmail}`);
+          const tradespersonResult = await transporter.sendMail({
+            from: process.env.GMAIL_USER,
+            to: tradesmanEmail,
+            subject: tradespersonResubmitSubject,
+            html: tradespersonResubmitHtml
+          });
+          console.log(`✅ Email sent to tradesperson, msgId: ${tradespersonResult.messageId}`);
+        } catch (error) {
+          console.error(`❌ Email failed to tradesperson: ${error.message}`);
+        }
 
         console.log(`📧 Quote resubmission notifications sent for lead ${leadId}`);
 
@@ -283,16 +301,16 @@ export default async function handler(req, res) {
       console.log(`✅ Quote saved for lead ${leadId} - Awaiting admin review`);
 
       // Send notification to admin about new quote for review
-      const adminSubject = `📋 New Quote for Review - ${serviceType} - ${leadId}`;
-      const adminHtml = `
+      const adminNewQuoteSubject = `📋 New Quote for Review - ${serviceType || 'Not specified'} - ${leadId || 'N/A'}`;
+      const adminNewQuoteHtml = `
         <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333; margin: 20px 0;">New Quote Requires Review</h2>
           <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-            <p><strong>Quote ID:</strong> ${leadId}</p>
-            <p><strong>Customer:</strong> ${customerName}</p>
-            <p><strong>Service:</strong> ${serviceType}</p>
-            <p><strong>Quote Amount:</strong> $${quoteAmount}</p>
-            <p><strong>Tradesperson:</strong> ${tradesmanName}</p>
+            <p><strong>Quote ID:</strong> ${leadId || 'N/A'}</p>
+            <p><strong>Customer:</strong> ${customerName || 'Customer'}</p>
+            <p><strong>Service:</strong> ${serviceType || 'Not specified'}</p>
+            <p><strong>Quote Amount:</strong> $${quoteAmount || '0'}</p>
+            <p><strong>Tradesperson:</strong> ${tradesmanName || 'Tradesperson'}</p>
             <p><strong>Status:</strong> Pending Review</p>
           </div>
           <div style="margin: 30px 0; text-align: center;">
@@ -301,41 +319,59 @@ export default async function handler(req, res) {
         </div>
       `;
 
+      console.log("📧 Built new quote email template: admin");
+
       if (process.env.ADMIN_EMAIL) {
-        await transporter.sendMail({
-          from: process.env.GMAIL_USER,
-          to: process.env.ADMIN_EMAIL,
-          subject: adminSubject,
-          html: adminHtml
-        });
+        try {
+          console.log(`📤 Sending admin new quote notification email to: ${process.env.ADMIN_EMAIL}`);
+          const adminResult = await transporter.sendMail({
+            from: process.env.GMAIL_USER,
+            to: process.env.ADMIN_EMAIL,
+            subject: adminNewQuoteSubject,
+            html: adminNewQuoteHtml
+          });
+          console.log(`✅ Email sent to admin, msgId: ${adminResult.messageId}`);
+        } catch (error) {
+          console.error(`❌ Email failed to admin: ${error.message}`);
+        }
+      } else {
+        console.log("⚠️ ADMIN_EMAIL not configured, skipping admin notification");
       }
 
       // Send confirmation to tradesperson that quote is submitted for review
-      const tradespersonSubject = `📋 Quote Submitted for Review - ${leadId}`;
-      const tradespersonHtml = `
+      const tradespersonNewQuoteSubject = `📋 Quote Submitted for Review - ${leadId || 'N/A'}`;
+      const tradespersonNewQuoteHtml = `
         <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333; margin: 20px 0;">Quote Submitted Successfully</h2>
           <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-            <p>Hi ${tradesmanName},</p>
-            <p>Your quote for ${customerName} has been submitted and is now awaiting admin review.</p>
+            <p>Hi ${tradesmanName || 'there'},</p>
+            <p>Your quote for ${customerName || 'the customer'} has been submitted and is now awaiting admin review.</p>
             <p><strong>Quote Details:</strong></p>
             <ul>
-              <li><strong>Quote ID:</strong> ${leadId}</li>
-              <li><strong>Customer:</strong> ${customerName}</li>
-              <li><strong>Service:</strong> ${serviceType}</li>
-              <li><strong>Amount:</strong> $${quoteAmount}</li>
+              <li><strong>Quote ID:</strong> ${leadId || 'N/A'}</li>
+              <li><strong>Customer:</strong> ${customerName || 'Customer'}</li>
+              <li><strong>Service:</strong> ${serviceType || 'Not specified'}</li>
+              <li><strong>Amount:</strong> $${quoteAmount || '0'}</li>
             </ul>
             <p>You will be notified once the quote has been reviewed and approved.</p>
           </div>
         </div>
       `;
 
-      await transporter.sendMail({
-        from: process.env.GMAIL_USER,
-        to: tradesmanEmail,
-        subject: tradespersonSubject,
-        html: tradespersonHtml
-      });
+      console.log("📧 Built new quote email template: tradesperson");
+
+      try {
+        console.log(`📤 Sending tradesperson new quote email to: ${tradesmanEmail}`);
+        const tradespersonResult = await transporter.sendMail({
+          from: process.env.GMAIL_USER,
+          to: tradesmanEmail,
+          subject: tradespersonNewQuoteSubject,
+          html: tradespersonNewQuoteHtml
+        });
+        console.log(`✅ Email sent to tradesperson, msgId: ${tradespersonResult.messageId}`);
+      } catch (error) {
+        console.error(`❌ Email failed to tradesperson: ${error.message}`);
+      }
 
       console.log(`📧 Quote submission notifications sent for lead ${leadId}`);
 
@@ -405,21 +441,21 @@ export default async function handler(req, res) {
       });
 
       // Customer email with web link and PDF
-      const customerSubject = `📋 Your Quote for ${serviceType} - ${leadId}`;
-      const quoteViewUrl = `${SITE_URL}/quote-view?leadId=${leadId}`;
-      const acceptUrl = `${SITE_URL}/api/quote-decision?leadId=${leadId}&action=accept`;
-      const declineUrl = `${SITE_URL}/api/quote-decision?leadId=${leadId}&action=decline`;
+      const customerSubject = `📋 Your Quote for ${serviceType || 'Not specified'} - ${leadId || 'N/A'}`;
+      const quoteViewUrl = `${SITE_URL}/quote-view?leadId=${leadId || 'N/A'}`;
+      const acceptUrl = `${SITE_URL}/api/quote-decision?leadId=${leadId || 'N/A'}&action=accept`;
+      const declineUrl = `${SITE_URL}/api/quote-decision?leadId=${leadId || 'N/A'}&action=decline`;
 
       const customerHtml = `
         <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
           ${renderStatus("quote")}
           <h2 style="color: #333; margin: 20px 0;">Your Quote is Ready!</h2>
           <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-            <p>Hi ${customerName},</p>
-            <p>Your quote for ${serviceType} is ready for review.</p>
-            <p><strong>Quote Amount:</strong> $${quoteAmount}</p>
+            <p>Hi ${customerName || 'there'},</p>
+            <p>Your quote for ${serviceType || 'your project'} is ready for review.</p>
+            <p><strong>Quote Amount:</strong> $${quoteAmount || '0'}</p>
             <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
-            <p><strong>Project Details:</strong> ${projectDetails}</p>
+            <p><strong>Project Details:</strong> ${projectDetails || 'Not provided'}</p>
           </div>
           <div style="margin: 30px 0; text-align: center;">
             <a href="${quoteViewUrl}" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 0 10px;">View Quote</a>
@@ -428,6 +464,8 @@ export default async function handler(req, res) {
           </div>
         </div>
       `;
+
+      console.log("📧 Built Stage 2 email template: customer");
 
       // Send all three emails
       let emailsSent = 0;
@@ -453,17 +491,17 @@ export default async function handler(req, res) {
       }
 
       // 2. Send admin notification email
-      const adminSubject = `📋 Quote Submitted - ${serviceType} - ${leadId}`;
-      const adminHtml = `
+      const adminStage2Subject = `📋 Quote Submitted - ${serviceType || 'Not specified'} - ${leadId || 'N/A'}`;
+      const adminStage2Html = `
         <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
           ${renderStatus("quote")}
           <h2 style="color: #333; margin: 20px 0;">Quote Submitted Successfully</h2>
           <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-            <p><strong>Lead ID:</strong> ${leadId}</p>
-            <p><strong>Customer:</strong> ${customerName}</p>
-            <p><strong>Service:</strong> ${serviceType}</p>
-            <p><strong>Quote Amount:</strong> $${quoteAmount}</p>
-            <p><strong>Tradesman:</strong> ${tradesmanName}</p>
+            <p><strong>Lead ID:</strong> ${leadId || 'N/A'}</p>
+            <p><strong>Customer:</strong> ${customerName || 'Customer'}</p>
+            <p><strong>Service:</strong> ${serviceType || 'Not specified'}</p>
+            <p><strong>Quote Amount:</strong> $${quoteAmount || '0'}</p>
+            <p><strong>Tradesman:</strong> ${tradesmanName || 'Tradesperson'}</p>
             <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
             <p><strong>Budget:</strong> ${budget || 'Not specified'}</p>
           </div>
@@ -473,14 +511,16 @@ export default async function handler(req, res) {
         </div>
       `;
 
+      console.log("📧 Built Stage 2 email template: admin");
+
       if (process.env.ADMIN_EMAIL) {
         try {
           console.log(`📤 Sending admin notification email to: ${process.env.ADMIN_EMAIL}`);
           const adminResult = await transporter.sendMail({
             from: process.env.GMAIL_USER,
             to: process.env.ADMIN_EMAIL,
-            subject: adminSubject,
-            html: adminHtml
+            subject: adminStage2Subject,
+            html: adminStage2Html
           });
           console.log(`✅ Email sent to admin, msgId: ${adminResult.messageId}`);
           emailsSent++;
@@ -492,20 +532,20 @@ export default async function handler(req, res) {
       }
 
       // 3. Send tradesperson confirmation email
-      const tradespersonSubject = `📋 Quote Sent Successfully - ${serviceType} - ${leadId}`;
-      const tradespersonHtml = `
+      const tradespersonStage2Subject = `📋 Quote Sent Successfully - ${serviceType || 'Not specified'} - ${leadId || 'N/A'}`;
+      const tradespersonStage2Html = `
         <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
           ${renderStatus("quote")}
           <h2 style="color: #333; margin: 20px 0;">Your Quote Has Been Sent</h2>
           <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-            <p>Hi ${tradesmanName},</p>
-            <p>Your quote for ${customerName}'s ${serviceType} project has been sent successfully.</p>
+            <p>Hi ${tradesmanName || 'there'},</p>
+            <p>Your quote for ${customerName || 'the customer'}'s ${serviceType || 'project'} has been sent successfully.</p>
             <p><strong>Quote Details:</strong></p>
             <ul>
-              <li><strong>Lead ID:</strong> ${leadId}</li>
-              <li><strong>Customer:</strong> ${customerName}</li>
-              <li><strong>Service:</strong> ${serviceType}</li>
-              <li><strong>Quote Amount:</strong> $${quoteAmount}</li>
+              <li><strong>Lead ID:</strong> ${leadId || 'N/A'}</li>
+              <li><strong>Customer:</strong> ${customerName || 'Customer'}</li>
+              <li><strong>Service:</strong> ${serviceType || 'Not specified'}</li>
+              <li><strong>Quote Amount:</strong> $${quoteAmount || '0'}</li>
               <li><strong>Timeline:</strong> ${timeline || 'Not specified'}</li>
             </ul>
             <p>The customer will receive an email with your quote and can accept or decline it.</p>
@@ -516,13 +556,15 @@ export default async function handler(req, res) {
         </div>
       `;
 
+      console.log("📧 Built Stage 2 email template: tradesperson");
+
       try {
         console.log(`📤 Sending tradesperson confirmation email to: ${tradesmanEmail}`);
         const tradespersonResult = await transporter.sendMail({
           from: process.env.GMAIL_USER,
           to: tradesmanEmail,
-          subject: tradespersonSubject,
-          html: tradespersonHtml
+          subject: tradespersonStage2Subject,
+          html: tradespersonStage2Html
         });
         console.log(`✅ Email sent to tradesperson, msgId: ${tradespersonResult.messageId}`);
         emailsSent++;

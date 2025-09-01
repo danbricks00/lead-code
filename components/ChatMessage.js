@@ -28,4 +28,4 @@ export default function ChatMessage({ message, isUser }) {
   };
 
   return <div style={isUser ? userStyle : systemStyle}>{message}</div>;
-
+}

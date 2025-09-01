@@ -357,26 +357,26 @@ async function sendAdminQuoteEmail(quoteData, req) {
                     
                     <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
                         <h4>📋 Quote Details</h4>
-                        <p><strong>Quote ID:</strong> ${quoteData.quoteId}</p>
-                        <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
-                        <p><strong>Customer:</strong> ${quoteData.customerName}</p>
-                        <p><strong>Customer Email:</strong> ${quoteData.customerEmail}</p>
-                        <p><strong>Service Type:</strong> ${quoteData.serviceType}</p>
-                    </div>
+                    <p><strong>Quote ID:</strong> ${quoteData.quoteId}</p>
+                    <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
+                    <p><strong>Customer:</strong> ${quoteData.customerName}</p>
+                    <p><strong>Customer Email:</strong> ${quoteData.customerEmail}</p>
+                    <p><strong>Service Type:</strong> ${quoteData.serviceType}</p>
+                </div>
 
-                    <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0;">
                         <h4 style="color: #155724; margin-top: 0;">💰 Financial Details</h4>
-                        <p><strong>Total Quote Amount:</strong> $${quoteData.total}</p>
-                        <p><strong>Potential Commission (10%):</strong> $${potentialCommission.toFixed(2)}</p>
-                    </div>
+                    <p><strong>Total Quote Amount:</strong> $${quoteData.total}</p>
+                    <p><strong>Potential Commission (10%):</strong> $${potentialCommission.toFixed(2)}</p>
+                </div>
 
-                    <div style="text-align: center; margin: 30px 0;">
-                        <a href="${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}" 
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${currentUrl}/api/generate-quote?quoteId=${quoteData.quoteId}" 
                            style="background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 25px; display: inline-block; font-weight: bold;">
                             📄 View Full Quote
-                        </a>
-                    </div>
-                    
+                    </a>
+                </div>
+
                     <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
                         <h4>🎯 Next Steps</h4>
                         <p><strong>The customer will now review the quote and make their decision.</strong></p>

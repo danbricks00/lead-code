@@ -35,12 +35,24 @@ export default async function handler(req, res) {
         type: 'timeline',
         question: 'When do you need the work done?',
         options: [
-          { label: 'Immediately', value: 'Immediately' },
-          { label: 'Within a couple of days', value: 'Within a couple of days' },
-          { label: 'Within a week', value: 'Within a week' },
-          { label: 'Within a month', value: 'Within a month' },
-          { label: 'Within a couple of months', value: 'Within a couple of months' },
-          { label: 'Other', value: 'Other' }
+          { label: 'ASAP', value: 'ASAP' },
+          { label: '1–2 Weeks', value: '1-2 Weeks' },
+          { label: '1 Month+', value: '1 Month+' }
+        ]
+      };
+    } else if (message.toLowerCase().includes('budget') || 
+               message.toLowerCase().includes('cost') ||
+               message.toLowerCase().includes('price')) {
+      
+      // Return budget options as buttons
+      response = {
+        success: true,
+        type: 'budget',
+        question: 'What is your budget range?',
+        options: [
+          { label: '< $500', value: '< $500' },
+          { label: '$500–$1000', value: '$500–$1000' },
+          { label: '$1000+', value: '$1000+' }
         ]
       };
     } else if (message.toLowerCase().includes('service') || 

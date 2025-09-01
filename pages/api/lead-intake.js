@@ -1,34 +1,5 @@
 import nodemailer from "nodemailer";
-import fs from "fs";
-import path from "path";
-
-// Helper function to determine ops email based on area/suburb
-function lookupOpsEmail(area, suburb) {
-  try {
-    const zonesPath = path.join(process.cwd(), "data", "zones.json");
-    const zonesData = JSON.parse(fs.readFileSync(zonesPath, "utf-8"));
-
-    // Find matching zone entry
-    const match = zonesData.find(zone =>
-      zone.area?.toLowerCase().includes(area?.toLowerCase()) ||
-      zone.suburb?.toLowerCase().includes(suburb?.toLowerCase())
-    );
-
-    if (match) {
-      // Map areas to specific ops emails
-      const areaLower = match.area?.toLowerCase() || "";
-      if (areaLower.includes("auckland")) return "auckland@kiwitrade.co.nz";
-      if (areaLower.includes("wellington")) return "wellington@kiwitrade.co.nz";
-      if (areaLower.includes("christchurch")) return "christchurch@kiwitrade.co.nz";
-    }
-
-    // Default fallback
-    return "leads@kiwitrade.co.nz";
-  } catch (error) {
-    console.error("Zone lookup failed, using default:", error.message);
-    return "leads@kiwitrade.co.nz";
-  }
-}
+import crypto from "crypto";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -38,15 +9,21 @@ export default async function handler(req, res) {
   try {
     const { name, email, phone, service, details, area, suburb } = req.body;
 
-    console.log("📩 Lead intake request:", { name, email, phone, service, details, area, suburb });
-
-    // Validate required fields
     if (!name || !email || !service) {
-      return res.status(400).json({ success: false, error: "Missing required fields: name, email, service" });
+      return res.status(400).json({ success: false, error: "Missing required fields" });
     }
 
-    // Create transporter
-    const transporter = nodemailer.createTransporter({
+    // Generate unique quoteId
+    const quoteId = crypto.randomBytes(6).toString("hex");
+
+    // Quote link (customer data prefilled via query params)
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const quoteLink = `${baseUrl}/quote/${quoteId}?name=${encodeURIComponent(name)}&service=${encodeURIComponent(service)}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone || "")}&area=${encodeURIComponent(area || "")}&suburb=${encodeURIComponent(suburb || "")}&details=${encodeURIComponent(details || "")}`;
+
+    console.log("📩 Lead intake:", { name, email, phone, service, area, suburb, details, quoteId });
+
+    // Transporter
+    const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
         user: process.env.GMAIL_USER,
@@ -54,92 +31,43 @@ export default async function handler(req, res) {
       },
     });
 
-    console.log("🔧 Transporter created, attempting 3 emails...");
-
-    // 1. Internal notification email
-    const adminEmail = {
-      from: `"Kiwi Trade Lead Bot" <${process.env.GMAIL_USER}>`,
-      to: "office@kiwitrade.co.nz", // Your admin inbox
-      subject: `🔔 New Lead: ${service}`,
-      text: `
-NEW LEAD RECEIVED:
-
-Name: ${name}
-Email: ${email}
-Phone: ${phone || "Not provided"}
-Service: ${service}
-Area: ${area || "Not specified"}
-Suburb: ${suburb || "Not specified"}
-Details: ${details || "No additional details"}
-
-Timestamp: ${new Date().toISOString()}
-      `.trim(),
-    };
-
-    const adminResult = await transporter.sendMail(adminEmail);
-    console.log("✅ Admin email sent:", adminResult.response);
-
-    // 2. Customer confirmation email
-    const customerEmail = {
-      from: `"Kiwi Trade Team" <${process.env.GMAIL_USER}>`,
-      to: email, // Customer's email
-      subject: "✅ Thanks for your inquiry!",
-      text: `
-Hi ${name},
-
-Thanks for reaching out to Kiwi Trade about ${service}!
-
-We've received your request and one of our team members will contact you within 24 hours to discuss your project.
-
-Your details:
-- Service: ${service}
-- Location: ${area ? `${suburb}, ${area}` : suburb || "Not specified"}
-- Phone: ${phone || "Not provided"}
-
-Best regards,
-The Kiwi Trade Team
-      `.trim(),
-    };
-
-    const customerResult = await transporter.sendMail(customerEmail);
-    console.log("✅ Customer email sent:", customerResult.response);
-
-    // 3. Zone-based ops email
-    const opsEmail = lookupOpsEmail(area, suburb);
-    const zoneEmail = {
-      from: `"Kiwi Trade Leads" <${process.env.GMAIL_USER}>`,
-      to: opsEmail,
-      subject: `📍 Zone Lead: ${service} (${area || suburb || "Unknown area"})`,
-      text: `
-ZONE-BASED LEAD FORWARDED:
-
-Customer: ${name}
-Contact: ${email} | ${phone || "No phone"}
-Service: ${service}
-Location: ${area ? `${suburb}, ${area}` : suburb || "Location not specified"}
-
-Project Details:
-${details || "No additional details provided"}
-
-Please follow up within 24 hours.
-      `.trim(),
-    };
-
-    const zoneResult = await transporter.sendMail(zoneEmail);
-    console.log("✅ Zone email sent to", opsEmail, ":", zoneResult.response);
-
-    return res.status(200).json({
-      success: true,
-      emailsSent: 3,
-      opsEmail: opsEmail
+    // 1. Customer confirmation
+    await transporter.sendMail({
+      from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
+      to: email,
+      subject: "✅ We received your request",
+      html: `
+        <p>Hi ${name},</p>
+        <p>Thanks for reaching out about <b>${service}</b>.</p>
+        <p>We've shared your details with one of our trade partners. They'll review your project and send you a detailed quote soon.</p>
+        <hr />
+        <small>Request ID: ${quoteId}</small>
+      `,
     });
+
+    // 2. Tradeperson lead email with quote form link
+    await transporter.sendMail({
+      from: `"Kiwi Trade Leads" <${process.env.GMAIL_USER}>`,
+      to: "office@kiwitrade.co.nz", // 🔧 later: dynamic zone-based address
+      subject: `🔔 New Lead: ${service} (${suburb || area || "Unknown location"})`,
+      html: `
+        <p>You have a new lead:</p>
+        <ul>
+          <li><b>Name:</b> ${name}</li>
+          <li><b>Email:</b> ${email}</li>
+          <li><b>Phone:</b> ${phone || "Not provided"}</li>
+          <li><b>Area/Suburb:</b> ${suburb || area || "Not specified"}</li>
+          <li><b>Details:</b> ${details || "No extra details"}</li>
+        </ul>
+        <p><b>Next step:</b> <a href="${quoteLink}">Click here to prepare a quote</a></p>
+        <p>This form will be pre-filled with customer details, and you can edit or complete the cost breakdown before submitting.</p>
+      `,
+    });
+
+    return res.status(200).json({ success: true, quoteId, quoteLink });
 
   } catch (error) {
-    console.error("❌ Lead email system failed:", error);
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      stack: error.stack
-    });
+    console.error("❌ Lead email failed:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 }

@@ -339,6 +339,31 @@
             align-self: flex-end;
         }
 
+        .button-container {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .chat-button {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .chat-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
         .chatbot-input {
             padding: 15px;
             border-top: 1px solid #eee;
@@ -763,7 +788,7 @@
             addMessage('How many areas are you planning to install underfloor heating in?');
         }
 
-        function addMessage(message, isUser = false) {
+        function addMessage(message, buttons = null, isUser = false) {
             const messagesContainer = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
@@ -777,6 +802,28 @@
             
             messageDiv.textContent = message;
             messagesContainer.appendChild(messageDiv);
+            
+            // Add buttons if provided
+            if (buttons && Array.isArray(buttons)) {
+                console.log('Creating buttons:', buttons);
+                const buttonContainer = document.createElement('div');
+                buttonContainer.className = 'button-container';
+                
+                buttons.forEach(button => {
+                    const buttonElement = document.createElement('button');
+                    buttonElement.className = 'chat-button';
+                    buttonElement.textContent = button.text;
+                    buttonElement.onclick = () => {
+                        addMessage(button.action, null, true);
+                        processUserMessage(button.action);
+                    };
+                    buttonContainer.appendChild(buttonElement);
+                });
+                
+                messagesContainer.appendChild(buttonContainer);
+                console.log('Buttons added to DOM');
+            }
+            
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
@@ -833,13 +880,38 @@
                                     chatState.step = 'timeframe';
                                     currentStep = 1;
                                     updateProgress();
-                                    addMessage("Great! What's your preferred timeframe for this project?");
+                                    addMessage("Great! What's your preferred timeline for this project?", [
+                                        { text: "Immediately", action: "Immediately" },
+                                        { text: "Within a couple of days", action: "Within a couple of days" },
+                                        { text: "Within a week", action: "Within a week" },
+                                        { text: "Within a month", action: "Within a month" },
+                                        { text: "Within a couple of months", action: "Within a couple of months" },
+                                        { text: "Other", action: "Other" }
+                                    ]);
                                 }
                             }
                         }
                         break;
                         
                     case 'timeframe':
+                        // Handle timeline selection
+                        if (message === 'Within a couple of days' || message === 'Other') {
+                            chatState.step = 'timeline_specific';
+                            addMessage("Please be specific with exact date or deadline (e.g. '15 Sept', 'before Christmas').");
+                        } else {
+                            chatState.timeframe = message;
+                            chatState.step = 'collect_details_intro';
+                            addMessage("Before we notify a tradie about your project enquiry, can you please enter your personal details so we can find a tradie who can service your area and your needs.");
+                            setTimeout(() => {
+                                chatState.step = 'customer_name';
+                                currentStep = 2; // Personal details phase
+                                updateProgress();
+                                addMessage("What's your name?");
+                            }, 3000);
+                        }
+                        break;
+                        
+                    case 'timeline_specific':
                         chatState.timeframe = message;
                         chatState.step = 'collect_details_intro';
                         addMessage("Before we notify a tradie about your project enquiry, can you please enter your personal details so we can find a tradie who can service your area and your needs.");

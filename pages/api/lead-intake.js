@@ -124,16 +124,8 @@ export default async function handler(req, res) {
       "Lead Request", // Tradesperson Status
       "Pending Review", // Admin Status
       "No", // Resubmission Allowed
-      "", // Labour Cost
-      "", // Labour Hours
-      "", // Labour Rate
-      "", // Materials Cost
-      "", // Materials Quantity
-      "", // Travel Cost
-      "", // Travel Distance
-      "", // Installation Cost
-      "", // Decision
-      "", // Decision Timestamp
+      "", "", "", "", "", "", "", "", // Cost fields
+      "", "", // Decision fields
     ]);
 
     // Setup Nodemailer
@@ -145,32 +137,52 @@ export default async function handler(req, res) {
       },
     });
 
-    // Emails
+    // --- UPDATED EMAIL CONTENT ---
+
+    // Customer Email
     const customerMail = {
       from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
       to: customerEmail,
       subject: "✅ We received your request",
-      html: `<p>Hi ${customerName},</p>
-             <p>Thanks for reaching out about <b>${serviceType}</b>. A trade professional will prepare a quote.</p>
-             <p><small>Request ID: ${leadId}</small></p>`,
+      html: `
+        <p>Hi ${customerName},</p>
+        <p>Thanks for reaching out about <b>${serviceType}</b>. A trade professional will prepare a quote.</p>
+        <p><small>Request ID: ${leadId}</small></p>
+        <hr>
+        <p>Here is a summary of what you submitted:</p>
+        <ul>
+          <li><b>Name:</b> ${customerName}</li>
+          <li><b>Email:</b> ${customerEmail}</li>
+          <li><b>Phone:</b> ${customerPhone || "Not provided"}</li>
+          <li><b>Service:</b> ${serviceType}</li>
+          <li><b>Details:</b> ${specificDetails || "No extra details"}</li>
+        </ul>
+        <p><b>Status:</b> Confirmation Request (Step 1 of 3)</p>
+      `,
     };
 
+    // Tradesperson Email
     const tradepersonMail = {
       from: `"Kiwi Trade Leads" <${process.env.GMAIL_USER}>`,
       to: "quangbui0600@gmail.com",
       subject: `🔔 New Lead: ${serviceType} (${suburb || area || "Unknown location"})`,
-      html: `<p>You have a new lead:</p>
-             <ul>
-               <li><b>Name:</b> ${customerName}</li>
-               <li><b>Email:</b> ${customerEmail}</li>
-               <li><b>Phone:</b> ${customerPhone || "Not provided"}</li>
-               <li><b>Area/Suburb:</b> ${suburb || area || "Not specified"}</li>
-               <li><b>Details:</b> ${specificDetails || "No extra details"}</li>
-             </ul>
-             <p><b>Prepare a quote here:</b> <a href="${quoteLink}">${quoteLink}</a></p>
-             <p>This link is unique and signed; no login required.</p>`,
+      html: `
+        <p>You have a new lead:</p>
+        <ul>
+          <li><b>Name:</b> ${customerName}</li>
+          <li><b>Email:</b> ${customerEmail}</li>
+          <li><b>Phone:</b> ${customerPhone || "Not provided"}</li>
+          <li><b>Area/Suburb:</b> ${suburb || area || "Not specified"}</li>
+          <li><b>Details:</b> ${specificDetails || "No extra details"}</li>
+        </ul>
+        <p><b>Prepare a quote here:</b> <a href="${quoteLink}">${quoteLink}</a></p>
+        <p>This link is unique and signed; no login required.</p>
+        <hr>
+        <p><b>Status:</b> Lead Request (Step 1 of 3)</p>
+      `,
     };
 
+    // Admin Email
     const adminMail = {
       from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
       to: "danbricks18@gmail.com",

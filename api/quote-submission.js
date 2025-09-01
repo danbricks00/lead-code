@@ -121,33 +121,129 @@ export default async function handler(req, res) {
       
       const existingQuotes = rows.filter(row => 
         row[1] === leadId && // leadId column (B)
-        row[4] === tradesmanEmail // tradesmanEmail column (E)
+        row[13] === tradesmanEmail // tradesmanEmail column (M)
       );
 
       if (existingQuotes.length > 0) {
-        // Check if any existing quote allows resubmission
-        const declinedQuote = existingQuotes.find(row => row[10] === 'declined'); // status column (K)
+        const existingQuote = existingQuotes[0];
+        const quoteStatus = existingQuote[6] || 'Pending'; // status column (G)
         
-        if (declinedQuote) {
-          const declineReason = declinedQuote[11]; // decline reason column (L)
-          const resubmissionUsed = declinedQuote[14]; // resubmission_used column (O)
-          
-          // Check if resubmission is allowed
-          if ((declineReason === 'pricing_error' || declineReason === 'missing_details') && resubmissionUsed !== 'TRUE') {
-            console.log('✅ Resubmission allowed for declined quote:', { leadId, tradesmanEmail, declineReason });
-            // Continue with submission - this is a valid resubmission
-          } else {
-            console.log('❌ Resubmission not allowed:', { leadId, tradesmanEmail, declineReason, resubmissionUsed });
-            return res.status(400).json({
-              error: 'You have already submitted a quote for this lead and resubmission is not allowed.'
-            });
-          }
-        } else {
-          console.log('❌ Quote already exists and is not declined:', { leadId, tradesmanEmail });
-          return res.status(400).json({
-            error: 'You have already submitted a quote for this lead.'
+        // Allow resubmission only if previous quote was rejected
+        if (quoteStatus !== 'Rejected') {
+          console.log('❌ Quote already exists and is not rejected:', { leadId, tradesmanEmail, quoteStatus });
+          return res.status(409).json({
+            success: false,
+            error: `You have already submitted a quote for this lead (Status: ${quoteStatus}). Only one quote per tradesperson is allowed unless the previous quote was rejected.`
           });
         }
+
+        // If this is a resubmission after rejection, update the existing row instead of creating new one
+        console.log(`🔄 Tradesperson ${tradesmanEmail} resubmitting quote for lead ${leadId} after rejection`);
+        
+        const quoteRowIndex = rows.findIndex(row => 
+          row[1] === leadId && row[13] === tradesmanEmail
+        );
+
+        const updatedRow = [
+          new Date().toISOString(), // Timestamp
+          leadId, // LeadId
+          customerName, // CustomerName
+          serviceType, // Service
+          quoteAmount, // QuoteAmount
+          projectDetails, // Details
+          'Pending', // Status (reset to pending for admin review)
+          timeline, // Timeline
+          location?.area || '', // Area
+          location?.suburb || '', // Suburb
+          budget, // Budget
+          specificDetails, // SpecificDetails
+          tradesmanName, // TradesmanName
+          tradesmanEmail, // TradesmanEmail
+          tradesmanPhone || '', // TradesmanPhone
+          projectSize, // ProjectSize
+          breakdown, // Breakdown
+          notes || '', // Notes
+          req.body.companyName || '', // CompanyName
+          '', // Admin approval timestamp (clear)
+          '', // Admin who approved (clear)
+          '' // Rejection reason (clear)
+        ];
+
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+          range: `Quotes!A${quoteRowIndex + 1}:Z${quoteRowIndex + 1}`,
+          valueInputOption: 'RAW',
+          requestBody: {
+            values: [updatedRow]
+          }
+        });
+
+        console.log(`✅ Quote resubmitted for lead ${leadId} - Awaiting admin review`);
+
+        // Send notification to admin about resubmitted quote
+        const adminSubject = `🔄 Quote Resubmitted for Review - ${serviceType} - ${leadId}`;
+        const adminHtml = `
+          <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333; margin: 20px 0;">Quote Resubmitted After Rejection</h2>
+            <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+              <p><strong>Quote ID:</strong> ${leadId}</p>
+              <p><strong>Customer:</strong> ${customerName}</p>
+              <p><strong>Service:</strong> ${serviceType}</p>
+              <p><strong>Quote Amount:</strong> $${quoteAmount}</p>
+              <p><strong>Tradesperson:</strong> ${tradesmanName}</p>
+              <p><strong>Status:</strong> Pending Review (Resubmitted)</p>
+              <p><strong>Previous Status:</strong> Rejected</p>
+            </div>
+            <div style="margin: 30px 0; text-align: center;">
+              <a href="${SITE_URL}/admin-quote-review.html" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Review Resubmitted Quote</a>
+            </div>
+          </div>
+        `;
+
+        if (process.env.ADMIN_EMAIL) {
+          await transporter.sendMail({
+            from: process.env.GMAIL_USER,
+            to: process.env.ADMIN_EMAIL,
+            subject: adminSubject,
+            html: adminHtml
+          });
+        }
+
+        // Send confirmation to tradesperson that resubmitted quote is under review
+        const tradespersonSubject = `🔄 Quote Resubmitted for Review - ${leadId}`;
+        const tradespersonHtml = `
+          <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333; margin: 20px 0;">Quote Resubmitted Successfully</h2>
+            <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+              <p>Hi ${tradesmanName},</p>
+              <p>Your revised quote for ${customerName} has been resubmitted and is now awaiting admin review.</p>
+              <p><strong>Quote Details:</strong></p>
+              <ul>
+                <li><strong>Quote ID:</strong> ${leadId}</li>
+                <li><strong>Customer:</strong> ${customerName}</li>
+                <li><strong>Service:</strong> ${serviceType}</li>
+                <li><strong>Amount:</strong> $${quoteAmount}</li>
+              </ul>
+              <p>You will be notified once the quote has been reviewed and approved.</p>
+            </div>
+          </div>
+        `;
+
+        await transporter.sendMail({
+          from: process.env.GMAIL_USER,
+          to: tradesmanEmail,
+          subject: tradespersonSubject,
+          html: tradespersonHtml
+        });
+
+        console.log(`📧 Quote resubmission notifications sent for lead ${leadId}`);
+
+        return res.json({ 
+          success: true, 
+          message: 'Quote resubmitted successfully and sent for admin review',
+          leadId,
+          isResubmission: true
+        });
       }
       
       // Save quote to Google Sheets

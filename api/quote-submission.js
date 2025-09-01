@@ -169,7 +169,8 @@ export default async function handler(req, res) {
         tradesmanPhone || '', // TradesmanPhone
         projectSize, // ProjectSize
         breakdown, // Breakdown
-        notes || '' // Notes
+        notes || '', // Notes
+        req.body.companyName || '' // CompanyName
       ];
 
       // Append to Quotes sheet

@@ -930,7 +930,7 @@
                 specificDetails: `Customer requires underfloor heating installation for ${totalRooms} room(s): ${roomDetailsText}. Timeframe: ${chatState.timeframe || 'Flexible'}`
             };
 
-            fetch('/api/app?action=lead-intake', {
+            fetch('/api/lead-intake', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(leadData)
@@ -1031,7 +1031,7 @@
         async function fetchZoneDataAndShowAddressSelection() {
             try {
                 console.log('🔍 Fetching Zone data from API...');
-                const response = await fetch('/api/app?action=zones');
+                const response = await fetch('/api/zones');
                 console.log('📊 Response status:', response.status);
                 
                 if (!response.ok) {
@@ -1327,7 +1327,7 @@
        zoneSelect.innerHTML = "<option>Loading zones...</option>";
 
        try {
-         const res = await fetch("/api/app?action=zone-list");
+         const res = await fetch("/api/zones");
          if (res.ok) {
            const zones = await res.json();
            zoneSelect.innerHTML = "";

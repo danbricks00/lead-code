@@ -20,6 +20,43 @@ function loadFallbackZonesFromHTML() {
   }
 }
 
+// Gamified status renderer function
+function renderStatus(stage) {
+  const baseStyle = "font-family: Arial, Helvetica, sans-serif; font-size: 14px; margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;";
+  const checkStyle = "color: #28a745; font-weight: bold;";
+  const pendingStyle = "color: #ffc107; font-weight: bold;";
+  const crossStyle = "color: #dc3545; font-weight: bold;";
+  
+  let statusHtml = `<div style="${baseStyle}">`;
+  statusHtml += `<h3 style="margin: 0 0 15px 0; color: #333;">Project Status</h3>`;
+  
+  switch(stage) {
+    case "lead":
+      statusHtml += `<p style="margin: 5px 0;"><span style="${checkStyle}">✔</span> Lead Received</p>`;
+      statusHtml += `<p style="margin: 5px 0;"><span style="${pendingStyle}">⏳</span> Awaiting Quote</p>`;
+      statusHtml += `<p style="margin: 5px 0;"><span style="${pendingStyle}">⏳</span> Awaiting Decision</p>`;
+      break;
+    case "quote":
+      statusHtml += `<p style="margin: 5px 0;"><span style="${checkStyle}">✔</span> Lead Received</p>`;
+      statusHtml += `<p style="margin: 5px 0;"><span style="${checkStyle}">✔</span> Quote Sent</p>`;
+      statusHtml += `<p style="margin: 5px 0;"><span style="${pendingStyle}">⏳</span> Awaiting Decision</p>`;
+      break;
+    case "accepted":
+      statusHtml += `<p style="margin: 5px 0;"><span style="${checkStyle}">✔</span> Lead Received</p>`;
+      statusHtml += `<p style="margin: 5px 0;"><span style="${checkStyle}">✔</span> Quote Sent</p>`;
+      statusHtml += `<p style="margin: 5px 0;"><span style="${checkStyle}">✔</span> Quote Accepted</p>`;
+      break;
+    case "declined":
+      statusHtml += `<p style="margin: 5px 0;"><span style="${checkStyle}">✔</span> Lead Received</p>`;
+      statusHtml += `<p style="margin: 5px 0;"><span style="${checkStyle}">✔</span> Quote Sent</p>`;
+      statusHtml += `<p style="margin: 5px 0;"><span style="${crossStyle}">✘</span> Quote Declined</p>`;
+      break;
+  }
+  
+  statusHtml += `</div>`;
+  return statusHtml;
+}
+
 export default async function handler(req, res) {
   const { action } = req.query;
 
@@ -453,22 +490,28 @@ export default async function handler(req, res) {
          // Team + Admin email content
          const teamSubject = `📋 New Lead - ${serviceType}`;
          const teamHtml = `
-           <h2>New Lead Received</h2>
-           <p><strong>Lead ID:</strong> ${leadId}</p>
-           <p><strong>Customer Name:</strong> ${customerName}</p>
-           <p><strong>Customer Email:</strong> ${customerEmail}</p>
-           <p><strong>Customer Phone:</strong> ${customerPhone || 'Not provided'}</p>
-           <p><strong>Service Type:</strong> ${serviceType}</p>
-           <p><strong>Area:</strong> ${areaValue || 'Not specified'}</p>
-           <p><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</p>
-           <p><strong>Number of Rooms:</strong> ${totalRooms}</p>
-           <p><strong>Room Details:</strong></p>
-           <ul>${roomsEmailList}</ul>
-           <p><strong>Budget:</strong> ${budget || 'Not specified'}</p>
-           <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
-           <p><strong>Specific Details:</strong> ${specificDetails || 'None'}</p>
-           <br>
-           <p><strong>👉 Create your quote here:</strong> <a href="${quoteFormUrl}">${quoteFormUrl}</a></p>
+           <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+             ${renderStatus("lead")}
+             <h2 style="color: #333; margin: 20px 0;">New Lead Received</h2>
+             <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+               <p><strong>Lead ID:</strong> ${leadId}</p>
+               <p><strong>Customer Name:</strong> ${customerName}</p>
+               <p><strong>Customer Email:</strong> ${customerEmail}</p>
+               <p><strong>Customer Phone:</strong> ${customerPhone || 'Not provided'}</p>
+               <p><strong>Service Type:</strong> ${serviceType}</p>
+               <p><strong>Area:</strong> ${areaValue || 'Not specified'}</p>
+               <p><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</p>
+               <p><strong>Number of Rooms:</strong> ${totalRooms}</p>
+               <p><strong>Room Details:</strong></p>
+               <ul>${roomsEmailList}</ul>
+               <p><strong>Budget:</strong> ${budget || 'Not specified'}</p>
+               <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
+               <p><strong>Specific Details:</strong> ${specificDetails || 'None'}</p>
+             </div>
+             <div style="margin: 30px 0; text-align: center;">
+               <a href="${quoteFormUrl}" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">👉 Create Quote</a>
+             </div>
+           </div>
          `;
 
                  // Send to team and admin
@@ -490,23 +533,28 @@ export default async function handler(req, res) {
            });
          }
 
-        // Customer confirmation email
-        const customerSubject = `✅ We received your request for ${serviceType}`;
-        const customerHtml = `
-          <h2>Thank you for your enquiry!</h2>
-          <p>Hi ${customerName},</p>
-          <p>We've received your ${serviceType} enquiry and will be in touch within 24 hours.</p>
-          <p><strong>Your enquiry details:</strong></p>
-          <ul>
-            <li><strong>Service:</strong> ${serviceType}</li>
-            <li><strong>Rooms:</strong> ${roomsString}</li>
-            <li><strong>Area:</strong> ${areaValue || 'Not specified'}</li>
-            <li><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</li>
-            <li><strong>Budget:</strong> ${budget || 'Not specified'}</li>
-            <li><strong>Timeline:</strong> ${timeline || 'Not specified'}</li>
-          </ul>
-          <p>Best regards,<br>The Kiwi Trade Team</p>
-        `;
+                 // Customer confirmation email
+         const customerSubject = `✅ We received your request for ${serviceType}`;
+         const customerHtml = `
+           <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+             ${renderStatus("lead")}
+             <h2 style="color: #333; margin: 20px 0;">Thank you for your enquiry!</h2>
+             <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+               <p>Hi ${customerName},</p>
+               <p>We've received your ${serviceType} enquiry and will be in touch within 24 hours.</p>
+               <p><strong>Your enquiry details:</strong></p>
+               <ul>
+                 <li><strong>Service:</strong> ${serviceType}</li>
+                 <li><strong>Rooms:</strong> ${roomsString}</li>
+                 <li><strong>Area:</strong> ${areaValue || 'Not specified'}</li>
+                 <li><strong>Suburb:</strong> ${suburbValue || 'Not specified'}</li>
+                 <li><strong>Budget:</strong> ${budget || 'Not specified'}</li>
+                 <li><strong>Timeline:</strong> ${timeline || 'Not specified'}</li>
+               </ul>
+               <p>Best regards,<br>The Kiwi Trade Team</p>
+             </div>
+           </div>
+         `;
 
                  await transporter.sendMail({
            from: process.env.GMAIL_USER,

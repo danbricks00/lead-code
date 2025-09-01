@@ -480,7 +480,7 @@ export default async function handler(req, res) {
          });
 
                  // Build quote form URL with lead ID
-         const quoteFormUrl = `${process.env.QUOTE_FORM_URL || "https://yourdomain.vercel.app/quote-form"}?leadId=${leadId}`;
+         const quoteFormUrl = `${process.env.SITE_URL || "https://lead-code.vercel.app"}/quote-form.html?leadId=${leadId}`;
 
          // Format rooms for email
          const roomsEmailList = rooms.map(room => 

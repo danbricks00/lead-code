@@ -2,32 +2,61 @@ import { google } from "googleapis";
 
 export default async function handler(req, res) {
   try {
-    // Log the credentials being used
-    console.log("Using GOOGLE_CLIENT_EMAIL:", process.env.GOOGLE_CLIENT_EMAIL);
-    console.log("Using GOOGLE_SHEET_ID:", process.env.GOOGLE_SHEET_ID);
+    // Collect and validate environment variables
+    const envVars = {
+      GOOGLE_CLIENT_EMAIL: process.env.GOOGLE_CLIENT_EMAIL,
+      GOOGLE_PRIVATE_KEY: process.env.GOOGLE_PRIVATE_KEY,
+      GOOGLE_SHEET_ID: process.env.GOOGLE_SHEET_ID
+    };
 
-    // Check if required environment variables are present
-    if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_SHEET_ID) {
-      return res.status(500).json({
+    // Build validation report
+    const report = {
+      GOOGLE_CLIENT_EMAIL: !!envVars.GOOGLE_CLIENT_EMAIL,
+      GOOGLE_PRIVATE_KEY: !!envVars.GOOGLE_PRIVATE_KEY,
+      GOOGLE_SHEET_ID: !!envVars.GOOGLE_SHEET_ID
+    };
+
+    // Check for missing or placeholder values
+    const warnings = [];
+    const requiredVars = ['GOOGLE_CLIENT_EMAIL', 'GOOGLE_PRIVATE_KEY', 'GOOGLE_SHEET_ID'];
+    
+    requiredVars.forEach(varName => {
+      const value = envVars[varName];
+      if (!value) {
+        warnings.push(`⚠️ ${varName} is missing`);
+      } else if (value === varName || value === `process.env.${varName}` || value.includes('YOUR_')) {
+        warnings.push(`⚠️ ${varName} appears to be a placeholder: "${value}"`);
+      }
+    });
+
+    // Log to Vercel console
+    console.log("Using GOOGLE_CLIENT_EMAIL:", envVars.GOOGLE_CLIENT_EMAIL);
+    console.log("Using GOOGLE_SHEET_ID:", envVars.GOOGLE_SHEET_ID);
+    console.log("Env Validation Report:", report);
+
+    // If any issues found, return error with details
+    if (warnings.length > 0) {
+      return res.status(400).json({
         success: false,
-        error: "Missing required environment variables: GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, or GOOGLE_SHEET_ID"
+        error: "Missing or invalid environment variables",
+        warnings,
+        details: report
       });
     }
 
-    // Create JWT auth
+    // All env vars look valid, attempt Google Sheets connection
     const auth = new google.auth.JWT(
-      process.env.GOOGLE_CLIENT_EMAIL,
+      envVars.GOOGLE_CLIENT_EMAIL,
       null,
-      process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      envVars.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
       ["https://www.googleapis.com/auth/spreadsheets.readonly"]
     );
 
-    // Create sheets client
     const sheets = google.sheets({ version: "v4", auth });
 
     // Try to fetch a sample range from Zone tab
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      spreadsheetId: envVars.GOOGLE_SHEET_ID,
       range: "Zone!A1:C5"
     });
 

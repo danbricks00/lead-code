@@ -14,6 +14,9 @@ export default async function handler(req, res) {
     const simplifiedHtml = '<html><body><h1>PDF Test</h1><p>If you can see this, the PDF engine is working.</p></body></html>';
     console.log('Using simplified HTML for test.');
 
+    // Add recommended font and Vercel-specific configurations
+    await chromium.font('https://raw.githack.com/googlei18n/noto-cjk/main/NotoSansCJK-Regular.ttc');
+
     browser = await puppeteer.launch({
         args: chromium.args,
         defaultViewport: chromium.defaultViewport,

@@ -81,6 +81,7 @@ const Chatbot = () => {
       if (response.ok && result.success) {
         addMessage('✅ Your lead has been submitted successfully! We will be in touch shortly.', false);
         setIsCompleted(true);
+        setCurrentStep(chatFlow.length-1); // move t
       } else {
         throw new Error(result.error || 'An unknown error occurred.');
       }

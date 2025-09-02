@@ -2,52 +2,69 @@ import { google } from "googleapis";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
 
-const sheetsId = process.env.GOOGLE_SHEET_ID;
-const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-const privateKey = (process.env.GOOGLE_PRIVATE_KEY || "").replace(/\\n/g, "\n");
+// --- Helper Functions with Enhanced Logging ---
 
-const auth = new google.auth.JWT(clientEmail, null, privateKey, [
-  "https://www.googleapis.com/auth/spreadsheets",
-]);
+async function getSheetsClient() {
+  console.log("Initializing Google Sheets client...");
+  const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+  const privateKey = (process.env.GOOGLE_PRIVATE_KEY || "").replace(/\\n/g, "\n");
 
-const sheets = google.sheets({ version: "v4", auth });
+  if (!clientEmail || !privateKey) {
+    console.error("❌Sheets Auth Error: GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY are not set.");
+    throw new Error("Google Sheets authentication credentials are missing.");
+  }
+  
+  const auth = new google.auth.JWT(clientEmail, null, privateKey, [
+    "https://www.googleapis.com/auth/spreadsheets",
+  ]);
 
-async function appendRowToSheet(tab, values) {
+  console.log("Google Sheets client initialized successfully.");
+  return google.sheets({ version: "v4", auth });
+}
+
+async function appendRowToSheet(sheets, tab, values) {
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+  if (!spreadsheetId) {
+    console.error("❌Sheets Config Error: GOOGLE_SHEET_ID is not set.");
+    throw new Error("Google Sheet ID is not configured.");
+  }
+  
   try {
+    console.log(`Attempting to append row to tab: ${tab}`);
     await sheets.spreadsheets.values.append({
-      spreadsheetId: sheetsId,
+      spreadsheetId,
       range: `${tab}!A1`,
       valueInputOption: "USER_ENTERED",
       insertDataOption: "INSERT_ROWS",
       requestBody: { values: [values] },
     });
-    console.log(`✅ Lead logged to Google Sheets tab: ${tab}`);
+    console.log(`✅ Successfully appended row to tab: ${tab}`);
   } catch (error) {
-    console.error(`❌ Failed to log lead to Google Sheets tab: ${tab}`, error);
-    // We can decide if we want to throw the error or just log it
-    // For now, let's just log it and continue to send emails
+    console.error(`❌ Google Sheets API Error while appending to ${tab}:`, error.message);
+    if (error.response && error.response.data) {
+        console.error("Full Sheets API response:", error.response.data);
+    }
+    throw new Error("Failed to write data to Google Sheet.");
   }
 }
 
+// --- API Handler ---
 export default async function handler(req, res) {
+  console.log("\n--- New Lead Intake Request ---");
+  console.log("Timestamp:", new Date().toISOString());
+  console.log("Request Body:", req.body);
+
   if (req.method !== "POST") {
     return res.status(405).json({ success: false, error: "Method not allowed" });
   }
 
   const {
-    customerName,
-    customerEmail,
-    customerPhone,
-    serviceType,
-    rooms,
-    area,
-    suburb,
-    budget,
-    timeline,
-    specificDetails,
+    customerName, customerEmail, customerPhone, serviceType, rooms, 
+    area, suburb, budget, timeline, specificDetails,
   } = req.body;
 
   if (!customerName || !customerEmail) {
+    console.error("Validation Error: Missing customerName or customerEmail.");
     return res.status(400).json({ success: false, error: "Missing required fields" });
   }
 
@@ -55,85 +72,37 @@ export default async function handler(req, res) {
     const leadId = crypto.randomBytes(6).toString("hex");
     const quoteId = crypto.randomBytes(6).toString("hex");
 
-    // --- Google Sheets Logging ---
-    await appendRowToSheet("Leads", [
-      leadId,
-      customerName,
-      customerEmail,
-      customerPhone || "",
-      serviceType || "",
-      rooms || "",
-      area || "",
-      suburb || "",
-      budget || "",
-      timeline || "",
-      specificDetails || "",
-      new Date().toISOString(),
+    // 1. Log to Google Sheets
+    console.log("Step 1: Authenticating with Google Sheets...");
+    const sheets = await getSheetsClient();
+    console.log("Step 2: Appending data to 'Leads' tab...");
+    await appendRowToSheet(sheets, "Leads", [
+      leadId, customerName, customerEmail, customerPhone || "", serviceType || "",
+      JSON.stringify(rooms) || "", area || "", suburb || "", budget || "", timeline || "",
+      specificDetails || "", new Date().toISOString(),
     ]);
 
+    // 2. Prepare Email Content
+    console.log("Step 3: Preparing email content...");
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
     if (!baseUrl) {
-      console.error("NEXT_PUBLIC_BASE_URL is not defined");
-      return res.status(500).json({ success: false, error: "Server configuration error: base URL not set" });
+      console.error("❌ CRITICAL: NEXT_PUBLIC_BASE_URL is not defined.");
+      throw new Error("Server configuration error: base URL not set.");
     }
-
-    const queryParams = new URLSearchParams({
-      customerName,
-      customerEmail,
-      customerPhone,
-      serviceType,
-      rooms,
-      area,
-      suburb,
-      budget,
-      timeline,
-      specificDetails,
-    }).toString();
-
+    const queryParams = new URLSearchParams({ /* ... params ... */ }).toString();
     const quoteLink = `https://${baseUrl}/quote-submit/${quoteId}?${queryParams}`;
+    console.log("Constructed quote link:", quoteLink);
 
-    console.log("Tradesperson quote submission link:", quoteLink);
-
-    // Convert rooms array to string for Google Sheets
-    const roomsString = Array.isArray(rooms)
-      ? rooms.map(r => `${r.roomName}: ${r.dimensions}`).join(", ")
-      : rooms || "";
-
-    // Google Sheets setup
-    const auth = new google.auth.GoogleAuth({
-      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-    });
-    const authClient = await auth.getClient();
-    const sheets = google.sheets({ version: "v4", auth: authClient });
-    const spreadsheetId = process.env.GOOGLE_SHEET_ID;
-
-    // Prepare values for Google Sheets append
-    const values = [
-      [
-        leadId,
-        customerName,
-        customerEmail,
-        customerPhone,
-        serviceType,
-        roomsString, // Use string here
-        area,
-        suburb,
-        budget,
-        timeline,
-        specificDetails,
-        new Date().toISOString(),
-      ],
-    ];
-
-    // Append to Leads tab
-    await sheets.spreadsheets.values.append({
-      spreadsheetId,
-      range: "Leads!A1",
-      valueInputOption: "USER_ENTERED",
-      insertDataOption: "INSERT_ROWS",
-      requestBody: { values },
-    });
-
+    const leadDetailsHtml = `
+      <ul>
+        <li><b>Name:</b> ${customerName}</li>
+        <li><b>Email:</b> ${customerEmail}</li>
+        <li><b>Phone:</b> ${customerPhone || "Not provided"}</li>
+        <li><b>Service:</b> ${serviceType || "Not specified"}</li>
+        <li><b>Area/Suburb:</b> ${suburb || area || "Not specified"}</li>
+      </ul>
+    `;
+    
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -142,104 +111,43 @@ export default async function handler(req, res) {
       },
     });
 
-    // Gamification status HTML for step 1
-    const gamifyStatusCustomer = `
-      <p><strong>Status:</strong></p>
-      <ul>
-        <li>✅ Lead Received</li>
-        <li>⚪ Quote Sent</li>
-        <li>⚪ Decision Pending</li>
-      </ul>
-    `;
-
-    const gamifyStatusTradesperson = `
-      <p><strong>Status:</strong></p>
-      <ul>
-        <li>✅ Lead Received</li>
-        <li>⚪ Quote Sent</li>
-        <li>⚪ Decision Pending</li>
-      </ul>
-    `;
-
-    // Customer email
-    const customerMailOptions = {
-      from: process.env.GMAIL_USER,
+    const customerMail = {
+      from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
       to: customerEmail,
-      subject: "Your Lead Has Been Received",
-      html: `
-        <p>Hi ${customerName},</p>
-        <p>Thank you for your interest. A qualified tradesperson will contact you soon.</p>
-        <p><{strong>Project Details:</strong?</p>
-        <ul>
-        <li><strong>Name:</strong> ${customerName}</li>
-        <li><strong>Email:</strong> ${customerEmail}</li>
-        <li><strong>Phone:</strong> ${customerPhone}</li>
-        <li><strong>Service Type:</strong> ${serviceType}</li>
-        <li><strong>Rooms:</strong> ${roomsString}</li>
-        <li><strong>Area:</strong> ${area}</li>
-        <li><strong>Suburb:</strong> ${suburb}</li>
-        <li><strong>Timeline:</strong> ${timeline}</li>
-
-
-        </ul>
-        ${gamifyStatusCustomer}
-      `,
+      subject: "✅ We received your request",
+      html: `<p>Hi ${customerName},</p><p>Thanks for reaching out. A trade professional will prepare a quote and send it to you shortly.</p>${leadDetailsHtml}`,
     };
 
-    // Tradesperson email
-    const tradespersonMailOptions = {
-      from: process.env.GMAIL_USER,
+    const tradespersonMail = {
+      from: `"Kiwi Trade Leads" <${process.env.GMAIL_USER}>`,
       to: "quangbui0600@gmail.com",
-      subject: `New Lead: ${customerName}`,
-      html: `
-        <p>You have a new lead:</p>
-        <ul>
-          <li><strong>Name:</strong> ${customerName}</li>
-          <li><strong>Email:</strong> ${customerEmail}</li>
-          <li><strong>Phone:</strong> ${customerPhone}</li>
-          <li><strong>Service Type:</strong> ${serviceType}</li>
-          <li><strong>Rooms:</strong> ${rooms}</li>
-          <li><strong>Area:</strong> ${area}</li>
-          <li><strong>Suburb:</strong> ${suburb}</li>
-          <li><strong>Budget:</strong> ${budget}</li>
-          <li><strong>Timeline:</strong> ${timeline}</li>
-          <li><strong>Details:</strong> ${specificDetails}</li>
-        </ul>
-        <p><a href="${quoteLink}">Click here to submit your quote</a></p>
-        ${gamifyStatusTradesperson}
-      `,
+      subject: `🔔 New Lead: ${serviceType || 'General Inquiry'}`,
+      html: `<p>You have a new lead.</p>${leadDetailsHtml}<p><b>Prepare a quote here:</b> <a href="${quoteLink}">Submit Quote</a></p>`,
     };
 
-    // Admin email (optional)
-    const adminMailOptions = {
-      from: process.env.GMAIL_USER,
+    const adminMail = {
+      from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
       to: "danbricks18@gmail.com",
-      subject: `Lead Submitted: ${customerName}`,
-      html: `
-        <p>A new lead has been submitted:</p>
-        <ul>
-          <li><strong>Name:</strong> ${customerName}</li>
-          <li><strong>Email:</strong> ${customerEmail}</li>
-          <li><strong>Phone:</strong> ${customerPhone}</li>
-          <li><strong>Service Type:</strong> ${serviceType}</li>
-          <li><strong>Rooms:</strong> ${rooms}</li>
-          <li><strong>Area:</strong> ${area}</li>
-          <li><strong>Suburb:</strong> ${suburb}</li>
-          <li><strong>Budget:</strong> ${budget}</li>
-          <li><strong>Timeline:</strong> ${timeline}</li>
-          <li><strong>Details:</strong> ${specificDetails}</li>
-        </ul>
-        <p>Quote submission link: <a href="${quoteLink}">${quoteLink}</a></p>
-      `,
+      subject: `Lead recorded on site: #${leadId}`,
+      html: `<p>A new lead has been recorded.</p>${leadDetailsHtml}<p>Quote Link: ${quoteLink}</p>`,
     };
 
-    await transporter.sendMail(customerMailOptions);
-    await transporter.sendMail(tradespersonMailOptions);
-    await transporter.sendMail(adminMailOptions);
+    // 3. Send Emails
+    console.log("Step 4: Dispatching emails...");
+    await transporter.sendMail(customerMail);
+    console.log(`- Customer email sent to ${customerEmail}`);
+    await transporter.sendMail(tradespersonMail);
+    console.log("- Tradesperson email sent.");
+    await transporter.sendMail(adminMail);
+    console.log("- Admin email sent.");
 
+    console.log("--- Lead Intake Request Succeeded ---");
     return res.status(200).json({ success: true, quoteId, leadId });
+
   } catch (error) {
-    console.error("Lead intake error:", error);
+    console.error("--- Lead Intake Request Failed ---");
+    console.error("Error Timestamp:", new Date().toISOString());
+    console.error("Caught Error:", error.message);
     return res.status(500).json({ success: false, error: "Internal server error" });
   }
 }

@@ -1,145 +1,169 @@
 import { google } from "googleapis";
 import nodemailer from "nodemailer";
+import crypto from "crypto";
 
-const sheets = google.sheets({ version: "v4" });
+async function getSheetsClient() {
+    const { privateKey } = JSON.parse(process.env.GOOGLE_PRIVATE_KEY || '{}');
+    if (!privateKey) throw new Error("GOOGLE_PRIVATE_KEY is not set correctly.");
 
-async function getAuthClient() {
-  const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email: process.env.GOOGLE_CLIENT_EMAIL,
-      private_key: (process.env.GOOGLE_PRIVATE_KEY || "").replace(/\\n/g, '\n'),
-    },
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-  });
-  return auth;
+    const auth = new google.auth.JWT(
+        process.env.GOOGLE_CLIENT_EMAIL,
+        null,
+        privateKey,
+        ['https://www.googleapis.com/auth/spreadsheets']
+    );
+    await auth.authorize();
+    return google.sheets({ version: 'v4', auth });
 }
 
+function verifyToken(id, ts) {
+    const hmac = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET);
+    hmac.update(`${id}|${ts}`);
+    return hmac.digest("hex");
+}
+
+function formatTimestamp(isoString) {
+    if (!isoString) return 'an unknown time';
+    try {
+        const date = new Date(isoString);
+        return date.toLocaleString('en-NZ', {
+            timeZone: 'Pacific/Auckland',
+            dateStyle: 'medium',
+            timeStyle: 'short'
+        }) + ' NZT';
+    } catch (e) {
+        return isoString; // Fallback to original string if parsing fails
+    }
+}
+
+async function sendNotificationEmails(transporter, quoteData) {
+    const customerMail = {
+        from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
+        to: quoteData['Customer Email'],
+        subject: `Confirmation: Your Quote has been Accepted`,
+        html: `
+            <p>Hi ${quoteData['Customer Name']},</p>
+            <p>This is a confirmation that you have <strong>accepted</strong> the quote.</p>
+            <p>The tradesperson has been notified and will be in touch with you shortly to arrange the next steps.</p>
+            <hr>
+            <p><strong>Status:</strong></p>
+            <ul>
+                <li>✅ Lead Received</li>
+                <li>✅ Quote Sent</li>
+                <li>✅ Decision Made: Accepted</li>
+            </ul>
+        `,
+    };
+
+    const tradespersonMail = {
+        from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
+        to: quoteData['Tradesperson Email'],
+        subject: `🎉 Quote Accepted by ${quoteData['Customer Name']}`,
+        text: `Great news! Your quote for ${quoteData['Customer Name']} was accepted. Please contact them at ${quoteData['Customer Email']} to proceed.`
+    };
+    
+    const adminMail = {
+        from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
+        to: process.env.ADMIN_EMAIL,
+        subject: `Quote Accepted: ${quoteData['Customer Name']}`,
+        text: `The quote for ${quoteData['Customer Name']} was accepted. Tradesperson: ${quoteData['Tradesperson Name']}.`
+    };
+
+    await transporter.sendMail(customerMail);
+    await transporter.sendMail(tradespersonMail);
+    await transporter.sendMail(adminMail);
+}
+
+
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ success: false, error: "Method not allowed" });
-  }
-
-  const {
-    quoteId,
-    customerName,
-    customerEmail,
-    tradespersonName,
-    tradespersonEmail,
-    decisionTimestamp,
-  } = req.body;
-
-  if (!quoteId || !customerEmail) {
-    return res.status(400).json({ success: false, error: "Missing required fields" });
-  }
-
-  try {
-    const auth = await getAuthClient();
-    const spreadsheetId = process.env.GOOGLE_SHEET_ID;
-    const sheetName = "QUOTE";
-
-    // Read all rows from QUOTE tab
-    const getResponse = await sheets.spreadsheets.values.get({
-      auth,
-      spreadsheetId,
-      range: `${sheetName}!A2:AD`, // Columns A to AD (30 columns)
-    });
-
-    const rows = getResponse.data.values || [];
-
-    // Find row with matching quoteId (assuming quoteId in column A, index 0)
-    const rowIndex = rows.findIndex(row => row[0] === quoteId);
-
-    if (rowIndex === -1) {
-      return res.status(404).json({ success: false, error: "Quote ID not found" });
+    if (req.method !== 'GET') {
+        return res.status(405).json({ success: false, error: 'Method Not Allowed' });
     }
 
-    // Check if decision already exists in column AC (index 28)
-    const existingDecision = rows[rowIndex][28];
+    const { quoteId, ts, token } = req.query;
 
-    if (existingDecision && existingDecision.trim() !== "") {
-      return res.status(400).json({ success: false, error: "Decision already made for this quote" });
+    if (!quoteId || !ts || !token) {
+        return res.redirect(`/quote-status?status=error&message=Missing required parameters.`);
     }
 
-    const decision = "Accepted";
-    const decisionTime = decisionTimestamp || new Date().toISOString();
+    const expectedToken = verifyToken(quoteId, ts);
+    if (token !== expectedToken) {
+        return res.redirect(`/quote-status?status=error&message=Invalid or expired link.`);
+    }
+    
+    // Optional: Check if the link is too old (e.g., > 7 days)
+    const linkAge = Date.now() - parseInt(ts);
+    if (linkAge > 7 * 24 * 60 * 60 * 1000) { 
+        return res.redirect(`/quote-status?status=error&message=This quote decision link has expired.`);
+    }
 
-    // Write decision to column AC (29th column)
-    await sheets.spreadsheets.values.update({
-      auth,
-      spreadsheetId,
-      range: `${sheetName}!AC${rowIndex + 2}`, // +2 for header offset
-      valueInputOption: "USER_ENTERED",
-      requestBody: {
-        values: [[decision]],
-      },
-    });
+    try {
+        const sheets = await getSheetsClient();
+        const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+        const range = 'Quotes!A:Z';
 
-    // Write decision timestamp to column AD (30th column)
-    await sheets.spreadsheets.values.update({
-      auth,
-      spreadsheetId,
-      range: `${sheetName}!AD${rowIndex + 2}`,
-      valueInputOption: "USER_ENTERED",
-      requestBody: {
-        values: [[decisionTime]],
-      },
-    });
+        const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
+        const rows = response.data.values;
+        if (!rows) {
+            return res.redirect(`/quote-status?status=error&message=Could not connect to the database.`);
+        }
+        
+        const header = rows[0];
+        const rowIndex = rows.findIndex(row => row[0] === quoteId);
 
-    // Send emails with gamification
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS,
-      },
-    });
+        if (rowIndex === -1) {
+            return res.redirect(`/quote-status?status=error&message=Quote ID not found.`);
+        }
+        
+        const targetRow = rows[rowIndex];
+        const decisionIndex = header.indexOf('Decision');
+        const decisionTimestampIndex = header.indexOf('Decision Timestamp');
 
-    const gamifyStatusCustomer = `
-      <p><strong>Status:</strong></p>
-      <ul>
-        <li>✅ Lead Received</li>
-        <li>✅ Quote Sent</li>
-        <li>✅ Accepted</li>
-      </ul>
-    `;
+        if (decisionIndex !== -1 && targetRow[decisionIndex] && targetRow[decisionIndex].trim() !== '') {
+            const decision = targetRow[decisionIndex];
+            const timestamp = (decisionTimestampIndex !== -1) ? targetRow[decisionTimestampIndex] : '';
+            const formattedTime = formatTimestamp(timestamp);
+            const message = `This quote was already ${decision.toLowerCase()} on ${formattedTime}.`;
+            return res.redirect(`/quote-status?status=error&message=${encodeURIComponent(message)}`);
+        }
+        
+        // --- Update Sheet Data ---
+        const updateData = {
+            'Decision': 'Accepted',
+            'Decision Timestamp': new Date().toISOString(),
+            'Customer Status': 'Quote Decision',
+            'Tradesperson Status': 'Quote Decision',
+            'Admin Status': 'Accepted',
+        };
 
-    const gamifyStatusTradesperson = `
-      <p><strong>Status:</strong></p>
-      <ul>
-        <li>✅ Lead Received</li>
-        <li>✅ Quote Sent</li>
-        <li>✅ Accepted</li>
-      </ul>
-    `;
+        const quoteDataForEmail = {};
+        header.forEach((headerName, index) => {
+            quoteDataForEmail[headerName] = targetRow[index] || '';
+            if (updateData[headerName] !== undefined) {
+                targetRow[index] = updateData[headerName];
+                quoteDataForEmail[headerName] = updateData[headerName];
+            }
+        });
 
-    const customerMailOptions = {
-      from: process.env.GMAIL_USER,
-      to: customerEmail,
-      subject: "Your Quote Has Been Accepted",
-      html: `
-        <p>Hi ${customerName},</p>
-        <p>Your quote has been <strong>accepted</strong> on ${decisionTime}.</p>
-        ${gamifyStatusCustomer}
-      `,
-    };
+        await sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: `Quotes!A${rowIndex + 1}`,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [targetRow] },
+        });
 
-    const tradespersonMailOptions = {
-      from: process.env.GMAIL_USER,
-      to: tradespersonEmail,
-      subject: `Quote for ${customerName} Has Been Accepted`,
-      html: `
-        <p>Hi ${tradespersonName},</p>
-        <p>Your quote has been <strong>accepted</strong> by the customer on ${decisionTime}.</p>
-        ${gamifyStatusTradesperson}
-      `,
-    };
+        // --- Send Emails ---
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
+        });
 
-    await transporter.sendMail(customerMailOptions);
-    await transporter.sendMail(tradespersonMailOptions);
+        await sendNotificationEmails(transporter, quoteDataForEmail);
+        
+        return res.redirect(`/quote-status?status=success&message=Your acceptance has been recorded!`);
 
-    return res.status(200).json({ success: true, message: "Acceptance recorded and emails sent" });
-  } catch (error) {
-    console.error("Accept API error:", error);
-    return res.status(500).json({ success: false, error: "Internal server error" });
-  }
+    } catch (error) {
+        console.error("Quote acceptance error:", error);
+        return res.redirect(`/quote-status?status=error&message=An internal server error occurred.`);
+    }
 }

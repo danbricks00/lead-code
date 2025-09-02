@@ -1,55 +1,47 @@
 import { useRouter } from 'next/router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import Layout from '../components/Layout';
 
 const QuoteStatusPage = () => {
   const router = useRouter();
-  const { result, error } = router.query;
+  const { status, message } = router.query;
+  const [displayMessage, setDisplayMessage] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  const styles = {
-    container: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: '100vh',
-      fontFamily: 'Arial, sans-serif',
-      textAlign: 'center',
-    },
-    icon: {
-      fontSize: '48px',
-      marginBottom: '20px',
-    },
-    title: {
-      fontSize: '28px',
-      marginBottom: '10px',
-    },
-    message: {
-      fontSize: '18px',
-      color: '#555',
-    },
-  };
-
-  if (error) {
-    return (
-      <div style={styles.container}>
-        <div style={styles.icon}>❌</div>
-        <h1 style={styles.title}>Error</h1>
-        <p style={styles.message}>{error}</p>
-      </div>
-    );
-  }
-
-  const isSuccess = result === 'accepted' || result === 'declined';
-  const title = isSuccess ? `Quote ${result.charAt(0).toUpperCase() + result.slice(1)}` : 'Status';
-  const message = `Your decision has been successfully recorded.`;
+  useEffect(() => {
+    if (status === 'success') {
+      setIsSuccess(true);
+      setDisplayMessage(message || 'Your decision has been recorded.');
+    } else if (status === 'error') {
+      setIsSuccess(false);
+      setDisplayMessage(message || 'An unexpected error occurred.');
+    }
+  }, [status, message]);
 
   return (
-    <div style={styles.container}>
-      <div style={styles.icon}>{isSuccess ? '✅' : 'ℹ️'}</div>
-      <h1 style={styles.title}>{title}</h1>
-      <p style={styles.message}>{message}</p>
-    </div>
+    <Layout>
+      <div style={styles.container}>
+        <div style={styles.card}>
+          <h1 style={isSuccess ? styles.successHeader : styles.errorHeader}>
+            {isSuccess ? '✅ Success!' : '❌ An Error Occurred'}
+          </h1>
+          <p style={styles.message}>{displayMessage}</p>
+          <button onClick={() => router.push('/')} style={styles.button}>
+            Return to Homepage
+          </button>
+        </div>
+      </div>
+    </Layout>
   );
+};
+
+const styles = {
+    container: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', background: '#f4f7f6', fontFamily: 'Arial, sans-serif' },
+    card: { background: 'white', padding: '40px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', textAlign: 'center', maxWidth: '500px', width: '100%' },
+    successHeader: { color: '#4caf50' },
+    errorHeader: { color: '#f44336' },
+    message: { fontSize: '1.1em', color: '#555', margin: '20px 0' },
+    button: { background: '#667eea', color: 'white', border: 'none', padding: '12px 20px', borderRadius: '5px', fontSize: '1em', cursor: 'pointer' },
 };
 
 export default QuoteStatusPage;

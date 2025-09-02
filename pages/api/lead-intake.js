@@ -94,6 +94,46 @@ export default async function handler(req, res) {
 
     console.log("Tradesperson quote submission link:", quoteLink);
 
+    // Convert rooms array to string for Google Sheets
+    const roomsString = Array.isArray(rooms)
+      ? rooms.map(r => `${r.roomName}: ${r.dimensions}`).join(", ")
+      : rooms || "";
+
+    // Google Sheets setup
+    const auth = new google.auth.GoogleAuth({
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    });
+    const authClient = await auth.getClient();
+    const sheets = google.sheets({ version: "v4", auth: authClient });
+    const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+    // Prepare values for Google Sheets append
+    const values = [
+      [
+        leadId,
+        customerName,
+        customerEmail,
+        customerPhone,
+        serviceType,
+        roomsString, // Use string here
+        area,
+        suburb,
+        budget,
+        timeline,
+        specificDetails,
+        new Date().toISOString(),
+      ],
+    ];
+
+    // Append to Leads tab
+    await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: "Leads!A1",
+      valueInputOption: "USER_ENTERED",
+      insertDataOption: "INSERT_ROWS",
+      requestBody: { values },
+    });
+
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -129,6 +169,19 @@ export default async function handler(req, res) {
       html: `
         <p>Hi ${customerName},</p>
         <p>Thank you for your interest. A qualified tradesperson will contact you soon.</p>
+        <p><{strong>Project Details:</strong?</p>
+        <ul>
+        <li><strong>Name:</strong> ${customerName}</li>
+        <li><strong>Email:</strong> ${customerEmail}</li>
+        <li><strong>Phone:</strong> ${customerPhone}</li>
+        <li><strong>Service Type:</strong> ${serviceType}</li>
+        <li><strong>Rooms:</strong> ${roomsString}</li>
+        <li><strong>Area:</strong> ${area}</li>
+        <li><strong>Suburb:</strong> ${suburb}</li>
+        <li><strong>Timeline:</strong> ${timeline}</li>
+
+
+        </ul>
         ${gamifyStatusCustomer}
       `,
     };

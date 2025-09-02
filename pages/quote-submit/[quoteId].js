@@ -28,6 +28,12 @@ const QuoteSubmitPage = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [parsedRooms, setParsedRooms] = useState([]);
   const [leadDetails, setLeadDetails] = useState(null); // To store fetched lead data
+  
+  // Set default expiry date to 2 weeks from now
+  const defaultExpiryDate = new Date();
+  defaultExpiryDate.setDate(defaultExpiryDate.getDate() + 14);
+  const [validUntil, setValidUntil] = useState(defaultExpiryDate.toISOString().split('T')[0]);
+
 
   // Load tradesperson details from localStorage on initial render
   useEffect(() => {
@@ -121,6 +127,7 @@ const QuoteSubmitPage = () => {
       tradespersonName: tradesperson.name,
       tradespersonEmail: tradesperson.email,
       tradespersonPhone: tradesperson.phone,
+      validUntil, // Add expiry date to submitted data
     };
 
     try {
@@ -302,6 +309,20 @@ const QuoteSubmitPage = () => {
           <div style={styles.section}>
              <h2 style={styles.subHeader}>Notes for Customer</h2>
              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} style={styles.textarea} placeholder="e.g., This quote is valid for 14 days."></textarea>
+          </div>
+
+          <div style={styles.section}>
+            <h2 style={styles.subHeader}>Quote Expiry</h2>
+            <div style={styles.inputGroup}>
+                <label>Quote Valid Until</label>
+                <input 
+                    type="date" 
+                    value={validUntil} 
+                    onChange={(e) => setValidUntil(e.target.value)} 
+                    style={styles.input} 
+                    required 
+                />
+            </div>
           </div>
 
           <button type="submit" style={styles.button} disabled={submissionStatus === 'submitting'}>

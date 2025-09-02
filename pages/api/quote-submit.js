@@ -1,6 +1,7 @@
 import { google } from "googleapis";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
+import { generatePdf } from "../../lib/pdfGenerator"; // Import the PDF generator
 
 async function getSheetsClient() {
     const { privateKey } = JSON.parse(process.env.GOOGLE_PRIVATE_KEY || '{}');
@@ -28,9 +29,17 @@ function generateDecisionLink(action, quoteId) {
     return `${process.env.NEXT_PUBLIC_BASE_URL}/api/quote-decision/${action}?quoteId=${quoteId}&ts=${ts}&token=${token}`;
 }
 
-async function sendQuoteEmails(transporter, customerEmail, customerName, quoteDetails) {
+async function sendQuoteEmails(transporter, customerEmail, customerName, quoteDetails, leadDetails, parsedRooms) {
     const acceptLink = generateDecisionLink('accept', quoteDetails.quoteId);
     const declineLink = generateDecisionLink('decline', quoteDetails.quoteId);
+    
+    // Generate the link for the web view
+    const ts = Date.now().toString();
+    const token = verifyToken(quoteDetails.quoteId, ts);
+    const viewLink = `${process.env.NEXT_PUBLIC_BASE_URL}/quote/view/${quoteDetails.quoteId}?ts=${ts}&token=${token}`;
+
+    // Generate the PDF
+    const pdfBuffer = await generatePdf(leadDetails, quoteDetails, parsedRooms);
 
     const customerMail = {
         from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
@@ -39,8 +48,9 @@ async function sendQuoteEmails(transporter, customerEmail, customerName, quoteDe
         html: `
             <p>Hi ${customerName},</p>
             <p>Your quote of <strong>$${quoteDetails.totalQuote.toFixed(2)}</strong> is ready.</p>
-            <p><strong>Notes from the tradesperson:</strong> ${quoteDetails.notes || 'None'}</p>
-            <p>Please review your quote and make a decision:</p>
+            <p>You can view the detailed quote online or open the attached PDF.</p>
+            <p><a href="${viewLink}" style="padding:10px; background-color:#667eea; color:white; text-decoration:none; border-radius:5px;">View Quote Online</a></p>
+            <p>When you are ready, please make a decision:</p>
             <a href="${acceptLink}" style="padding:10px; background-color:green; color:white; text-decoration:none; border-radius:5px;">Accept Quote</a>
             <a href="${declineLink}" style="padding:10px; background-color:red; color:white; text-decoration:none; border-radius:5px; margin-left:10px;">Decline Quote</a>
             <hr>
@@ -51,6 +61,11 @@ async function sendQuoteEmails(transporter, customerEmail, customerName, quoteDe
                 <li>⚪ Decision Pending</li>
             </ul>
         `,
+        attachments: [{
+            filename: `Quote-${quoteDetails.quoteId}.pdf`,
+            content: pdfBuffer,
+            contentType: 'application/pdf'
+        }]
     };
 
     const adminMail = {
@@ -70,10 +85,20 @@ export default async function handler(req, res) {
     }
 
     const { quoteId, ts, token, quoteDetails, leadDetails } = req.body;
+    let parsedRooms = [];
 
     // --- Validation ---
     if (!quoteId || !ts || !token || !quoteDetails || !leadDetails) {
         return res.status(400).json({ success: false, error: 'Missing required fields for quote submission.' });
+    }
+
+    // Safely parse rooms data
+    if (leadDetails.Rooms) {
+        try {
+            parsedRooms = JSON.parse(leadDetails.Rooms);
+        } catch (e) {
+            console.warn("Could not parse rooms data for PDF, it may be malformed.");
+        }
     }
 
     const expectedToken = verifyToken(quoteId, ts);
@@ -115,6 +140,7 @@ export default async function handler(req, res) {
             'Installation Cost': quoteDetails.installationCost,
             'Total Quote': quoteDetails.totalQuote,
             'Notes': quoteDetails.notes,
+            'Quote Valid Until': quoteDetails.validUntil,
         };
 
         header.forEach((headerName, index) => {
@@ -136,7 +162,7 @@ export default async function handler(req, res) {
             auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
         });
 
-        await sendQuoteEmails(transporter, leadDetails['Customer Email'], leadDetails['Customer Name'], { ...quoteDetails, quoteId });
+        await sendQuoteEmails(transporter, leadDetails['Customer Email'], leadDetails['Customer Name'], { ...quoteDetails, quoteId }, leadDetails, parsedRooms);
         
         res.status(200).json({ success: true });
 

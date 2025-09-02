@@ -102,6 +102,16 @@ export default async function handler(req, res) {
         <li><b>Area/Suburb:</b> ${suburb || area || "Not specified"}</li>
       </ul>
     `;
+
+    const gamifyStatus = `
+      <hr>
+      <p><strong>Status:</strong></p>
+      <ul>
+        <li>✅ Lead Received</li>
+        <li>⚪ Quote Pending</li>
+        <li>⚪ Decision Pending</li>
+      </ul>
+    `;
     
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -115,14 +125,14 @@ export default async function handler(req, res) {
       from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
       to: customerEmail,
       subject: "✅ We received your request",
-      html: `<p>Hi ${customerName},</p><p>Thanks for reaching out. A trade professional will prepare a quote and send it to you shortly.</p>${leadDetailsHtml}`,
+      html: `<p>Hi ${customerName},</p><p>Thanks for reaching out. A trade professional will prepare a quote and send it to you shortly.</p>${leadDetailsHtml}${gamifyStatus}`,
     };
 
     const tradespersonMail = {
       from: `"Kiwi Trade Leads" <${process.env.GMAIL_USER}>`,
       to: "quangbui0600@gmail.com",
       subject: `🔔 New Lead: ${serviceType || 'General Inquiry'}`,
-      html: `<p>You have a new lead.</p>${leadDetailsHtml}<p><b>Prepare a quote here:</b> <a href="${quoteLink}">Submit Quote</a></p>`,
+      html: `<p>You have a new lead.</p>${leadDetailsHtml}<p><b>Prepare a quote here:</b> <a href="${quoteLink}">Submit Quote</a></p>${gamifyStatus}`,
     };
 
     const adminMail = {

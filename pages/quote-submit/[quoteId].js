@@ -27,19 +27,58 @@ const QuoteSubmitPage = () => {
   const [submissionStatus, setSubmissionStatus] = useState(null); // null | 'submitting' | 'success' | 'error'
   const [errorMessage, setErrorMessage] = useState('');
   const [parsedRooms, setParsedRooms] = useState([]);
+  const [leadDetails, setLeadDetails] = useState(null); // To store fetched lead data
 
-  // Parse rooms data from query string once router is ready
+  // Load tradesperson details from localStorage on initial render
   useEffect(() => {
-    if (isReady && query.rooms) {
-      try {
-        const roomsData = JSON.parse(query.rooms);
-        setParsedRooms(Array.isArray(roomsData) ? roomsData : []);
-      } catch (e) {
-        console.error("Failed to parse rooms data from query:", e);
-        setParsedRooms([]);
-      }
+    const savedTradesperson = localStorage.getItem('tradespersonDetails');
+    if (savedTradesperson) {
+      setTradesperson(JSON.parse(savedTradesperson));
     }
-  }, [isReady, query.rooms]);
+  }, []); // Empty dependency array ensures this runs only once on mount
+
+  // Save tradesperson details to localStorage whenever they change
+  useEffect(() => {
+    // We check if the name is not empty to avoid saving an empty initial object
+    if (tradesperson.name) {
+      localStorage.setItem('tradespersonDetails', JSON.stringify(tradesperson));
+    }
+  }, [tradesperson]);
+
+  // Fetch lead details from API
+  useEffect(() => {
+    if (isReady && quoteId) {
+      const fetchLeadDetails = async () => {
+        try {
+          const response = await fetch(`/api/get-lead-details?quoteId=${quoteId}`);
+          const result = await response.json();
+          if (result.success) {
+            setLeadDetails(result.data);
+            // Also parse rooms from the fetched data
+            if (result.data.Rooms) {
+                try {
+                    const roomsData = JSON.parse(result.data.Rooms);
+                    setParsedRooms(Array.isArray(roomsData) ? roomsData : []);
+                } catch (e) {
+                    console.error("Failed to parse rooms data from API:", e);
+                    setParsedRooms([]);
+                }
+            }
+          } else {
+            console.error("API Error:", result.error);
+            // Fallback to query params if API fails
+            setLeadDetails(query); 
+          }
+        } catch (error) {
+          console.error("Failed to fetch lead details:", error);
+          // Fallback to query params if fetch fails
+          setLeadDetails(query);
+        }
+      };
+      fetchLeadDetails();
+    }
+  }, [isReady, quoteId]);
+
 
   // Calculate totals whenever costs change
   useEffect(() => {
@@ -93,6 +132,7 @@ const QuoteSubmitPage = () => {
           ts,
           token,
           quoteDetails,
+          leadDetails, // Pass the fetched lead details to the backend
         }),
       });
 
@@ -109,8 +149,8 @@ const QuoteSubmitPage = () => {
     }
   };
 
-  if (!isReady) {
-    return <div style={styles.container}><p>Loading...</p></div>;
+  if (!isReady || !leadDetails) {
+    return <div style={styles.container}><p>Loading lead details...</p></div>;
   }
   
   if (submissionStatus === 'success') {
@@ -133,14 +173,15 @@ const QuoteSubmitPage = () => {
         <div style={styles.section}>
           <h2 style={styles.subHeader}>Customer & Project Details</h2>
           <div style={styles.detailsGrid}>
-            <div><strong>Name:</strong> {query.customerName || 'N/A'}</div>
-            <div><strong>Email:</strong> {query.customerEmail || 'N/A'}</div>
-            <div><strong>Phone:</strong> {query.customerPhone || 'N/A'}</div>
-            <div><strong>Service:</strong> {query.serviceType || 'N/A'}</div>
-            <div><strong>Area:</strong> {query.area || 'N/A'}</div>
-            <div><strong>Suburb:</strong> {query.suburb || 'N/A'}</div>
+            <div><strong>Name:</strong> {leadDetails['Customer Name'] || 'N/A'}</div>
+            <div><strong>Email:</strong> {leadDetails['Customer Email'] || 'N/A'}</div>
+            <div><strong>Phone:</strong> {leadDetails['Customer Phone'] || 'N/A'}</div>
+            <div><strong>Service:</strong> {leadDetails['Service Type'] || 'N/A'}</div>
+            <div><strong>Area:</strong> {leadDetails.Area || 'N/A'}</div>
+            <div><strong>Suburb:</strong> {leadDetails.Suburb || 'N/A'}</div>
+            <div><strong>Timeline:</strong> {leadDetails.Timeline || 'N/A'}</div>
           </div>
-          {query.specificDetails && <p style={{marginTop: '10px'}}><strong>Details:</strong> {query.specificDetails}</p>}
+          {leadDetails.specificDetails && <p style={{marginTop: '10px'}}><strong>Details:</strong> {leadDetails.specificDetails}</p>}
         </div>
 
         {parsedRooms.length > 0 && (

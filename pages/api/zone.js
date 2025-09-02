@@ -32,7 +32,7 @@ export default async function handler(req, res) {
         
         const response = await sheets.spreadsheets.values.get({
           spreadsheetId: sheetId,
-          range: 'Zones!A:Z',
+          range: 'Zone!A:Z',
         });
 
         const rows = response.data.values || [];
@@ -83,16 +83,18 @@ export default async function handler(req, res) {
       const fileContents = await fs.readFile(filePath, 'utf8');
       const zones = JSON.parse(fileContents);
       
-      // Filter zones based on query
-      const filteredZones = zones.filter(zone => {
-        if (suburb && zone.suburb.toLowerCase().includes(suburb.toLowerCase())) {
-          return true;
-        }
-        if (area && zone.area.toLowerCase().includes(area.toLowerCase())) {
-          return true;
-        }
-        return false;
-      });
+      // If no query, return all zones. Otherwise, filter.
+      const filteredZones = (!suburb && !area)
+        ? zones
+        : zones.filter(zone => {
+            if (suburb && zone.suburb.toLowerCase().includes(suburb.toLowerCase())) {
+              return true;
+            }
+            if (area && zone.area.toLowerCase().includes(area.toLowerCase())) {
+              return true;
+            }
+            return false;
+          });
 
       console.log(`✅ Found ${filteredZones.length} matching zones in fallback JSON`);
       return res.status(200).json({

@@ -26,6 +26,20 @@ const QuoteSubmitPage = () => {
   });
   const [submissionStatus, setSubmissionStatus] = useState(null); // null | 'submitting' | 'success' | 'error'
   const [errorMessage, setErrorMessage] = useState('');
+  const [parsedRooms, setParsedRooms] = useState([]);
+
+  // Parse rooms data from query string once router is ready
+  useEffect(() => {
+    if (isReady && query.rooms) {
+      try {
+        const roomsData = JSON.parse(query.rooms);
+        setParsedRooms(Array.isArray(roomsData) ? roomsData : []);
+      } catch (e) {
+        console.error("Failed to parse rooms data from query:", e);
+        setParsedRooms([]);
+      }
+    }
+  }, [isReady, query.rooms]);
 
   // Calculate totals whenever costs change
   useEffect(() => {
@@ -117,12 +131,39 @@ const QuoteSubmitPage = () => {
         <p><strong>Quote ID:</strong> {quoteId}</p>
 
         <div style={styles.section}>
-          <h2 style={styles.subHeader}>Customer Details</h2>
-          <p><strong>Name:</strong> {query.customerName}</p>
-          <p><strong>Email:</strong> {query.customerEmail}</p>
-          <p><strong>Service:</strong> {query.serviceType}</p>
-          <p><strong>Details:</strong> {query.specificDetails}</p>
+          <h2 style={styles.subHeader}>Customer & Project Details</h2>
+          <div style={styles.detailsGrid}>
+            <div><strong>Name:</strong> {query.customerName || 'N/A'}</div>
+            <div><strong>Email:</strong> {query.customerEmail || 'N/A'}</div>
+            <div><strong>Phone:</strong> {query.customerPhone || 'N/A'}</div>
+            <div><strong>Service:</strong> {query.serviceType || 'N/A'}</div>
+            <div><strong>Area:</strong> {query.area || 'N/A'}</div>
+            <div><strong>Suburb:</strong> {query.suburb || 'N/A'}</div>
+          </div>
+          {query.specificDetails && <p style={{marginTop: '10px'}}><strong>Details:</strong> {query.specificDetails}</p>}
         </div>
+
+        {parsedRooms.length > 0 && (
+            <div style={styles.section}>
+                <h2 style={styles.subHeader}>Room Details</h2>
+                <table style={styles.table}>
+                    <thead>
+                        <tr>
+                            <th style={styles.th}>Room Name</th>
+                            <th style={styles.th}>Dimensions / SQM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {parsedRooms.map((room, index) => (
+                            <tr key={index}>
+                                <td style={styles.td}>{room.name}</td>
+                                <td style={styles.td}>{room.dimensions}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div style={styles.section}>
@@ -165,12 +206,12 @@ const QuoteSubmitPage = () => {
             {/* Materials */}
             <div style={styles.calcBox}>
                 <div style={styles.calcInputGroup}>
-                    <label style={styles.calcLabel}>Cost per Item</label>
+                    <label style={styles.calcLabel}>Cost per Square Meter</label>
                     <input type="number" name="materialsCost" value={costs.materialsCost} onChange={handleCostChange} placeholder="0" style={styles.calcInput} />
                 </div>
                 <span style={styles.calcSymbol}>x</span>
                 <div style={styles.calcInputGroup}>
-                    <label style={styles.calcLabel}>Quantity</label>
+                    <label style={styles.calcLabel}>Square Meters (m²)</label>
                     <input type="number" name="materialsQuantity" value={costs.materialsQuantity} onChange={handleCostChange} placeholder="0" style={styles.calcInput} />
                 </div>
                 <span style={styles.calcSymbol}>=</span>
@@ -238,6 +279,7 @@ const styles = {
   header: { color: '#333', borderBottom: '1px solid #eee', paddingBottom: '10px' },
   subHeader: { color: '#555', fontSize: '1.1em', marginTop: '20px' },
   section: { marginBottom: '20px' },
+  detailsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' },
   inputGroup: { marginBottom: '10px' },
   input: { width: '100%', padding: '8px', boxSizing: 'border-box', border: '1px solid #ddd', borderRadius: '4px' },
   
@@ -249,6 +291,10 @@ const styles = {
   calcSymbol: { fontSize: '1.2em', paddingBottom: '8px' },
   subtotalBox: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: '100px', paddingBottom: '8px' },
   subtotal: { fontWeight: 'bold', fontSize: '1.1em' },
+
+  table: { width: '100%', borderCollapse: 'collapse', marginTop: '10px' },
+  th: { background: '#f9f9f9', border: '1px solid #ddd', padding: '8px', textAlign: 'left' },
+  td: { border: '1px solid #ddd', padding: '8px' },
 
   hr: { border: 'none', borderTop: '1px solid #eee', margin: '20px 0' },
   totalRow: { display: 'flex', justifyContent: 'space-between', fontSize: '1.2em', fontWeight: 'bold' },

@@ -1,7 +1,7 @@
 import { google } from "googleapis";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
-import { generatePdf } from "../../lib/pdfGenerator";
+import { generatePdf } from "../../../lib/pdfGenerator";
 
 // --- Helper Functions (can be moved to a shared lib) ---
 async function getSheetsClient() {

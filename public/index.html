@@ -1393,31 +1393,5 @@
         window.confirmAddress = confirmAddress;
      </script>
 
-     <script>
-     async function loadZones() {
-       const zoneSelect = document.getElementById("suburb");
-       zoneSelect.innerHTML = "<option>Loading zones...</option>";
-
-       try {
-         const res = await fetch("/api/zones");
-         if (res.ok) {
-           const zones = await res.json();
-           zoneSelect.innerHTML = "";
-           zones.forEach(z => {
-             const opt = document.createElement("option");
-             opt.value = z.suburb;
-             opt.dataset.area = z.area;
-             opt.textContent = z.suburb;
-             zoneSelect.appendChild(opt);
-           });
-         } else {
-           zoneSelect.innerHTML = "<option value=''>Error loading zones</option>";
-         }
-       } catch {
-         zoneSelect.innerHTML = "<option value=''>Error loading zones</option>";
-       }
-     }
-     document.addEventListener("DOMContentLoaded", loadZones);
-     </script>
 </body>
 </html>

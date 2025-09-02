@@ -1,6 +1,33 @@
-js
-Copy
+import { google } from "googleapis";
 import nodemailer from "nodemailer";
+import crypto from "crypto";
+
+const sheetsId = process.env.GOOGLE_SHEET_ID;
+const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+const privateKey = (process.env.GOOGLE_PRIVATE_KEY || "").replace(/\\n/g, "\n");
+
+const auth = new google.auth.JWT(clientEmail, null, privateKey, [
+  "https://www.googleapis.com/auth/spreadsheets",
+]);
+
+const sheets = google.sheets({ version: "v4", auth });
+
+async function appendRowToSheet(tab, values) {
+  try {
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: sheetsId,
+      range: `${tab}!A1`,
+      valueInputOption: "USER_ENTERED",
+      insertDataOption: "INSERT_ROWS",
+      requestBody: { values: [values] },
+    });
+    console.log(`✅ Lead logged to Google Sheets tab: ${tab}`);
+  } catch (error) {
+    console.error(`❌ Failed to log lead to Google Sheets tab: ${tab}`, error);
+    // We can decide if we want to throw the error or just log it
+    // For now, let's just log it and continue to send emails
+  }
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -25,7 +52,24 @@ export default async function handler(req, res) {
   }
 
   try {
-    const quoteId = Date.now().toString();
+    const leadId = crypto.randomBytes(6).toString("hex");
+    const quoteId = crypto.randomBytes(6).toString("hex");
+
+    // --- Google Sheets Logging ---
+    await appendRowToSheet("Leads", [
+      leadId,
+      customerName,
+      customerEmail,
+      customerPhone || "",
+      serviceType || "",
+      rooms || "",
+      area || "",
+      suburb || "",
+      budget || "",
+      timeline || "",
+      specificDetails || "",
+      new Date().toISOString(),
+    ]);
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
     if (!baseUrl) {
@@ -46,7 +90,7 @@ export default async function handler(req, res) {
       specificDetails,
     }).toString();
 
-    const quoteLink = `${baseUrl}/quote-submit/${quoteId}?${queryParams}`;
+    const quoteLink = `https://${baseUrl}/quote-submit/${quoteId}?${queryParams}`;
 
     console.log("Tradesperson quote submission link:", quoteLink);
 
@@ -140,7 +184,7 @@ export default async function handler(req, res) {
     await transporter.sendMail(tradespersonMailOptions);
     await transporter.sendMail(adminMailOptions);
 
-    return res.status(200).json({ success: true, quoteId });
+    return res.status(200).json({ success: true, quoteId, leadId });
   } catch (error) {
     console.error("Lead intake error:", error);
     return res.status(500).json({ success: false, error: "Internal server error" });

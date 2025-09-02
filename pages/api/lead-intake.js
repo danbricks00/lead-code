@@ -19,7 +19,7 @@ function generateId() {
 
 function signToken(id, ts) {
   const hmac = crypto.createHmac("sha256", QUOTE_LINK_SECRET);
-  hmac.update(`${id}.${ts}`);
+  hmac.update(`${id}|${ts}`); // Changed separator from . to |
   return hmac.digest("hex");
 }
 

@@ -2,15 +2,14 @@ import { google } from 'googleapis';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 
-// --- HELPER FUNCTIONS ---
-
-function verifyToken(quoteId, ts, token) {
+// --- Standardized Crypto Helper ---
+function verifyToken(payload, token) {
   const secret = process.env.QUOTE_LINK_SECRET;
-  const payload = `${quoteId}|${ts}`;
   const expectedToken = crypto.createHmac('sha256', secret).update(payload).digest('hex');
   return crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expectedToken));
 }
 
+// --- Google Sheets Helper ---
 async function getSheetsClient() {
   const auth = new google.auth.GoogleAuth({
     credentials: {
@@ -22,6 +21,7 @@ async function getSheetsClient() {
   return google.sheets({ version: 'v4', auth });
 }
 
+// --- Nodemailer Helper ---
 async function sendNotificationEmails(details) {
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
@@ -32,21 +32,17 @@ async function sendNotificationEmails(details) {
 
   const { customer, tradesperson, admin, quoteId } = details;
 
-  // Email to Customer
+  // Emails for decline
   await transporter.sendMail({
     to: customer.email,
     subject: `Quote Declined (#${quoteId})`,
     html: `<p>Hi ${customer.name},</p><p>You have declined the quote. We have recorded your decision and hope to assist you in the future.</p>`,
   });
-
-  // Email to Tradesperson
   await transporter.sendMail({
     to: tradesperson.email,
     subject: `Quote DECLINED by Customer (#${quoteId})`,
     html: `<p>The customer, ${customer.name}, has DECLINED your quote. No further action is required.</p>`,
   });
-
-  // Email to Admin
   await transporter.sendMail({
     to: admin.email,
     subject: `[Decision] Quote DECLINED (#${quoteId})`,
@@ -54,22 +50,20 @@ async function sendNotificationEmails(details) {
   });
 }
 
-// --- API HANDLER ---
+// --- API Handler ---
 export default async function handler(req, res) {
-  const renderPage = (title, message) => res.status(200).send(`<html>...<h1>${title}</h1><p>${message}</p>...</html>`);
-
   if (req.method !== 'GET') {
-    return res.status(405).send(renderPage('Method Not Allowed', ''));
+    return res.status(405).redirect('/quote-status?error=Method Not Allowed');
   }
 
   try {
     const { quoteId, ts, token } = req.query;
 
-    if (!verifyToken(quoteId, ts, token)) {
-      return res.status(403).send(renderPage('Invalid Link', 'This link is invalid or has been tampered with.'));
+    if (!verifyToken(`${quoteId}|${ts}`, token)) {
+      return res.status(403).redirect('/quote-status?error=Invalid Link');
     }
-    if (Date.now() - parseInt(ts, 10) > 7 * 24 * 60 * 60 * 1000) {
-      return res.status(410).send(renderPage('Link Expired', 'This decision link has expired.'));
+    if (Date.now() - parseInt(ts, 10) > 7 * 24 * 60 * 60 * 1000) { // 7-day expiry
+      return res.status(410).redirect('/quote-status?error=Link Expired');
     }
 
     const sheets = await getSheetsClient();
@@ -77,60 +71,48 @@ export default async function handler(req, res) {
     const range = 'Quotes!A:Z';
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
     const rows = response.data.values || [];
-    const header = rows.shift() || [];
+    const header = rows[0] || [];
     
-    const col = {
-      quoteId: header.indexOf('Quote ID'),
-      decision: header.indexOf('Decision'),
-      customerStatus: header.indexOf('Customer Status'),
-      tradespersonStatus: header.indexOf('Tradesperson Status'),
-      adminStatus: header.indexOf('Admin Status'),
-      customerName: header.indexOf('Customer Name'),
-      customerEmail: header.indexOf('Customer Email'),
-      tradespersonName: header.indexOf('Tradesperson Name'),
-      tradespersonEmail: header.indexOf('Tradesperson Email'),
-    };
-    if (Object.values(col).some(i => i === -1)) throw new Error("A required column is missing in the 'Quotes' sheet.");
-
-    const quoteRowIndex = rows.findIndex(row => row[col.quoteId] === quoteId);
+    const col = Object.fromEntries(header.map((h, i) => [h.replace(/\s+/g, ''), i]));
+    
+    const quoteRowIndex = rows.findIndex(row => row[col.QuoteID] === quoteId);
     if (quoteRowIndex === -1) {
-      return res.status(404).send(renderPage('Quote Not Found', ''));
+      return res.status(404).redirect('/quote-status?error=Quote Not Found');
     }
 
     const quoteRow = rows[quoteRowIndex];
-    if (quoteRow[col.decision] && quoteRow[col.decision] !== "") {
-      return res.status(409).send(renderPage('Link Already Used', 'A decision has already been recorded for this quote.'));
+    if (quoteRow[col.Decision] && quoteRow[col.Decision] !== "") {
+      return res.status(409).redirect('/quote-status?error=Link Already Used');
     }
 
-    // Update statuses and decision
-    const updateData = [
-      "Quote Decision", // Customer Status
-      "Quote Decision", // Tradesperson Status
-      "Declined",       // Admin Status
-      ...new Array(8).fill(''), // Skip 8 cost columns + resubmission
-      "Declined",       // Decision
-      new Date().toISOString() // Decision Timestamp
-    ];
+    // Update the specific columns in the fetched row data
+    quoteRow[col.CustomerStatus] = "Quote Decision";
+    quoteRow[col.TradespersonStatus] = "Quote Decision";
+    quoteRow[col.AdminStatus] = "Declined";
+    quoteRow[col.Decision] = "Declined";
+    quoteRow[col.DecisionTimestamp] = new Date().toISOString();
+    
+    // Write the entire updated row back to the sheet
     await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `Quotes!H${quoteRowIndex + 2}`, // Start update at Customer Status (H)
+        range: `Quotes!A${quoteRowIndex + 1}`,
         valueInputOption: 'USER_ENTERED',
-        requestBody: { values: [updateData] },
+        requestBody: { values: [quoteRow] },
     });
     console.log(`[Decline] Updated sheet for quote #${quoteId}`);
 
     await sendNotificationEmails({
       quoteId,
-      customer: { name: quoteRow[col.customerName], email: quoteRow[col.customerEmail] },
-      tradesperson: { name: quoteRow[col.tradespersonName], email: quoteRow[col.tradespersonEmail] },
+      customer: { name: quoteRow[col.CustomerName], email: quoteRow[col.CustomerEmail] },
+      tradesperson: { name: quoteRow[col.TradespersonName], email: quoteRow[col.TradespersonEmail] },
       admin: { email: 'danbricks18@gmail.com' },
     });
     console.log(`[Decline] Dispatched emails for quote #${quoteId}`);
 
-    return renderPage('Thank You!', 'Your decision has been recorded.');
+    return res.redirect('/quote-status?result=declined');
 
   } catch (error) {
     console.error('[Decline] CRITICAL ERROR:', error);
-    return res.status(500).send(renderPage('Error', 'An unexpected error occurred.'));
+    return res.status(500).redirect(`/quote-status?error=${encodeURIComponent(error.message)}`);
   }
 }

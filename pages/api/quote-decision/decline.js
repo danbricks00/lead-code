@@ -1,118 +1,145 @@
-import { google } from 'googleapis';
-import nodemailer from 'nodemailer';
-import crypto from 'crypto';
+import { google } from "googleapis";
+import nodemailer from "nodemailer";
 
-// --- Standardized Crypto Helper ---
-function verifyToken(payload, token) {
-  const secret = process.env.QUOTE_LINK_SECRET;
-  const expectedToken = crypto.createHmac('sha256', secret).update(payload).digest('hex');
-  return crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expectedToken));
-}
+const sheets = google.sheets({ version: "v4" });
 
-// --- Google Sheets Helper ---
-async function getSheetsClient() {
+async function getAuthClient() {
   const auth = new google.auth.GoogleAuth({
     credentials: {
       client_email: process.env.GOOGLE_CLIENT_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      private_key: (process.env.GOOGLE_PRIVATE_KEY || "").replace(/\\n/g, '\n'),
     },
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
-  return google.sheets({ version: 'v4', auth });
+  return auth;
 }
 
-// --- Nodemailer Helper ---
-async function sendNotificationEmails(details) {
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
-  });
-
-  const { customer, tradesperson, admin, quoteId } = details;
-
-  // Emails for decline
-  await transporter.sendMail({
-    to: customer.email,
-    subject: `Quote Declined (#${quoteId})`,
-    html: `<p>Hi ${customer.name},</p><p>You have declined the quote. We have recorded your decision and hope to assist you in the future.</p>`,
-  });
-  await transporter.sendMail({
-    to: tradesperson.email,
-    subject: `Quote DECLINED by Customer (#${quoteId})`,
-    html: `<p>The customer, ${customer.name}, has DECLINED your quote. No further action is required.</p>`,
-  });
-  await transporter.sendMail({
-    to: admin.email,
-    subject: `[Decision] Quote DECLINED (#${quoteId})`,
-    text: `The quote #${quoteId} has been declined by ${customer.name}.`,
-  });
-}
-
-// --- API Handler ---
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).redirect('/quote-status?error=Method Not Allowed');
+  if (req.method !== "POST") {
+    return res.status(405).json({ success: false, error: "Method not allowed" });
+  }
+
+  const {
+    quoteId,
+    customerName,
+    customerEmail,
+    tradespersonName,
+    tradespersonEmail,
+    decisionTimestamp,
+  } = req.body;
+
+  if (!quoteId || !customerEmail) {
+    return res.status(400).json({ success: false, error: "Missing required fields" });
   }
 
   try {
-    const { quoteId, ts, token } = req.query;
-
-    if (!verifyToken(`${quoteId}|${ts}`, token)) {
-      return res.status(403).redirect('/quote-status?error=Invalid Link');
-    }
-    if (Date.now() - parseInt(ts, 10) > 7 * 24 * 60 * 60 * 1000) { // 7-day expiry
-      return res.status(410).redirect('/quote-status?error=Link Expired');
-    }
-
-    const sheets = await getSheetsClient();
+    const auth = await getAuthClient();
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
-    const range = 'Quotes!A:Z';
-    const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
-    const rows = response.data.values || [];
-    const header = rows[0] || [];
-    
-    const col = Object.fromEntries(header.map((h, i) => [h.replace(/\s+/g, ''), i]));
-    
-    const quoteRowIndex = rows.findIndex(row => row[col.QuoteID] === quoteId);
-    if (quoteRowIndex === -1) {
-      return res.status(404).redirect('/quote-status?error=Quote Not Found');
+    const sheetName = "QUOTE";
+
+    // Read all rows from QUOTE tab
+    const getResponse = await sheets.spreadsheets.values.get({
+      auth,
+      spreadsheetId,
+      range: `${sheetName}!A2:AD`, // Columns A to AD (30 columns)
+    });
+
+    const rows = getResponse.data.values || [];
+
+    // Find row with matching quoteId (assuming quoteId in column A, index 0)
+    const rowIndex = rows.findIndex(row => row[0] === quoteId);
+
+    if (rowIndex === -1) {
+      return res.status(404).json({ success: false, error: "Quote ID not found" });
     }
 
-    const quoteRow = rows[quoteRowIndex];
-    if (quoteRow[col.Decision] && quoteRow[col.Decision] !== "") {
-      return res.status(409).redirect('/quote-status?error=Link Already Used');
+    // Check if decision already exists in column AC (index 28)
+    const existingDecision = rows[rowIndex][28];
+
+    if (existingDecision && existingDecision.trim() !== "") {
+      return res.status(400).json({ success: false, error: "Decision already made for this quote" });
     }
 
-    // Update the specific columns in the fetched row data
-    quoteRow[col.CustomerStatus] = "Quote Decision";
-    quoteRow[col.TradespersonStatus] = "Quote Decision";
-    quoteRow[col.AdminStatus] = "Declined";
-    quoteRow[col.Decision] = "Declined";
-    quoteRow[col.DecisionTimestamp] = new Date().toISOString();
-    
-    // Write the entire updated row back to the sheet
+    const decision = "Declined";
+    const decisionTime = decisionTimestamp || new Date().toISOString();
+
+    // Write decision to column AC (29th column)
     await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: `Quotes!A${quoteRowIndex + 1}`,
-        valueInputOption: 'USER_ENTERED',
-        requestBody: { values: [quoteRow] },
+      auth,
+      spreadsheetId,
+      range: `${sheetName}!AC${rowIndex + 2}`, // +2 for header offset
+      valueInputOption: "USER_ENTERED",
+      requestBody: {
+        values: [[decision]],
+      },
     });
-    console.log(`[Decline] Updated sheet for quote #${quoteId}`);
 
-    await sendNotificationEmails({
-      quoteId,
-      customer: { name: quoteRow[col.CustomerName], email: quoteRow[col.CustomerEmail] },
-      tradesperson: { name: quoteRow[col.TradespersonName], email: quoteRow[col.TradespersonEmail] },
-      admin: { email: 'danbricks18@gmail.com' },
+    // Write decision timestamp to column AD (30th column)
+    await sheets.spreadsheets.values.update({
+      auth,
+      spreadsheetId,
+      range: `${sheetName}!AD${rowIndex + 2}`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: {
+        values: [[decisionTime]],
+      },
     });
-    console.log(`[Decline] Dispatched emails for quote #${quoteId}`);
 
-    return res.redirect('/quote-status?result=declined');
+    // Send emails with gamification
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS,
+      },
+    });
 
+    const gamifyStatusCustomer = `
+      <p><strong>Status:</strong></p>
+      <ul>
+        <li>✅ Lead Received</li>
+        <li>✅ Quote Sent</li>
+        <li>❌ Declined</li>
+      </ul>
+    `;
+
+    const gamifyStatusTradesperson = `
+      <p><strong>Status:</strong></p>
+      <ul>
+        <li>✅ Lead Received</li>
+        <li>✅ Quote Sent</li>
+        <li>❌ Declined</li>
+      </ul>
+    `;
+
+    const customerMailOptions = {
+      from: process.env.GMAIL_USER,
+      to: customerEmail,
+      subject: "Your Quote Has Been Declined",
+      html: `
+        <p>Hi ${customerName},</p>
+        <p>Your quote has been <strong>declined</strong> on ${decisionTime}.</p>
+        ${gamifyStatusCustomer}
+      `,
+    };
+
+    const tradespersonMailOptions = {
+      from: process.env.GMAIL_USER,
+      to: tradespersonEmail,
+      subject: `Quote for ${customerName} Has Been Declined`,
+      html: `
+        <p>Hi ${tradespersonName},</p>
+        <p>Your quote has been <strong>declined</strong> by the customer on ${decisionTime}.</p>
+        ${gamifyStatusTradesperson}
+      `,
+    };
+
+    await transporter.sendMail(customerMailOptions);
+    await transporter.sendMail(tradespersonMailOptions);
+
+    return res.status(200).json({ success: true, message: "Decline recorded and emails sent" });
   } catch (error) {
-    console.error('[Decline] CRITICAL ERROR:', error);
-    return res.status(500).redirect(`/quote-status?error=${encodeURIComponent(error.message)}`);
+    console.error("Decline API error:", error);
+    return res.status(500).json({ success: false, error: "Internal server error" });
   }
 }

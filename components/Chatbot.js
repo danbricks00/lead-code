@@ -1,4 +1,4 @@
-import React, a from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ChatMessage from './ChatMessage';
 
 const chatFlow = [
@@ -31,29 +31,29 @@ const ProgressBar = ({ steps, currentStep, isCompleted }) => {
 };
 
 const Chatbot = () => {
-  const [messages, setMessages] = a.useState([
+  const [messages, setMessages] = useState([
     {
       id: 1,
       content: "👋 Welcome to Kiwi Trade! We'll ask a couple of quick questions to prepare your quote.",
       isUser: false,
     },
   ]);
-  const [inputValue, setInputValue] = a.useState('');
-  const [isLoading, setIsLoading] = a.useState(true);
-  const [currentStep, setCurrentStep] = a.useState(0);
-  const [leadData, setLeadData] = a.useState({});
-  const [isCompleted, setIsCompleted] = a.useState(false);
-  const messagesEndRef = a.useRef(null);
+  const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [leadData, setLeadData] = useState({});
+  const [isCompleted, setIsCompleted] = useState(false);
+  const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  a.useEffect(() => {
+  useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
 
-  a.useEffect(() => {
+  useEffect(() => {
     if (currentStep === 0) {
       setTimeout(() => {
         setIsLoading(false);

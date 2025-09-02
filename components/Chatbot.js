@@ -125,6 +125,7 @@ const Chatbot = () => {
     <div style={styles.chatbotContainer}>
       <div style={styles.chatbotHeader}>
         <h3>Kiwi Trade Chatbot</h3>
+        <small style={{color: '#aaa', marginTop: '4px'}}>v1.1 - Debug</small> {/* Visible change for deployment verification */}
         <ProgressBar steps={chatFlow} currentStep={currentStep} isCompleted={isCompleted} />
       </div>
       

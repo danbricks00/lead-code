@@ -1,14 +1,18 @@
 import React from 'react';
 
-// Typing animation component
+// A separate component for the typing animation for clarity
 function TypingAnimation() {
   return (
     <div style={styles.typingContainer}>
-      Typing<span className="dot">.</span><span className="dot">.</span><span className="dot">.</span>
       <style jsx>{`
         .dot {
-          animation: blink 1.4s infinite;
-          margin-left: 2px;
+          display: inline-block;
+          width: 8px;
+          height: 8px;
+          background-color: #aaa;
+          border-radius: 50%;
+          margin: 0 2px;
+          animation: blink 1.4s infinite both;
         }
         .dot:nth-child(2) {
           animation-delay: 0.2s;
@@ -17,32 +21,29 @@ function TypingAnimation() {
           animation-delay: 0.4s;
         }
         @keyframes blink {
-          0%, 20% { opacity: 0; }
-          50% { opacity: 1; }
-          100% { opacity: 0; }
+          0%, 80%, 100% {
+            transform: scale(0);
+          }
+          40% {
+            transform: scale(1);
+          }
         }
       `}</style>
+      <div className="dot"></div>
+      <div className="dot"></div>
+      <div className="dot"></div>
     </div>
   );
 }
 
-// Main ChatMessage component
 export default function ChatMessage({ message, isUser, isTyping }) {
-  console.log("Rendering ChatMessage:", { message, isUser, isTyping });
+  // If the isTyping prop is true, render the animation
   if (isTyping) {
     return <TypingAnimation />;
   }
 
-  const messageStyle = {
-    backgroundColor: isUser ? "#28a745" : "#f0f0f0", // green for user, light gray for system
-    color: isUser ? "white" : "black",
-    padding: "10px 15px",
-    borderRadius: "15px",
-    maxWidth: "70%",
-    margin: "5px 0",
-    alignSelf: isUser ? "flex-end" : "flex-start",
-    wordBreak: "break-word",
-  };
+  // Determine the style based on the isUser prop
+  const messageStyle = isUser ? styles.userMessage : styles.systemMessage;
 
   return (
     <div style={messageStyle}>
@@ -51,37 +52,39 @@ export default function ChatMessage({ message, isUser, isTyping }) {
   );
 }
 
-// Styles object
+// Centralized styles object for clarity
 const styles = {
   userMessage: {
     maxWidth: "70%",
     margin: "8px",
     padding: "12px 16px",
     borderRadius: "16px",
-    backgroundColor: "#4caf50", // Green background
-    color: "#fff", // Correct white text
+    backgroundColor: "#4caf50", // User message: Green
+    color: "#ffffff", // White text for contrast
     alignSelf: "flex-end",
     fontSize: "16px",
     lineHeight: "1.4",
     boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-    border: "1px solid #388e3c", // Subtle darker green border for visibility
   },
   systemMessage: {
     maxWidth: "70%",
     margin: "8px",
     padding: "12px 16px",
     borderRadius: "16px",
-    backgroundColor: "#333", // Dark gray
-    color: "#fff", // White text
+    backgroundColor: "#333", // System message: Dark Gray
+    color: "#fff",
     alignSelf: "flex-start",
     fontSize: "16px",
     lineHeight: "1.4",
     boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
   },
   typingContainer: {
-    color: "#aaa",
-    fontStyle: "italic",
-    margin: "8px",
     alignSelf: 'flex-start',
+    display: 'flex',
+    alignItems: 'center',
+    margin: "8px",
+    padding: "12px 16px",
+    borderRadius: "16px",
+    backgroundColor: '#f1f1f1',
   }
 };

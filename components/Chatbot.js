@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, a from 'react';
 import ChatMessage from './ChatMessage';
 
 const chatFlow = [
@@ -13,52 +13,52 @@ const ProgressBar = ({ steps, currentStep, isCompleted }) => {
   const progressPercentage = isCompleted ? 100 : (currentStep / (steps.length - 1)) * 100;
   return (
     <div style={styles.progressBarContainer}>
-    <div style={styles.progressBarSteps}>
-    {steps.map((step, index) => (
-    <div key={index} style={{
-    ...styles.progressStep,
-    color: isCompleted || index <= currentStep ? '#4caf50' : '#ccc'
-    }}>
-    {isCompleted || index < currentStep ? '✔' : '●'} {step.stepName}
-    </div>
-    ))}
-    </div>
-    <div style={styles.progressBar}>
-    <div style={{...styles.progress, width: `${progressPercentage}%`}}></div>
-    </div>
+      <div style={styles.progressBarSteps}>
+        {steps.map((step, index) => (
+          <div key={index} style={{
+            ...styles.progressStep,
+            color: isCompleted || index <= currentStep ? '#4caf50' : '#ccc'
+          }}>
+            {isCompleted || index < currentStep ? '✔' : '●'} {step.stepName}
+          </div>
+        ))}
+      </div>
+      <div style={styles.progressBar}>
+        <div style={{...styles.progress, width: `${progressPercentage}%`}}></div>
+      </div>
     </div>
   );
 };
 
 const Chatbot = () => {
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = a.useState([
     {
-    id: 1,
-    content: "👋 Welcome to Kiwi Trade! We'll ask a couple of quick questions to prepare your quote.",
-    isUser: false,
+      id: 1,
+      content: "👋 Welcome to Kiwi Trade! We'll ask a couple of quick questions to prepare your quote.",
+      isUser: false,
     },
   ]);
-  const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [leadData, setLeadData] = useState({});
-  const [isCompleted, setIsCompleted] = useState(false);
-  const messagesEndRef = useRef(null);
+  const [inputValue, setInputValue] = a.useState('');
+  const [isLoading, setIsLoading] = a.useState(true);
+  const [currentStep, setCurrentStep] = a.useState(0);
+  const [leadData, setLeadData] = a.useState({});
+  const [isCompleted, setIsCompleted] = a.useState(false);
+  const messagesEndRef = a.useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(() => {
+  a.useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
 
-  useEffect(() => {
+  a.useEffect(() => {
     if (currentStep === 0) {
-    setTimeout(() => {
-    setIsLoading(false);
-    addMessage(chatFlow[0].question, false);
-    }, 1000);
+      setTimeout(() => {
+        setIsLoading(false);
+        addMessage(chatFlow[0].question, false);
+      }, 1200); // Give a moment for the user to see the typing animation
     }
   }, []);
 
@@ -67,29 +67,29 @@ const Chatbot = () => {
   };
 
   const handleLeadSubmission = async (data) => {
+    // This function remains unchanged and will submit the lead
     setIsLoading(true);
     addMessage(chatFlow.find(step => step.key === 'end').question, false);
 
     try {
-    const response = await fetch('/api/lead-intake', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-    });
-    const result = await response.json();
+      const response = await fetch('/api/lead-intake', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
 
-    if (response.ok && result.success) {
-    addMessage('✅ Your lead has been submitted successfully! We will be in touch shortly.', false);
-    setIsCompleted(true);
-    setCurrentStep(chatFlow.length - 1); // move to last step
-    } else {
-    throw new Error(result.error || 'An unknown error occurred.');
-    }
+      if (response.ok && result.success) {
+        addMessage('✅ Your lead has been submitted successfully! We will be in touch shortly.', false);
+        setIsCompleted(true);
+      } else {
+        throw new Error(result.error || 'An unknown error occurred.');
+      }
     } catch (error) {
-    console.error("Lead submission failed:", error);
-    addMessage(`❌ Sorry, there was an error: ${error.message}. Please try again later.`, false);
+      console.error("Lead submission failed:", error);
+      addMessage(`❌ Sorry, there was an error: ${error.message}. Please try again later.`, false);
     } finally {
-    setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -100,7 +100,7 @@ const Chatbot = () => {
 
     addMessage(userInput, true);
     setInputValue('');
-    setIsLoading(true);
+    setIsLoading(true); // Show typing animation immediately
 
     const currentFlowStep = chatFlow[currentStep];
     const newLeadData = { ...leadData, [currentFlowStep.key]: userInput };
@@ -108,52 +108,50 @@ const Chatbot = () => {
 
     const nextStep = currentStep + 1;
     if (nextStep < chatFlow.length - 1) {
-    setCurrentStep(nextStep);
-    setTimeout(() => {
-    setIsLoading(false);
-    addMessage(chatFlow[nextStep].question, false);
-    }, 1000);
+      setCurrentStep(nextStep);
+      setTimeout(() => {
+        setIsLoading(false); // Hide typing animation
+        addMessage(chatFlow[nextStep].question, false);
+      }, 1200); // Simulate bot thinking
     } else {
-    setCurrentStep(nextStep);
-    handleLeadSubmission(newLeadData);
+      setCurrentStep(nextStep);
+      handleLeadSubmission(newLeadData);
     }
   };
 
-  const isChatEnded = currentStep >= chatFlow.length - 1;
+  const isChatEnded = isCompleted || currentStep >= chatFlow.length - 1;
 
   return (
     <div style={styles.chatbotContainer}>
-    <div style={styles.chatbotHeader}>
-    <h3>Kiwi Trade Chatbot</h3>
-    <small style={{color: '#aaa'}}>v1.1</small> {/* Version indicator */}
-  <ProgressBar steps={chatFlow} currentStep={currentStep} isCompleted={isCompleted} />
-    </div>
-    
-    <div style={styles.chatbotMessages}>
-    {messages.map((message) => (
-    <div key={message.id} style={{display: 'flex', justifyContent: message.isUser ? 'flex-end' : 'flex-start', width: '100%'}}>
-    <ChatMessage key={message.id} message={message.content} isUser={message.isUser} />
-    </div>
-    ))}
-    {isLoading && <div style={{display: 'flex', justifyContent: 'flex-start', width: '100%'}}><ChatMessage isTyping={true} /></div>}
-    <div ref={messagesEndRef} />
-    </div>
-    
-    {!isChatEnded && (
-    <form onSubmit={handleSubmit} style={styles.chatbotInput}>
-    <input
-    type="text"
-    value={inputValue}
-    onChange={(e) => setInputValue(e.target.value)}
-    style={styles.inputField}
-    placeholder="Type your message..."
-    disabled={isLoading}
-    />
-    <button type="submit" style={styles.sendButton} disabled={isLoading || !inputValue.trim()}>
-    ➤
-    </button>
-    </form>
-    )}
+      <div style={styles.chatbotHeader}>
+        <h3>Kiwi Trade Chatbot</h3>
+        <ProgressBar steps={chatFlow} currentStep={currentStep} isCompleted={isCompleted} />
+      </div>
+      
+      <div style={styles.chatbotMessages}>
+        {messages.map((msg) => (
+          <ChatMessage key={msg.id} message={msg.content} isUser={msg.isUser} />
+        ))}
+        {/* Render the ChatMessage component with the isTyping prop */}
+        {isLoading && <ChatMessage isTyping={true} />}
+        <div ref={messagesEndRef} />
+      </div>
+      
+      {!isChatEnded && (
+        <form onSubmit={handleSubmit} style={styles.chatbotInput}>
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            style={styles.inputField}
+            placeholder="Type your message..."
+            disabled={isLoading}
+          />
+          <button type="submit" style={styles.sendButton} disabled={isLoading || !inputValue.trim()}>
+            ➤
+          </button>
+        </form>
+      )}
     </div>
   );
 };
@@ -163,7 +161,7 @@ const styles = {
   chatbotContainer: {
     width: '100%',
     maxWidth: '400px',
-    height: '600px', // Increased height for progress bar
+    height: '600px',
     border: '1px solid #ddd',
     borderRadius: '10px',
     display: 'flex',

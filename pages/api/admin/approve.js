@@ -45,6 +45,67 @@ async function findRowByValue(sheets, spreadsheetId, tabName, columnIndex, value
     };
 }
 
+async function sendCustomerQuoteEmail(transporter, customerEmail, customerName, quoteDetails, leadDetails, parsedRooms) {
+    try {
+        const ts = Date.now().toString();
+        const token = verifyToken(quoteDetails.quoteId, ts);
+        
+        const acceptLink = generateCustomerDecisionLink('accept', quoteDetails.quoteId);
+        const declineLink = generateCustomerDecisionLink('decline', quoteDetails.quoteId);
+        const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
+        const viewLink = `https://${baseUrl}/quote/view/${quoteDetails.quoteId}?ts=${ts}&token=${token}`;
+        
+        // Generate PDF with HTML fallback
+        const { pdfBuffer, htmlContent } = await generatePdf(quoteDetails, leadDetails, parsedRooms);
+        
+        const attachments = [];
+        let attachmentNote = '';
+
+        if (pdfBuffer) {
+            attachments.push({
+                filename: `Quote-${quoteDetails.quoteId}.pdf`,
+                content: pdfBuffer,
+                contentType: 'application/pdf'
+            });
+            attachmentNote = '<p>Your detailed quote is attached as a PDF.</p>';
+        } else {
+            console.warn(`[Admin Approve] PDF generation failed for quote ${quoteDetails.quoteId}. Attaching HTML fallback.`);
+            attachments.push({
+                filename: `Quote-${quoteDetails.quoteId}.html`,
+                content: htmlContent,
+                contentType: 'text/html'
+            });
+            attachmentNote = '<p style="color:orange;">We were unable to generate a PDF quote, so an HTML version is attached for your convenience.</p>';
+        }
+
+        const customerMail = {
+            from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
+            to: customerEmail,
+            subject: `Your Quote for Underfloor Heating is Ready!`,
+            html: `
+                <p>Hi ${customerName},</p>
+                <p>Good news! Your quote for ${leadDetails['Service Type']} is ready. You can view it online or in the attachment.</p>
+                ${attachmentNote}
+                <p><strong>Total Quote:</strong> $${quoteDetails['Total Quote']}</p>
+                <p>
+                    <a href="${viewLink}" style="padding:10px; background-color:#667eea; color:white; text-decoration:none; border-radius:5px;">View Quote Online</a>
+                </p>
+                <p>When you are ready, please make your decision below:</p>
+                <a href="${acceptLink}" style="padding:10px; background-color:green; color:white; text-decoration:none; border-radius:5px;">Accept Quote</a>
+                <a href="${declineLink}" style="padding:10px; background-color:red; color:white; text-decoration:none; border-radius:5px; margin-left:10px;">Decline Quote</a>
+            `,
+            attachments: attachments
+        };
+
+        await transporter.sendMail(customerMail);
+        console.log(`✅ Customer quote email sent to ${customerEmail}`);
+        return { success: true };
+    } catch (error) {
+        console.error(`❌ Error sending customer quote email for quote ${quoteDetails.quoteId}:`, error);
+        return { success: false, error: error.message };
+    }
+}
+
 
 // --- Main Handler ---
 export default async function handler(req, res) {
@@ -86,21 +147,11 @@ export default async function handler(req, res) {
         });
 
         const parsedRooms = JSON.parse(leadData.Rooms || '[]');
-        const pdfBuffer = await generatePdf(leadData, quoteData, parsedRooms);
-        
-        const acceptLink = generateCustomerDecisionLink('accept', quoteId);
-        const declineLink = generateCustomerDecisionLink('decline', quoteId);
-        const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
-        const viewLink = `https://${baseUrl}/quote/view/${quoteId}?ts=${ts}&token=${token}`;
+        const sendResult = await sendCustomerQuoteEmail(transporter, leadData['Customer Email'], leadData['Customer Name'], quoteData, leadData, parsedRooms);
 
-        const customerMail = {
-            from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
-            to: leadData['Customer Email'],
-            subject: `Your Quote for Underfloor Heating is Ready!`,
-            html: `...`, // Full email body
-            attachments: [{ filename: `Quote-${quoteId}.pdf`, content: pdfBuffer, contentType: 'application/pdf' }]
-        };
-        await transporter.sendMail(customerMail);
+        if (!sendResult.success) {
+            return res.redirect(`/quote-status?status=error&message=Failed to send quote email to customer: ${sendResult.error}.`);
+        }
 
         // 4. Update Sheet Status
         const updateRange = `Quotes!A${rowIndex + 1}`;

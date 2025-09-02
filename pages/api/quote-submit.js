@@ -52,8 +52,28 @@ async function sendQuoteEmails(transporter, customerEmail, customerName, quoteDe
     const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
     const viewLink = `https://${baseUrl}/quote/view/${quoteDetails.quoteId}?ts=${ts}&token=${token}`;
 
-    // Generate the PDF for review
-    const pdfBuffer = await generatePdf(leadDetails, quoteDetails, parsedRooms);
+    // Generate the PDF and get HTML for fallback
+    const { pdfBuffer, htmlContent } = await generatePdf(quoteDetails, leadDetails, parsedRooms);
+
+    const attachments = [];
+    let attachmentNote = '';
+
+    if (pdfBuffer) {
+        attachments.push({
+            filename: `Quote-For-Review-${quoteDetails.quoteId}.pdf`,
+            content: pdfBuffer,
+            contentType: 'application/pdf'
+        });
+        attachmentNote = '<p>The quote is attached as a PDF.</p>';
+    } else {
+        console.warn('PDF generation failed. Attaching HTML as fallback.');
+        attachments.push({
+            filename: `Quote-For-Review-${quoteDetails.quoteId}.html`,
+            content: htmlContent,
+            contentType: 'text/html'
+        });
+        attachmentNote = '<p style="color:orange;">Warning: The PDF could not be generated. The quote is attached as an HTML file instead.</p>';
+    }
 
     const reviewEmail = {
         from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
@@ -62,17 +82,14 @@ async function sendQuoteEmails(transporter, customerEmail, customerName, quoteDe
         html: `
             <p>A new quote has been prepared for ${customerName} and requires approval before it is sent.</p>
             <p><strong>Total Quote:</strong> $${quoteDetails.totalQuote.toFixed(2)}</p>
-            <p>Please review the quote details. You can see the customer-facing version via the link or the attached PDF.</p>
+            <p>Please review the quote details. You can see the customer-facing version via the link or the attached file.</p>
+            ${attachmentNote}
             <p><a href="${viewLink}" style="padding:10px; background-color:#667eea; color:white; text-decoration:none; border-radius:5px;">Review Quote</a></p>
             <p>Once you have reviewed the quote, please approve or reject it:</p>
             <a href="${approveLink}" style="padding:10px; background-color:green; color:white; text-decoration:none; border-radius:5px;">Approve & Send to Customer</a>
             <a href="${declineLink}" style="padding:10px; background-color:red; color:white; text-decoration:none; border-radius:5px; margin-left:10px;">Reject Quote</a>
         `,
-        attachments: [{
-            filename: `Quote-For-Review-${quoteDetails.quoteId}.pdf`,
-            content: pdfBuffer,
-            contentType: 'application/pdf'
-        }]
+        attachments: attachments
     };
 
     await transporter.sendMail(reviewEmail);

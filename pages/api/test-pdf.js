@@ -55,7 +55,7 @@ export default async function handler(req, res) {
 
     // 3. Send the PDF as the response
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'inline; filename=test-quote.pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=test-quote.pdf'); // Force download
     res.status(200).send(pdfBuffer);
 
   } catch (error) {

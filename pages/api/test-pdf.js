@@ -16,11 +16,14 @@ export default async function handler(req, res) {
       tradespersonEmail: 'john.doe@example.com',
       tradespersonPhone: '021 123 4567',
       companyName: 'JD Underfloor Heating',
-      labourCost: '1200',
-      materialsCost: '2500',
-      travelCost: '80',
+      labourRate: '120',
+      labourHours: '10',
+      materialsCost: '100',
+      materialsQuantity: '25',
+      travelCost: '2',
+      travelDistance: '40',
       installationCost: '500',
-      totalCost: '4280',
+      totalQuote: 4280,
       validUntil: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('en-NZ'),
       notes: 'This is a sample quote for testing purposes.'
     };
@@ -42,8 +45,12 @@ export default async function handler(req, res) {
     console.log('Mock data created. Generating PDF...');
 
     // 2. Generate the PDF buffer
-    const pdfBuffer = await generatePdf(mockQuoteDetails, mockLeadDetails, mockRooms);
+    const { pdfBuffer } = await generatePdf(mockQuoteDetails, mockLeadDetails, mockRooms);
 
+    if (!pdfBuffer) {
+        throw new Error("PDF generation returned null. Check logs for puppeteer errors.");
+    }
+    
     console.log('✅ PDF generated successfully.');
 
     // 3. Send the PDF as the response

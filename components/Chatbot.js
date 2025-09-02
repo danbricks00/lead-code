@@ -37,11 +37,18 @@ const Chatbot = () => {
 
   // Initial welcome message
   useEffect(() => {
-    setTimeout(() => {
-        setIsLoading(false);
+    // This effect runs only once on component mount
+    const startConversation = () => {
         addMessage("👋 Welcome to Kiwi Trade! We'll ask a couple of quick questions to prepare your underfloor heating quote.");
-        setTimeout(() => nextStep('start_questions'), 1000);
-    }, 1200);
+        
+        setIsLoading(true);
+        setTimeout(() => {
+            setIsLoading(false);
+            nextStep('start_questions');
+        }, 1200); // Wait a moment after the welcome message
+    };
+
+    startConversation();
 
     const fetchZones = async () => {
         try {
@@ -78,7 +85,7 @@ const Chatbot = () => {
     setMessages(prev => [...prev, { id: Date.now(), content, isUser }]);
   };
 
-  const nextStep = (next, delay = 1200) => {
+  const nextStep = (next, delay = 1200, context = {}) => {
     setIsLoading(true);
     setTimeout(() => {
         setIsLoading(false);
@@ -88,7 +95,7 @@ const Chatbot = () => {
             start_questions: "Let's get started with a few details about your project.",
             ask_room_count: "How many areas are you planning to install underfloor heating in?",
             ask_room_name: `What is the name of room ${leadData.rooms.length + 1}? (e.g., Kitchen, Lounge)`,
-            ask_room_dimensions: `What are the dimensions of the ${leadData.rooms[leadData.rooms.length - 1].name}? (e.g., 12m² or 4m x 3m)`,
+            ask_room_dimensions: `What are the dimensions of the ${context.roomName || leadData.rooms[leadData.rooms.length - 1]?.name}? (e.g., 12m² or 4m x 3m)`,
             pre_contact_details: "Great, that's all the project information we need. Now, let's get some contact details so we can send you the quote.",
             ask_name: "Perfect. What is your full name?",
             ask_phone: "What is your phone number?",
@@ -101,7 +108,8 @@ const Chatbot = () => {
         }
         // Automatically move to the next logical step if needed
         if (next === 'start_questions') {
-            setTimeout(() => nextStep('ask_room_count'), 1200);
+            // No need for an extra delay here, nextStep already has one.
+            nextStep('ask_room_count');
         }
         if (next === 'pre_contact_details') {
             setTimeout(() => nextStep('ask_name'), 1200);
@@ -173,7 +181,7 @@ const Chatbot = () => {
                 ...prev,
                 rooms: [...prev.rooms, { name: input, dimensions: '' }]
             }));
-            nextStep('ask_room_dimensions');
+            nextStep('ask_room_dimensions', 1200, { roomName: input });
             break;
         case 'ask_room_dimensions':
             const updatedRooms = [...leadData.rooms];

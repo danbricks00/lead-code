@@ -15,14 +15,12 @@ export default async function handler(req, res) {
   try {
     const { suburb, area } = req.query;
     
+    // If no suburb or area, we are fetching the whole list for the chatbot
     if (!suburb && !area) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required parameter: suburb or area'
-      });
+      console.log("🔍 Fetching all zones for chatbot initialization...");
+    } else {
+      console.log("🔍 Zone lookup request:", { suburb, area });
     }
-
-    console.log("🔍 Zone lookup request:", { suburb, area });
 
     // Try Google Sheets first
     try {
@@ -40,20 +38,21 @@ export default async function handler(req, res) {
         const rows = response.data.values || [];
         console.log(`📊 Found ${rows.length} zones in Google Sheets`);
 
-        // Filter zones based on query
-        const filteredZones = rows.filter(row => {
-          const rowSuburb = row[0] || '';
-          const rowArea = row[1] || '';
-          const rowZone = row[2] || '';
-          
-          if (suburb && rowSuburb.toLowerCase().includes(suburb.toLowerCase())) {
-            return true;
-          }
-          if (area && rowArea.toLowerCase().includes(area.toLowerCase())) {
-            return true;
-          }
-          return false;
-        });
+        // Filter zones based on query, or return all if no query
+        const filteredZones = (!suburb && !area) 
+          ? rows.slice(1) // Return all but header row
+          : rows.filter(row => {
+            const rowSuburb = row[0] || '';
+            const rowArea = row[1] || '';
+            
+            if (suburb && rowSuburb.toLowerCase().includes(suburb.toLowerCase())) {
+              return true;
+            }
+            if (area && rowArea.toLowerCase().includes(area.toLowerCase())) {
+              return true;
+            }
+            return false;
+          });
 
         if (filteredZones.length > 0) {
           const zones = filteredZones.map(row => ({

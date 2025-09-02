@@ -1,6 +1,6 @@
 import React from 'react';
 
-// Typing animation component using the user-provided snippet
+// Typing animation component
 function TypingAnimation() {
   return (
     <div style={styles.typingContainer}>
@@ -48,8 +48,8 @@ const styles = {
     margin: "8px",
     padding: "12px 16px",
     borderRadius: "16px",
-    backgroundColor: "#DCF8C6", // Light green
-    color: "#000", // Black text
+    backgroundColor: "#4caf50", // Updated green
+    color: "#ffffff", // Updated to white text for better contrast
     alignSelf: "flex-end",
     fontSize: "16px",
     lineHeight: "1.4",

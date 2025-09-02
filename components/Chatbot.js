@@ -2,12 +2,33 @@ import React, { useState, useEffect, useRef } from 'react';
 import ChatMessage from './ChatMessage';
 
 const chatFlow = [
-  { key: 'customerName', question: 'To start, what is your full name?' },
-  { key: 'customerEmail', question: 'Thanks! What is your email address?' },
-  { key: 'serviceType', question: 'What type of service are you looking for?' },
-  { key: 'specificDetails', question: 'Great. Please provide any specific details about the job.' },
-  { key: 'end', question: 'Thank you! We are submitting your request now...' }
+  { key: 'customerName', question: 'To start, what is your full name?', stepName: 'Name' },
+  { key: 'customerEmail', question: 'Thanks! What is your email address?', stepName: 'Email' },
+  { key: 'serviceType', question: 'What type of service are you looking for?', stepName: 'Service' },
+  { key: 'specificDetails', question: 'Great. Please provide any specific details about the job.', stepName: 'Details' },
+  { key: 'end', question: 'Thank you! We are submitting your request now...', stepName: 'Submit' }
 ];
+
+const ProgressBar = ({ steps, currentStep, isCompleted }) => {
+  const progressPercentage = isCompleted ? 100 : (currentStep / (steps.length - 1)) * 100;
+  return (
+    <div style={styles.progressBarContainer}>
+      <div style={styles.progressBarSteps}>
+        {steps.map((step, index) => (
+          <div key={index} style={{
+            ...styles.progressStep,
+            color: isCompleted || index <= currentStep ? '#4caf50' : '#ccc'
+          }}>
+            {isCompleted || index < currentStep ? '✔' : '●'} {step.stepName}
+          </div>
+        ))}
+      </div>
+      <div style={styles.progressBar}>
+        <div style={{...styles.progress, width: `${progressPercentage}%`}}></div>
+      </div>
+    </div>
+  );
+};
 
 const Chatbot = () => {
   const [messages, setMessages] = useState([
@@ -18,9 +39,10 @@ const Chatbot = () => {
     },
   ]);
   const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(true); // Start loading to show typing for first message
+  const [isLoading, setIsLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [leadData, setLeadData] = useState({});
+  const [isCompleted, setIsCompleted] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -36,7 +58,7 @@ const Chatbot = () => {
       setTimeout(() => {
         setIsLoading(false);
         addMessage(chatFlow[0].question, false);
-      }, 1000); // Increased delay to show animation
+      }, 1000);
     }
   }, []);
 
@@ -54,11 +76,11 @@ const Chatbot = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-
       const result = await response.json();
 
       if (response.ok && result.success) {
         addMessage('✅ Your lead has been submitted successfully! We will be in touch shortly.', false);
+        setIsCompleted(true);
       } else {
         throw new Error(result.error || 'An unknown error occurred.');
       }
@@ -77,21 +99,20 @@ const Chatbot = () => {
 
     addMessage(userInput, true);
     setInputValue('');
-    setIsLoading(true); // Show typing indicator
+    setIsLoading(true);
 
     const currentFlowStep = chatFlow[currentStep];
     const newLeadData = { ...leadData, [currentFlowStep.key]: userInput };
     setLeadData(newLeadData);
 
     const nextStep = currentStep + 1;
-    if (nextStep < chatFlow.length -1) {
+    if (nextStep < chatFlow.length - 1) {
       setCurrentStep(nextStep);
       setTimeout(() => {
         setIsLoading(false);
         addMessage(chatFlow[nextStep].question, false);
-      }, 1000); // Delay for bot "thinking" time
+      }, 1000);
     } else {
-      // End of the flow, submit the data
       setCurrentStep(nextStep);
       handleLeadSubmission(newLeadData);
     }
@@ -103,6 +124,7 @@ const Chatbot = () => {
     <div style={styles.chatbotContainer}>
       <div style={styles.chatbotHeader}>
         <h3>Kiwi Trade Chatbot</h3>
+        <ProgressBar steps={chatFlow} currentStep={currentStep} isCompleted={isCompleted} />
       </div>
       
       <div style={styles.chatbotMessages}>
@@ -137,7 +159,7 @@ const styles = {
   chatbotContainer: {
     width: '100%',
     maxWidth: '400px',
-    height: '500px',
+    height: '600px', // Increased height for progress bar
     border: '1px solid #ddd',
     borderRadius: '10px',
     display: 'flex',
@@ -187,6 +209,32 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // Progress Bar Styles
+  progressBarContainer: {
+    marginTop: '10px',
+  },
+  progressBarSteps: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '12px',
+    marginBottom: '5px',
+    color: '#ccc',
+  },
+  progressStep: {
+    transition: 'color 0.4s ease',
+  },
+  progressBar: {
+    width: '100%',
+    backgroundColor: '#555',
+    borderRadius: '5px',
+    height: '8px',
+  },
+  progress: {
+    height: '100%',
+    backgroundColor: '#4caf50',
+    borderRadius: '5px',
+    transition: 'width 0.4s ease-in-out',
   }
 };
 

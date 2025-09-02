@@ -1,5 +1,5 @@
 import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
+import chromium from '@sparticuz/chromium-min';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -14,9 +14,8 @@ export default async function handler(req, res) {
     const simplifiedHtml = '<html><body><h1>PDF Test</h1><p>If you can see this, the PDF engine is working.</p></body></html>';
     console.log('Using simplified HTML for test.');
 
-    // Add recommended font and Vercel-specific configurations
-    await chromium.font('https://raw.githack.com/googlei18n/noto-cjk/main/NotoSansCJK-Regular.ttc');
-
+    // The new package bundles fonts, so no explicit download is needed.
+    // The executablePath will now point to the bundled version.
     browser = await puppeteer.launch({
         args: chromium.args,
         defaultViewport: chromium.defaultViewport,

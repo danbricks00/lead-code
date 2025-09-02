@@ -77,8 +77,12 @@ export default async function handler(req, res) {
     // Fallback to static JSON
     console.log("📄 Using zone fallback JSON...");
     try {
-      const zoneFallback = await import('../../../data/zones.json');
-      const zones = zoneFallback.default || zoneFallback;
+      // Use path and fs for a reliable file path
+      const path = require('path');
+      const fs = require('fs').promises;
+      const filePath = path.join(process.cwd(), 'data', 'zones.json');
+      const fileContents = await fs.readFile(filePath, 'utf8');
+      const zones = JSON.parse(fileContents);
       
       // Filter zones based on query
       const filteredZones = zones.filter(zone => {

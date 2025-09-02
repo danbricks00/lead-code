@@ -13,8 +13,12 @@ export default async function handler(req, res) {
   try {
     console.log("📄 Returning zone fallback JSON for debugging...");
 
-    const zoneFallback = await import('../../../data/zones.json');
-    const zones = zoneFallback.default || zoneFallback;
+    // Use path and fs for a reliable file path
+    const path = require('path');
+    const fs = require('fs').promises;
+    const filePath = path.join(process.cwd(), 'data', 'zones.json');
+    const fileContents = await fs.readFile(filePath, 'utf8');
+    const zones = JSON.parse(fileContents);
     
     console.log(`✅ Returning ${zones.length} zones from fallback JSON`);
     return res.status(200).json({

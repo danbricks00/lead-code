@@ -80,8 +80,11 @@ export default async function handler(req, res) {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
   if (!baseUrl) {
-    console.error("NEXT_PUBLIC_BASE_URL is not defined");
-    return res.status(500).json({ success: false, error: "Server configuration error: base URL not set" });
+    console.error("❌ CRITICAL: NEXT_PUBLIC_BASE_URL is not defined in environment variables.");
+    return res.status(500).json({ 
+      success: false, 
+      error: "Server configuration error: The base URL is not set, cannot generate links." 
+    });
   }
 
   const queryParams = new URLSearchParams({
@@ -99,9 +102,8 @@ export default async function handler(req, res) {
     ts: issuedAt,
   }).toString();
   
-  // Construct and log the full quote submission URL
   const quoteLink = `https://${baseUrl}/quote-submit/${quoteId}?${queryParams}`;
-  console.log("[Lead Intake] Constructed quote link:", quoteLink);
+  console.log("✅ [Lead Intake] Constructed quote submission link:", quoteLink);
 
   try {
     await appendRowToSheet("Leads", [
@@ -124,13 +126,13 @@ export default async function handler(req, res) {
       leadId,
       customerName,
       customerEmail,
-      "Tradeperson Name", // Placeholder
-      "quangbui0600@gmail.com", // Hardcoded tradesperson email
+      "Tradeperson Name",
+      "quangbui0600@gmail.com",
       quoteLink,
       "Confirmation Request",
       "Lead Request",
       "Pending Review",
-      "No", // Resubmission Allowed
+      "No",
     ]);
 
     const transporter = nodemailer.createTransport({

@@ -9,13 +9,13 @@ const QuoteSubmitPage = () => {
   // Form state
   const [tradesperson, setTradesperson] = useState({ name: '', email: '', phone: '' });
   const [costs, setCosts] = useState({
-    labourRate: 0,
-    labourHours: 0,
-    materialsCost: 0,
-    materialsQuantity: 1,
-    travelCost: 0,
-    travelDistance: 0,
-    installationCost: 0,
+    labourRate: '',
+    labourHours: '',
+    materialsCost: '',
+    materialsQuantity: '',
+    travelCost: '',
+    travelDistance: '',
+    installationCost: '',
   });
   const [notes, setNotes] = useState('');
   const [totals, setTotals] = useState({
@@ -29,10 +29,12 @@ const QuoteSubmitPage = () => {
 
   // Calculate totals whenever costs change
   useEffect(() => {
-    const labourTotal = (costs.labourRate || 0) * (costs.labourHours || 0);
-    const materialsTotal = (costs.materialsCost || 0) * (costs.materialsQuantity || 0);
-    const travelTotal = (costs.travelCost || 0) * (costs.travelDistance || 0);
-    const finalTotal = labourTotal + materialsTotal + travelTotal + (costs.installationCost || 0);
+    const getNum = (val) => parseFloat(val) || 0;
+
+    const labourTotal = getNum(costs.labourRate) * getNum(costs.labourHours);
+    const materialsTotal = getNum(costs.materialsCost) * getNum(costs.materialsQuantity);
+    const travelTotal = getNum(costs.travelCost) * getNum(costs.travelDistance);
+    const finalTotal = labourTotal + materialsTotal + travelTotal + getNum(costs.installationCost);
 
     setTotals({
       labour: labourTotal,
@@ -44,7 +46,8 @@ const QuoteSubmitPage = () => {
   
   const handleCostChange = (e) => {
     const { name, value } = e.target;
-    setCosts(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
+    // Allow empty string, otherwise store as number
+    setCosts(prev => ({ ...prev, [name]: value }));
   };
 
   const handleTradespersonChange = (e) => {
@@ -140,40 +143,73 @@ const QuoteSubmitPage = () => {
           
           <div style={styles.section}>
             <h2 style={styles.subHeader}>Quote Calculator</h2>
+            
             {/* Labour */}
-            <div style={styles.calcRow}>
-              <span>Labour</span>
-              <input type="number" name="labourRate" value={costs.labourRate} onChange={handleCostChange} placeholder="$/hr" style={styles.calcInput} />
-              <span>x</span>
-              <input type="number" name="labourHours" value={costs.labourHours} onChange={handleCostChange} placeholder="hours" style={styles.calcInput} />
-              <span>=</span>
-              <span style={styles.subtotal}>${totals.labour.toFixed(2)}</span>
+            <div style={styles.calcBox}>
+              <div style={styles.calcInputGroup}>
+                <label style={styles.calcLabel}>Labour Rate</label>
+                <input type="number" name="labourRate" value={costs.labourRate} onChange={handleCostChange} placeholder="0" style={styles.calcInput} />
+              </div>
+              <span style={styles.calcSymbol}>x</span>
+              <div style={styles.calcInputGroup}>
+                <label style={styles.calcLabel}>Hours</label>
+                <input type="number" name="labourHours" value={costs.labourHours} onChange={handleCostChange} placeholder="0" style={styles.calcInput} />
+              </div>
+              <span style={styles.calcSymbol}>=</span>
+              <div style={styles.subtotalBox}>
+                <label style={styles.calcLabel}>Subtotal</label>
+                <span style={styles.subtotal}>${totals.labour.toFixed(2)}</span>
+              </div>
             </div>
+
             {/* Materials */}
-            <div style={styles.calcRow}>
-              <span>Materials</span>
-              <input type="number" name="materialsCost" value={costs.materialsCost} onChange={handleCostChange} placeholder="$/item" style={styles.calcInput} />
-              <span>x</span>
-              <input type="number" name="materialsQuantity" value={costs.materialsQuantity} onChange={handleCostChange} placeholder="quantity" style={styles.calcInput} />
-              <span>=</span>
-              <span style={styles.subtotal}>${totals.materials.toFixed(2)}</span>
+            <div style={styles.calcBox}>
+                <div style={styles.calcInputGroup}>
+                    <label style={styles.calcLabel}>Cost per Item</label>
+                    <input type="number" name="materialsCost" value={costs.materialsCost} onChange={handleCostChange} placeholder="0" style={styles.calcInput} />
+                </div>
+                <span style={styles.calcSymbol}>x</span>
+                <div style={styles.calcInputGroup}>
+                    <label style={styles.calcLabel}>Quantity</label>
+                    <input type="number" name="materialsQuantity" value={costs.materialsQuantity} onChange={handleCostChange} placeholder="0" style={styles.calcInput} />
+                </div>
+                <span style={styles.calcSymbol}>=</span>
+                <div style={styles.subtotalBox}>
+                    <label style={styles.calcLabel}>Subtotal</label>
+                    <span style={styles.subtotal}>${totals.materials.toFixed(2)}</span>
+                </div>
             </div>
+
             {/* Travel */}
-            <div style={styles.calcRow}>
-              <span>Travel</span>
-              <input type="number" name="travelCost" value={costs.travelCost} onChange={handleCostChange} placeholder="$/km" style={styles.calcInput} />
-              <span>x</span>
-              <input type="number" name="travelDistance" value={costs.travelDistance} onChange={handleCostChange} placeholder="km" style={styles.calcInput} />
-              <span>=</span>
-              <span style={styles.subtotal}>${totals.travel.toFixed(2)}</span>
+            <div style={styles.calcBox}>
+                <div style={styles.calcInputGroup}>
+                    <label style={styles.calcLabel}>Cost per KM</label>
+                    <input type="number" name="travelCost" value={costs.travelCost} onChange={handleCostChange} placeholder="0" style={styles.calcInput} />
+                </div>
+                <span style={styles.calcSymbol}>x</span>
+                <div style={styles.calcInputGroup}>
+                    <label style={styles.calcLabel}>Distance (KM)</label>
+                    <input type="number" name="travelDistance" value={costs.travelDistance} onChange={handleCostChange} placeholder="0" style={styles.calcInput} />
+                </div>
+                <span style={styles.calcSymbol}>=</span>
+                <div style={styles.subtotalBox}>
+                    <label style={styles.calcLabel}>Subtotal</label>
+                    <span style={styles.subtotal}>${totals.travel.toFixed(2)}</span>
+                </div>
             </div>
+
              {/* Installation */}
-            <div style={styles.calcRow}>
-              <span>Installation</span>
-              <input type="number" name="installationCost" value={costs.installationCost} onChange={handleCostChange} placeholder="flat cost" style={styles.calcInput} />
-              <span style={{flex: 1}}></span>
-              <span style={styles.subtotal}>${costs.installationCost.toFixed(2)}</span>
+            <div style={styles.calcBox}>
+                <div style={styles.calcInputGroup}>
+                    <label style={styles.calcLabel}>Installation Cost</label>
+                    <input type="number" name="installationCost" value={costs.installationCost} onChange={handleCostChange} placeholder="0" style={styles.calcInput} />
+                </div>
+                <div style={styles.subtotalBox}>
+                    <label style={styles.calcLabel}>Subtotal</label>
+                    <span style={styles.subtotal}>${(parseFloat(costs.installationCost) || 0).toFixed(2)}</span>
+                </div>
             </div>
+
             <hr style={styles.hr} />
             <div style={styles.totalRow}>
               <strong>Final Quote Total:</strong>
@@ -204,9 +240,16 @@ const styles = {
   section: { marginBottom: '20px' },
   inputGroup: { marginBottom: '10px' },
   input: { width: '100%', padding: '8px', boxSizing: 'border-box', border: '1px solid #ddd', borderRadius: '4px' },
-  calcRow: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' },
-  calcInput: { width: '100px', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' },
-  subtotal: { minWidth: '80px', textAlign: 'right', fontWeight: 'bold' },
+  
+  // New Calculator Styles
+  calcBox: { border: '1px solid #eee', borderRadius: '6px', padding: '15px', display: 'flex', alignItems: 'flex-end', gap: '10px', marginBottom: '10px', background: '#fcfcfc' },
+  calcInputGroup: { display: 'flex', flexDirection: 'column', flex: 1 },
+  calcLabel: { fontSize: '0.8em', color: '#666', marginBottom: '4px' },
+  calcInput: { width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px', boxSizing: 'border-box' },
+  calcSymbol: { fontSize: '1.2em', paddingBottom: '8px' },
+  subtotalBox: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: '100px', paddingBottom: '8px' },
+  subtotal: { fontWeight: 'bold', fontSize: '1.1em' },
+
   hr: { border: 'none', borderTop: '1px solid #eee', margin: '20px 0' },
   totalRow: { display: 'flex', justifyContent: 'space-between', fontSize: '1.2em', fontWeight: 'bold' },
   textarea: { width: '100%', padding: '8px', boxSizing: 'border-box', border: '1px solid #ddd', borderRadius: '4px', minHeight: '80px' },

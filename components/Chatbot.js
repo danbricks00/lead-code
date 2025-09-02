@@ -40,7 +40,7 @@ const Chatbot = () => {
     setTimeout(() => {
         setIsLoading(false);
         addMessage("👋 Welcome to Kiwi Trade! We'll ask a couple of quick questions to prepare your underfloor heating quote.");
-        setTimeout(() => nextStep('ask_room_count'), 1000);
+        setTimeout(() => nextStep('start_questions'), 1000);
     }, 1200);
 
     const fetchZones = async () => {
@@ -85,17 +85,26 @@ const Chatbot = () => {
         setStep(next);
         // Trigger the question for the new step
         const questions = {
+            start_questions: "Let's get started with a few details about your project.",
             ask_room_count: "How many areas are you planning to install underfloor heating in?",
             ask_room_name: `What is the name of room ${leadData.rooms.length + 1}? (e.g., Kitchen, Lounge)`,
             ask_room_dimensions: `What are the dimensions of the ${leadData.rooms[leadData.rooms.length - 1].name}? (e.g., 12m² or 4m x 3m)`,
-            ask_area: "Great. Now for your contact details. Please select your area from the options below.",
-            ask_suburb: "Thanks. Now, please select your suburb.",
+            pre_contact_details: "Great, that's all the project information we need. Now, let's get some contact details so we can send you the quote.",
             ask_name: "Perfect. What is your full name?",
             ask_phone: "What is your phone number?",
+            ask_area: "Great. Now, please select your area from the options below.",
+            ask_suburb: "Thanks. And now your suburb.",
             ask_email: "Finally, what is your email address?",
         };
         if (questions[next]) {
             addMessage(questions[next]);
+        }
+        // Automatically move to the next logical step if needed
+        if (next === 'start_questions') {
+            setTimeout(() => nextStep('ask_room_count'), 1200);
+        }
+        if (next === 'pre_contact_details') {
+            setTimeout(() => nextStep('ask_name'), 1200);
         }
     }, delay);
   };
@@ -175,12 +184,20 @@ const Chatbot = () => {
                 nextStep('ask_room_name');
             } else {
                 setProgressStep(1);
-                if (zoneData.areas.length > 0) {
-                    nextStep('ask_area');
-                } else {
-                    addMessage("Location data isn't available, so we'll skip to the next step.");
-                    nextStep('ask_name');
-                }
+                nextStep('pre_contact_details');
+            }
+            break;
+        case 'ask_name':
+            setLeadData(prev => ({ ...prev, customerName: input }));
+            nextStep('ask_phone');
+            break;
+        case 'ask_phone':
+            setLeadData(prev => ({ ...prev, customerPhone: input }));
+            if (zoneData.areas.length > 0) {
+                nextStep('ask_area');
+            } else {
+                addMessage("Location data isn't available, so we'll skip to the final step.");
+                nextStep('ask_email');
             }
             break;
         case 'ask_area':
@@ -189,14 +206,6 @@ const Chatbot = () => {
             break;
         case 'ask_suburb':
             setLeadData(prev => ({ ...prev, suburb: input }));
-            nextStep('ask_name');
-            break;
-        case 'ask_name':
-            setLeadData(prev => ({ ...prev, customerName: input }));
-            nextStep('ask_phone');
-            break;
-        case 'ask_phone':
-            setLeadData(prev => ({ ...prev, customerPhone: input }));
             nextStep('ask_email');
             break;
         case 'ask_email':

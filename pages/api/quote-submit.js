@@ -29,54 +29,50 @@ function generateDecisionLink(action, quoteId) {
     return `${process.env.NEXT_PUBLIC_BASE_URL}/api/quote-decision/${action}?quoteId=${quoteId}&ts=${ts}&token=${token}`;
 }
 
+// Generates links for the ADMIN to approve or decline the quote
+function generateAdminDecisionLink(action, quoteId) {
+    const ts = Date.now().toString();
+    // A separate secret or a different context could be used here, but for simplicity, we reuse.
+    const token = verifyToken(quoteId, ts); 
+    return `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/${action}?quoteId=${quoteId}&ts=${ts}&token=${token}`;
+}
+
+
 async function sendQuoteEmails(transporter, customerEmail, customerName, quoteDetails, leadDetails, parsedRooms) {
-    const acceptLink = generateDecisionLink('accept', quoteDetails.quoteId);
-    const declineLink = generateDecisionLink('decline', quoteDetails.quoteId);
+    // This function is now for sending the ADMIN/TRADESPERSON approval email
+
+    const approveLink = generateAdminDecisionLink('approve', quoteDetails.quoteId);
+    const declineLink = generateAdminDecisionLink('decline', quoteDetails.quoteId);
     
-    // Generate the link for the web view
+    // Generate the link for the web view for the admin/tradesperson to review
     const ts = Date.now().toString();
     const token = verifyToken(quoteDetails.quoteId, ts);
     const viewLink = `${process.env.NEXT_PUBLIC_BASE_URL}/quote/view/${quoteDetails.quoteId}?ts=${ts}&token=${token}`;
 
-    // Generate the PDF
+    // Generate the PDF for review
     const pdfBuffer = await generatePdf(leadDetails, quoteDetails, parsedRooms);
 
-    const customerMail = {
-        from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
-        to: customerEmail,
-        subject: `Your Quote for Underfloor Heating is Ready!`,
+    const reviewEmail = {
+        from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
+        to: [process.env.ADMIN_EMAIL, quoteDetails.tradespersonEmail], // Send to both admin and tradesperson
+        subject: `REVIEW REQUIRED: Quote for ${customerName} - $${quoteDetails.totalQuote.toFixed(2)}`,
         html: `
-            <p>Hi ${customerName},</p>
-            <p>Your quote of <strong>$${quoteDetails.totalQuote.toFixed(2)}</strong> is ready.</p>
-            <p>You can view the detailed quote online or open the attached PDF.</p>
-            <p><a href="${viewLink}" style="padding:10px; background-color:#667eea; color:white; text-decoration:none; border-radius:5px;">View Quote Online</a></p>
-            <p>When you are ready, please make a decision:</p>
-            <a href="${acceptLink}" style="padding:10px; background-color:green; color:white; text-decoration:none; border-radius:5px;">Accept Quote</a>
-            <a href="${declineLink}" style="padding:10px; background-color:red; color:white; text-decoration:none; border-radius:5px; margin-left:10px;">Decline Quote</a>
-            <hr>
-            <p><strong>Status:</strong></p>
-            <ul>
-                <li>✅ Lead Received</li>
-                <li>✅ Quote Sent</li>
-                <li>⚪ Decision Pending</li>
-            </ul>
+            <p>A new quote has been prepared for ${customerName} and requires approval before it is sent.</p>
+            <p><strong>Total Quote:</strong> $${quoteDetails.totalQuote.toFixed(2)}</p>
+            <p>Please review the quote details. You can see the customer-facing version via the link or the attached PDF.</p>
+            <p><a href="${viewLink}" style="padding:10px; background-color:#667eea; color:white; text-decoration:none; border-radius:5px;">Review Quote</a></p>
+            <p>Once you have reviewed the quote, please approve or reject it:</p>
+            <a href="${approveLink}" style="padding:10px; background-color:green; color:white; text-decoration:none; border-radius:5px;">Approve & Send to Customer</a>
+            <a href="${declineLink}" style="padding:10px; background-color:red; color:white; text-decoration:none; border-radius:5px; margin-left:10px;">Reject Quote</a>
         `,
         attachments: [{
-            filename: `Quote-${quoteDetails.quoteId}.pdf`,
+            filename: `Quote-For-Review-${quoteDetails.quoteId}.pdf`,
             content: pdfBuffer,
             contentType: 'application/pdf'
         }]
     };
 
-    const adminMail = {
-        from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
-        to: process.env.ADMIN_EMAIL,
-        subject: `Quote Submitted for ${customerName} - $${quoteDetails.totalQuote.toFixed(2)}`,
-        text: `A quote was submitted for ${customerName} with a total of $${quoteDetails.totalQuote.toFixed(2)}. Tradesperson: ${quoteDetails.tradespersonName} (${quoteDetails.tradespersonEmail}).`
-    };
-
-    await transporter.sendMail(customerMail);
-    await transporter.sendMail(adminMail);
+    await transporter.sendMail(reviewEmail);
 }
 
 export default async function handler(req, res) {
@@ -129,8 +125,9 @@ export default async function handler(req, res) {
             'Tradesperson Name': quoteDetails.tradespersonName,
             'Tradesperson Email': quoteDetails.tradespersonEmail,
             'Tradesperson Phone': quoteDetails.tradespersonPhone,
-            'Customer Status': 'Quote Received',
-            'Tradesperson Status': 'Quote Sent',
+            'Customer Status': 'Quote Pending Approval', // New status
+            'Tradesperson Status': 'Quote Submitted',
+            'Admin Status': 'Pending Approval', // New status
             'Labour Cost': quoteDetails.labourRate,
             'Labour Hours': quoteDetails.labourHours,
             'Materials Cost': quoteDetails.materialsCost,

@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Layout from '../components/Layout';
-import Chatbot from '../components/Chatbot';
 
-const HomePage = () => {
-  const [isChatOpen, setIsChatOpen] = useState(false);
+const HomePage = ({ openChat }) => { // Receive openChat prop from Layout
 
   return (
     <Layout>
@@ -13,7 +11,7 @@ const HomePage = () => {
           <div style={styles.heroContent}>
             <h1>Connect with Qualified Tradesmen Instantly</h1>
             <p>Our intelligent chatbot matches you with the perfect tradesman for your project. Get quotes, schedule work, and complete your projects with confidence.</p>
-            <button style={styles.ctaButton} onClick={() => setIsChatOpen(true)}>
+            <button style={styles.ctaButton} onClick={openChat}>
               Get Started Now
             </button>
           </div>
@@ -44,18 +42,7 @@ const HomePage = () => {
           </div>
         </section>
 
-        {/* Chatbot Integration */}
-        {isChatOpen && (
-          <div style={styles.chatbotContainer}>
-            <Chatbot />
-          </div>
-        )}
-        
-        {!isChatOpen && (
-           <button style={styles.chatBubble} onClick={() => setIsChatOpen(true)}>
-             💬
-           </button>
-        )}
+        {/* Chatbot is now managed by Layout.js, so we remove it from here */}
       </div>
     </Layout>
   );
@@ -72,8 +59,7 @@ const styles = {
   servicesGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', maxWidth: '1200px', margin: '0 auto' },
   serviceCard: { background: 'white', padding: '2rem', borderRadius: '15px', textAlign: 'center', boxShadow: '0 5px 20px rgba(0,0,0,0.1)' },
   serviceIcon: { fontSize: '3rem', marginBottom: '1rem' },
-  chatbotContainer: { position: 'fixed', bottom: '20px', right: '20px', zIndex: 10001 },
-  chatBubble: { position: 'fixed', right: '20px', bottom: '20px', width: '60px', height: '60px', borderRadius: '50%', background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.3)', zIndex: 9999 },
+  // Removed chatbotContainer and chatBubble styles as they are now in Layout.js
 };
 
 export default HomePage;

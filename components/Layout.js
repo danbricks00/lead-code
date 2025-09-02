@@ -1,10 +1,29 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import Chatbot from './Chatbot'; // Import the Chatbot
 
 const Layout = ({ children }) => {
   const router = useRouter();
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatKey, setChatKey] = useState(Date.now()); // Key to force re-mount for reset
+
+  const handleClose = () => setIsChatOpen(false);
+  
+  const handleResetAndClose = () => {
+    setIsChatOpen(false);
+    // Change the key to force React to create a new instance of the Chatbot
+    setChatKey(Date.now()); 
+  };
+  
+  // Pass a function to children to allow them to open the chat
+  const childrenWithProps = React.Children.map(children, child => {
+    if (React.isValidElement(child)) {
+      return React.cloneElement(child, { openChat: () => setIsChatOpen(true) });
+    }
+    return child;
+  });
 
   return (
     <>
@@ -27,11 +46,24 @@ const Layout = ({ children }) => {
         </nav>
       </header>
       <main style={styles.main}>
-        {children}
+        {childrenWithProps}
       </main>
       <footer style={styles.footer}>
         <p>&copy; {new Date().getFullYear()} Kiwi Trade. All rights reserved.</p>
       </footer>
+
+      {/* Chatbot Integration */}
+      {isChatOpen && (
+        <div style={styles.chatbotContainer}>
+          <Chatbot key={chatKey} handleClose={handleClose} handleReset={handleResetAndClose} />
+        </div>
+      )}
+      
+      {!isChatOpen && (
+         <button style={styles.chatBubble} onClick={() => setIsChatOpen(true)}>
+           💬
+         </button>
+      )}
     </>
   );
 };
@@ -106,6 +138,9 @@ const styles = {
     background: '#f8f9fa',
     borderTop: '1px solid #eee',
   },
+  // Chatbot styles moved from index.js
+  chatbotContainer: { position: 'fixed', bottom: '20px', right: '20px', zIndex: 10001, width: '400px', height: '600px', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' },
+  chatBubble: { position: 'fixed', right: '20px', bottom: '20px', width: '60px', height: '60px', borderRadius: '50%', background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.3)', zIndex: 9999 },
 };
 
 export default Layout;

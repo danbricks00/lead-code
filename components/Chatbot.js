@@ -22,7 +22,7 @@ const ProgressBar = ({ steps, currentStep, isCompleted }) => {
     );
   };
 
-const Chatbot = () => {
+const Chatbot = ({ handleClose, handleReset }) => {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -96,6 +96,8 @@ const Chatbot = () => {
             ask_room_count: "How many areas are you planning to install underfloor heating in?",
             ask_room_name: `What is the name of room ${leadData.rooms.length + 1}? (e.g., Kitchen, Lounge)`,
             ask_room_dimensions: `What are the dimensions of the ${context.roomName || leadData.rooms[leadData.rooms.length - 1]?.name}? (e.g., 12m² or 4m x 3m)`,
+            ask_timeline: "What is your desired timeline for this project?",
+            ask_timeline_details: "Could you please be more specific about your timeline?",
             pre_contact_details: "Great, that's all the project information we need. Now, let's get some contact details so we can send you the quote.",
             ask_name: "Perfect. What is your full name?",
             ask_phone: "What is your phone number?",
@@ -191,9 +193,22 @@ const Chatbot = () => {
             if (updatedRooms.length < leadData.roomCount) {
                 nextStep('ask_room_name');
             } else {
+                nextStep('ask_timeline');
+            }
+            break;
+        case 'ask_timeline':
+            setLeadData(prev => ({ ...prev, timeline: input }));
+            if (input === 'In a couple of months' || input === 'Other') {
+                nextStep('ask_timeline_details');
+            } else {
                 setProgressStep(1);
                 nextStep('pre_contact_details');
             }
+            break;
+        case 'ask_timeline_details':
+            setLeadData(prev => ({ ...prev, timeline: input })); // Overwrite with specific details
+            setProgressStep(1);
+            nextStep('pre_contact_details');
             break;
         case 'ask_name':
             setLeadData(prev => ({ ...prev, customerName: input }));
@@ -248,13 +263,21 @@ const Chatbot = () => {
   }
 
   const isChatEnded = isCompleted || step === 'completed';
-  const showTextInput = !isChatEnded && !['ask_area', 'ask_suburb'].includes(step);
+  const showTextInput = !isChatEnded && !['ask_area', 'ask_suburb', 'ask_timeline'].includes(step);
+
+  const timelineOptions = ["Immediately", "In a week", "In a couple of months", "Other"];
 
   return (
     <div style={styles.chatbotContainer}>
       <div style={styles.chatbotHeader}>
-        <h3>Kiwi Trade Chatbot</h3>
-        <ProgressBar steps={progressSteps} currentStep={progressStep} isCompleted={isCompleted} />
+        <div style={styles.headerContent}>
+          <h3>Kiwi Trade Chatbot</h3>
+          <ProgressBar steps={progressSteps} currentStep={progressStep} isCompleted={isCompleted} />
+        </div>
+        <div style={styles.headerButtons}>
+            <button onClick={handleClose} style={styles.headerBtn}>—</button>
+            <button onClick={handleReset} style={styles.headerBtn}>✕</button>
+        </div>
       </div>
       
       <div style={styles.chatbotMessages}>
@@ -265,6 +288,16 @@ const Chatbot = () => {
         <div ref={messagesEndRef} />
       </div>
       
+      {step === 'ask_timeline' && !isLoading && (
+        <div style={styles.optionsContainer}>
+            {timelineOptions.map(option => (
+                <button key={option} onClick={() => handleOptionSelect(option)} style={styles.optionButton}>
+                    {option}
+                </button>
+            ))}
+        </div>
+      )}
+
       {step === 'ask_area' && !isLoading && zoneData.areas.length > 0 && (
         <div style={styles.optionsContainer}>
             {zoneData.areas.map(area => (
@@ -306,8 +339,11 @@ const Chatbot = () => {
 
 // --- STYLES ---
 const styles = {
-  chatbotContainer: { width: '100%', maxWidth: '400px', height: '600px', border: '1px solid #ddd', borderRadius: '10px', display: 'flex', flexDirection: 'column', background: 'white', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', fontFamily: 'Arial, sans-serif' },
-  chatbotHeader: { background: '#333', color: 'white', padding: '15px', borderRadius: '10px 10px 0 0', textAlign: 'center' },
+  chatbotContainer: { width: '100%', maxWidth: '400px', height: '100%', border: '1px solid #ddd', borderRadius: '10px', display: 'flex', flexDirection: 'column', background: 'white', fontFamily: 'Arial, sans-serif' },
+  chatbotHeader: { background: '#333', color: 'white', padding: '10px 15px', borderRadius: '10px 10px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  headerContent: { flex: 1, textAlign: 'center', paddingLeft: '40px' /* Offset for buttons */ },
+  headerButtons: { display: 'flex', gap: '5px' },
+  headerBtn: { background: 'none', border: 'none', color: 'white', fontSize: '18px', cursor: 'pointer' },
   chatbotMessages: { flex: 1, overflowY: 'auto', padding: '15px', display: 'flex', flexDirection: 'column', backgroundColor: '#f9f9f9' },
   chatbotInput: { display: 'flex', padding: '15px', gap: '10px', borderTop: '1px solid #eee' },
   inputField: { flex: 1, padding: '10px', border: '1px solid #ddd', borderRadius: '20px', outline: 'none', fontSize: '14px' },

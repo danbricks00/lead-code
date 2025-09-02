@@ -124,15 +124,18 @@ const Chatbot = () => {
     <div style={styles.chatbotContainer}>
       <div style={styles.chatbotHeader}>
         <h3>Kiwi Trade Chatbot</h3>
-        <ProgressBar steps={chatFlow} currentStep={currentStep} isCompleted={isCompleted} />
+        <small style={{color: '#aaa'}}>v1.1</small> {/* Version indicator */}
+  <ProgressBar steps={chatFlow} currentStep={currentStep} isCompleted={isCompleted} />
       </div>
       
       <div style={styles.chatbotMessages}>
         {messages.map((message) => (
-          <ChatMessage key={message.id} message={message.content} isUser={message.isUser} />
-        ))}
-        {isLoading && <ChatMessage isTyping={true} />}
-        <div ref={messagesEndRef} />
+           <div key={message.id} style={{display: 'flex', justifyContent: message.isUser ? 'flex-end' : 'flex-start', width: '100%'}}>
+           <ChatMessage key={message.id} message={message.content} isUser={message.isUser} />
+         </div>
+       ))}
+       {isLoading && <div style={{display: 'flex', justifyContent: 'flex-start', width: '100%'}}><ChatMessage isTyping={true} /></div>}
+       <div ref={messagesEndRef} />
       </div>
       
       {!isChatEnded && (

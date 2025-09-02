@@ -28,6 +28,7 @@ function TypingAnimation() {
 
 // Main ChatMessage component
 export default function ChatMessage({ message, isUser, isTyping }) {
+  console.log("Rendering ChatMessage:", { message, isUser, isTyping });
   if (isTyping) {
     return <TypingAnimation />;
   }

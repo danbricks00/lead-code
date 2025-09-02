@@ -37,6 +37,10 @@ function TypingAnimation() {
 }
 
 export default function ChatMessage({ message, isUser, isTyping }) {
+  // --- DIAGNOSTIC LOG ---
+  // This will print the received props to your browser's developer console.
+  console.log('ChatMessage Component received props:', { message, isUser, isTyping });
+
   // If the isTyping prop is true, render the animation
   if (isTyping) {
     return <TypingAnimation />;

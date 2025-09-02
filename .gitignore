@@ -8,3 +8,6 @@ config.js
 node_modules/
 .DS_Store
 .vercel
+
+# Ignore nested git repositories
+temp_pdf_converter/

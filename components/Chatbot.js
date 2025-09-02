@@ -28,7 +28,9 @@ const Chatbot = ({ handleClose, handleReset }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [step, setStep] = useState('welcome');
   const [leadData, setLeadData] = useState({ rooms: [] });
-  const [zoneData, setZoneData] = useState({ areas: [], suburbs: {} });
+  const [zoneData, setZoneData] = useState({ areas: [], suburbs: {}, allSuburbs: [] });
+  const [suburbSearch, setSuburbSearch] = useState('');
+  const [suburbSuggestions, setSuburbSuggestions] = useState([]);
   const [isCompleted, setIsCompleted] = useState(false);
   const messagesEndRef = useRef(null);
 
@@ -56,13 +58,14 @@ const Chatbot = ({ handleClose, handleReset }) => {
           const data = await response.json();
           if (data.success && Array.isArray(data.rows)) {
             const areas = [...new Set(data.rows.map(row => row.area).filter(Boolean))];
-            const suburbs = {};
+            const allSuburbs = [...new Set(data.rows.map(row => row.suburb).filter(Boolean))].sort();
+            const suburbsByArea = {};
             areas.forEach(area => {
-              suburbs[area] = data.rows
+              suburbsByArea[area] = data.rows
                 .filter(row => row.area === area && row.suburb)
                 .map(row => row.suburb);
             });
-            setZoneData({ areas, suburbs });
+            setZoneData({ areas, suburbs: suburbsByArea, allSuburbs });
           } else {
             console.error("Zone API did not return a successful array of rows:", data);
           }
@@ -159,6 +162,10 @@ const Chatbot = ({ handleClose, handleReset }) => {
             return /^[a-zA-Z\s'-]{2,}$/.test(value) ? null : "Please enter a valid name.";
         case 'ask_phone':
             return /^[\d\s()+-]{7,}$/.test(value) ? null : "Please enter a valid phone number.";
+        case 'ask_suburb':
+            return zoneData.allSuburbs.map(s => s.toLowerCase()).includes(value.toLowerCase()) 
+                ? null 
+                : "Please select a valid suburb from the list.";
         case 'ask_email':
             return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? null : "Please enter a valid email address.";
         default:
@@ -259,8 +266,24 @@ const Chatbot = ({ handleClose, handleReset }) => {
   const handleOptionSelect = (selectedValue) => {
     if (isLoading) return;
     addMessage(selectedValue, true);
+    setSuburbSearch(selectedValue); // Set search to selected value to populate input
+    setSuburbSuggestions([]); // Clear suggestions
     processUserInput(selectedValue);
   }
+
+  const handleSuburbSearchChange = (e) => {
+    const value = e.target.value;
+    setSuburbSearch(value);
+
+    if (value.length > 0) {
+        const suggestions = zoneData.allSuburbs
+            .filter(suburb => suburb.toLowerCase().startsWith(value.toLowerCase()))
+            .slice(0, 5); // Limit to 5 suggestions
+        setSuburbSuggestions(suggestions);
+    } else {
+        setSuburbSuggestions([]);
+    }
+  };
 
   const isChatEnded = isCompleted || step === 'completed';
   const showTextInput = !isChatEnded && !['ask_area', 'ask_suburb', 'ask_timeline'].includes(step);
@@ -308,13 +331,29 @@ const Chatbot = ({ handleClose, handleReset }) => {
         </div>
       )}
 
-      {step === 'ask_suburb' && !isLoading && leadData.area && (
-        <div style={styles.optionsContainer}>
-            {(zoneData.suburbs[leadData.area] || []).map(suburb => (
-                <button key={suburb} onClick={() => handleOptionSelect(suburb)} style={styles.optionButton}>
-                    {suburb}
-                </button>
-            ))}
+      {step === 'ask_suburb' && !isLoading && (
+        <div style={styles.suburbSearchContainer}>
+            <input
+                type="text"
+                value={suburbSearch}
+                onChange={handleSuburbSearchChange}
+                style={styles.inputField}
+                placeholder="Type your suburb..."
+                autoFocus
+            />
+            {suburbSuggestions.length > 0 && (
+                <div style={styles.suggestionsContainer}>
+                    {suburbSuggestions.map(suburb => (
+                        <div 
+                            key={suburb} 
+                            onClick={() => handleOptionSelect(suburb)} 
+                            style={styles.suggestionItem}
+                        >
+                            {suburb}
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
       )}
 
@@ -350,6 +389,9 @@ const styles = {
   sendButton: { width: '35px', height: '35px', border: 'none', background: '#333', color: 'white', borderRadius: '50%', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   optionsContainer: { padding: '10px', borderTop: '1px solid #eee', maxHeight: '150px', overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' },
   optionButton: { background: '#f0f0f0', border: '1px solid #ddd', borderRadius: '15px', padding: '8px 12px', cursor: 'pointer', fontSize: '14px', '&:hover': { background: '#e0e0e0' } },
+  suburbSearchContainer: { padding: '15px', borderTop: '1px solid #eee', position: 'relative' },
+  suggestionsContainer: { position: 'absolute', bottom: '100%', left: '15px', right: '15px', background: 'white', border: '1px solid #ddd', borderRadius: '8px', zIndex: 10, maxHeight: '150px', overflowY: 'auto', boxShadow: '0 -2px 10px rgba(0,0,0,0.1)' },
+  suggestionItem: { padding: '10px', cursor: 'pointer', borderBottom: '1px solid #eee' },
   progressBarContainer: { marginTop: '10px' },
   progressBarSteps: { display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '5px', color: '#ccc' },
   progressStep: { transition: 'color 0.4s ease' },

@@ -13,14 +13,27 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { suburb, area } = req.query;
+    const { search, area } = req.query; // Changed from 'suburb' to 'search' for autocomplete logic
     
-    // If no suburb or area, we are fetching the whole list for the chatbot
-    if (!suburb && !area) {
+    if (!search && !area) {
       console.log("🔍 Fetching all zones for chatbot initialization...");
     } else {
-      console.log("🔍 Zone lookup request:", { suburb, area });
+      console.log("🔍 Zone lookup request:", { search, area });
     }
+
+    const filterLogic = (zones) => {
+        if (!search && !area) return zones; // Return all if no filters
+        
+        return zones.filter(zone => {
+            const rowSuburb = zone.suburb || '';
+            const rowArea = zone.area || '';
+
+            const areaMatch = area ? rowArea.toLowerCase() === area.toLowerCase() : true;
+            const searchMatch = search ? rowSuburb.toLowerCase().startsWith(search.toLowerCase()) : true;
+
+            return areaMatch && searchMatch;
+        });
+    };
 
     // Try Google Sheets first
     try {
@@ -36,35 +49,21 @@ export default async function handler(req, res) {
         });
 
         const rows = response.data.values || [];
-        console.log(`📊 Found ${rows.length} zones in Google Sheets`);
+        console.log(`📊 Found ${rows.length - 1} total zones in Google Sheets`);
 
-        // Filter zones based on query, or return all if no query
-        const filteredZones = (!suburb && !area) 
-          ? rows.slice(1) // Return all but header row
-          : rows.filter(row => {
-            const rowSuburb = row[0] || '';
-            const rowArea = row[1] || '';
-            
-            if (suburb && rowSuburb.toLowerCase().includes(suburb.toLowerCase())) {
-              return true;
-            }
-            if (area && rowArea.toLowerCase().includes(area.toLowerCase())) {
-              return true;
-            }
-            return false;
-          });
-
-        if (filteredZones.length > 0) {
-          const zones = filteredZones.map(row => ({
+        const allZones = rows.slice(1).map(row => ({
             suburb: row[0] || '',
             area: row[1] || '',
             zone: row[2] || ''
-          }));
+        }));
+        
+        const filteredZones = filterLogic(allZones);
 
-          console.log(`✅ Found ${zones.length} matching zones in Google Sheets`);
+        if (filteredZones.length > 0) {
+          console.log(`✅ Found ${filteredZones.length} matching zones in Google Sheets`);
           return res.status(200).json({
             success: true,
-            rows: zones,
+            rows: filteredZones,
             source: 'google-sheets'
           });
         }
@@ -83,18 +82,7 @@ export default async function handler(req, res) {
       const fileContents = await fs.readFile(filePath, 'utf8');
       const zones = JSON.parse(fileContents);
       
-      // If no query, return all zones. Otherwise, filter.
-      const filteredZones = (!suburb && !area)
-        ? zones
-        : zones.filter(zone => {
-            if (suburb && zone.suburb.toLowerCase().includes(suburb.toLowerCase())) {
-              return true;
-            }
-            if (area && zone.area.toLowerCase().includes(area.toLowerCase())) {
-              return true;
-            }
-            return false;
-          });
+      const filteredZones = filterLogic(zones);
 
       console.log(`✅ Found ${filteredZones.length} matching zones in fallback JSON`);
       return res.status(200).json({

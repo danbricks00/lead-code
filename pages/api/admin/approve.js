@@ -24,7 +24,8 @@ function verifyToken(id, ts) {
 function generateCustomerDecisionLink(action, quoteId) {
     const ts = Date.now().toString();
     const token = verifyToken(quoteId, ts);
-    return `${process.env.NEXT_PUBLIC_BASE_URL}/api/quote-decision/${action}?quoteId=${quoteId}&ts=${ts}&token=${token}`;
+    const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
+    return `https://${baseUrl}/api/quote-decision/${action}?quoteId=${quoteId}&ts=${ts}&token=${token}`;
 }
 
 async function findRowByValue(sheets, spreadsheetId, tabName, columnIndex, valueToFind) {
@@ -89,7 +90,8 @@ export default async function handler(req, res) {
         
         const acceptLink = generateCustomerDecisionLink('accept', quoteId);
         const declineLink = generateCustomerDecisionLink('decline', quoteId);
-        const viewLink = `${process.env.NEXT_PUBLIC_BASE_URL}/quote/view/${quoteId}?ts=${ts}&token=${token}`;
+        const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
+        const viewLink = `https://${baseUrl}/quote/view/${quoteId}?ts=${ts}&token=${token}`;
 
         const customerMail = {
             from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,

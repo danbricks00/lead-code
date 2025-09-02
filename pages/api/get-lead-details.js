@@ -1,11 +1,10 @@
 import { google } from 'googleapis';
 
 async function getSheetsClient() {
-    const { privateKey } = JSON.parse(process.env.GOOGLE_PRIVATE_KEY);
     const auth = new google.auth.JWT(
         process.env.GOOGLE_CLIENT_EMAIL,
         null,
-        privateKey,
+        (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
         ['https://www.googleapis.com/auth/spreadsheets']
     );
     await auth.authorize();

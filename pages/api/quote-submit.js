@@ -26,7 +26,8 @@ function verifyToken(id, ts) {
 function generateDecisionLink(action, quoteId) {
     const ts = Date.now().toString();
     const token = verifyToken(quoteId, ts); // Re-using the same function for consistency
-    return `${process.env.NEXT_PUBLIC_BASE_URL}/api/quote-decision/${action}?quoteId=${quoteId}&ts=${ts}&token=${token}`;
+    const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
+    return `https://${baseUrl}/api/quote-decision/${action}?quoteId=${quoteId}&ts=${ts}&token=${token}`;
 }
 
 // Generates links for the ADMIN to approve or decline the quote
@@ -34,7 +35,8 @@ function generateAdminDecisionLink(action, quoteId) {
     const ts = Date.now().toString();
     // A separate secret or a different context could be used here, but for simplicity, we reuse.
     const token = verifyToken(quoteId, ts); 
-    return `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/${action}?quoteId=${quoteId}&ts=${ts}&token=${token}`;
+    const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
+    return `https://${baseUrl}/api/admin/${action}?quoteId=${quoteId}&ts=${ts}&token=${token}`;
 }
 
 
@@ -47,7 +49,8 @@ async function sendQuoteEmails(transporter, customerEmail, customerName, quoteDe
     // Generate the link for the web view for the admin/tradesperson to review
     const ts = Date.now().toString();
     const token = verifyToken(quoteDetails.quoteId, ts);
-    const viewLink = `${process.env.NEXT_PUBLIC_BASE_URL}/quote/view/${quoteDetails.quoteId}?ts=${ts}&token=${token}`;
+    const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
+    const viewLink = `https://${baseUrl}/quote/view/${quoteDetails.quoteId}?ts=${ts}&token=${token}`;
 
     // Generate the PDF for review
     const pdfBuffer = await generatePdf(leadDetails, quoteDetails, parsedRooms);

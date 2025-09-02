@@ -84,11 +84,14 @@ export default async function handler(req, res) {
 
     // 2. Prepare Email Content
     console.log("Step 3: Preparing email content...");
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-    if (!baseUrl) {
+    const rawBaseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    if (!rawBaseUrl) {
       console.error("❌ CRITICAL: NEXT_PUBLIC_BASE_URL is not defined.");
       throw new Error("Server configuration error: base URL not set.");
     }
+    // Normalize the base URL to ensure it doesn't have a protocol
+    const baseUrl = rawBaseUrl.replace(/^(https?:\/\/)/, '');
+    
     const queryParams = new URLSearchParams({ /* ... params ... */ }).toString();
     const quoteLink = `https://${baseUrl}/quote-submit/${quoteId}?${queryParams}`;
     console.log("Constructed quote link:", quoteLink);

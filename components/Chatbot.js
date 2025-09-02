@@ -13,19 +13,19 @@ const ProgressBar = ({ steps, currentStep, isCompleted }) => {
   const progressPercentage = isCompleted ? 100 : (currentStep / (steps.length - 1)) * 100;
   return (
     <div style={styles.progressBarContainer}>
-      <div style={styles.progressBarSteps}>
-        {steps.map((step, index) => (
-          <div key={index} style={{
-            ...styles.progressStep,
-            color: isCompleted || index <= currentStep ? '#4caf50' : '#ccc'
-          }}>
-            {isCompleted || index < currentStep ? '✔' : '●'} {step.stepName}
-          </div>
-        ))}
-      </div>
-      <div style={styles.progressBar}>
-        <div style={{...styles.progress, width: `${progressPercentage}%`}}></div>
-      </div>
+    <div style={styles.progressBarSteps}>
+    {steps.map((step, index) => (
+    <div key={index} style={{
+    ...styles.progressStep,
+    color: isCompleted || index <= currentStep ? '#4caf50' : '#ccc'
+    }}>
+    {isCompleted || index < currentStep ? '✔' : '●'} {step.stepName}
+    </div>
+    ))}
+    </div>
+    <div style={styles.progressBar}>
+    <div style={{...styles.progress, width: `${progressPercentage}%`}}></div>
+    </div>
     </div>
   );
 };
@@ -33,9 +33,9 @@ const ProgressBar = ({ steps, currentStep, isCompleted }) => {
 const Chatbot = () => {
   const [messages, setMessages] = useState([
     {
-      id: 1,
-      content: "👋 Welcome to Kiwi Trade! We'll ask a couple of quick questions to prepare your quote.",
-      isUser: false,
+    id: 1,
+    content: "👋 Welcome to Kiwi Trade! We'll ask a couple of quick questions to prepare your quote.",
+    isUser: false,
     },
   ]);
   const [inputValue, setInputValue] = useState('');
@@ -55,10 +55,10 @@ const Chatbot = () => {
 
   useEffect(() => {
     if (currentStep === 0) {
-      setTimeout(() => {
-        setIsLoading(false);
-        addMessage(chatFlow[0].question, false);
-      }, 1000);
+    setTimeout(() => {
+    setIsLoading(false);
+    addMessage(chatFlow[0].question, false);
+    }, 1000);
     }
   }, []);
 
@@ -71,25 +71,25 @@ const Chatbot = () => {
     addMessage(chatFlow.find(step => step.key === 'end').question, false);
 
     try {
-      const response = await fetch('/api/lead-intake', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const result = await response.json();
+    const response = await fetch('/api/lead-intake', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    });
+    const result = await response.json();
 
-      if (response.ok && result.success) {
-        addMessage('✅ Your lead has been submitted successfully! We will be in touch shortly.', false);
-        setIsCompleted(true);
-        setCurrentStep(chatFlow.length-1); // move t
-      } else {
-        throw new Error(result.error || 'An unknown error occurred.');
-      }
+    if (response.ok && result.success) {
+    addMessage('✅ Your lead has been submitted successfully! We will be in touch shortly.', false);
+    setIsCompleted(true);
+    setCurrentStep(chatFlow.length - 1); // move to last step
+    } else {
+    throw new Error(result.error || 'An unknown error occurred.');
+    }
     } catch (error) {
-      console.error("Lead submission failed:", error);
-      addMessage(`❌ Sorry, there was an error: ${error.message}. Please try again later.`, false);
+    console.error("Lead submission failed:", error);
+    addMessage(`❌ Sorry, there was an error: ${error.message}. Please try again later.`, false);
     } finally {
-      setIsLoading(false);
+    setIsLoading(false);
     }
   };
 
@@ -108,14 +108,14 @@ const Chatbot = () => {
 
     const nextStep = currentStep + 1;
     if (nextStep < chatFlow.length - 1) {
-      setCurrentStep(nextStep);
-      setTimeout(() => {
-        setIsLoading(false);
-        addMessage(chatFlow[nextStep].question, false);
-      }, 1000);
+    setCurrentStep(nextStep);
+    setTimeout(() => {
+    setIsLoading(false);
+    addMessage(chatFlow[nextStep].question, false);
+    }, 1000);
     } else {
-      setCurrentStep(nextStep);
-      handleLeadSubmission(newLeadData);
+    setCurrentStep(nextStep);
+    handleLeadSubmission(newLeadData);
     }
   };
 
@@ -123,37 +123,37 @@ const Chatbot = () => {
 
   return (
     <div style={styles.chatbotContainer}>
-      <div style={styles.chatbotHeader}>
-        <h3>Kiwi Trade Chatbot</h3>
-        <small style={{color: '#aaa'}}>v1.1</small> {/* Version indicator */}
+    <div style={styles.chatbotHeader}>
+    <h3>Kiwi Trade Chatbot</h3>
+    <small style={{color: '#aaa'}}>v1.1</small> {/* Version indicator */}
   <ProgressBar steps={chatFlow} currentStep={currentStep} isCompleted={isCompleted} />
-      </div>
-      
-      <div style={styles.chatbotMessages}>
-        {messages.map((message) => (
-           <div key={message.id} style={{display: 'flex', justifyContent: message.isUser ? 'flex-end' : 'flex-start', width: '100%'}}>
-           <ChatMessage key={message.id} message={message.content} isUser={message.isUser} />
-         </div>
-       ))}
-       {isLoading && <div style={{display: 'flex', justifyContent: 'flex-start', width: '100%'}}><ChatMessage isTyping={true} /></div>}
-       <div ref={messagesEndRef} />
-      </div>
-      
-      {!isChatEnded && (
-        <form onSubmit={handleSubmit} style={styles.chatbotInput}>
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            style={styles.inputField}
-            placeholder="Type your message..."
-            disabled={isLoading}
-          />
-          <button type="submit" style={styles.sendButton} disabled={isLoading || !inputValue.trim()}>
-            ➤
-          </button>
-        </form>
-      )}
+    </div>
+    
+    <div style={styles.chatbotMessages}>
+    {messages.map((message) => (
+    <div key={message.id} style={{display: 'flex', justifyContent: message.isUser ? 'flex-end' : 'flex-start', width: '100%'}}>
+    <ChatMessage key={message.id} message={message.content} isUser={message.isUser} />
+    </div>
+    ))}
+    {isLoading && <div style={{display: 'flex', justifyContent: 'flex-start', width: '100%'}}><ChatMessage isTyping={true} /></div>}
+    <div ref={messagesEndRef} />
+    </div>
+    
+    {!isChatEnded && (
+    <form onSubmit={handleSubmit} style={styles.chatbotInput}>
+    <input
+    type="text"
+    value={inputValue}
+    onChange={(e) => setInputValue(e.target.value)}
+    style={styles.inputField}
+    placeholder="Type your message..."
+    disabled={isLoading}
+    />
+    <button type="submit" style={styles.sendButton} disabled={isLoading || !inputValue.trim()}>
+    ➤
+    </button>
+    </form>
+    )}
     </div>
   );
 };

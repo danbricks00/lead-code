@@ -33,7 +33,16 @@ export default function ChatMessage({ message, isUser, isTyping }) {
     return <TypingAnimation />;
   }
 
-  const messageStyle = isUser ? styles.userMessage : styles.systemMessage;
+  const messageStyle = {
+    backgroundColor: isUser ? "#28a745" : "#f0f0f0", // green for user, light gray for system
+    color: isUser ? "white" : "black",
+    padding: "10px 15px",
+    borderRadius: "15px",
+    maxWidth: "70%",
+    margin: "5px 0",
+    alignSelf: isUser ? "flex-end" : "flex-start",
+    wordBreak: "break-word",
+  };
 
   return (
     <div style={messageStyle}>

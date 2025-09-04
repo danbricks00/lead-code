@@ -75,8 +75,8 @@ export default async function handler(req, res) {
     // 1. Log to Google Sheets
     const sheets = await getSheetsClient();
     
-    // Step 1a: Log to "Leads" tab
-    console.log("Step 2a: Appending data to 'Leads' tab...");
+    // Log to "Leads" tab, matching the required header order
+    console.log("Appending data to 'Leads' tab...");
     await appendRowToSheet(sheets, "Leads", [
       leadId,
       customerName,
@@ -86,14 +86,14 @@ export default async function handler(req, res) {
       JSON.stringify(rooms) || "[]",
       area || "",
       suburb || "",
-      "", // budget - placeholder
+      "", // Budget
       timeline || "",
-      "", // specificDetails - placeholder
-      new Date().toISOString(),
+      "", // Specific Details
+      new Date().toISOString(), // Timestamp
     ]);
 
-    // Step 1b: CRITICAL FIX - Create entry in "Quotes" tab to link Quote ID and Lead ID
-    console.log("Step 2b: Appending data to 'Quotes' tab to create the link...");
+    // Log to "Quotes" tab, matching the required header order
+    console.log("Appending data to 'Quotes' tab...");
     await appendRowToSheet(sheets, "Quotes", [
         quoteId,
         leadId,
@@ -103,6 +103,18 @@ export default async function handler(req, res) {
         "Quote Pending", // Customer Status
         "Not Submitted", // Tradesperson Status
         "Not Required", // Admin Status
+        "", // Xero Quote ID
+        "", // Labour Cost
+        "", // Labour Hours
+        "", // Materials Cost
+        "", // Materials Quantity
+        "", // Travel Cost
+        "", // Travel Distance
+        "", // Installation Cost
+        "", // Total Quote
+        "", // Notes
+        "", // Quote Valid Until
+        "", // Resubmission Allowed
     ]);
 
 

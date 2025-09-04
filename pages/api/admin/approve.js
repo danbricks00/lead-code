@@ -1,6 +1,8 @@
 import { google } from "googleapis";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
+import { xero, initializeXero } from "../../../lib/xero";
+import { sendEmail } from '../../../lib/emailHelper';
 
 // --- Helper Functions (can be moved to a shared lib) ---
 async function getSheetsClient() {
@@ -108,56 +110,79 @@ export default async function handler(req, res) {
 
     const { quoteId, ts, token } = req.query;
 
-    if (!quoteId || !ts || !token) {
-        return res.redirect(`/quote-status?status=error&message=Missing approval parameters.`);
-    }
-
-    if (token !== verifyToken(quoteId, ts)) {
+    if (!quoteId || !ts || !token || token !== verifyToken(quoteId, ts)) {
         return res.redirect(`/quote-status?status=error&message=Invalid approval link.`);
     }
 
     try {
+        const tenantId = await initializeXero();
         const sheets = await getSheetsClient();
         const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
-        // 1. Get Quote and Lead data
-        const { rowData: quoteData, rowIndex } = await findRowByValue(sheets, spreadsheetId, 'Quotes', 0, quoteId);
-        if (!quoteData) return res.redirect(`/quote-status?status=error&message=Quote not found.`);
+        // 1. Get Quote and Lead data from Sheets
+        const quoteResult = await findRowByValue(sheets, spreadsheetId, 'Quotes', 0, quoteId);
+        if (!quoteResult) return res.redirect(`/quote-status?status=error&message=Quote not found.`);
+        
+        const { rowData: quoteData, rowIndex } = quoteResult;
 
-        const leadId = quoteData['Lead ID'];
-        const { rowData: leadData } = await findRowByValue(sheets, spreadsheetId, 'Leads', 0, leadId);
-        if (!leadData) return res.redirect(`/quote-status?status=error&message=Lead data not found.`);
-
-        // 2. Check if already approved
         if (quoteData['Admin Status'] === 'Approved') {
-            return res.redirect(`/quote-status?status=error&message=This quote has already been approved and sent.`);
+            return res.redirect(`/quote-status?status=error&message=This quote has already been approved.`);
         }
 
-        // 3. Send Quote to Customer
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
-        });
-
-        const parsedRooms = JSON.parse(leadData.Rooms || '[]');
-        const sendResult = await sendCustomerQuoteEmail(transporter, leadData['Customer Email'], leadData['Customer Name'], quoteData, leadData, parsedRooms);
-
-        if (!sendResult.success) {
-            return res.redirect(`/quote-status?status=error&message=Failed to send quote email to customer: ${sendResult.error}.`);
+        const xeroQuoteId = quoteData['Xero Quote ID'];
+        if (!xeroQuoteId) {
+            return res.redirect(`/quote-status?status=error&message=Error: Xero Quote ID not found for this quote.`);
         }
+        
+        const leadResult = await findRowByValue(sheets, spreadsheetId, 'Leads', 0, quoteData['Lead ID']);
+        if (!leadResult) return res.redirect(`/quote-status?status=error&message=Lead data not found.`);
+        const { rowData: leadData } = leadResult;
 
-        // 4. Update Sheet Status
-        const updateRange = `Quotes!A${rowIndex + 1}`;
-        const sheetResponse = await sheets.spreadsheets.values.get({ spreadsheetId, range: updateRange });
-        const targetRow = sheetResponse.data.values[0];
+        // 2. Update Xero Quote status from DRAFT to SENT
+        const quoteToSend = { quotes: [{ status: 'SENT' }] };
+        await xero.accountingApi.updateQuote(tenantId, xeroQuoteId, quoteToSend);
+        console.log(`Updated Xero Quote ${xeroQuoteId} to SENT status.`);
 
+        // 3. Get the final PDF from Xero
+        const quotePdf = await xero.accountingApi.getQuoteAsPdf(tenantId, xeroQuoteId, { headers: { 'Accept': 'application/pdf' } });
+        const pdfBuffer = Buffer.from(quotePdf.body);
+        console.log(`Downloaded final PDF for Xero Quote ${xeroQuoteId}`);
+
+        // 4. Send the quote email to the customer with Xero PDF
+        const acceptLink = generateCustomerDecisionLink('accept', quoteId);
+        const declineLink = generateCustomerDecisionLink('decline', quoteId);
+        
+        const customerEmailOptions = {
+          to: leadData['Customer Email'],
+          subject: `Your Quote for ${leadData['Project Name']} is Ready!`,
+          html: `
+            <h1>Your Quote is Ready</h1>
+            <p>Hello ${leadData['Customer Name']},</p>
+            <p>Please find your official quote attached.</p>
+            <p>To accept or decline, please use the buttons below.</p>
+            <a href="${acceptLink}">Accept Quote</a> | <a href="${declineLink}">Decline Quote</a>
+          `,
+          attachments: [{
+            filename: `Quote_${quoteId}.pdf`,
+            content: pdfBuffer,
+            contentType: 'application/pdf'
+          }]
+        };
+
+        await sendEmail(customerEmailOptions);
+
+        // 5. Update Sheet Status to final
         const header = (await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Quotes!A1:Z1' })).data.values[0];
-        targetRow[header.indexOf('Admin Status')] = 'Approved';
-        targetRow[header.indexOf('Customer Status')] = 'Quote Sent';
+        const updates = { 'Admin Status': 'Approved', 'Customer Status': 'Quote Sent' };
+        let targetRow = (await sheets.spreadsheets.values.get({ spreadsheetId, range: `Quotes!A${rowIndex}:Z${rowIndex}` })).data.values[0];
+        
+        header.forEach((colName, index) => {
+            if(updates[colName]) targetRow[index] = updates[colName];
+        });
 
         await sheets.spreadsheets.values.update({
             spreadsheetId,
-            range: updateRange,
+            range: `Quotes!A${rowIndex}`,
             valueInputOption: 'USER_ENTERED',
             requestBody: { values: [targetRow] },
         });
@@ -165,7 +190,7 @@ export default async function handler(req, res) {
         return res.redirect(`/quote-status?status=success&message=Quote approved and sent to the customer!`);
 
     } catch (error) {
-        console.error("Quote approval error:", error);
-        return res.redirect(`/quote-status?status=error&message=An internal server error occurred during approval.`);
+        console.error("Xero Quote Approval Error:", error.response ? JSON.stringify(error.response.body, null, 2) : error);
+        return res.redirect(`/quote-status?status=error&message=An internal server error occurred during Xero approval.`);
     }
 }

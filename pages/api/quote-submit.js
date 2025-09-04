@@ -1,6 +1,8 @@
-import { google } from "googleapis";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
+import { xero, initializeXero } from "../../lib/xero";
+import { google } from "googleapis";
+import { sendEmail } from '../../lib/emailHelper'; // Assuming you have a centralized email helper
 
 async function getSheetsClient() {
     const { privateKey } = JSON.parse(process.env.GOOGLE_PRIVATE_KEY || '{}');
@@ -22,23 +24,14 @@ function verifyToken(id, ts) {
     return hmac.digest("hex");
 }
 
-function generateDecisionLink(action, quoteId) {
-    const ts = Date.now().toString();
-    const token = verifyToken(quoteId, ts); // Re-using the same function for consistency
-    const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
-    return `https://${baseUrl}/api/quote-decision/${action}?quoteId=${quoteId}&ts=${ts}&token=${token}`;
-}
-
-// Generates links for the ADMIN to approve or decline the quote
 function generateAdminDecisionLink(action, quoteId) {
     const ts = Date.now().toString();
-    // A separate secret or a different context could be used here, but for simplicity, we reuse.
     const token = verifyToken(quoteId, ts); 
     const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
     return `https://${baseUrl}/api/admin/${action}?quoteId=${quoteId}&ts=${ts}&token=${token}`;
 }
 
-
+// Main handler
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method Not Allowed' });
@@ -47,75 +40,120 @@ export default async function handler(req, res) {
   try {
     const { quoteId, ts, token, quoteDetails, leadDetails } = req.body;
 
-    // Basic validation
     if (!quoteId || !ts || !token || !quoteDetails || !leadDetails) {
         return res.status(400).json({ success: false, error: 'Missing required fields for quote submission.' });
     }
 
-    // Verify the token to ensure the request is legitimate
-    const expectedToken = verifyToken(quoteId, ts);
-    if (token !== expectedToken) {
+    if (token !== verifyToken(quoteId, ts)) {
         return res.status(403).json({ success: false, error: 'Invalid or expired link.' });
     }
     
-    // Note: The Google Sheets update logic was here. It will be reimplemented as part of the Xero integration.
+    // --- XERO INTEGRATION ---
+    const tenantId = await initializeXero();
 
-    // Destructure details needed for emails
-    const { tradespersonName, tradespersonEmail, totalQuote } = quoteDetails;
-    const { customerName, projectName } = leadDetails;
-    const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
-
-    // Generate necessary links for the emails
-    const approveLink = generateAdminDecisionLink('approve', quoteId);
-    const declineLink = generateAdminDecisionLink('decline', quoteId);
+    // 1. Find or Create Contact in Xero
+    let contactID;
+    const { customerName, customerEmail, customerPhone } = leadDetails;
     
-    const view_ts = Date.now().toString();
-    const view_token = verifyToken(quoteId, view_ts);
-    const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
-    const viewLink = `https://${baseUrl}/quote/view/${quoteId}?ts=${view_ts}&token=${view_token}`;
-
-    // --- CONSTRUCT AND SEND EMAILS (TEMP TEXT) ---
-    const adminEmailOptions = {
-        to: ADMIN_EMAIL,
-        subject: `ACTION REQUIRED: Review Quote for ${customerName} (Lead ID: ${quoteId})`,
-        html: `
-            <p>A new quote has been submitted by ${tradespersonName} for the lead "${projectName}" and is ready for your review.</p>
-            <p><strong>Total Quote:</strong> $${totalQuote.toFixed(2)}</p>
-            <p><i>PDF generation is temporarily disabled while we integrate with Xero.</i></p>
-            <a href="${approveLink}" style="padding: 10px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">Approve Quote</a>
-            <a href="${declineLink}" style="padding: 10px; background-color: #dc3545; color: white; text-decoration: none; border-radius: 5px;">Decline Quote</a>
-            <hr>
-            <p>You can also view the quote online here: <a href="${viewLink}">${viewLink}</a></p>
-        `,
-    };
-
-    const tradespersonEmailOptions = {
-        to: tradespersonEmail,
-        subject: `Quote Submitted for ${customerName} - Awaiting Admin Approval`,
-        html: `
-            <p>Thank you for submitting your quote for the lead "${projectName}".</p>
-            <p>It has been sent to the admin for review. You will be notified once a decision has been made.</p>
-            <p><i>PDF generation is temporarily disabled while we integrate with Xero.</i></p>
-            <p>You can view the submitted quote here: <a href="${viewLink}">${viewLink}</a></p>
-        `,
-    };
-
-    try {
-       const transporter = nodemailer.createTransport({
-           service: "gmail",
-           auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
-       });
-       await transporter.sendMail(adminEmailOptions);
-       console.log(`Admin review email sent successfully to ${ADMIN_EMAIL}.`);
-       await transporter.sendMail(tradespersonEmailOptions);
-       console.log(`Tradesperson confirmation email sent successfully to ${tradespersonEmail}.`);
-    } catch (emailError) {
-       console.error('Failed to send quote submission emails:', emailError);
+    const getContactResponse = await xero.accountingApi.getContacts(tenantId, null, `EmailAddress=="${customerEmail}"`);
+    
+    if (getContactResponse.body.contacts && getContactResponse.body.contacts.length > 0) {
+        contactID = getContactResponse.body.contacts[0].contactID;
+        console.log(`Found existing Xero contact: ${contactID}`);
+    } else {
+        const newContact = { contacts: [{ name: customerName, emailAddress: customerEmail, phones: [{ phoneType: 'DEFAULT', phoneNumber: customerPhone }] }] };
+        const createContactResponse = await xero.accountingApi.createContacts(tenantId, newContact);
+        contactID = createContactResponse.body.contacts[0].contactID;
+        console.log(`Created new Xero contact: ${contactID}`);
     }
 
-    res.status(200).json({ success: true, message: 'Quote submitted for admin approval.' });
+    // 2. Create Quote in Xero
+    const {
+        labourRate, labourHours, materialsCost, materialsQuantity,
+        travelCost, travelDistance, installationCost, totalQuote, notes, validUntil
+    } = quoteDetails;
+
+    const quoteToCreate = {
+        quotes: [{
+            contact: { contactID: contactID },
+            date: new Date().toISOString().split('T')[0], // Today's date
+            expiryDate: new Date(validUntil).toISOString().split('T')[0],
+            title: `Quote for ${leadDetails.projectName}`,
+            summary: notes,
+            lineItems: [
+                { description: 'Labour', quantity: labourHours, unitAmount: labourRate, accountCode: '200' },
+                { description: 'Materials', quantity: materialsQuantity, unitAmount: materialsCost, accountCode: '200' },
+                { description: 'Travel', quantity: travelDistance, unitAmount: travelCost, accountCode: '200' },
+                { description: 'Installation', quantity: 1, unitAmount: installationCost, accountCode: '200' }
+            ],
+            status: 'DRAFT' // Draft until admin approves
+        }]
+    };
+    
+    const createQuoteResponse = await xero.accountingApi.createQuotes(tenantId, quoteToCreate);
+    const xeroQuoteId = createQuoteResponse.body.quotes[0].quoteID;
+    console.log(`Successfully created Xero Quote (Draft): ${xeroQuoteId}`);
+
+    // 3. Get PDF of the Quote from Xero
+    const quotePdf = await xero.accountingApi.getQuoteAsPdf(tenantId, xeroQuoteId, { headers: { 'Accept': 'application/pdf' } });
+    const pdfBuffer = Buffer.from(quotePdf.body);
+    console.log(`Successfully downloaded PDF for Quote ${xeroQuoteId}`);
+
+    // 4. Update Google Sheet with Xero Quote ID and new status
+    const sheets = await getSheetsClient();
+    const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+    const range = 'Quotes!A:Z';
+    const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
+    const rows = response.data.values;
+    const header = rows[0];
+    const rowIndex = rows.findIndex(row => row[header.indexOf('Quote ID')] === quoteId);
+    
+    if (rowIndex > -1) {
+        const targetRow = rows[rowIndex];
+        targetRow[header.indexOf('Admin Status')] = 'Pending Approval';
+        targetRow[header.indexOf('Customer Status')] = 'Quote Pending Approval';
+        targetRow[header.indexOf('Tradesperson Status')] = 'Quote Submitted';
+        targetRow[header.indexOf('Xero Quote ID')] = xeroQuoteId; // Store Xero ID
+
+        await sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: `Quotes!A${rowIndex + 1}`,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [targetRow] },
+        });
+        console.log(`Updated Google Sheet for Quote ID ${quoteId} with Xero ID ${xeroQuoteId}`);
+    }
+
+    // 5. Send Review Email to Admin and Tradesperson with PDF
+    const { tradespersonName, tradespersonEmail } = quoteDetails;
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+    const approveLink = generateAdminDecisionLink('approve', quoteId);
+    const declineLink = generateAdminDecisionLink('decline', quoteId);
+
+    const emailHtml = `
+        <p>A new quote for "${leadDetails.projectName}" has been submitted by ${tradespersonName} and created in Xero.</p>
+        <p>Please review the attached PDF quote and approve or decline it.</p>
+        <a href="${approveLink}">Approve & Send to Customer</a> | <a href="${declineLink}">Decline</a>
+    `;
+
+    const emailOptions = {
+        to: [ADMIN_EMAIL, tradespersonEmail],
+        subject: `ACTION REQUIRED: Review Quote for ${leadDetails.customerName}`,
+        html: emailHtml,
+        attachments: [{
+            filename: `Quote_${quoteId}.pdf`,
+            content: pdfBuffer,
+            contentType: 'application/pdf'
+        }]
+    };
+
+    await sendEmail(emailOptions);
+    console.log(`Admin/Tradesperson review email sent with Xero PDF attached.`);
+    
+    res.status(200).json({ success: true, message: 'Quote submitted and created in Xero.' });
+
   } catch (error) {
-    console.error("Quote submission error:", error);
-    res.status(500).json({ success: false, error: 'Internal Server Error' });
+    console.error("Xero Quote Submission Error:", error.response ? JSON.stringify(error.response.body, null, 2) : error);
+    res.status(500).json({ success: false, error: 'Failed to create quote in Xero.' });
   }
 }

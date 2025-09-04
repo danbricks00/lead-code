@@ -60,7 +60,7 @@ export default async function handler(req, res) {
 
   const {
     customerName, customerEmail, customerPhone, serviceType, rooms, 
-    area, suburb, budget, timeline, specificDetails,
+    area, suburb, timeline,
   } = req.body;
 
   if (!customerName || !customerEmail) {
@@ -76,10 +76,20 @@ export default async function handler(req, res) {
     console.log("Step 1: Authenticating with Google Sheets...");
     const sheets = await getSheetsClient();
     console.log("Step 2: Appending data to 'Leads' tab...");
+    // Ensure all data points, including rooms and timeline, are correctly logged.
     await appendRowToSheet(sheets, "Leads", [
-      leadId, customerName, customerEmail, customerPhone || "", serviceType || "",
-      JSON.stringify(rooms) || "", area || "", suburb || "", budget || "", timeline || "",
-      specificDetails || "", new Date().toISOString(),
+      leadId,
+      customerName,
+      customerEmail,
+      customerPhone || "",
+      serviceType || "Underfloor Heating",
+      JSON.stringify(rooms) || "[]",
+      area || "",
+      suburb || "",
+      "", // budget - placeholder
+      timeline || "",
+      "", // specificDetails - placeholder
+      new Date().toISOString(),
     ]);
 
     // 2. Prepare Email Content
@@ -92,17 +102,25 @@ export default async function handler(req, res) {
     // Normalize the base URL to ensure it doesn't have a protocol
     const baseUrl = rawBaseUrl.replace(/^(https?:\/\/)/, '');
     
-    const queryParams = new URLSearchParams({ /* ... params ... */ }).toString();
-    const quoteLink = `https://${baseUrl}/quote-submit/${quoteId}?${queryParams}`;
+    const ts = Date.now();
+    const token = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET).update(`${quoteId}|${ts}`).digest("hex");
+    const quoteLink = `https://${baseUrl}/quote-submit/${quoteId}?ts=${ts}&token=${token}`;
     console.log("Constructed quote link:", quoteLink);
+
+    // Format rooms for email display
+    const roomsHtml = (rooms && rooms.length > 0)
+      ? `<li><b>Room Details:</b><ul>${rooms.map(room => `<li>${room.name}: ${room.dimensions}</li>`).join('')}</ul></li>`
+      : '';
 
     const leadDetailsHtml = `
       <ul>
         <li><b>Name:</b> ${customerName}</li>
         <li><b>Email:</b> ${customerEmail}</li>
         <li><b>Phone:</b> ${customerPhone || "Not provided"}</li>
-        <li><b>Service:</b> ${serviceType || "Not specified"}</li>
+        <li><b>Service:</b> ${serviceType || "Underfloor Heating"}</li>
         <li><b>Area/Suburb:</b> ${suburb || area || "Not specified"}</li>
+        <li><b>Timeline:</b> ${timeline || "Not specified"}</li>
+        ${roomsHtml}
       </ul>
     `;
 

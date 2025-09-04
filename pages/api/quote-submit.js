@@ -1,9 +1,9 @@
+import { getGoogleSheetsClient, getSpreadsheetId } from '../../lib/googleSheets.js';
+import { xero, initializeXero } from "../../lib/xero";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
-import { xero, initializeXero } from "../../lib/xero";
 import { google } from "googleapis";
 import { sendEmail } from '../../lib/emailHelper'; // Assuming you have a centralized email helper
-import { getGoogleSheetsClient, getSpreadsheetId } from '../../../lib/googleSheets.js';
 
 async function getSheetsClient() {
     const { privateKey } = JSON.parse(process.env.GOOGLE_PRIVATE_KEY || '{}');

@@ -39,11 +39,14 @@ export default async function handler(req, res) {
         console.log("Debugging Sheets: Fetching headers...");
         const leadsResult = await getSheetHeaders(sheets, spreadsheetId, 'Leads');
         const quotesResult = await getSheetHeaders(sheets, spreadsheetId, 'Quotes');
+        const zoneResult = await getSheetHeaders(sheets, spreadsheetId, 'Zone');
+
 
         res.status(200).json({
             message: "This is a report of the exact column headers found in your Google Sheet.",
             leadsTabReport: leadsResult,
-            quotesTabReport: quotesResult
+            quotesTabReport: quotesResult,
+            zoneTabReport: zoneResult,
         });
 
     } catch (error) {

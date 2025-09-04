@@ -28,6 +28,7 @@ const QuoteSubmitPage = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [parsedRooms, setParsedRooms] = useState([]);
   const [leadDetails, setLeadDetails] = useState(null); // To store fetched lead data
+  const [isEditing, setIsEditing] = useState(false); // New state for edit mode
   
   // Set default expiry date to 2 weeks from now
   const defaultExpiryDate = new Date();
@@ -70,12 +71,21 @@ const QuoteSubmitPage = () => {
                 }
             }
           } else {
-            console.error("API Error:", result.error || "Data object not found in API response.");
-            setLeadDetails({ error: result.error || "Data not found." });
+            console.error("API Error:", result.error || "Data object not found. Enabling edit mode.");
+            // If fetching fails, initialize an empty object to allow editing
+            setLeadDetails({
+                'Customer Name': '', 'Customer Email': '', 'Customer Phone': '',
+                'Service Type': 'Underfloor Heating', 'Area': '', 'Suburb': '', 'Timeline': ''
+            });
+            setIsEditing(true); // Automatically enable editing if data fetch fails
           }
         } catch (error) {
-          console.error("Failed to fetch lead details:", error);
-          setLeadDetails({ error: "Fetch operation failed." });
+          console.error("Failed to fetch lead details, enabling edit mode.", error);
+          setLeadDetails({
+            'Customer Name': '', 'Customer Email': '', 'Customer Phone': '',
+            'Service Type': 'Underfloor Heating', 'Area': '', 'Suburb': '', 'Timeline': ''
+          });
+          setIsEditing(true);
         }
       };
       fetchLeadDetails();
@@ -109,6 +119,11 @@ const QuoteSubmitPage = () => {
   const handleTradespersonChange = (e) => {
     const { name, value } = e.target;
     setTradesperson(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleLeadDetailsChange = (e) => {
+    const { name, value } = e.target;
+    setLeadDetails(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -175,17 +190,36 @@ const QuoteSubmitPage = () => {
         <p><strong>Quote ID:</strong> {quoteId}</p>
 
         <div style={styles.section}>
-          <h2 style={styles.subHeader}>Customer & Project Details</h2>
-          <div style={styles.detailsGrid}>
-            <div><strong>Name:</strong> {leadDetails['Customer Name'] || 'N/A'}</div>
-            <div><strong>Email:</strong> {leadDetails['Customer Email'] || 'N/A'}</div>
-            <div><strong>Phone:</strong> {leadDetails['Customer Phone'] || 'N/A'}</div>
-            <div><strong>Service:</strong> {leadDetails['Service Type'] || 'Underfloor Heating'}</div>
-            <div><strong>Area:</strong> {leadDetails.Area || leadDetails.area || 'N/A'}</div>
-            <div><strong>Suburb:</strong> {leadDetails.Suburb || leadDetails.suburb || 'N/A'}</div>
-            <div><strong>Timeline:</strong> {leadDetails.Timeline || leadDetails.timeline || 'N/A'}</div>
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+            <h2 style={styles.subHeader}>Customer & Project Details</h2>
+            <button onClick={() => setIsEditing(!isEditing)} style={styles.editButton}>
+              {isEditing ? 'Lock Details' : 'Edit Details'}
+            </button>
           </div>
-          {leadDetails.specificDetails && <p style={{marginTop: '10px'}}><strong>Details:</strong> {leadDetails.specificDetails}</p>}
+          
+          {!isEditing ? (
+            <div style={styles.detailsGrid}>
+              {/* Display static details when not editing */}
+              <div><strong>Name:</strong> {leadDetails['Customer Name'] || 'N/A'}</div>
+              <div><strong>Email:</strong> {leadDetails['Customer Email'] || 'N/A'}</div>
+              <div><strong>Phone:</strong> {leadDetails['Customer Phone'] || 'N/A'}</div>
+              <div><strong>Service:</strong> {leadDetails['Service Type'] || 'Underfloor Heating'}</div>
+              <div><strong>Area:</strong> {leadDetails.Area || leadDetails.area || 'N/A'}</div>
+              <div><strong>Suburb:</strong> {leadDetails.Suburb || leadDetails.suburb || 'N/A'}</div>
+              <div><strong>Timeline:</strong> {leadDetails.Timeline || leadDetails.timeline || 'N/A'}</div>
+            </div>
+          ) : (
+            <div style={styles.detailsGrid}>
+              {/* Display input fields when editing */}
+              <div style={styles.inputGroup}><label>Name</label><input type="text" name="Customer Name" value={leadDetails['Customer Name']} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Email</label><input type="email" name="Customer Email" value={leadDetails['Customer Email']} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Phone</label><input type="tel" name="Customer Phone" value={leadDetails['Customer Phone']} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Service</label><input type="text" name="Service Type" value={leadDetails['Service Type']} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Area</label><input type="text" name="Area" value={leadDetails.Area || leadDetails.area} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Suburb</label><input type="text" name="Suburb" value={leadDetails.Suburb || leadDetails.suburb} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Timeline</label><input type="text" name="Timeline" value={leadDetails.Timeline || leadDetails.timeline} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+            </div>
+          )}
         </div>
 
         {parsedRooms.length > 0 && (
@@ -360,6 +394,14 @@ const styles = {
   textarea: { width: '100%', padding: '8px', boxSizing: 'border-box', border: '1px solid #ddd', borderRadius: '4px', minHeight: '80px' },
   button: { width: '100%', padding: '12px', background: '#4caf50', color: 'white', border: 'none', borderRadius: '4px', fontSize: '1em', cursor: 'pointer' },
   error: { color: 'red', marginTop: '10px', textAlign: 'center' },
+  editButton: {
+    background: 'none',
+    border: '1px solid #ddd',
+    color: '#333',
+    padding: '5px 10px',
+    borderRadius: '4px',
+    cursor: 'pointer'
+  },
 };
 
 export default QuoteSubmitPage;

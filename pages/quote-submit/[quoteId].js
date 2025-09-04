@@ -58,9 +58,8 @@ const QuoteSubmitPage = () => {
         try {
           const response = await fetch(`/api/get-lead-details?quoteId=${quoteId}`);
           const result = await response.json();
-          if (result.success) {
+          if (result.success && result.data) { // Check for result.data
             setLeadDetails(result.data);
-            // Also parse rooms from the fetched data
             if (result.data.Rooms) {
                 try {
                     const roomsData = JSON.parse(result.data.Rooms);
@@ -71,14 +70,12 @@ const QuoteSubmitPage = () => {
                 }
             }
           } else {
-            console.error("API Error:", result.error);
-            // Fallback to query params if API fails
-            setLeadDetails(query); 
+            console.error("API Error:", result.error || "Data object not found in API response.");
+            setLeadDetails({ error: result.error || "Data not found." });
           }
         } catch (error) {
           console.error("Failed to fetch lead details:", error);
-          // Fallback to query params if fetch fails
-          setLeadDetails(query);
+          setLeadDetails({ error: "Fetch operation failed." });
         }
       };
       fetchLeadDetails();
@@ -183,10 +180,10 @@ const QuoteSubmitPage = () => {
             <div><strong>Name:</strong> {leadDetails['Customer Name'] || 'N/A'}</div>
             <div><strong>Email:</strong> {leadDetails['Customer Email'] || 'N/A'}</div>
             <div><strong>Phone:</strong> {leadDetails['Customer Phone'] || 'N/A'}</div>
-            <div><strong>Service:</strong> {leadDetails['Service Type'] || 'N/A'}</div>
-            <div><strong>Area:</strong> {leadDetails.Area || 'N/A'}</div>
-            <div><strong>Suburb:</strong> {leadDetails.Suburb || 'N/A'}</div>
-            <div><strong>Timeline:</strong> {leadDetails.Timeline || 'N/A'}</div>
+            <div><strong>Service:</strong> {leadDetails['Service Type'] || 'Underfloor Heating'}</div>
+            <div><strong>Area:</strong> {leadDetails.Area || leadDetails.area || 'N/A'}</div>
+            <div><strong>Suburb:</strong> {leadDetails.Suburb || leadDetails.suburb || 'N/A'}</div>
+            <div><strong>Timeline:</strong> {leadDetails.Timeline || leadDetails.timeline || 'N/A'}</div>
           </div>
           {leadDetails.specificDetails && <p style={{marginTop: '10px'}}><strong>Details:</strong> {leadDetails.specificDetails}</p>}
         </div>

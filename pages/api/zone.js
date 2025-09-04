@@ -13,26 +13,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { search, area } = req.query; // Changed from 'suburb' to 'search' for autocomplete logic
-    
-    if (!search && !area) {
-      console.log("🔍 Fetching all zones for chatbot initialization...");
-    } else {
-      console.log("🔍 Zone lookup request:", { search, area });
-    }
+    const { search } = req.query; 
 
     const filterLogic = (zones) => {
-        if (!search && !area) return zones; // Return all if no filters
+        if (!search) {
+          // If no search term, return all zones, which is useful for initializing the chatbot
+          return zones;
+        }
         
-        return zones.filter(zone => {
-            const rowSuburb = zone.suburb || '';
-            const rowArea = zone.area || '';
-
-            const areaMatch = area ? rowArea.toLowerCase() === area.toLowerCase() : true;
-            const searchMatch = search ? rowSuburb.toLowerCase().startsWith(search.toLowerCase()) : true;
-
-            return areaMatch && searchMatch;
-        });
+        // Return zones where the suburb starts with the search term (case-insensitive)
+        return zones.filter(zone => 
+            (zone.suburb || '').toLowerCase().startsWith(search.toLowerCase())
+        );
     };
 
     // Try Google Sheets first

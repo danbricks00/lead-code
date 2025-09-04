@@ -28,7 +28,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [step, setStep] = useState('welcome');
   const [leadData, setLeadData] = useState({ rooms: [] });
-  const [zoneData, setZoneData] = useState({ areas: [], suburbs: {}, allSuburbs: [] });
+  const [zoneData, setZoneData] = useState([]); // Simplified to a single array of {suburb, area}
   const [suburbSearch, setSuburbSearch] = useState('');
   const [suburbSuggestions, setSuburbSuggestions] = useState([]);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -54,24 +54,16 @@ const Chatbot = ({ handleClose, handleReset }) => {
 
     const fetchZones = async () => {
         try {
-          const response = await fetch('/api/zone');
+          const response = await fetch('/api/zone'); // Fetches ALL zones on init
           const data = await response.json();
           if (data.success && Array.isArray(data.rows)) {
-            const areas = [...new Set(data.rows.map(row => row.area).filter(Boolean))];
-            const allSuburbs = [...new Set(data.rows.map(row => row.suburb).filter(Boolean))].sort();
-            const suburbsByArea = {};
-            areas.forEach(area => {
-              suburbsByArea[area] = data.rows
-                .filter(row => row.area === area && row.suburb)
-                .map(row => row.suburb);
-            });
-            setZoneData({ areas, suburbs: suburbsByArea, allSuburbs });
+            // Store as a flat array for easier searching
+            setZoneData(data.rows); 
           } else {
             console.error("Zone API did not return a successful array of rows:", data);
           }
         } catch (error) {
           console.error("Failed to fetch zone data", error);
-          addMessage("Sorry, I'm having trouble loading location data right now. Please try again in a moment.");
         }
       };
   
@@ -104,8 +96,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
             pre_contact_details: "Great, that's all the project information we need. Now, let's get some contact details so we can send you the quote.",
             ask_name: "Perfect. What is your full name?",
             ask_phone: "What is your phone number?",
-            ask_area: "Great. Now, please select your area from the options below.",
-            ask_suburb: "Thanks. And now your suburb.",
+            ask_suburb: "Great. Now, what is your suburb? Start typing and select from the list.",
             ask_email: "Finally, what is your email address?",
         };
         if (questions[next]) {
@@ -163,7 +154,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
         case 'ask_phone':
             return /^[\d\s()+-]{7,}$/.test(value) ? null : "Please enter a valid phone number.";
         case 'ask_suburb':
-            return zoneData.allSuburbs.map(s => s.toLowerCase()).includes(value.toLowerCase()) 
+            // Validation now checks if the selected suburb exists in our initial list
+            return zoneData.some(zone => zone.suburb.toLowerCase() === value.toLowerCase()) 
                 ? null 
                 : "Please select a valid suburb from the list.";
         case 'ask_email':
@@ -223,19 +215,21 @@ const Chatbot = ({ handleClose, handleReset }) => {
             break;
         case 'ask_phone':
             setLeadData(prev => ({ ...prev, customerPhone: input }));
-            if (zoneData.areas.length > 0) {
-                nextStep('ask_area');
+            if (zoneData.length > 0) {
+                nextStep('ask_suburb');
             } else {
                 addMessage("Location data isn't available, so we'll skip to the final step.");
                 nextStep('ask_email');
             }
             break;
-        case 'ask_area':
-            setLeadData(prev => ({ ...prev, area: input }));
-            nextStep('ask_suburb');
-            break;
         case 'ask_suburb':
-            setLeadData(prev => ({ ...prev, suburb: input }));
+            // Find the corresponding area for the selected suburb
+            const selectedZone = zoneData.find(zone => zone.suburb.toLowerCase() === input.toLowerCase());
+            setLeadData(prev => ({ 
+                ...prev, 
+                suburb: selectedZone.suburb,
+                area: selectedZone.area 
+            }));
             nextStep('ask_email');
             break;
         case 'ask_email':
@@ -265,20 +259,26 @@ const Chatbot = ({ handleClose, handleReset }) => {
 
   const handleOptionSelect = (selectedValue) => {
     if (isLoading) return;
-    addMessage(selectedValue, true);
-    setSuburbSearch(selectedValue); // Set search to selected value to populate input
-    setSuburbSuggestions([]); // Clear suggestions
-    processUserInput(selectedValue);
+
+    if (step === 'ask_suburb') {
+        addMessage(selectedValue.suburb, true);
+        setSuburbSearch(selectedValue.suburb);
+        setSuburbSuggestions([]);
+        processUserInput(selectedValue.suburb); // Pass just the suburb string
+    } else { // Handle timeline options
+        addMessage(selectedValue, true);
+        processUserInput(selectedValue);
+    }
   }
 
   const handleSuburbSearchChange = (e) => {
     const value = e.target.value;
     setSuburbSearch(value);
 
-    if (value.length > 0) {
-        const suggestions = zoneData.allSuburbs
-            .filter(suburb => suburb.toLowerCase().startsWith(value.toLowerCase()))
-            .slice(0, 5); // Limit to 5 suggestions
+    if (value.length > 1) { // Start searching after 1 character
+        const suggestions = zoneData
+            .filter(zone => zone.suburb.toLowerCase().startsWith(value.toLowerCase()))
+            .slice(0, 5); // Limit suggestions
         setSuburbSuggestions(suggestions);
     } else {
         setSuburbSuggestions([]);
@@ -286,7 +286,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
   };
 
   const isChatEnded = isCompleted || step === 'completed';
-  const showTextInput = !isChatEnded && !['ask_area', 'ask_suburb', 'ask_timeline'].includes(step);
+  // Simplified: remove 'ask_area'
+  const showTextInput = !isChatEnded && !['ask_suburb', 'ask_timeline'].includes(step);
 
   const timelineOptions = ["Immediately", "In a week", "In a couple of months", "Other"];
 
@@ -321,16 +322,6 @@ const Chatbot = ({ handleClose, handleReset }) => {
         </div>
       )}
 
-      {step === 'ask_area' && !isLoading && zoneData.areas.length > 0 && (
-        <div style={styles.optionsContainer}>
-            {zoneData.areas.map(area => (
-                <button key={area} onClick={() => handleOptionSelect(area)} style={styles.optionButton}>
-                    {area}
-                </button>
-            ))}
-        </div>
-      )}
-
       {step === 'ask_suburb' && !isLoading && (
         <div style={styles.suburbSearchContainer}>
             <input
@@ -343,13 +334,13 @@ const Chatbot = ({ handleClose, handleReset }) => {
             />
             {suburbSuggestions.length > 0 && (
                 <div style={styles.suggestionsContainer}>
-                    {suburbSuggestions.map(suburb => (
+                    {suburbSuggestions.map(zone => (
                         <div 
-                            key={suburb} 
-                            onClick={() => handleOptionSelect(suburb)} 
+                            key={`${zone.suburb}-${zone.area}`} 
+                            onClick={() => handleOptionSelect(zone)} 
                             style={styles.suggestionItem}
                         >
-                            {suburb}
+                            {zone.suburb} <span style={{color: '#888'}}>({zone.area})</span>
                         </div>
                     ))}
                 </div>

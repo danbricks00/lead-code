@@ -1,8 +1,7 @@
-import { google } from "googleapis";
-import nodemailer from "nodemailer";
-import crypto from "crypto";
+import { getGoogleSheetsClient, getSpreadsheetId } from "../../../lib/googleSheets.js";
 import { xero, initializeXero } from "../../../lib/xero";
 import { sendEmail } from '../../../lib/emailHelper';
+import crypto from "crypto";
 
 // --- Helper Functions (can be moved to a shared lib) ---
 async function getSheetsClient() {
@@ -116,8 +115,8 @@ export default async function handler(req, res) {
 
     try {
         const tenantId = await initializeXero();
-        const sheets = await getSheetsClient();
-        const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+        const sheets = getGoogleSheetsClient();
+        const spreadsheetId = getSpreadsheetId();
 
         // 1. Get Quote and Lead data from Sheets
         const quoteResult = await findRowByValue(sheets, spreadsheetId, 'Quotes', 0, quoteId);

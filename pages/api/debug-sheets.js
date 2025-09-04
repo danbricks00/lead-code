@@ -1,4 +1,4 @@
-import { google } from 'googleapis';
+import { getGoogleSheetsClient, getSpreadsheetId } from '../../lib/googleSheets.js';
 
 async function getSheetHeaders(sheets, spreadsheetId, tabName) {
     try {
@@ -20,21 +20,9 @@ async function getSheetHeaders(sheets, spreadsheetId, tabName) {
 
 export default async function handler(req, res) {
     try {
-        const { privateKey } = JSON.parse(process.env.GOOGLE_PRIVATE_KEY || '{}');
-        if (!process.env.GOOGLE_CLIENT_EMAIL || !privateKey) {
-            return res.status(500).json({ error: "Google API credentials are not configured correctly in environment variables." });
-        }
-
-        const auth = new google.auth.JWT(
-            process.env.GOOGLE_CLIENT_EMAIL, null, privateKey,
-            ['https://www.googleapis.com/auth/spreadsheets']
-        );
-        const sheets = google.sheets({ version: 'v4', auth });
-        const spreadsheetId = process.env.GOOGLE_SHEET_ID;
-
-        if (!spreadsheetId) {
-             return res.status(500).json({ error: "GOOGLE_SHEET_ID is not configured in environment variables." });
-        }
+        // Use the new centralized client
+        const sheets = getGoogleSheetsClient();
+        const spreadsheetId = getSpreadsheetId();
 
         console.log("Debugging Sheets: Fetching headers...");
         const leadsResult = await getSheetHeaders(sheets, spreadsheetId, 'Leads');

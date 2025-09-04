@@ -1,4 +1,5 @@
-import { google } from 'googleapis';
+import { getGoogleSheetsClient, getSpreadsheetId } from '../../lib/googleSheets.js';
+import { google } from 'googleapis'; // Keep for JWT, remove if sheets client handles it all
 
 // This new helper is much more robust. It finds columns by name, not by index.
 async function getSheetsData(options) {
@@ -49,13 +50,9 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { privateKey } = JSON.parse(process.env.GOOGLE_PRIVATE_KEY || '{}');
-        const auth = new google.auth.JWT(
-            process.env.GOOGLE_CLIENT_EMAIL, null, privateKey,
-            ['https://www.googleapis.com/auth/spreadsheets']
-        );
-        const sheets = google.sheets({ version: 'v4', auth });
-        const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+        // Use the new centralized client
+        const sheets = getGoogleSheetsClient();
+        const spreadsheetId = getSpreadsheetId();
 
         // 1. Find the quote in the "Quotes" tab to get the Lead ID.
         console.log(`Searching for Quote ID: ${quoteId} in "Quotes" tab...`);

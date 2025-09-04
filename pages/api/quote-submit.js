@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { xero, initializeXero } from "../../lib/xero";
 import { google } from "googleapis";
 import { sendEmail } from '../../lib/emailHelper'; // Assuming you have a centralized email helper
+import { getGoogleSheetsClient, getSpreadsheetId } from '../../../lib/googleSheets.js';
 
 async function getSheetsClient() {
     const { privateKey } = JSON.parse(process.env.GOOGLE_PRIVATE_KEY || '{}');
@@ -100,8 +101,8 @@ export default async function handler(req, res) {
     console.log(`Successfully downloaded PDF for Quote ${xeroQuoteId}`);
 
     // 4. Update Google Sheet with Xero Quote ID and new status
-    const sheets = await getSheetsClient();
-    const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+    const sheets = getGoogleSheetsClient();
+    const spreadsheetId = getSpreadsheetId();
     const range = 'Quotes!A:Z';
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
     const rows = response.data.values;

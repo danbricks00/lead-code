@@ -1,26 +1,8 @@
-import { google } from "googleapis";
+import { getGoogleSheetsClient, getSpreadsheetId } from '../../lib/googleSheets.js';
 import nodemailer from "nodemailer";
 import crypto from "crypto";
 
 // --- Helper Functions with Enhanced Logging ---
-
-async function getSheetsClient() {
-  console.log("Initializing Google Sheets client...");
-  const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-  const privateKey = (process.env.GOOGLE_PRIVATE_KEY || "").replace(/\\n/g, "\n");
-
-  if (!clientEmail || !privateKey) {
-    console.error("❌Sheets Auth Error: GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY are not set.");
-    throw new Error("Google Sheets authentication credentials are missing.");
-  }
-  
-  const auth = new google.auth.JWT(clientEmail, null, privateKey, [
-    "https://www.googleapis.com/auth/spreadsheets",
-  ]);
-
-  console.log("Google Sheets client initialized successfully.");
-  return google.sheets({ version: "v4", auth });
-}
 
 async function appendRowToSheet(sheets, tab, values) {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
@@ -72,10 +54,10 @@ export default async function handler(req, res) {
     const leadId = crypto.randomBytes(6).toString("hex");
     const quoteId = crypto.randomBytes(6).toString("hex");
 
-    // 1. Log to Google Sheets
-    const sheets = await getSheetsClient();
+    // Use the new centralized client
+    const sheets = getGoogleSheetsClient();
     
-    // Log to "Leads" tab, matching the required header order
+    // Step 1a: Log to "Leads" tab
     console.log("Appending data to 'Leads' tab...");
     await appendRowToSheet(sheets, "Leads", [
       leadId,

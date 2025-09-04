@@ -73,10 +73,10 @@ export default async function handler(req, res) {
     const quoteId = crypto.randomBytes(6).toString("hex");
 
     // 1. Log to Google Sheets
-    console.log("Step 1: Authenticating with Google Sheets...");
     const sheets = await getSheetsClient();
-    console.log("Step 2: Appending data to 'Leads' tab...");
-    // Ensure all data points, including rooms and timeline, are correctly logged.
+    
+    // Step 1a: Log to "Leads" tab
+    console.log("Step 2a: Appending data to 'Leads' tab...");
     await appendRowToSheet(sheets, "Leads", [
       leadId,
       customerName,
@@ -92,6 +92,20 @@ export default async function handler(req, res) {
       new Date().toISOString(),
     ]);
 
+    // Step 1b: CRITICAL FIX - Create entry in "Quotes" tab to link Quote ID and Lead ID
+    console.log("Step 2b: Appending data to 'Quotes' tab to create the link...");
+    await appendRowToSheet(sheets, "Quotes", [
+        quoteId,
+        leadId,
+        "", // Tradesperson Name
+        "", // Tradesperson Email
+        "", // Tradesperson Phone
+        "Quote Pending", // Customer Status
+        "Not Submitted", // Tradesperson Status
+        "Not Required", // Admin Status
+    ]);
+
+
     // 2. Prepare Email Content
     console.log("Step 3: Preparing email content...");
     const rawBaseUrl = process.env.NEXT_PUBLIC_BASE_URL;
@@ -99,7 +113,6 @@ export default async function handler(req, res) {
       console.error("❌ CRITICAL: NEXT_PUBLIC_BASE_URL is not defined.");
       throw new Error("Server configuration error: base URL not set.");
     }
-    // Normalize the base URL to ensure it doesn't have a protocol
     const baseUrl = rawBaseUrl.replace(/^(https?:\/\/)/, '');
     
     const ts = Date.now();
@@ -109,16 +122,18 @@ export default async function handler(req, res) {
 
     // Format rooms for email display
     const roomsHtml = (rooms && rooms.length > 0)
-      ? `<li><b>Room Details:</b><ul>${rooms.map(room => `<li>${room.name}: ${room.dimensions}</li>`).join('')}</ul></li>`
+      ? `<li><b>Room Details:</b><ul>${rooms.map(room => `<li>${room.name || 'Unnamed'}: ${room.dimensions || 'N/A'}</li>`).join('')}</ul></li>`
       : '';
 
     const leadDetailsHtml = `
+      <p>A new lead has been received with the following details:</p>
       <ul>
-        <li><b>Name:</b> ${customerName}</li>
+        <li><b>Lead ID:</b> ${leadId}</li>
+        <li><b>Customer Name:</b> ${customerName}</li>
         <li><b>Email:</b> ${customerEmail}</li>
         <li><b>Phone:</b> ${customerPhone || "Not provided"}</li>
         <li><b>Service:</b> ${serviceType || "Underfloor Heating"}</li>
-        <li><b>Area/Suburb:</b> ${suburb || area || "Not specified"}</li>
+        <li><b>Location:</b> ${suburb || ""}${suburb && area ? ", " : ""}${area || ""}</li>
         <li><b>Timeline:</b> ${timeline || "Not specified"}</li>
         ${roomsHtml}
       </ul>
@@ -138,29 +153,29 @@ export default async function handler(req, res) {
       service: "gmail",
       auth: {
         user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS,
+        pass: process.env.GMAIL_APP_PASSWORD, // CORRECTED from GMAIL_PASS
       },
     });
 
     const customerMail = {
       from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
       to: customerEmail,
-      subject: "✅ We received your request",
-      html: `<p>Hi ${customerName},</p><p>Thanks for reaching out. A trade professional will prepare a quote and send it to you shortly.</p>${leadDetailsHtml}${gamifyStatus}`,
+      subject: "✅ We've Received Your Underfloor Heating Quote Request!",
+      html: `<p>Hi ${customerName},</p><p>Thanks for your request. We've received your project details and a tradesperson will be in touch with a quote shortly.</p><p>For your records, here are the details you provided:</p>${leadDetailsHtml}${gamifyStatus}`,
     };
 
     const tradespersonMail = {
       from: `"Kiwi Trade Leads" <${process.env.GMAIL_USER}>`,
-      to: "quangbui0600@gmail.com",
-      subject: `🔔 New Lead: ${serviceType || 'General Inquiry'}`,
-      html: `<p>You have a new lead.</p>${leadDetailsHtml}<p><b>Prepare a quote here:</b> <a href="${quoteLink}">Submit Quote</a></p>${gamifyStatus}`,
+      to: "quangbui0600@gmail.com", // This should be a dynamic tradesperson email
+      subject: `🔔 New Underfloor Heating Lead: ${suburb || area}`,
+      html: `<h1>New Lead Received</h1>${leadDetailsHtml}<p>Please prepare a quote for this customer by clicking the link below:</p><h2><a href="${quoteLink}">Submit Your Quote Now</a></h2>`,
     };
 
     const adminMail = {
       from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
       to: "danbricks18@gmail.com",
-      subject: `Lead recorded on site: #${leadId}`,
-      html: `<p>A new lead has been recorded.</p>${leadDetailsHtml}<p>Quote Link: ${quoteLink}</p>`,
+      subject: `New Lead Logged: ${customerName} in ${suburb || area}`,
+      html: `<h1>New Lead Logged (#${leadId})</h1>${leadDetailsHtml}<p>A quote link has been sent to the tradesperson.</p><p>Quote Link: ${quoteLink}</p>`,
     };
 
     // 3. Send Emails

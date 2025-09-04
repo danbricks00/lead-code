@@ -55,49 +55,43 @@ async function sendCustomerQuoteEmail(transporter, customerEmail, customerName, 
         const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
         const viewLink = `https://${baseUrl}/quote/view/${quoteDetails.quoteId}?ts=${ts}&token=${token}`;
         
-        // Generate PDF with HTML fallback
-        const { pdfBuffer, htmlContent } = await generatePdf(quoteDetails, leadDetails, parsedRooms);
-        
-        const attachments = [];
-        let attachmentNote = '';
+        // --- Temporarily disable PDF generation ---
+        // let pdfBuffer;
+        // try {
+        //   // We pass the full leadDetails object now
+        //   const { pdfBuffer: generatedPdf } = await generatePdf(quoteDetails, leadDetails);
+        //   pdfBuffer = generatedPdf;
+        //   console.log('PDF for customer generated successfully.');
+        // } catch (pdfError) {
+        //   console.error('CRITICAL: Failed to generate customer PDF after approval:', pdfError);
+        //   // If PDF fails here, we should still try to send the email without it.
+        // }
 
-        if (pdfBuffer) {
-            attachments.push({
-                filename: `Quote-${quoteDetails.quoteId}.pdf`,
-                content: pdfBuffer,
-                contentType: 'application/pdf'
-            });
-            attachmentNote = '<p>Your detailed quote is attached as a PDF.</p>';
-        } else {
-            console.warn(`[Admin Approve] PDF generation failed for quote ${quoteDetails.quoteId}. Attaching HTML fallback.`);
-            attachments.push({
-                filename: `Quote-${quoteDetails.quoteId}.html`,
-                content: htmlContent,
-                contentType: 'text/html'
-            });
-            attachmentNote = '<p style="color:orange;">We were unable to generate a PDF quote, so an HTML version is attached for your convenience.</p>';
-        }
-
-        const customerMail = {
-            from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
-            to: customerEmail,
-            subject: `Your Quote for Underfloor Heating is Ready!`,
-            html: `
-                <p>Hi ${customerName},</p>
-                <p>Good news! Your quote for ${leadDetails['Service Type']} is ready. You can view it online or in the attachment.</p>
-                ${attachmentNote}
-                <p><strong>Total Quote:</strong> $${quoteDetails['Total Quote']}</p>
-                <p>
-                    <a href="${viewLink}" style="padding:10px; background-color:#667eea; color:white; text-decoration:none; border-radius:5px;">View Quote Online</a>
-                </p>
-                <p>When you are ready, please make your decision below:</p>
-                <a href="${acceptLink}" style="padding:10px; background-color:green; color:white; text-decoration:none; border-radius:5px;">Accept Quote</a>
-                <a href="${declineLink}" style="padding:10px; background-color:red; color:white; text-decoration:none; border-radius:5px; margin-left:10px;">Decline Quote</a>
-            `,
-            attachments: attachments
+        // 4. Send the quote email to the customer
+        const customerEmailOptions = {
+          to: leadDetails.customerEmail,
+          subject: `Your Quote for ${leadDetails.projectName} is Ready!`,
+          html: `
+            <h1>Your Quote is Ready</h1>
+            <p>Hello ${leadDetails.customerName},</p>
+            <p>Please find your quote from ${quoteDetails.tradespersonName} for the project "${leadDetails.projectName}" attached.</p>
+            <p><strong>Total Quote:</strong> $${quoteDetails.totalQuote}</p>
+            <p><i>PDF generation is temporarily disabled while we integrate with Xero. You can view the full quote details online.</i></p>
+            <p>To accept or decline this quote, please use the buttons below. This action is final.</p>
+            <a href="${acceptLink}" style="padding: 10px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">Accept Quote</a>
+            <a href="${declineLink}" style="padding: 10px; background-color: #dc3545; color: white; text-decoration: none; border-radius: 5px;">Decline Quote</a>
+            <br/><br/>
+            <p>You can also view the quote online here: <a href="${viewLink}">${viewLink}</a></p>
+            <p>This quote is valid until: <strong>${new Date(quoteDetails.quoteValidUntil).toLocaleDateString()}</strong></p>
+          `
+          // attachments: pdfBuffer ? [{
+          //   filename: `Quote_${leadId}.pdf`,
+          //   content: pdfBuffer,
+          //   contentType: 'application/pdf'
+          // }] : []
         };
 
-        await transporter.sendMail(customerMail);
+        await transporter.sendMail(customerEmailOptions);
         console.log(`✅ Customer quote email sent to ${customerEmail}`);
         return { success: true };
     } catch (error) {

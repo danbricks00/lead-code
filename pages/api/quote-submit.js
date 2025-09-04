@@ -1,7 +1,6 @@
 import { google } from "googleapis";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
-import { generatePdf } from "../../lib/pdfGenerator"; // Import the PDF generator
 
 async function getSheetsClient() {
     const { privateKey } = JSON.parse(process.env.GOOGLE_PRIVATE_KEY || '{}');

@@ -40,90 +40,48 @@ function generateAdminDecisionLink(action, quoteId) {
 }
 
 
-async function sendQuoteEmails(transporter, customerEmail, customerName, quoteDetails, leadDetails, parsedRooms) {
-    // This function is now for sending the ADMIN/TRADESPERSON approval email
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, error: 'Method Not Allowed' });
+  }
+  
+  try {
+    const { quoteId, ts, token, quoteDetails, leadDetails } = req.body;
 
-    const approveLink = generateAdminDecisionLink('approve', quoteDetails.quoteId);
-    const declineLink = generateAdminDecisionLink('decline', quoteDetails.quoteId);
+    // Basic validation
+    if (!quoteId || !ts || !token || !quoteDetails || !leadDetails) {
+        return res.status(400).json({ success: false, error: 'Missing required fields for quote submission.' });
+    }
+
+    // Verify the token to ensure the request is legitimate
+    const expectedToken = verifyToken(quoteId, ts);
+    if (token !== expectedToken) {
+        return res.status(403).json({ success: false, error: 'Invalid or expired link.' });
+    }
     
-    // Generate the link for the web view for the admin/tradesperson to review
-    const ts = Date.now().toString();
-    const token = verifyToken(quoteDetails.quoteId, ts);
+    // Note: The Google Sheets update logic was here. It will be reimplemented as part of the Xero integration.
+
+    // Destructure details needed for emails
+    const { tradespersonName, tradespersonEmail, totalQuote } = quoteDetails;
+    const { customerName, projectName } = leadDetails;
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+
+    // Generate necessary links for the emails
+    const approveLink = generateAdminDecisionLink('approve', quoteId);
+    const declineLink = generateAdminDecisionLink('decline', quoteId);
+    
+    const view_ts = Date.now().toString();
+    const view_token = verifyToken(quoteId, view_ts);
     const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
-    const viewLink = `https://${baseUrl}/quote/view/${quoteDetails.quoteId}?ts=${ts}&token=${token}`;
+    const viewLink = `https://${baseUrl}/quote/view/${quoteId}?ts=${view_ts}&token=${view_token}`;
 
-    // Temporarily comment out old PDF generation
-    // let pdfBuffer;
-    // let htmlContent;
-    // try {
-    //   const { pdfBuffer: generatedPdf, htmlContent: generatedHtml } = await generatePdf(quoteDetails, leadDetails);
-    //   pdfBuffer = generatedPdf;
-    //   htmlContent = generatedHtml;
-    //   console.log('PDF generated successfully for admin review.');
-    // } catch (pdfError) {
-    //   console.error('Error generating PDF for admin review:', pdfError);
-    //   // Fallback to HTML if PDF fails
-    //   htmlContent = getHTML(quoteDetails, leadDetails);
-    // }
-
-    // Prepare email content
-    // const adminEmailOptions = {
-    //   to: ADMIN_EMAIL,
-    //   subject: `ACTION REQUIRED: Review Quote for ${leadDetails.customerName} (Lead ID: ${leadId})`,
-    //   html: `
-    //     <p>A new quote has been submitted by ${tradespersonName} for the lead "${leadDetails.projectName}" and is ready for your review.</p>
-    //     <p><strong>Customer:</strong> ${leadDetails.customerName}</p>
-    //     <p><strong>Project:</strong> ${leadDetails.projectName}</p>
-    //     <p><strong>Total Quote:</strong> $${totalQuote}</p>
-    //     <p>Please review the attached quote (and the web version below) and approve or decline it using the buttons below.</p>
-    //     <a href="${adminApproveLink}" style="padding: 10px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">Approve Quote</a>
-    //     <a href="${adminDeclineLink}" style="padding: 10px; background-color: #dc3545; color: white; text-decoration: none; border-radius: 5px;">Decline Quote</a>
-    //     <hr>
-    //     <p>You can also view the quote online here: <a href="${viewLink}">${viewLink}</a></p>
-    //   `,
-    //   attachments: pdfBuffer ? [{
-    //     filename: `Quote_${leadId}.pdf`,
-    //     content: pdfBuffer,
-    //     contentType: 'application/pdf'
-    //   }] : []
-    // };
-
-    // const tradespersonEmailOptions = {
-    //   to: tradespersonEmail,
-    //   subject: `Quote Submitted for ${leadDetails.customerName} - Awaiting Admin Approval`,
-    //   html: `
-    //     <p>Thank you for submitting your quote for the lead "${leadDetails.projectName}".</p>
-    //     <p>It has been sent to the admin for review. You will be notified once a decision has been made.</p>
-    //     <p>You can view the submitted quote here: <a href="${viewLink}">${viewLink}</a></p>
-    //     <hr>
-    //     <h3>Quote Summary:</h3>
-    //     ${htmlContent}
-    //   `,
-    //   attachments: pdfBuffer ? [{
-    //     filename: `Quote_${leadId}_Copy.pdf`,
-    //     content: pdfBuffer,
-    //     contentType: 'application/pdf'
-    //   }] : []
-    // };
-
-
-    // Send emails
-    // await sendEmail(adminEmailOptions);
-    // console.log(`Admin review email sent successfully to ${ADMIN_EMAIL}.`);
-    // await sendEmail(tradespersonEmailOptions);
-    // console.log(`Tradesperson confirmation email sent successfully to ${tradespersonEmail}.`);
-
-    // --- TEMPORARY RESPONSE ---
-    // This will be replaced by the Xero logic and proper emails later.
+    // --- CONSTRUCT AND SEND EMAILS (TEMP TEXT) ---
     const adminEmailOptions = {
-        to: process.env.ADMIN_EMAIL,
-        subject: `ACTION REQUIRED: Review Quote for ${leadDetails.customerName} (Lead ID: ${quoteDetails.quoteId})`,
+        to: ADMIN_EMAIL,
+        subject: `ACTION REQUIRED: Review Quote for ${customerName} (Lead ID: ${quoteId})`,
         html: `
-            <p>A new quote has been submitted by ${quoteDetails.tradespersonName} for the lead "${leadDetails.projectName}" and is ready for your review.</p>
-            <p><strong>Customer:</strong> ${leadDetails.customerName}</p>
-            <p><strong>Project:</strong> ${leadDetails.projectName}</p>
-            <p><strong>Total Quote:</strong> $${quoteDetails.totalQuote.toFixed(2)}</p>
-            <p>Please review the quote details and approve or decline it using the buttons below.</p>
+            <p>A new quote has been submitted by ${tradespersonName} for the lead "${projectName}" and is ready for your review.</p>
+            <p><strong>Total Quote:</strong> $${totalQuote.toFixed(2)}</p>
             <p><i>PDF generation is temporarily disabled while we integrate with Xero.</i></p>
             <a href="${approveLink}" style="padding: 10px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">Approve Quote</a>
             <a href="${declineLink}" style="padding: 10px; background-color: #dc3545; color: white; text-decoration: none; border-radius: 5px;">Decline Quote</a>
@@ -133,34 +91,32 @@ async function sendQuoteEmails(transporter, customerEmail, customerName, quoteDe
     };
 
     const tradespersonEmailOptions = {
-        to: customerEmail,
-        subject: `Quote Submitted for ${leadDetails.customerName} - Awaiting Admin Approval`,
+        to: tradespersonEmail,
+        subject: `Quote Submitted for ${customerName} - Awaiting Admin Approval`,
         html: `
-            <p>Thank you for submitting your quote for the lead "${leadDetails.projectName}".</p>
+            <p>Thank you for submitting your quote for the lead "${projectName}".</p>
             <p>It has been sent to the admin for review. You will be notified once a decision has been made.</p>
             <p><i>PDF generation is temporarily disabled while we integrate with Xero.</i></p>
             <p>You can view the submitted quote here: <a href="${viewLink}">${viewLink}</a></p>
         `,
     };
 
-     try {
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
-        });
-        await transporter.sendMail(adminEmailOptions);
-        console.log(`Admin review email sent successfully to ${process.env.ADMIN_EMAIL}.`);
-        await transporter.sendMail(tradespersonEmailOptions);
-        console.log(`Tradesperson confirmation email sent successfully to ${customerEmail}.`);
+    try {
+       const transporter = nodemailer.createTransport({
+           service: "gmail",
+           auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
+       });
+       await transporter.sendMail(adminEmailOptions);
+       console.log(`Admin review email sent successfully to ${ADMIN_EMAIL}.`);
+       await transporter.sendMail(tradespersonEmailOptions);
+       console.log(`Tradesperson confirmation email sent successfully to ${tradespersonEmail}.`);
     } catch (emailError) {
-        console.error('Failed to send quote submission emails:', emailError);
-        // We don't want to block the whole process if emails fail, but we should log it.
+       console.error('Failed to send quote submission emails:', emailError);
     }
-
 
     res.status(200).json({ success: true, message: 'Quote submitted for admin approval.' });
   } catch (error) {
-        console.error("Quote submission error:", error);
-        res.status(500).json({ success: false, error: 'Internal Server Error' });
-    }
+    console.error("Quote submission error:", error);
+    res.status(500).json({ success: false, error: 'Internal Server Error' });
+  }
 }

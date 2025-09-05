@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Color Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: white;
+            color: black;
+        }
+        
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        .dark-mode {
+            background: #1a1a1a;
+            color: white;
+        }
+        
+        .message {
+            padding: 10px 15px;
+            border-radius: 15px;
+            margin: 10px 0;
+            max-width: 85%;
+            display: block;
+        }
+        
+        .bot-message {
+            background: white;
+            color: black;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            align-self: flex-start;
+        }
+        
+        .user-message {
+            background: #007bff !important;
+            background-color: #007bff !important;
+            color: white !important;
+            margin-left: auto;
+            align-self: flex-end;
+            box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+            border: none !important;
+            float: right;
+            clear: both;
+        }
+        
+        /* Force user message styling in all color schemes */
+        .message.user-message {
+            background: #007bff !important;
+            background-color: #007bff !important;
+            color: white !important;
+        }
+        
+        .clear { clear: both; }
+        
+        button {
+            padding: 10px 20px;
+            margin: 10px 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Chatbot Color Test</h1>
+    
+    <button onclick="toggleDarkMode()">Toggle Dark/Light Mode</button>
+    
+    <div class="test-section" id="lightTest">
+        <h2>💡 Light Mode Test</h2>
+        <div class="message bot-message">Hi! I'm the chatbot. How can I help you today?</div>
+        <div class="message user-message">I need a quote for underfloor heating</div>
+        <div class="clear"></div>
+        <div class="message bot-message">Great! How many rooms do you need heating for?</div>
+        <div class="message user-message">3 rooms please</div>
+        <div class="clear"></div>
+        
+        <p><strong>Expected:</strong> User messages should be <span style="background: #007bff; color: white; padding: 2px 6px; border-radius: 3px;">solid blue with white text</span></p>
+    </div>
+    
+    <div class="test-section dark-mode" id="darkTest">
+        <h2>🌙 Dark Mode Test</h2>
+        <div class="message bot-message" style="background: #333; color: white;">Hi! I'm the chatbot. How can I help you today?</div>
+        <div class="message user-message">I need a quote for underfloor heating</div>
+        <div class="clear"></div>
+        <div class="message bot-message" style="background: #333; color: white;">Great! How many rooms do you need heating for?</div>
+        <div class="message user-message">3 rooms please</div>
+        <div class="clear"></div>
+        
+        <p style="color: white;"><strong>Expected:</strong> User messages should be <span style="background: #007bff; color: white; padding: 2px 6px; border-radius: 3px;">solid blue with white text</span> (NOT green)</p>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔧 Debugging Info</h2>
+        <p>If user messages are showing as:</p>
+        <ul>
+            <li><strong>Green in dark mode:</strong> There might be browser theme overrides</li>
+            <li><strong>Black in light mode:</strong> CSS not being applied correctly</li>
+            <li><strong>Any color other than blue:</strong> External CSS interference</li>
+        </ul>
+        
+        <h3>CSS Applied:</h3>
+        <pre><code>.user-message {
+    background: #007bff !important;
+    background-color: #007bff !important;
+    color: white !important;
+    border: none !important;
+}
+
+.message.user-message {
+    background: #007bff !important;
+    background-color: #007bff !important;
+    color: white !important;
+}</code></pre>
+    </div>
+    
+    <script>
+        function toggleDarkMode() {
+            const body = document.body;
+            const lightTest = document.getElementById('lightTest');
+            const darkTest = document.getElementById('darkTest');
+            
+            if (body.style.background === 'black') {
+                body.style.background = 'white';
+                body.style.color = 'black';
+            } else {
+                body.style.background = 'black';
+                body.style.color = 'white';
+            }
+        }
+        
+        // Test dynamic message creation like the real chatbot
+        function addTestMessage() {
+            const container = document.getElementById('lightTest');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message user-message';
+            messageDiv.textContent = 'This is a dynamically created user message';
+            container.appendChild(messageDiv);
+            
+            const clearDiv = document.createElement('div');
+            clearDiv.className = 'clear';
+            container.appendChild(clearDiv);
+        }
+        
+        // Add a test button
+        const testButton = document.createElement('button');
+        testButton.textContent = 'Add Dynamic Message';
+        testButton.onclick = addTestMessage;
+        document.querySelector('h1').after(testButton);
+    </script>
+</body>
+</html>

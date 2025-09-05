@@ -120,11 +120,20 @@
         }
 
         .user-message {
-            background: #007bff;
-            color: white;
+            background: #007bff !important;
+            background-color: #007bff !important;
+            color: white !important;
             margin-left: auto;
             align-self: flex-end;
             box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+            border: none !important;
+        }
+
+        /* Force user message styling in all color schemes */
+        .message.user-message {
+            background: #007bff !important;
+            background-color: #007bff !important;
+            color: white !important;
         }
 
         /* Progress Bar and Checklist */

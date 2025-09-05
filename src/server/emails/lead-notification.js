@@ -78,13 +78,15 @@ export default async function handler(req, res) {
               leadData.specificDetails || '',
               'new',
               leadId,
-              `Tradesman: ${emailResult.emailResults.tradesman.sent ? 'Sent' : 'Failed'}, Admin: ${emailResult.emailResults.admin.sent ? 'Sent' : 'Failed'}, Customer: ${emailResult.emailResults.customer.sent ? 'Sent' : 'Failed'}`
+              `Tradesman: ${emailResult.emailResults.tradesman.sent ? 'Sent' : 'Failed'}, Admin: ${emailResult.emailResults.admin.sent ? 'Sent' : 'Failed'}, Customer: ${emailResult.emailResults.customer.sent ? 'Sent' : 'Failed'}`,
+              leadData.Rooms || '', // Structured room data
+              leadData.totalSqm || '' // Total square meters
             ]
           ];
 
           await sheets.spreadsheets.values.append({
             spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-            range: 'Leads!A:N',
+            range: 'Leads!A:P',
             valueInputOption: 'RAW',
             insertDataOption: 'INSERT_ROWS',
             resource: { values }

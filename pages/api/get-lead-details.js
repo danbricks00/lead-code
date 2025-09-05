@@ -81,7 +81,8 @@ export default async function handler(req, res) {
             searchValue: leadId,
             columnsToFetch: [
                 'CustomerName', 'CustomerEmail', 'CustomerPhone', 
-                'ServiceType', 'Rooms', 'Area', 'Suburb', 'Timelline'
+                'ServiceType', 'Rooms', 'Area', 'Suburb', 'Timelline',
+                'ProjectDetails', 'ProjectSize', 'Location', 'Budget', 'Timeline'
             ]
         });
         console.log(`[4] Result from "Leads" tab:`, leadData ? JSON.stringify(leadData) : 'null');

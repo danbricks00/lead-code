@@ -1975,17 +1975,42 @@ You can enter:
         }
 
         function generateLead() {
+            // Calculate total square meters from room details
+            const totalSqm = roomDetails.reduce((sum, room) => sum + (room.sqm || 0), 0);
+            
+            // Create structured room data for automation
+            const structuredRooms = roomDetails.map(room => ({
+                name: room.name,
+                sqm: room.sqm,
+                dimensions: room.dimensions,
+                format: room.format,
+                parsedDimensions: room.parsedDimensions
+            }));
+            
+            // Create room details text for display
+            const roomDetailsText = roomDetails.map(room => {
+                if (room.format === 'direct_sqm') {
+                    return `${room.name}: ${room.sqm}m²`;
+                } else {
+                    return `${room.name}: ${room.parsedDimensions.width}m x ${room.parsedDimensions.length}m (${room.sqm}m²)`;
+                }
+            }).join(', ');
+
             const leadData = {
                 customerName: chatState.customerName,
                 customerEmail: chatState.customerEmail,
                 customerPhone: chatState.customerPhone,
                 selectedService: 'underfloor_heating',
-                projectDetails: `Areas: ${chatState.areasCount || ''}; Sizes: ${chatState.areaSizes || ''}`,
-                projectSize: chatState.areaSizes || '',
+                projectDetails: `Areas: ${chatState.areasCount || ''}; Sizes: ${roomDetailsText}`,
+                projectSize: roomDetailsText,
                 specificDetails: '',
                 location: chatState.location,
                 budget: '',
-                timeline: ''
+                timeline: '',
+                // Add structured room data for quote automation
+                Rooms: JSON.stringify(structuredRooms),
+                roomsJson: JSON.stringify(structuredRooms),
+                totalSqm: totalSqm.toFixed(1)
             };
 
             console.log('Lead generated:', leadData);

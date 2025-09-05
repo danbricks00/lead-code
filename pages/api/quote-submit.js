@@ -107,14 +107,14 @@ export default async function handler(req, res) {
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
     const rows = response.data.values;
     const header = rows[0];
-    const rowIndex = rows.findIndex(row => row[header.indexOf('Quote ID')] === quoteId);
+    const rowIndex = rows.findIndex(row => row[header.indexOf('QuoteID')] === quoteId); // CORRECTED HEADER
     
     if (rowIndex > -1) {
         const targetRow = rows[rowIndex];
         targetRow[header.indexOf('Admin Status')] = 'Pending Approval';
         targetRow[header.indexOf('Customer Status')] = 'Quote Pending Approval';
-        targetRow[header.indexOf('Tradesperson Status')] = 'Quote Submitted';
-        targetRow[header.indexOf('Xero Quote ID')] = xeroQuoteId; // Store Xero ID
+        targetRow[header.indexOf('TradePerson Status')] = 'Quote Submitted'; // CORRECTED HEADER
+        targetRow[header.indexOf('Xero Quote iD')] = xeroQuoteId; // CORRECTED HEADER
 
         await sheets.spreadsheets.values.update({
             spreadsheetId,

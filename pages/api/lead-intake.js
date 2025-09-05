@@ -54,49 +54,35 @@ export default async function handler(req, res) {
     const leadId = crypto.randomBytes(6).toString("hex");
     const quoteId = crypto.randomBytes(6).toString("hex");
 
-    // Use the new centralized client
     const sheets = getGoogleSheetsClient();
     
-    // Step 1a: Log to "Leads" tab
+    // Using the exact headers from the user's sheet
     console.log("Appending data to 'Leads' tab...");
     await appendRowToSheet(sheets, "Leads", [
-      leadId,
-      customerName,
-      customerEmail,
-      customerPhone || "",
-      serviceType || "Underfloor Heating",
-      JSON.stringify(rooms) || "[]",
-      area || "",
-      suburb || "",
-      "", // Budget
-      timeline || "",
-      "", // Specific Details
-      new Date().toISOString(), // Timestamp
+      leadId,             // Lead
+      customerName,       // CustomerName
+      customerEmail,      // CustomerEmail
+      customerPhone || "",// CustomerPhone
+      serviceType || "Underfloor Heating", // ServiceType
+      JSON.stringify(rooms) || "[]", // Rooms
+      area || "",         // Area
+      suburb || "",       // Suburb
+      "",                 // Budget
+      timeline || "",     // Timelline
+      "",                 // Specfic Details
+      new Date().toISOString(), // Time
     ]);
 
-    // Log to "Quotes" tab, matching the required header order
     console.log("Appending data to 'Quotes' tab...");
     await appendRowToSheet(sheets, "Quotes", [
-        quoteId,
-        leadId,
-        "", // Tradesperson Name
-        "", // Tradesperson Email
-        "", // Tradesperson Phone
-        "Quote Pending", // Customer Status
-        "Not Submitted", // Tradesperson Status
+        quoteId,        // QuoteID
+        leadId,         // LeadiD
+        "",             // TradesPerson Name
+        "",             // TradePerson Email
+        "",             // (Duplicate) TradePerson Name
+        "Quote Pending",// Customer Status
+        "Not Submitted",// TradePerson Status
         "Not Required", // Admin Status
-        "", // Xero Quote ID
-        "", // Labour Cost
-        "", // Labour Hours
-        "", // Materials Cost
-        "", // Materials Quantity
-        "", // Travel Cost
-        "", // Travel Distance
-        "", // Installation Cost
-        "", // Total Quote
-        "", // Notes
-        "", // Quote Valid Until
-        "", // Resubmission Allowed
     ]);
 
 

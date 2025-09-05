@@ -59,27 +59,27 @@ export default async function handler(req, res) {
         const quoteData = await getSheetsData({
             sheets, spreadsheetId, 
             tab: 'Quotes', 
-            searchColumn: 'Quote ID', 
+            searchColumn: 'QuoteID', // CORRECTED HEADER
             searchValue: quoteId, 
-            columnsToFetch: ['Lead ID']
+            columnsToFetch: ['LeadiD'] // CORRECTED HEADER
         });
 
-        if (!quoteData || !quoteData['Lead ID']) {
-            console.error(`Quote ID ${quoteId} not found in Quotes sheet or it has no Lead ID.`);
+        if (!quoteData || !quoteData['LeadiD']) {
+            console.error(`Quote ID ${quoteId} not found in Quotes sheet or it has no LeadiD.`);
             return res.status(404).json({ success: false, error: 'Quote not found.' });
         }
-        console.log(`Found Lead ID: ${quoteData['Lead ID']}`);
+        console.log(`Found LeadiD: ${quoteData['LeadiD']}`);
 
         // 2. Find all lead details from the "Leads" tab using the Lead ID.
-        const leadId = quoteData['Lead ID'];
+        const leadId = quoteData['LeadiD']; // CORRECTED HEADER
         const leadData = await getSheetsData({
             sheets, spreadsheetId,
             tab: 'Leads',
-            searchColumn: 'Lead ID',
+            searchColumn: 'Lead', // CORRECTED HEADER
             searchValue: leadId,
             columnsToFetch: [
-                'Customer Name', 'Customer Email', 'Customer Phone', 
-                'Service Type', 'Rooms', 'Area', 'Suburb', 'Timeline'
+                'CustomerName', 'CustomerEmail', 'CustomerPhone', 
+                'ServiceType', 'Rooms', 'Area', 'Suburb', 'Timelline' // CORRECTED HEADERS
             ]
         });
 

@@ -123,7 +123,10 @@ const QuoteSubmitPage = () => {
 
   const handleLeadDetailsChange = (e) => {
     const { name, value } = e.target;
-    setLeadDetails(prev => ({ ...prev, [name]: value }));
+    // Use a temporary object for the new state to handle different capitalizations
+    const newDetails = { ...leadDetails };
+    newDetails[name] = value;
+    setLeadDetails(newDetails);
   };
 
   const handleSubmit = async (e) => {
@@ -210,14 +213,14 @@ const QuoteSubmitPage = () => {
             </div>
           ) : (
             <div style={styles.detailsGrid}>
-              {/* Display input fields when editing */}
-              <div style={styles.inputGroup}><label>Name</label><input type="text" name="Customer Name" value={leadDetails['Customer Name']} onChange={handleLeadDetailsChange} style={styles.input}/></div>
-              <div style={styles.inputGroup}><label>Email</label><input type="email" name="Customer Email" value={leadDetails['Customer Email']} onChange={handleLeadDetailsChange} style={styles.input}/></div>
-              <div style={styles.inputGroup}><label>Phone</label><input type="tel" name="Customer Phone" value={leadDetails['Customer Phone']} onChange={handleLeadDetailsChange} style={styles.input}/></div>
-              <div style={styles.inputGroup}><label>Service</label><input type="text" name="Service Type" value={leadDetails['Service Type']} onChange={handleLeadDetailsChange} style={styles.input}/></div>
-              <div style={styles.inputGroup}><label>Area</label><input type="text" name="Area" value={leadDetails.Area || leadDetails.area} onChange={handleLeadDetailsChange} style={styles.input}/></div>
-              <div style={styles.inputGroup}><label>Suburb</label><input type="text" name="Suburb" value={leadDetails.Suburb || leadDetails.suburb} onChange={handleLeadDetailsChange} style={styles.input}/></div>
-              <div style={styles.inputGroup}><label>Timeline</label><input type="text" name="Timeline" value={leadDetails.Timeline || leadDetails.timeline} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              {/* Use the exact (but inconsistent) headers from the user's sheet */}
+              <div style={styles.inputGroup}><label>Name</label><input type="text" name="CustomerName" value={leadDetails['CustomerName']} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Email</label><input type="email" name="CustomerEmail" value={leadDetails['CustomerEmail']} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Phone</label><input type="tel" name="CustomerPhone" value={leadDetails['CustomerPhone']} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Service</label><input type="text" name="ServiceType" value={leadDetails['ServiceType']} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Area</label><input type="text" name="Area" value={leadDetails.Area} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Suburb</label><input type="text" name="Suburb" value={leadDetails.Suburb} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Timeline</label><input type="text" name="Timelline" value={leadDetails.Timelline} onChange={handleLeadDetailsChange} style={styles.input}/></div>
             </div>
           )}
         </div>

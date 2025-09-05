@@ -81,11 +81,40 @@ export default async function handler(req, res) {
             searchValue: leadId,
             columnsToFetch: [
                 'CustomerName', 'CustomerEmail', 'CustomerPhone', 
-                'ServiceType', 'Rooms', 'Area', 'Suburb', 'Timelline',
-                'ProjectDetails', 'ProjectSize', 'Location', 'Budget', 'Timeline'
+                'ServiceType', 'ProjectDetails', 'ProjectSize', 'Location', 'Budget', 'Timeline',
+                'SpecificDetails', 'Status', 'Lead', 'EmailStatus', 'Rooms', 'TotalSqm'
             ]
         });
         console.log(`[4] Result from "Leads" tab:`, leadData ? JSON.stringify(leadData) : 'null');
+
+        // 3. If Rooms column is not found by name, try to get it by position
+        if (leadData && !leadData.Rooms) {
+            console.log('[5] Rooms column not found by name, trying to get by position...');
+            try {
+                const range = 'Leads!A:Z';
+                const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
+                const rows = response.data.values;
+                
+                if (rows && rows.length >= 2) {
+                    const header = rows[0];
+                    const dataRow = rows.find(row => row[header.indexOf('Lead')] === leadId);
+                    
+                    if (dataRow) {
+                        // Try to find Rooms data in the last few columns (where we store it)
+                        for (let i = Math.max(0, dataRow.length - 3); i < dataRow.length; i++) {
+                            const cellValue = dataRow[i];
+                            if (cellValue && cellValue.startsWith('[') && cellValue.includes('sqm')) {
+                                leadData.Rooms = cellValue;
+                                console.log(`[6] Found Rooms data in column ${i}:`, cellValue);
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('[ERROR] Failed to get Rooms data by position:', error);
+            }
+        }
 
         if (!leadData) {
             console.error(`[ERROR] Lead with ID ${leadId} not found in Leads sheet.`);

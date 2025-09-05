@@ -49,6 +49,33 @@ export default function ChatMessage({ message, isUser, isTyping }) {
   // Determine the style based on the isUser prop
   const messageStyle = isUser ? styles.userMessage : styles.systemMessage;
 
+  // For user messages, add aggressive blue color forcing
+  if (isUser) {
+    return (
+      <div style={{
+        ...messageStyle,
+        background: '#007bff',
+        backgroundColor: '#007bff',
+        color: '#ffffff',
+        colorScheme: 'light',
+        filter: 'none',
+        WebkitFilter: 'none'
+      }}>
+        <style jsx>{`
+          div {
+            background: #007bff !important;
+            background-color: #007bff !important;
+            color: #ffffff !important;
+            color-scheme: light !important;
+            filter: none !important;
+            -webkit-filter: none !important;
+          }
+        `}</style>
+        {message}
+      </div>
+    );
+  }
+
   return (
     <div style={messageStyle}>
       {message}
@@ -63,7 +90,7 @@ const styles = {
     margin: "8px",
     padding: "12px 16px",
     borderRadius: "16px",
-    backgroundColor: "#4caf50", // User message: Green
+    backgroundColor: "#007bff", // User message: Blue
     color: "#ffffff", // White text for contrast
     alignSelf: "flex-end",
     fontSize: "16px",

@@ -66,6 +66,27 @@ export default async function handler(req, res) {
     // Generate PDF using our new system
     let pdfBuffer;
     try {
+        // Debug quote details
+        console.log('📋 Quote details received:', JSON.stringify(quoteDetails, null, 2));
+        console.log('📋 Lead details received:', JSON.stringify(leadDetails, null, 2));
+        
+        // Calculate totals with safe parsing
+        const labourRate = parseFloat(quoteDetails.labourRate) || 0;
+        const labourHours = parseFloat(quoteDetails.labourHours) || 0;
+        const materialsCost = parseFloat(quoteDetails.materialsCost) || 0;
+        const materialsQuantity = parseFloat(quoteDetails.materialsQuantity) || 0;
+        const travelCost = parseFloat(quoteDetails.travelCost) || 0;
+        const travelDistance = parseFloat(quoteDetails.travelDistance) || 0;
+        const installationCost = parseFloat(quoteDetails.installationCost) || 0;
+        const subtotal = parseFloat(quoteDetails.subtotal) || 0;
+        const gst = parseFloat(quoteDetails.gst) || 0;
+        const totalQuote = parseFloat(quoteDetails.totalQuote) || 0;
+        
+        console.log('💰 Calculated values:', {
+            labourRate, labourHours, materialsCost, materialsQuantity,
+            travelCost, travelDistance, installationCost, subtotal, gst, totalQuote
+        });
+        
         // Prepare quote data for PDF generation
         const quoteData = {
             quoteId,
@@ -82,15 +103,17 @@ export default async function handler(req, res) {
             tradespersonLicense: 'Licensed Tradesperson',
             rooms: leadDetails.Rooms ? JSON.parse(leadDetails.Rooms) : [],
             totals: {
-                labour: (parseFloat(quoteDetails.labourRate) || 0) * (parseFloat(quoteDetails.labourHours) || 0),
-                materials: (parseFloat(quoteDetails.materialsCost) || 0) * (parseFloat(quoteDetails.materialsQuantity) || 0),
-                travel: (parseFloat(quoteDetails.travelCost) || 0) * (parseFloat(quoteDetails.travelDistance) || 0),
-                installation: parseFloat(quoteDetails.installationCost) || 0,
-                subtotal: parseFloat(quoteDetails.subtotal) || 0,
-                gst: parseFloat(quoteDetails.gst) || 0,
-                final: parseFloat(quoteDetails.totalQuote) || 0
+                labour: labourRate * labourHours,
+                materials: materialsCost * materialsQuantity,
+                travel: travelCost * travelDistance,
+                installation: installationCost,
+                subtotal: subtotal,
+                gst: gst,
+                final: totalQuote
             }
         };
+        
+        console.log('📊 Final quote data for PDF:', JSON.stringify(quoteData, null, 2));
 
         pdfBuffer = await generateQuotePDF(quoteData);
         console.log(`✅ PDF generated successfully for Quote ${quoteId}`);

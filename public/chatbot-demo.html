@@ -357,28 +357,55 @@
 
         // Smart dimension parsing function
         function parseDimensions(input) {
-            const cleanInput = input.toLowerCase().replace(/[^\d\.\sx]/g, '').trim();
+            const originalInput = input;
+            const cleanInput = input.toLowerCase().trim();
             
-            // Pattern 1: Direct square meters (e.g., "25", "25.5", "25 sqm")
-            const directSqmMatch = cleanInput.match(/^(\d+\.?\d*)\s*$/);
-            if (directSqmMatch) {
-                const sqm = parseFloat(directSqmMatch[1]);
+            // Pattern 1: Square meter notation (e.g., "12m2", "12m²", "25.5m2", "25.5m²")
+            const sqmNotationMatch = cleanInput.match(/^(\d+\.?\d*)\s*m[²2]\s*$/);
+            if (sqmNotationMatch) {
+                const sqm = parseFloat(sqmNotationMatch[1]);
                 return {
-                    originalInput: input,
+                    originalInput: originalInput,
                     sqm: sqm,
                     dimensions: null,
                     format: 'direct_sqm'
                 };
             }
             
-            // Pattern 2: Dimensions (e.g., "10 x 5", "7.07 x 7.07", "4m x 3m")
-            const dimensionMatch = cleanInput.match(/(\d+\.?\d*)\s*x\s*(\d+\.?\d*)/);
+            // Pattern 2: Direct square meters (e.g., "25", "25.5", "25 sqm")
+            const directSqmMatch = cleanInput.match(/^(\d+\.?\d*)\s*(?:sqm|sq\s*m|square\s*meters?)?\s*$/);
+            if (directSqmMatch) {
+                const sqm = parseFloat(directSqmMatch[1]);
+                return {
+                    originalInput: originalInput,
+                    sqm: sqm,
+                    dimensions: null,
+                    format: 'direct_sqm'
+                };
+            }
+            
+            // Pattern 3: Dimensions with units (e.g., "4m x 12m", "4.0m x 12.0m", "4.5m x 3.2m")
+            const dimensionWithUnitsMatch = cleanInput.match(/^(\d+\.?\d*)\s*m\s*x\s*(\d+\.?\d*)\s*m\s*$/);
+            if (dimensionWithUnitsMatch) {
+                const width = parseFloat(dimensionWithUnitsMatch[1]);
+                const length = parseFloat(dimensionWithUnitsMatch[2]);
+                const sqm = width * length;
+                return {
+                    originalInput: originalInput,
+                    sqm: sqm,
+                    dimensions: { width, length },
+                    format: 'dimensions'
+                };
+            }
+            
+            // Pattern 4: Dimensions without units (e.g., "10 x 5", "7.07 x 7.07", "4.0 x 12.0")
+            const dimensionMatch = cleanInput.match(/^(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*$/);
             if (dimensionMatch) {
                 const width = parseFloat(dimensionMatch[1]);
                 const length = parseFloat(dimensionMatch[2]);
                 const sqm = width * length;
                 return {
-                    originalInput: input,
+                    originalInput: originalInput,
                     sqm: sqm,
                     dimensions: { width, length },
                     format: 'dimensions'
@@ -415,18 +442,20 @@
                                 addMessage(`What are the dimensions of the ${message}?
                                 
 You can enter:
-• Direct square meters: "25" or "25.5"
-• Length x Width: "10 x 5" or "7.07 x 7.07"
-• With units: "4m x 3m" or "25 sqm"`);
+• Direct square meters: "25", "25.5", "12m2", "12m²"
+• Length x Width: "10 x 5", "7.07 x 7.07", "4.0 x 12.0"
+• With units: "4m x 12m", "4.0m x 12.0m"
+• Square meter notation: "25 sqm", "25.5 square meters"`);
                             } else {
                                 // Parse room dimensions intelligently
                                 const parsed = parseDimensions(message);
                                 
                                 if (!parsed) {
                                     addMessage(`Sorry, I couldn't understand that format. Please try:
-• Direct square meters: "25" or "25.5"
-• Length x Width: "10 x 5" or "7.07 x 7.07"
-• With units: "4m x 3m" or "25 sqm"`);
+• Direct square meters: "25", "25.5", "12m2", "12m²"
+• Length x Width: "10 x 5", "7.07 x 7.07", "4.0 x 12.0"
+• With units: "4m x 12m", "4.0m x 12.0m"
+• Square meter notation: "25 sqm", "25.5 square meters"`);
                                     return;
                                 }
                                 

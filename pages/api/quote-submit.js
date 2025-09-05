@@ -177,25 +177,75 @@ export default async function handler(req, res) {
     const approveLink = generateAdminDecisionLink('approve', quoteId);
     const declineLink = generateAdminDecisionLink('decline', quoteId);
 
+    console.log('DEBUG - Email details:', { 
+        tradespersonName, 
+        tradespersonEmail, 
+        ADMIN_EMAIL,
+        leadDetails_ServiceType: leadDetails.ServiceType || leadDetails.serviceType,
+        leadDetails_CustomerName: leadDetails.CustomerName || leadDetails.customerName
+    });
+
     const emailHtml = `
-        <p>A new quote for "${leadDetails.projectName}" has been submitted by ${tradespersonName} and created in Xero.</p>
-        <p>Please review the attached PDF quote and approve or decline it.</p>
-        <a href="${approveLink}">Approve & Send to Customer</a> | <a href="${declineLink}">Decline</a>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>🔍 New Quote Review Required</h2>
+            <p>A new quote for <strong>"${leadDetails.ServiceType || leadDetails.serviceType || 'service'}"</strong> has been submitted by <strong>${tradespersonName}</strong> and created in Xero.</p>
+            
+            <h3>Customer Details:</h3>
+            <ul>
+                <li><strong>Name:</strong> ${customerName}</li>
+                <li><strong>Email:</strong> ${customerEmail}</li>
+                <li><strong>Phone:</strong> ${customerPhone}</li>
+                <li><strong>Area:</strong> ${leadDetails.Area || leadDetails.area || 'N/A'}</li>
+                <li><strong>Suburb:</strong> ${leadDetails.Suburb || leadDetails.suburb || 'N/A'}</li>
+                <li><strong>Timeline:</strong> ${leadDetails.Timelline || leadDetails.timeline || 'N/A'}</li>
+            </ul>
+
+            <h3>Quote Details:</h3>
+            <p>Please review the attached PDF quote from Xero and take action:</p>
+            
+            <div style="margin: 20px 0; text-align: center;">
+                <a href="${approveLink}" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-right: 10px;">✅ Approve & Send to Customer</a>
+                <a href="${declineLink}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px;">❌ Decline Quote</a>
+            </div>
+            
+            <p><em>Quote ID: ${quoteId}</em></p>
+        </div>
     `;
 
-    const emailOptions = {
-        to: [ADMIN_EMAIL, tradespersonEmail],
-        subject: `ACTION REQUIRED: Review Quote for ${leadDetails.customerName}`,
-        html: emailHtml,
-        attachments: [{
-            filename: `Quote_${quoteId}.pdf`,
-            content: pdfBuffer,
-            contentType: 'application/pdf'
-        }]
-    };
+    // Build recipient list with validation
+    const recipients = [];
+    if (ADMIN_EMAIL && ADMIN_EMAIL.trim()) {
+        recipients.push(ADMIN_EMAIL.trim());
+    }
+    if (tradespersonEmail && tradespersonEmail.trim()) {
+        recipients.push(tradespersonEmail.trim());
+    }
 
-    await sendEmail(emailOptions);
-    console.log(`Admin/Tradesperson review email sent with Xero PDF attached.`);
+    console.log('DEBUG - Email recipients:', recipients);
+
+    if (recipients.length === 0) {
+        console.error('❌ No valid email recipients found. ADMIN_EMAIL:', ADMIN_EMAIL, 'tradespersonEmail:', tradespersonEmail);
+        // Don't fail the whole process, just log the error
+    } else {
+        const emailOptions = {
+            to: recipients,
+            subject: `ACTION REQUIRED: Review Quote for ${customerName}`,
+            html: emailHtml,
+            attachments: [{
+                filename: `Quote_${quoteId}.pdf`,
+                content: pdfBuffer,
+                contentType: 'application/pdf'
+            }]
+        };
+
+        try {
+            await sendEmail(emailOptions);
+            console.log(`✅ Admin/Tradesperson review email sent successfully to: ${recipients.join(', ')}`);
+        } catch (emailError) {
+            console.error('❌ Failed to send review email:', emailError);
+            // Don't fail the whole process, just log the error
+        }
+    }
     
     res.status(200).json({ success: true, message: 'Quote submitted and created in Xero.' });
 

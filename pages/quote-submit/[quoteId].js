@@ -22,6 +22,8 @@ const QuoteSubmitPage = () => {
     labour: 0,
     materials: 0,
     travel: 0,
+    subtotal: 0,
+    gst: 0,
     final: 0,
   });
   const [submissionStatus, setSubmissionStatus] = useState(null); // null | 'submitting' | 'success' | 'error'
@@ -72,6 +74,21 @@ const QuoteSubmitPage = () => {
                 try {
                     const roomsData = JSON.parse(result.data.Rooms);
                     setParsedRooms(Array.isArray(roomsData) ? roomsData : []);
+                    
+                    // Auto-populate materials quantity with total square meters if available
+                    if (roomsData && Array.isArray(roomsData)) {
+                        const totalSqm = roomsData.reduce((sum, room) => {
+                            return sum + (room.sqm || 0);
+                        }, 0);
+                        
+                        if (totalSqm > 0) {
+                            setCosts(prev => ({
+                                ...prev,
+                                materialsQuantity: totalSqm.toString()
+                            }));
+                            console.log(`[FORM] Auto-populated materials quantity: ${totalSqm} sqm`);
+                        }
+                    }
                 } catch (e) {
                     console.error("[FORM] Failed to parse rooms data:", e);
                     setParsedRooms([]);
@@ -142,12 +159,18 @@ const QuoteSubmitPage = () => {
     const labourTotal = getNum(costs.labourRate) * getNum(costs.labourHours);
     const materialsTotal = getNum(costs.materialsCost) * getNum(costs.materialsQuantity);
     const travelTotal = getNum(costs.travelCost) * getNum(costs.travelDistance);
-    const finalTotal = labourTotal + materialsTotal + travelTotal + getNum(costs.installationCost);
+    const installationTotal = getNum(costs.installationCost);
+    
+    const subtotal = labourTotal + materialsTotal + travelTotal + installationTotal;
+    const gst = subtotal * 0.15; // 15% GST
+    const finalTotal = subtotal + gst;
 
     setTotals({
       labour: labourTotal,
       materials: materialsTotal,
       travel: travelTotal,
+      subtotal: subtotal,
+      gst: gst,
       final: finalTotal,
     });
   }, [costs]);
@@ -196,6 +219,8 @@ const QuoteSubmitPage = () => {
     const quoteDetails = {
       ...costs,
       notes,
+      subtotal: totals.subtotal,
+      gst: totals.gst,
       totalQuote: totals.final,
       tradespersonName: tradesperson.name,
       tradespersonEmail: tradesperson.email,
@@ -317,16 +342,29 @@ const QuoteSubmitPage = () => {
                         <thead>
                             <tr>
                                 <th style={styles.th}>Room Name</th>
-                                <th style={styles.th}>Dimensions / SQM</th>
+                                <th style={styles.th}>Dimensions</th>
+                                <th style={styles.th}>Square Meters</th>
                             </tr>
                         </thead>
                         <tbody>
                             {parsedRooms.map((room, index) => (
                                 <tr key={index}>
                                     <td style={styles.td}>{room.name}</td>
-                                    <td style={styles.td}>{room.dimensions}</td>
+                                    <td style={styles.td}>
+                                        {room.dimensions || room.originalInput || 'N/A'}
+                                    </td>
+                                    <td style={styles.td}>
+                                        {room.sqm ? `${room.sqm}m²` : 'N/A'}
+                                    </td>
                                 </tr>
                             ))}
+                            <tr style={{backgroundColor: '#f0f8ff', fontWeight: 'bold'}}>
+                                <td style={styles.td}>Total</td>
+                                <td style={styles.td}>-</td>
+                                <td style={styles.td}>
+                                    {parsedRooms.reduce((sum, room) => sum + (room.sqm || 0), 0).toFixed(1)}m²
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 ) : (
@@ -465,9 +503,22 @@ const QuoteSubmitPage = () => {
             </div>
 
             <hr style={styles.hr} />
-            <div style={styles.totalRow}>
-              <strong>Final Quote Total:</strong>
-              <strong>${totals.final.toFixed(2)}</strong>
+            
+            {/* Subtotal, GST, and Final Total */}
+            <div style={styles.totalSection}>
+              <div style={styles.totalRow}>
+                <span>Subtotal (excl. GST):</span>
+                <span>${totals.subtotal.toFixed(2)}</span>
+              </div>
+              <div style={styles.totalRow}>
+                <span>GST (15%):</span>
+                <span>${totals.gst.toFixed(2)}</span>
+              </div>
+              <hr style={{...styles.hr, margin: '10px 0'}} />
+              <div style={{...styles.totalRow, ...styles.finalTotalRow}}>
+                <strong>Total (incl. GST):</strong>
+                <strong>${totals.final.toFixed(2)}</strong>
+              </div>
             </div>
           </div>
 
@@ -524,7 +575,9 @@ const styles = {
   td: { border: '1px solid #ddd', padding: '8px' },
 
   hr: { border: 'none', borderTop: '1px solid #eee', margin: '20px 0' },
-  totalRow: { display: 'flex', justifyContent: 'space-between', fontSize: '1.2em', fontWeight: 'bold' },
+  totalSection: { background: '#f9f9f9', padding: '15px', borderRadius: '6px', border: '1px solid #e0e0e0' },
+  totalRow: { display: 'flex', justifyContent: 'space-between', fontSize: '1em', margin: '5px 0' },
+  finalTotalRow: { fontSize: '1.2em', fontWeight: 'bold', color: '#2c5530' },
   textarea: { width: '100%', padding: '8px', boxSizing: 'border-box', border: '1px solid #ddd', borderRadius: '4px', minHeight: '80px' },
   button: { width: '100%', padding: '12px', background: '#4caf50', color: 'white', border: 'none', borderRadius: '4px', fontSize: '1em', cursor: 'pointer' },
   error: { color: 'red', marginTop: '10px', textAlign: 'center' },

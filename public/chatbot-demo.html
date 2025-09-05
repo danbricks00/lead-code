@@ -352,6 +352,39 @@
             processUserMessage(message);
         }
 
+        // Smart dimension parsing function
+        function parseDimensions(input) {
+            const cleanInput = input.toLowerCase().replace(/[^\d\.\sx]/g, '').trim();
+            
+            // Pattern 1: Direct square meters (e.g., "25", "25.5", "25 sqm")
+            const directSqmMatch = cleanInput.match(/^(\d+\.?\d*)\s*$/);
+            if (directSqmMatch) {
+                const sqm = parseFloat(directSqmMatch[1]);
+                return {
+                    originalInput: input,
+                    sqm: sqm,
+                    dimensions: null,
+                    format: 'direct_sqm'
+                };
+            }
+            
+            // Pattern 2: Dimensions (e.g., "10 x 5", "7.07 x 7.07", "4m x 3m")
+            const dimensionMatch = cleanInput.match(/(\d+\.?\d*)\s*x\s*(\d+\.?\d*)/);
+            if (dimensionMatch) {
+                const width = parseFloat(dimensionMatch[1]);
+                const length = parseFloat(dimensionMatch[2]);
+                const sqm = width * length;
+                return {
+                    originalInput: input,
+                    sqm: sqm,
+                    dimensions: { width, length },
+                    format: 'dimensions'
+                };
+            }
+            
+            return null; // Invalid format
+        }
+
         function processUserMessage(message) {
             setTimeout(() => {
                 switch (chatState.step) {
@@ -376,20 +409,55 @@
                             // Collect room name
                             if (!roomDetails[currentRoom]) {
                                 roomDetails[currentRoom] = { name: message };
-                                addMessage(`What are the dimensions of the ${message}? (e.g., 12m² or 4m x 3m)`);
+                                addMessage(`What are the dimensions of the ${message}?
+                                
+You can enter:
+• Direct square meters: "25" or "25.5"
+• Length x Width: "10 x 5" or "7.07 x 7.07"
+• With units: "4m x 3m" or "25 sqm"`);
                             } else {
-                                // Collect room dimensions
-                                roomDetails[currentRoom].dimensions = message;
+                                // Parse room dimensions intelligently
+                                const parsed = parseDimensions(message);
+                                
+                                if (!parsed) {
+                                    addMessage(`Sorry, I couldn't understand that format. Please try:
+• Direct square meters: "25" or "25.5"
+• Length x Width: "10 x 5" or "7.07 x 7.07"
+• With units: "4m x 3m" or "25 sqm"`);
+                                    return;
+                                }
+                                
+                                // Store structured data
+                                roomDetails[currentRoom].dimensions = parsed.originalInput;
+                                roomDetails[currentRoom].sqm = parsed.sqm;
+                                roomDetails[currentRoom].parsedDimensions = parsed.dimensions;
+                                roomDetails[currentRoom].format = parsed.format;
+                                
+                                // Provide confirmation
+                                if (parsed.format === 'direct_sqm') {
+                                    addMessage(`✅ ${roomDetails[currentRoom].name}: ${parsed.sqm} square meters`);
+                                } else {
+                                    addMessage(`✅ ${roomDetails[currentRoom].name}: ${parsed.dimensions.width}m x ${parsed.dimensions.length}m = ${parsed.sqm} square meters`);
+                                }
+                                
                                 currentRoom++;
                                 
                                 if (currentRoom < totalRooms) {
-                                    addMessage(`What's the name of room ${currentRoom + 1}?`);
+                                    setTimeout(() => {
+                                        addMessage(`What's the name of room ${currentRoom + 1}?`);
+                                    }, 1000);
                                 } else {
-                                    // All rooms collected, move to timeframe
-                                    chatState.step = 'timeframe';
-                                    currentStep = 1;
-                                    updateProgress();
-                                    addMessage("Great! What's your preferred timeframe for this project?");
+                                    // Calculate total and move to timeframe
+                                    const totalSqm = roomDetails.reduce((sum, room) => sum + room.sqm, 0);
+                                    setTimeout(() => {
+                                        addMessage(`Perfect! Total area: ${totalSqm.toFixed(1)} square meters across ${totalRooms} room(s).`);
+                                        setTimeout(() => {
+                                            chatState.step = 'timeframe';
+                                            currentStep = 1;
+                                            updateProgress();
+                                            addMessage("What's your preferred timeframe for this project?");
+                                        }, 2000);
+                                    }, 1000);
                                 }
                             }
                         }
@@ -455,25 +523,53 @@
         function generateLead() {
             addMessage("Thank you! Your details have been sent for a quote. A qualified tradesman will contact you within 24 hours.");
             
-            // Format room details for submission
-            const roomDetailsText = roomDetails.map(room => 
-                `${room.name}: ${room.dimensions}`
-            ).join(', ');
+            // Calculate total square meters
+            const totalSqm = roomDetails.reduce((sum, room) => sum + room.sqm, 0);
             
-            console.log('Lead Data:', {
+            // Format room details for display
+            const roomDetailsText = roomDetails.map(room => {
+                if (room.format === 'direct_sqm') {
+                    return `${room.name}: ${room.sqm}m²`;
+                } else {
+                    return `${room.name}: ${room.parsedDimensions.width}m x ${room.parsedDimensions.length}m (${room.sqm}m²)`;
+                }
+            }).join(', ');
+            
+            // Create structured room data for quote automation
+            const structuredRooms = roomDetails.map(room => ({
+                name: room.name,
+                originalInput: room.dimensions,
+                sqm: room.sqm,
+                dimensions: room.parsedDimensions,
+                format: room.format
+            }));
+            
+            console.log('Enhanced Lead Data:', {
                 customerName: chatState.customerName,
                 customerEmail: chatState.customerEmail,
                 customerPhone: chatState.customerPhone,
                 selectedService: 'underfloor_heating',
                 projectDetails: `Underfloor heating installation - ${totalRooms} room(s): ${roomDetailsText}`,
-                projectSize: roomDetailsText,
+                projectSize: `${totalSqm.toFixed(1)} square meters total`,
                 location: chatState.location,
                 areasCount: totalRooms.toString(),
                 areaSizes: roomDetailsText,
+                totalSquareMeters: totalSqm.toFixed(1),
+                rooms: structuredRooms, // Structured data for automation
+                roomsJson: JSON.stringify(structuredRooms), // For easy database storage
                 budget: 'To be quoted',
                 timeline: chatState.timeframe || 'Flexible',
-                specificDetails: `Customer requires underfloor heating installation for ${totalRooms} room(s): ${roomDetailsText}. Timeframe: ${chatState.timeframe || 'Flexible'}`
+                specificDetails: `Customer requires underfloor heating installation for ${totalRooms} room(s). Total area: ${totalSqm.toFixed(1)}m². Room breakdown: ${roomDetailsText}. Timeframe: ${chatState.timeframe || 'Flexible'}`
             });
+            
+            // Show summary to user
+            setTimeout(() => {
+                addMessage(`📋 Summary:
+• ${totalRooms} room(s) totaling ${totalSqm.toFixed(1)} square meters
+• Service: Underfloor heating installation  
+• Timeline: ${chatState.timeframe || 'Flexible'}
+• Contact: ${chatState.customerName} (${chatState.customerPhone})`);
+            }, 2000);
         }
 
         // Button handlers

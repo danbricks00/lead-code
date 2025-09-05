@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Quote System Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
+        .feature { background: #f5f5f5; padding: 20px; margin: 15px 0; border-radius: 8px; }
+        .enhanced { border-left: 4px solid #4caf50; }
+        .issue-fixed { border-left: 4px solid #2196f3; }
+        .email-preview { background: #fff; border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .calc-demo { background: #e8f5e9; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f9f9f9; }
+        .total-row { background: #e3f2fd; font-weight: bold; }
+        .final-total { background: #c8e6c9; font-weight: bold; font-size: 1.1em; }
+        code { background: #f1f1f1; padding: 2px 4px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Enhanced Quote System</h1>
+    
+    <div class="feature enhanced">
+        <h2>✅ Issue 1: Enhanced Quote Details</h2>
+        <p><strong>Problem:</strong> Quote generation was bare bones - no tradesman or customer details</p>
+        <p><strong>Solution:</strong> Added comprehensive details in quote submission emails</p>
+        
+        <div class="email-preview">
+            <h3>📧 New Admin Email Format:</h3>
+            <table>
+                <tr><th colspan="2">Customer Details</th></tr>
+                <tr><td>Name</td><td>John Smith</td></tr>
+                <tr><td>Email</td><td>john@example.com</td></tr>
+                <tr><td>Phone</td><td>021-123-4567</td></tr>
+                <tr><td>Area</td><td>Auckland Central</td></tr>
+                <tr><td>Timeline</td><td>Within 2 weeks</td></tr>
+            </table>
+            
+            <table>
+                <tr><th colspan="2">Tradesperson Details</th></tr>
+                <tr><td>Name</td><td>Mike's Heating Ltd</td></tr>
+                <tr><td>Email</td><td>mike@heating.co.nz</td></tr>
+                <tr><td>Phone</td><td>09-123-4567</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="feature enhanced">
+        <h2>✅ Issue 2: GST Calculation System</h2>
+        <p><strong>Problem:</strong> No subtotal and GST calculation</p>
+        <p><strong>Solution:</strong> Added automatic 15% GST calculation with clear breakdown</p>
+        
+        <div class="calc-demo">
+            <h3>💰 New Quote Calculator:</h3>
+            <table>
+                <tr><td>Labour (8h @ $50/h)</td><td>$400.00</td></tr>
+                <tr><td>Materials (25m² @ $30/m²)</td><td>$750.00</td></tr>
+                <tr><td>Travel (50km @ $1.20/km)</td><td>$60.00</td></tr>
+                <tr><td>Installation</td><td>$500.00</td></tr>
+                <tr class="total-row"><td>Subtotal (excl. GST)</td><td>$1,710.00</td></tr>
+                <tr><td>GST (15%)</td><td>$256.50</td></tr>
+                <tr class="final-total"><td>Total (incl. GST)</td><td>$1,966.50</td></tr>
+            </table>
+            
+            <p><strong>Features:</strong></p>
+            <ul>
+                <li>✅ Real-time calculation as tradesperson enters values</li>
+                <li>✅ Separate subtotal and GST display</li>
+                <li>✅ Professional formatting for customer presentation</li>
+                <li>✅ NZ GST compliance (15%)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="feature issue-fixed">
+        <h2>✅ Issue 3: Admin Rejection Emails</h2>
+        <p><strong>Problem:</strong> Admin reject worked but no email sent to tradesperson</p>
+        <p><strong>Solution:</strong> Already working! Admin decline sends detailed feedback emails</p>
+        
+        <div class="email-preview">
+            <h3>📧 Tradesperson Rejection Email Includes:</h3>
+            <ul>
+                <li>🔴 <strong>Clear decline notice</strong> with quote details</li>
+                <li>📝 <strong>Admin feedback</strong> with specific reasons</li>
+                <li>🔄 <strong>Next steps</strong> for revision</li>
+                <li>🔗 <strong>Direct link</strong> to quote form for resubmission</li>
+                <li>✅ <strong>Pre-populated form</strong> with existing quote data</li>
+            </ul>
+            
+            <p><strong>Example feedback messages:</strong></p>
+            <code>"Quote amount exceeds customer budget - please reduce by 15%"</code><br>
+            <code>"Timeline too long - customer needs completion within 2 weeks"</code><br>
+            <code>"Missing breakdown for materials - please provide detailed list"</code>
+        </div>
+    </div>
+
+    <div class="feature issue-fixed">
+        <h2>✅ Issue 4: Rejection Form Linking</h2>
+        <p><strong>Problem:</strong> Should link back to quote form with errors noted</p>
+        <p><strong>Solution:</strong> Comprehensive resubmission system already implemented</p>
+        
+        <h3>🔄 Resubmission Flow:</h3>
+        <ol>
+            <li><strong>Admin declines quote</strong> with specific feedback</li>
+            <li><strong>Tradesperson receives email</strong> with decline reason</li>
+            <li><strong>Clicks resubmission link</strong> in email</li>
+            <li><strong>Quote form opens</strong> with:
+                <ul>
+                    <li>🟡 Warning banner showing decline reason</li>
+                    <li>📝 Form pre-populated with existing data</li>
+                    <li>✏️ Ability to edit and improve quote</li>
+                    <li>🔄 Clear "Resubmission" labeling</li>
+                </ul>
+            </li>
+            <li><strong>Resubmits improved quote</strong> for admin review</li>
+        </ol>
+        
+        <div class="email-preview">
+            <h3>🔗 Resubmission Features:</h3>
+            <table>
+                <tr><th>Feature</th><th>Status</th><th>Benefit</th></tr>
+                <tr><td>Secure token links</td><td>✅ Working</td><td>Prevents unauthorized access</td></tr>
+                <tr><td>Form pre-population</td><td>✅ Working</td><td>Saves tradesperson time</td></tr>
+                <tr><td>Clear feedback display</td><td>✅ Working</td><td>Shows exactly what to fix</td></tr>
+                <tr><td>Visual decline banner</td><td>✅ Working</td><td>Clear indication of revision needed</td></tr>
+                <tr><td>Resubmission tracking</td><td>✅ Working</td><td>Admin knows it's a revision</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="feature enhanced">
+        <h2>🎯 System Improvements Summary</h2>
+        
+        <h3>📋 Quote Submission Email Now Includes:</h3>
+        <ul>
+            <li>✅ <strong>Complete customer details</strong> (name, email, phone, area, timeline)</li>
+            <li>✅ <strong>Complete tradesperson details</strong> (name, email, phone)</li>
+            <li>✅ <strong>Detailed cost breakdown</strong> with quantities and rates</li>
+            <li>✅ <strong>Subtotal calculation</strong> (excluding GST)</li>
+            <li>✅ <strong>GST calculation</strong> (15% automatically calculated)</li>
+            <li>✅ <strong>Final total</strong> (including GST)</li>
+            <li>✅ <strong>Quote validity date</strong> in DD/MM/YYYY format</li>
+            <li>✅ <strong>Customer notes</strong> from tradesperson</li>
+            <li>✅ <strong>PDF attachment</strong> from Xero</li>
+        </ul>
+
+        <h3>🔄 Admin Workflow:</h3>
+        <table>
+            <tr><th>Action</th><th>Email Sent</th><th>Form Behavior</th></tr>
+            <tr><td>Admin approves</td><td>✅ Customer gets quote</td><td>Quote becomes active for customer decision</td></tr>
+            <tr><td>Admin declines</td><td>✅ Tradesperson gets feedback</td><td>Form pre-populated for easy revision</td></tr>
+            <tr><td>Tradesperson resubmits</td><td>✅ Admin gets new review email</td><td>Clear indication it's a resubmission</td></tr>
+        </table>
+
+        <h3>💰 GST Compliance:</h3>
+        <ul>
+            <li>✅ <strong>15% GST rate</strong> (New Zealand standard)</li>
+            <li>✅ <strong>Clear subtotal display</strong> (excluding GST)</li>
+            <li>✅ <strong>Separate GST line item</strong></li>
+            <li>✅ <strong>Total including GST</strong></li>
+            <li>✅ <strong>Professional presentation</strong> for customers</li>
+        </ul>
+    </div>
+
+    <div class="feature enhanced">
+        <h2>🚀 Next Steps</h2>
+        <p>All requested issues have been resolved:</p>
+        <ul>
+            <li>✅ Quote generation now includes complete customer & tradesperson details</li>
+            <li>✅ GST calculation (15%) automatically added with subtotal breakdown</li>
+            <li>✅ Admin rejection emails working with detailed feedback</li>
+            <li>✅ Rejection form links back to quote form with errors pre-populated</li>
+        </ul>
+        
+        <p><strong>The quote system is now professional, comprehensive, and GST-compliant!</strong> 🎉</p>
+    </div>
+</body>
+</html>

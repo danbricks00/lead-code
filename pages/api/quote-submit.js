@@ -108,7 +108,8 @@ export default async function handler(req, res) {
     let xeroQuoteId;
     const {
         labourRate, labourHours, materialsCost, materialsQuantity,
-        travelCost, travelDistance, installationCost, totalQuote, notes, validUntil
+        travelCost, travelDistance, installationCost, subtotal, gst, totalQuote, notes, validUntil,
+        tradespersonName, tradespersonEmail, tradespersonPhone
     } = quoteDetails;
     try {
       const quoteData = {
@@ -172,7 +173,6 @@ export default async function handler(req, res) {
     }
 
     // 5. Send Review Email to Admin and Tradesperson with PDF
-    const { tradespersonName, tradespersonEmail } = quoteDetails;
     const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
     const approveLink = generateAdminDecisionLink('approve', quoteId);
     const declineFormLink = (() => {
@@ -205,8 +205,27 @@ export default async function handler(req, res) {
                 <li><strong>Timeline:</strong> ${leadDetails.Timelline || leadDetails.timeline || 'N/A'}</li>
             </ul>
 
-            <h3>Quote Details:</h3>
-            <p>Please review the attached PDF quote from Xero and take action:</p>
+            <h3>Tradesperson Details:</h3>
+            <ul>
+                <li><strong>Name:</strong> ${tradespersonName}</li>
+                <li><strong>Email:</strong> ${tradespersonEmail}</li>
+                <li><strong>Phone:</strong> ${tradespersonPhone}</li>
+            </ul>
+
+            <h3>Quote Summary:</h3>
+            <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Labour (${labourHours}h @ $${labourRate}/h):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(labourRate) * parseFloat(labourHours) || 0).toFixed(2)}</td></tr>
+                    <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Materials (${materialsQuantity}m² @ $${materialsCost}/m²):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(materialsCost) * parseFloat(materialsQuantity) || 0).toFixed(2)}</td></tr>
+                    <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Travel (${travelDistance}km @ $${travelCost}/km):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(travelCost) * parseFloat(travelDistance) || 0).toFixed(2)}</td></tr>
+                    <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Installation:</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${parseFloat(installationCost || 0).toFixed(2)}</td></tr>
+                    <tr><td style="padding: 8px 0; font-weight: bold;">Subtotal (excl. GST):</td><td style="text-align: right; padding: 8px 0; font-weight: bold;">$${parseFloat(subtotal || 0).toFixed(2)}</td></tr>
+                    <tr><td style="padding: 5px 0;">GST (15%):</td><td style="text-align: right; padding: 5px 0;">$${parseFloat(gst || 0).toFixed(2)}</td></tr>
+                    <tr style="border-top: 2px solid #333;"><td style="padding: 8px 0; font-weight: bold; font-size: 1.1em;">Total (incl. GST):</td><td style="text-align: right; padding: 8px 0; font-weight: bold; font-size: 1.1em;">$${parseFloat(totalQuote || 0).toFixed(2)}</td></tr>
+                </table>
+            </div>
+            <p><strong>Valid Until:</strong> ${new Date(validUntil).toLocaleDateString('en-NZ')}</p>
+            ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ''}
             
             <div style="margin: 20px 0; text-align: center;">
                 <a href="${approveLink}" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-right: 10px;">✅ Approve & Send to Customer</a>

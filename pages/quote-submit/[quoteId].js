@@ -133,6 +133,22 @@ const QuoteSubmitPage = () => {
     setLeadDetails(newDetails);
   };
 
+  const handleRoomChange = (index, field, value) => {
+    const updatedRooms = [...parsedRooms];
+    updatedRooms[index] = { ...updatedRooms[index], [field]: value };
+    setParsedRooms(updatedRooms);
+  };
+
+  const removeRoom = (index) => {
+    const updatedRooms = parsedRooms.filter((_, i) => i !== index);
+    setParsedRooms(updatedRooms);
+  };
+
+  const addRoom = () => {
+    const newRoom = { name: '', dimensions: '' };
+    setParsedRooms([...parsedRooms, newRoom]);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmissionStatus('submitting');
@@ -150,6 +166,12 @@ const QuoteSubmitPage = () => {
     };
 
     try {
+      // Update leadDetails with current room data before submitting
+      const updatedLeadDetails = {
+        ...leadDetails,
+        Rooms: JSON.stringify(parsedRooms) // Update rooms with any edits made by tradesperson
+      };
+
       const response = await fetch('/api/quote-submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -158,7 +180,7 @@ const QuoteSubmitPage = () => {
           ts,
           token,
           quoteDetails,
-          leadDetails, // Pass the fetched lead details to the backend
+          leadDetails: updatedLeadDetails, // Pass the updated lead details including edited rooms
         }),
       });
 
@@ -231,23 +253,76 @@ const QuoteSubmitPage = () => {
 
         {parsedRooms.length > 0 && (
             <div style={styles.section}>
-                <h2 style={styles.subHeader}>Room Details</h2>
-                <table style={styles.table}>
-                    <thead>
-                        <tr>
-                            <th style={styles.th}>Room Name</th>
-                            <th style={styles.th}>Dimensions / SQM</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {parsedRooms.map((room, index) => (
-                            <tr key={index}>
-                                <td style={styles.td}>{room.name}</td>
-                                <td style={styles.td}>{room.dimensions}</td>
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                    <h2 style={styles.subHeader}>Room Details</h2>
+                    <span style={{fontSize: '0.9em', color: '#666', fontStyle: 'italic'}}>
+                        {isEditing ? 'Click rows to edit room data' : 'Customer entered room information'}
+                    </span>
+                </div>
+                
+                {!isEditing ? (
+                    <table style={styles.table}>
+                        <thead>
+                            <tr>
+                                <th style={styles.th}>Room Name</th>
+                                <th style={styles.th}>Dimensions / SQM</th>
                             </tr>
+                        </thead>
+                        <tbody>
+                            {parsedRooms.map((room, index) => (
+                                <tr key={index}>
+                                    <td style={styles.td}>{room.name}</td>
+                                    <td style={styles.td}>{room.dimensions}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                ) : (
+                    <div style={styles.editableRooms}>
+                        <div style={{marginBottom: '10px', fontWeight: 'bold', color: '#333'}}>
+                            Edit room details below (clean up any unclear entries):
+                        </div>
+                        {parsedRooms.map((room, index) => (
+                            <div key={index} style={styles.roomEditRow}>
+                                <div style={styles.roomInputGroup}>
+                                    <label style={styles.roomLabel}>Room Name</label>
+                                    <input 
+                                        type="text" 
+                                        value={room.name} 
+                                        onChange={(e) => handleRoomChange(index, 'name', e.target.value)}
+                                        style={styles.roomInput}
+                                        placeholder="e.g., Kitchen, Bathroom, Living Room"
+                                    />
+                                </div>
+                                <div style={styles.roomInputGroup}>
+                                    <label style={styles.roomLabel}>Dimensions / SQM</label>
+                                    <input 
+                                        type="text" 
+                                        value={room.dimensions} 
+                                        onChange={(e) => handleRoomChange(index, 'dimensions', e.target.value)}
+                                        style={styles.roomInput}
+                                        placeholder="e.g., 4x3m, 15 sqm, 12 square meters"
+                                    />
+                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={() => removeRoom(index)}
+                                    style={styles.removeRoomBtn}
+                                    title="Remove this room"
+                                >
+                                    ✕
+                                </button>
+                            </div>
                         ))}
-                    </tbody>
-                </table>
+                        <button 
+                            type="button"
+                            onClick={addRoom}
+                            style={styles.addRoomBtn}
+                        >
+                            + Add Another Room
+                        </button>
+                    </div>
+                )}
             </div>
         )}
 
@@ -409,6 +484,63 @@ const styles = {
     borderRadius: '4px',
     cursor: 'pointer'
   },
+  
+  // Room editing styles
+  editableRooms: {
+    border: '1px solid #e0e0e0',
+    borderRadius: '6px',
+    padding: '15px',
+    background: '#fafafa',
+    marginTop: '10px'
+  },
+  roomEditRow: {
+    display: 'flex',
+    gap: '10px',
+    alignItems: 'flex-end',
+    marginBottom: '10px',
+    padding: '10px',
+    background: 'white',
+    borderRadius: '4px',
+    border: '1px solid #e8e8e8'
+  },
+  roomInputGroup: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column'
+  },
+  roomLabel: {
+    fontSize: '0.85em',
+    color: '#555',
+    marginBottom: '4px',
+    fontWeight: '500'
+  },
+  roomInput: {
+    padding: '8px',
+    border: '1px solid #ddd',
+    borderRadius: '4px',
+    fontSize: '14px'
+  },
+  removeRoomBtn: {
+    background: '#ff6b6b',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    padding: '8px 12px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    height: '36px'
+  },
+  addRoomBtn: {
+    background: '#4CAF50',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    padding: '10px 15px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    marginTop: '10px'
+  }
 };
 
 export default QuoteSubmitPage;

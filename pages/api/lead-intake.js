@@ -34,7 +34,8 @@ async function appendRowToSheet(sheets, tab, values) {
 export default async function handler(req, res) {
   console.log("\n--- New Lead Intake Request ---");
   console.log("Timestamp:", new Date().toISOString());
-  console.log("Request Body:", req.body);
+  // Add detailed logging of the received body
+  console.log("Request Body Received:", JSON.stringify(req.body, null, 2));
 
   if (req.method !== "POST") {
     return res.status(405).json({ success: false, error: "Method not allowed" });

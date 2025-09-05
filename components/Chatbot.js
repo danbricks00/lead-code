@@ -233,12 +233,13 @@ const Chatbot = ({ handleClose, handleReset }) => {
             nextStep('ask_email');
             break;
         case 'ask_email':
+            // CRITICAL FIX: Add email to existing leadData, don't create a new object
             const finalData = {
                 ...leadData,
                 customerEmail: input,
                 serviceType: 'Underfloor Heating',
             };
-            setLeadData(finalData);
+            setLeadData(finalData); // This state update is for UI consistency if needed
             handleLeadSubmission(finalData);
             setStep('completed');
             break;

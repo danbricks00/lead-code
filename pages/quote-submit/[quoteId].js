@@ -13,20 +13,23 @@ function parseDimensions(input) {
     return parseFloat(singleNumberMatch[1]);
   }
   
-  // Match patterns like "4x3", "4 x 3", "4m x 3m", "4.5 x 6.2"
+  // Match patterns like "4x3", "4 x 3", "4m x 3m", "5m x 5m", "4.5 x 6.2", "7mx8m"
   const dimensionsMatch = cleanInput.match(/^(\d+(?:\.\d+)?)\s*m?\s*[x×]\s*(\d+(?:\.\d+)?)\s*m?$/);
   if (dimensionsMatch) {
     const length = parseFloat(dimensionsMatch[1]);
     const width = parseFloat(dimensionsMatch[2]);
+    console.log(`🔢 Parsing dimensions: "${input}" → ${length} x ${width} = ${length * width}m²`);
     return length * width;
   }
   
   // If no pattern matches, try to extract the first number
   const firstNumberMatch = cleanInput.match(/(\d+(?:\.\d+)?)/);
   if (firstNumberMatch) {
+    console.log(`🔢 Parsing single number: "${input}" → ${parseFloat(firstNumberMatch[1])}m²`);
     return parseFloat(firstNumberMatch[1]);
   }
   
+  console.log(`⚠️ Could not parse dimensions: "${input}"`);
   return 0;
 }
 

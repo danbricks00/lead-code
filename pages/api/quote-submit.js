@@ -477,8 +477,18 @@ export default async function handler(req, res) {
                         <h3 style="margin: 0 0 10px 0; color: #333;">Quote Details:</h3>
                         <p><strong>Customer:</strong> ${customerName}</p>
                         <p><strong>Service:</strong> ${serviceType}</p>
-                        <p><strong>Total Quote:</strong> $${parseFloat(quoteDetails.totalQuote || 0).toFixed(2)}</p>
                         <p><strong>Valid Until:</strong> ${new Date(quoteDetails.validUntil).toLocaleDateString('en-NZ')}</p>
+                        
+                        <h4 style="margin: 15px 0 10px 0; color: #333;">Cost Breakdown:</h4>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Labour (${quoteDetails.labourHours}h @ $${quoteDetails.labourRate}/h):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(quoteDetails.labourRate) * parseFloat(quoteDetails.labourHours) || 0).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Materials (${quoteDetails.materialsQuantity}m² @ $${quoteDetails.materialsCost}/m²):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(quoteDetails.materialsCost) * parseFloat(quoteDetails.materialsQuantity) || 0).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Travel (${quoteDetails.travelDistance}km @ $${quoteDetails.travelCost}/km):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(quoteDetails.travelCost) * parseFloat(quoteDetails.travelDistance) || 0).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Installation:</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${parseFloat(quoteDetails.installationCost || 0).toFixed(2)}</td></tr>
+                            <tr style="border-top: 2px solid #333;"><td style="padding: 8px 0 5px 0; font-weight: bold;">Subtotal (excl. GST):</td><td style="text-align: right; padding: 8px 0 5px 0; font-weight: bold;">$${parseFloat(quoteDetails.subtotal || 0).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 5px 0;">GST (15%):</td><td style="text-align: right; padding: 5px 0;">$${parseFloat(quoteDetails.gst || 0).toFixed(2)}</td></tr>
+                            <tr style="background: #28a745; color: white;"><td style="padding: 10px 5px; font-weight: bold; font-size: 16px;">TOTAL (incl. GST):</td><td style="text-align: right; padding: 10px 5px; font-weight: bold; font-size: 16px;">$${parseFloat(quoteDetails.totalQuote || 0).toFixed(2)}</td></tr>
+                        </table>
                     </div>
                     
                     <p>The customer will receive an email with your quote and can accept or decline it.</p>

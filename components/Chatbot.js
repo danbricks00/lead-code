@@ -85,6 +85,16 @@ const Chatbot = ({ handleClose, handleReset }) => {
     setTimeout(() => {
         setIsLoading(false);
         setStep(next);
+        // Get the first name from the full name for personalization
+        const getFirstName = () => {
+            if (leadData.name) {
+                return leadData.name.split(' ')[0];
+            }
+            return '';
+        };
+        
+        const firstName = getFirstName();
+        
         // Trigger the question for the new step
         const questions = {
             start_questions: "Let's get started with a few details about your project.",
@@ -95,9 +105,9 @@ const Chatbot = ({ handleClose, handleReset }) => {
             ask_timeline_details: "Could you please be more specific about your timeline?",
             pre_contact_details: "Great, that's all the project information we need. Now, let's get some contact details so we can send you the quote.",
             ask_name: "Perfect. What is your full name?",
-            ask_phone: "What is your phone number?",
-            ask_suburb: "Great. Now, what is your suburb? Start typing and select from the list.",
-            ask_email: "Finally, what is your email address?",
+            ask_phone: firstName ? `Thanks ${firstName}! What is your phone number?` : "What is your phone number?",
+            ask_suburb: firstName ? `Great ${firstName}! Now, what is your suburb? Start typing and select from the list.` : "Great. Now, what is your suburb? Start typing and select from the list.",
+            ask_email: firstName ? `Finally ${firstName}, what is your email address?` : "Finally, what is your email address?",
         };
         if (questions[next]) {
             addMessage(questions[next]);

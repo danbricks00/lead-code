@@ -144,6 +144,28 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
         }
+        @media (max-width: 480px) {
+            .nav-container {
+                padding: 0 10px;
+            }
+
+            .nav-logo h2 {
+                font-size: 1.5rem;
+            }
+
+            .nav-desktop {
+                gap: 0.5rem; /* Reduce gap on small screens */
+            }
+
+            .nav-link {
+                font-size: 13px; /* Reduce font size */
+                padding: 0.4rem 0.6rem;
+            }
+            .nav-link.login-btn {
+                padding: 0.5rem 1rem;
+                font-size: 12px;
+            }
+        }
         
         /* Mobile menu toggle button */
         .menu-toggle {

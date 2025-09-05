@@ -114,54 +114,19 @@
         }
 
         .bot-message {
-            background: white;
+            background-color: #f1f0f0 !important; /* A light grey */
+            color: black !important;
             align-self: flex-start;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .user-message {
-            background-color: #1a73e8 !important; /* A slightly different blue */
+            background-color: #007bff !important; /* Standard blue */
             color: white !important;
             margin-left: auto;
             align-self: flex-end;
-            box-shadow: 0 2px 8px rgba(26, 115, 232, 0.3);
+            box-shadow: 0 2px 8px rgba(0,123,255,0.3);
             border: none !important;
-            color-scheme: light !important; /* This is the key: tells Chrome to leave this element alone */
-        }
-
-        /* Extra override for dark mode specifically */
-        @media (prefers-color-scheme: dark) {
-            .user-message, div.user-message, .message.user-message {
-                background-color: #1a73e8 !important;
-                color: white !important;
-            }
-        }
-
-        /* Force user message styling in all color schemes */
-        .message.user-message {
-            background: #007bff !important;
-            background-color: #007bff !important;
-            color: white !important;
-        }
-
-        /* Override any Chrome theme or system colors */
-        .user-message,
-        div.user-message,
-        .message.user-message,
-        div.message.user-message {
-            background: #007bff !important;
-            background-color: #007bff !important;
-            color: white !important;
-            border: none !important;
-        }
-
-        /* Override autofill and system colors */
-        .user-message:-webkit-autofill,
-        .user-message:-webkit-autofill:hover,
-        .user-message:-webkit-autofill:focus {
-            background: #007bff !important;
-            background-color: #007bff !important;
-            color: white !important;
         }
 
         /* Progress Bar and Checklist */

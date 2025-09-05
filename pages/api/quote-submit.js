@@ -1,10 +1,7 @@
 import { getGoogleSheetsClient, getSpreadsheetId } from '../../lib/googleSheets.js';
-import { initializeXeroDirectApi, makeXeroApiCall, getXeroQuoteAsPdf } from '../../lib/xeroDirectApi.js';
 import { generateQuotePDF } from '../../lib/pdfGenerator.js';
-import nodemailer from "nodemailer";
+import { sendEmail } from '../../lib/emailHelper';
 import crypto from "crypto";
-import { google } from "googleapis";
-import { sendEmail } from '../../lib/emailHelper'; // Assuming you have a centralized email helper
 
 function verifyToken(id, ts) {
     const hmac = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET);
@@ -17,6 +14,18 @@ function generateAdminDecisionLink(action, quoteId) {
     const token = verifyToken(quoteId, ts); 
     const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
     return `https://${baseUrl}/api/admin/${action}?quoteId=${quoteId}&ts=${ts}&token=${token}`;
+}
+
+function generateCustomerDecisionLink(action, quoteId) {
+    const ts = Date.now().toString();
+    const token = verifyToken(quoteId, ts);
+    const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
+    return `https://${baseUrl}/api/quote-decision/${action}?quoteId=${quoteId}&ts=${ts}&token=${token}`;
+}
+
+function generateQuoteViewLink(quoteId) {
+    const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
+    return `https://${baseUrl}/quote-view/${quoteId}`;
 }
 
 // Main handler
@@ -36,95 +45,25 @@ export default async function handler(req, res) {
         return res.status(403).json({ success: false, error: 'Invalid or expired link.' });
     }
     
-    // --- XERO INTEGRATION (DIRECT API) ---
-    let xeroConfig;
-    try {
-        xeroConfig = await initializeXeroDirectApi();
-        console.log('Xero Direct API initialized successfully');
-    } catch (initError) {
-        console.error("Xero Direct API Initialization Error:", initError);
-        return res.status(500).json({ success: false, error: "Failed during Xero API initialization." });
-    }
-
-    // 1. Find or Create Contact in Xero
-    let contactID;
     // Extract customer details with fallbacks and proper field names
     const customerName = leadDetails.CustomerName || leadDetails.customerName || 'Unknown Customer';
-    const customerEmail = leadDetails.CustomerEmail || leadDetails.customerEmail;
+    const customerEmail = leadDetails.CustomerEmail || leadDetails.customerEmail || '';
     const customerPhone = leadDetails.CustomerPhone || leadDetails.customerPhone || '';
+    const customerAddress = leadDetails.Location || leadDetails.location || leadDetails.CustomerAddress || leadDetails.customerAddress || '';
+    const serviceType = leadDetails.ServiceType || leadDetails.serviceType || 'Underfloor Heating';
+    const tradespersonEmail = quoteDetails.tradespersonEmail || '';
+    const tradespersonName = quoteDetails.tradespersonName || '';
+    const tradespersonPhone = quoteDetails.tradespersonPhone || '';
     
-    console.log('DEBUG - Customer details extracted:', { customerName, customerEmail, customerPhone });
-    console.log('DEBUG - Full leadDetails object:', JSON.stringify(leadDetails, null, 2));
-    
-    if (!customerEmail) {
-        console.error('Customer email is missing from leadDetails');
-        return res.status(400).json({ success: false, error: "Customer email is required but missing from lead details." });
-    }
-    try {
-      // Search for existing contact by email
-      const contactsResponse = await makeXeroApiCall(
-        `Contacts?where=EmailAddress%3D%3D"${encodeURIComponent(customerEmail)}"`,
-        'GET',
-        null,
-        xeroConfig
-      );
-      
-      if (contactsResponse.Contacts && contactsResponse.Contacts.length > 0) {
-          contactID = contactsResponse.Contacts[0].ContactID;
-          console.log(`Found existing Xero contact: ${contactID}`);
-      } else {
-          // Create new contact
-          const newContactData = {
-            Contacts: [{
-              Name: customerName,
-              EmailAddress: customerEmail,
-              Phones: [{ PhoneType: 'DEFAULT', PhoneNumber: customerPhone }]
-            }]
-          };
-          
-          const createContactResponse = await makeXeroApiCall('Contacts', 'POST', newContactData, xeroConfig);
-          contactID = createContactResponse.Contacts[0].ContactID;
-          console.log(`Created new Xero contact: ${contactID}`);
-      }
-    } catch (contactError) {
-        console.error("Xero Contact Error:", contactError);
-        return res.status(500).json({ success: false, error: "Failed to find or create Xero contact." });
-    }
+    console.log('📊 Quote submission data:', {
+      quoteId,
+      customerName,
+      customerEmail,
+      serviceType,
+      tradespersonName
+    });
 
-    // 2. Create Quote in Xero
-    let xeroQuoteId;
-    const {
-        labourRate, labourHours, materialsCost, materialsQuantity,
-        travelCost, travelDistance, installationCost, subtotal, gst, totalQuote, notes, validUntil,
-        tradespersonName, tradespersonEmail, tradespersonPhone
-    } = quoteDetails;
-    try {
-      const quoteData = {
-          Quotes: [{
-              Contact: { ContactID: contactID },
-              Date: new Date().toISOString().split('T')[0], // Today's date
-              ExpiryDate: new Date(validUntil).toISOString().split('T')[0],
-              Title: `Quote for ${leadDetails.ServiceType || 'services'} for ${leadDetails.CustomerName}`,
-              Summary: notes,
-              LineItems: [
-                  { Description: 'Labour', Quantity: labourHours, UnitAmount: labourRate, AccountCode: '200' },
-                  { Description: 'Materials', Quantity: materialsQuantity, UnitAmount: materialsCost, AccountCode: '200' },
-                  { Description: 'Travel', Quantity: travelDistance, UnitAmount: travelCost, AccountCode: '200' },
-                  { Description: 'Installation', Quantity: 1, UnitAmount: installationCost, AccountCode: '200' }
-              ],
-              Status: 'DRAFT' // Draft until admin approves
-          }]
-      };
-      
-      const createQuoteResponse = await makeXeroApiCall('Quotes', 'POST', quoteData, xeroConfig);
-      xeroQuoteId = createQuoteResponse.Quotes[0].QuoteID;
-      console.log(`Successfully created Xero Quote (Draft): ${xeroQuoteId}`);
-    } catch (quoteError) {
-        console.error("Xero Create Quote Error:", quoteError);
-        return res.status(500).json({ success: false, error: "Failed to create quote in Xero." });
-    }
-
-    // 3. Generate PDF using our new system
+    // Generate PDF using our new system
     let pdfBuffer;
     try {
         // Prepare quote data for PDF generation
@@ -137,9 +76,9 @@ export default async function handler(req, res) {
             customerPhone: customerPhone,
             customerAddress: customerAddress,
             serviceType: serviceType,
-            tradespersonName: quoteDetails.tradespersonName,
-            tradespersonEmail: quoteDetails.tradespersonEmail,
-            tradespersonPhone: quoteDetails.tradespersonPhone,
+            tradespersonName: tradespersonName,
+            tradespersonEmail: tradespersonEmail,
+            tradespersonPhone: tradespersonPhone,
             tradespersonLicense: 'Licensed Tradesperson',
             rooms: leadDetails.Rooms ? JSON.parse(leadDetails.Rooms) : [],
             totals: {
@@ -154,98 +93,118 @@ export default async function handler(req, res) {
         };
 
         pdfBuffer = await generateQuotePDF(quoteData);
-        console.log(`Successfully generated PDF for Quote ${quoteId}`);
+        console.log(`✅ PDF generated successfully for Quote ${quoteId}`);
     } catch (pdfError) {
         console.error("PDF Generation Error:", pdfError);
         return res.status(500).json({ success: false, error: "Failed to generate PDF quote." });
     }
 
-    // 4. Update Google Sheet with Xero Quote ID and new status
+    // Update Google Sheet with quote data
     const sheets = await getGoogleSheetsClient();
     const spreadsheetId = getSpreadsheetId();
-    const range = 'Quotes!A:Z';
-    const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
-    const rows = response.data.values;
-    const header = rows[0];
-    const rowIndex = rows.findIndex(row => row[header.indexOf('QuoteID')] === quoteId); // CORRECTED HEADER
     
-    if (rowIndex > -1) {
-        const targetRow = rows[rowIndex];
-        targetRow[header.indexOf('Admin Status')] = 'Pending Approval';
-        targetRow[header.indexOf('Customer Status')] = 'Quote Pending Approval';
-        targetRow[header.indexOf('TradePerson Status')] = 'Quote Submitted'; // CORRECTED HEADER
-        targetRow[header.indexOf('Xero Quote iD')] = xeroQuoteId; // CORRECTED HEADER
+    try {
+        // Add quote to Quotes sheet
+        const quotesRange = 'Quotes!A:Z';
+        const quoteRow = [
+            quoteId,
+            new Date().toISOString(),
+            customerName,
+            customerEmail,
+            customerPhone,
+            customerAddress,
+            serviceType,
+            tradespersonName,
+            tradespersonEmail,
+            tradespersonPhone,
+            quoteDetails.labourRate,
+            quoteDetails.labourHours,
+            quoteDetails.materialsCost,
+            quoteDetails.materialsQuantity,
+            quoteDetails.travelCost,
+            quoteDetails.travelDistance,
+            quoteDetails.installationCost,
+            quoteDetails.notes || '',
+            quoteDetails.validUntil,
+            quoteDetails.subtotal,
+            quoteDetails.gst,
+            quoteDetails.totalQuote,
+            'pending', // status
+            leadDetails.LeadId || '', // link to lead
+            JSON.stringify(leadDetails.Rooms || []), // room data
+            new Date().toISOString() // created timestamp
+        ];
 
-        await sheets.spreadsheets.values.update({
+        await sheets.spreadsheets.values.append({
             spreadsheetId,
-            range: `Quotes!A${rowIndex + 1}`,
-            valueInputOption: 'USER_ENTERED',
-            requestBody: { values: [targetRow] },
+            range: quotesRange,
+            valueInputOption: 'RAW',
+            resource: {
+                values: [quoteRow]
+            }
         });
-        console.log(`Updated Google Sheet for Quote ID ${quoteId} with Xero ID ${xeroQuoteId}`);
+
+        console.log(`✅ Quote data saved to Google Sheets: ${quoteId}`);
+    } catch (sheetsError) {
+        console.error("Google Sheets Error:", sheetsError);
+        // Don't fail the whole process, just log the error
     }
 
-    // 5. Send Review Email to Admin and Tradesperson with PDF
+    // Generate decision links
+    const approveLink = generateCustomerDecisionLink('accept', quoteId);
+    const declineLink = generateCustomerDecisionLink('decline', quoteId);
+    const quoteViewLink = generateQuoteViewLink(quoteId);
+    const adminApproveLink = generateAdminDecisionLink('approve', quoteId);
+    const declineFormLink = generateAdminDecisionLink('decline-form', quoteId);
+
+    // Send admin/tradesperson review email
     const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
-    const approveLink = generateAdminDecisionLink('approve', quoteId);
-    const declineFormLink = (() => {
-        const ts = Date.now().toString();
-        const token = verifyToken(quoteId, ts);
-        const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
-        return `https://${baseUrl}/admin/decline-form?quoteId=${quoteId}&ts=${ts}&token=${token}`;
-    })();
-
-    console.log('DEBUG - Email details:', { 
-        tradespersonName, 
-        tradespersonEmail, 
-        ADMIN_EMAIL,
-        leadDetails_ServiceType: leadDetails.ServiceType || leadDetails.serviceType,
-        leadDetails_CustomerName: leadDetails.CustomerName || leadDetails.customerName
-    });
-
     const emailHtml = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2>🔍 New Quote Review Required</h2>
-            <p>A new quote for <strong>"${leadDetails.ServiceType || leadDetails.serviceType || 'service'}"</strong> has been submitted by <strong>${tradespersonName}</strong> and created in Xero.</p>
-            
-            <h3>Customer Details:</h3>
-            <ul>
-                <li><strong>Name:</strong> ${customerName}</li>
-                <li><strong>Email:</strong> ${customerEmail}</li>
-                <li><strong>Phone:</strong> ${customerPhone}</li>
-                <li><strong>Area:</strong> ${leadDetails.Area || leadDetails.area || 'N/A'}</li>
-                <li><strong>Suburb:</strong> ${leadDetails.Suburb || leadDetails.suburb || 'N/A'}</li>
-                <li><strong>Timeline:</strong> ${leadDetails.Timelline || leadDetails.timeline || 'N/A'}</li>
-            </ul>
-
-            <h3>Tradesperson Details:</h3>
-            <ul>
-                <li><strong>Name:</strong> ${tradespersonName}</li>
-                <li><strong>Email:</strong> ${tradespersonEmail}</li>
-                <li><strong>Phone:</strong> ${tradespersonPhone}</li>
-            </ul>
-
-            <h3>Quote Summary:</h3>
-            <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin: 15px 0;">
-                <table style="width: 100%; border-collapse: collapse;">
-                    <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Labour (${labourHours}h @ $${labourRate}/h):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(labourRate) * parseFloat(labourHours) || 0).toFixed(2)}</td></tr>
-                    <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Materials (${materialsQuantity}m² @ $${materialsCost}/m²):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(materialsCost) * parseFloat(materialsQuantity) || 0).toFixed(2)}</td></tr>
-                    <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Travel (${travelDistance}km @ $${travelCost}/km):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(travelCost) * parseFloat(travelDistance) || 0).toFixed(2)}</td></tr>
-                    <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Installation:</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${parseFloat(installationCost || 0).toFixed(2)}</td></tr>
-                    <tr><td style="padding: 8px 0; font-weight: bold;">Subtotal (excl. GST):</td><td style="text-align: right; padding: 8px 0; font-weight: bold;">$${parseFloat(subtotal || 0).toFixed(2)}</td></tr>
-                    <tr><td style="padding: 5px 0;">GST (15%):</td><td style="text-align: right; padding: 5px 0;">$${parseFloat(gst || 0).toFixed(2)}</td></tr>
-                    <tr style="border-top: 2px solid #333;"><td style="padding: 8px 0; font-weight: bold; font-size: 1.1em;">Total (incl. GST):</td><td style="text-align: right; padding: 8px 0; font-weight: bold; font-size: 1.1em;">$${parseFloat(totalQuote || 0).toFixed(2)}</td></tr>
-                </table>
+        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                <h1 style="margin: 0; font-size: 24px;">📋 Quote Ready for Review</h1>
             </div>
-            <p><strong>Valid Until:</strong> ${new Date(validUntil).toLocaleDateString('en-NZ')}</p>
-            ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ''}
-            
-            <div style="margin: 20px 0; text-align: center;">
-                <a href="${approveLink}" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-right: 10px;">✅ Approve & Send to Customer</a>
-                <a href="${declineFormLink}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px;">❌ Decline Quote</a>
+            <div style="background: #fff; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #ddd;">
+                <h2 style="color: #333; margin: 0 0 20px 0;">Quote Details</h2>
+                
+                <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                    <h3 style="margin: 0 0 10px 0; color: #333;">Customer Information:</h3>
+                    <p><strong>Name:</strong> ${customerName}</p>
+                    <p><strong>Email:</strong> ${customerEmail}</p>
+                    <p><strong>Phone:</strong> ${customerPhone || 'Not provided'}</p>
+                    <p><strong>Address:</strong> ${customerAddress || 'Not provided'}</p>
+                    <p><strong>Service:</strong> ${serviceType}</p>
+                </div>
+
+                <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                    <h3 style="margin: 0 0 10px 0; color: #333;">Tradesperson Information:</h3>
+                    <p><strong>Name:</strong> ${tradespersonName}</p>
+                    <p><strong>Email:</strong> ${tradespersonEmail}</p>
+                    <p><strong>Phone:</strong> ${tradespersonPhone || 'Not provided'}</p>
+                </div>
+
+                <h3>Quote Summary:</h3>
+                <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Labour (${quoteDetails.labourHours}h @ $${quoteDetails.labourRate}/h):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(quoteDetails.labourRate) * parseFloat(quoteDetails.labourHours) || 0).toFixed(2)}</td></tr>
+                        <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Materials (${quoteDetails.materialsQuantity}m² @ $${quoteDetails.materialsCost}/m²):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(quoteDetails.materialsCost) * parseFloat(quoteDetails.materialsQuantity) || 0).toFixed(2)}</td></tr>
+                        <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Travel (${quoteDetails.travelDistance}km @ $${quoteDetails.travelCost}/km):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(quoteDetails.travelCost) * parseFloat(quoteDetails.travelDistance) || 0).toFixed(2)}</td></tr>
+                        <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Installation:</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${parseFloat(quoteDetails.installationCost || 0).toFixed(2)}</td></tr>
+                        <tr><td style="padding: 8px 0; font-weight: bold;">Subtotal (excl. GST):</td><td style="text-align: right; padding: 8px 0; font-weight: bold;">$${parseFloat(quoteDetails.subtotal || 0).toFixed(2)}</td></tr>
+                        <tr><td style="padding: 5px 0;">GST (15%):</td><td style="text-align: right; padding: 5px 0;">$${parseFloat(quoteDetails.gst || 0).toFixed(2)}</td></tr>
+                        <tr style="border-top: 2px solid #333;"><td style="padding: 8px 0; font-weight: bold; font-size: 1.1em;">Total (incl. GST):</td><td style="text-align: right; padding: 8px 0; font-weight: bold; font-size: 1.1em;">$${parseFloat(quoteDetails.totalQuote || 0).toFixed(2)}</td></tr>
+                    </table>
+                </div>
+                <p><strong>Valid Until:</strong> ${new Date(quoteDetails.validUntil).toLocaleDateString('en-NZ')}</p>
+                ${quoteDetails.notes ? `<p><strong>Notes:</strong> ${quoteDetails.notes}</p>` : ''}
+                
+                <div style="margin: 20px 0; text-align: center;">
+                    <a href="${adminApproveLink}" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-right: 10px;">✅ Approve & Send to Customer</a>
+                    <a href="${declineFormLink}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px;">❌ Decline Quote</a>
+                </div>
+                
+                <p><em>Quote ID: ${quoteId}</em></p>
             </div>
-            
-            <p><em>Quote ID: ${quoteId}</em></p>
         </div>
     `;
 
@@ -258,11 +217,10 @@ export default async function handler(req, res) {
         recipients.push(tradespersonEmail.trim());
     }
 
-    console.log('DEBUG - Email recipients:', recipients);
+    console.log('📧 Email recipients:', recipients);
 
     if (recipients.length === 0) {
         console.error('❌ No valid email recipients found. ADMIN_EMAIL:', ADMIN_EMAIL, 'tradespersonEmail:', tradespersonEmail);
-        // Don't fail the whole process, just log the error
     } else {
         const emailOptions = {
             to: recipients,
@@ -280,7 +238,6 @@ export default async function handler(req, res) {
             console.log(`✅ Admin/Tradesperson review email sent successfully to: ${recipients.join(', ')}`);
         } catch (emailError) {
             console.error('❌ Failed to send review email:', emailError);
-            // Don't fail the whole process, just log the error
         }
     }
 
@@ -298,18 +255,18 @@ export default async function handler(req, res) {
                     <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin: 15px 0;">
                         <h3 style="margin: 0 0 10px 0; color: #333;">Quote Summary:</h3>
                         <table style="width: 100%; border-collapse: collapse;">
-                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Labour (${labourHours}h @ $${labourRate}/h):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(labourRate) * parseFloat(labourHours) || 0).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Materials (${materialsQuantity}m² @ $${materialsCost}/m²):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(materialsCost) * parseFloat(materialsQuantity) || 0).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Travel (${travelDistance}km @ $${travelCost}/km):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(travelCost) * parseFloat(travelDistance) || 0).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Installation:</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${parseFloat(installationCost || 0).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">Subtotal (excl. GST):</td><td style="text-align: right; padding: 8px 0; font-weight: bold;">$${parseFloat(subtotal || 0).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 5px 0;">GST (15%):</td><td style="text-align: right; padding: 5px 0;">$${parseFloat(gst || 0).toFixed(2)}</td></tr>
-                            <tr style="border-top: 2px solid #333;"><td style="padding: 8px 0; font-weight: bold; font-size: 1.1em;">Total (incl. GST):</td><td style="text-align: right; padding: 8px 0; font-weight: bold; font-size: 1.1em;">$${parseFloat(totalQuote || 0).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Labour (${quoteDetails.labourHours}h @ $${quoteDetails.labourRate}/h):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(quoteDetails.labourRate) * parseFloat(quoteDetails.labourHours) || 0).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Materials (${quoteDetails.materialsQuantity}m² @ $${quoteDetails.materialsCost}/m²):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(quoteDetails.materialsCost) * parseFloat(quoteDetails.materialsQuantity) || 0).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Travel (${quoteDetails.travelDistance}km @ $${quoteDetails.travelCost}/km):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(quoteDetails.travelCost) * parseFloat(quoteDetails.travelDistance) || 0).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Installation:</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${parseFloat(quoteDetails.installationCost || 0).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">Subtotal (excl. GST):</td><td style="text-align: right; padding: 8px 0; font-weight: bold;">$${parseFloat(quoteDetails.subtotal || 0).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 5px 0;">GST (15%):</td><td style="text-align: right; padding: 5px 0;">$${parseFloat(quoteDetails.gst || 0).toFixed(2)}</td></tr>
+                            <tr style="border-top: 2px solid #333;"><td style="padding: 8px 0; font-weight: bold; font-size: 1.1em;">Total (incl. GST):</td><td style="text-align: right; padding: 8px 0; font-weight: bold; font-size: 1.1em;">$${parseFloat(quoteDetails.totalQuote || 0).toFixed(2)}</td></tr>
                         </table>
                     </div>
                     
-                    <p><strong>Valid Until:</strong> ${new Date(validUntil).toLocaleDateString('en-NZ')}</p>
-                    ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ''}
+                    <p><strong>Valid Until:</strong> ${new Date(quoteDetails.validUntil).toLocaleDateString('en-NZ')}</p>
+                    ${quoteDetails.notes ? `<p><strong>Notes:</strong> ${quoteDetails.notes}</p>` : ''}
                     
                     <div style="margin: 20px 0; text-align: center;">
                         <a href="${approveLink}" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-right: 10px;">✅ Accept Quote</a>
@@ -353,15 +310,15 @@ export default async function handler(req, res) {
                     <h1 style="margin: 0; font-size: 24px;">📋 Quote Sent Successfully!</h1>
                 </div>
                 <div style="background: #fff; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #ddd;">
-                    <p>Hi ${quoteDetails.tradespersonName},</p>
+                    <p>Hi ${tradespersonName},</p>
                     <p>Your quote for <strong>${customerName}</strong>'s <strong>${serviceType}</strong> has been sent successfully.</p>
                     
                     <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin: 15px 0;">
                         <h3 style="margin: 0 0 10px 0; color: #333;">Quote Details:</h3>
                         <p><strong>Customer:</strong> ${customerName}</p>
                         <p><strong>Service:</strong> ${serviceType}</p>
-                        <p><strong>Total Quote:</strong> $${parseFloat(totalQuote || 0).toFixed(2)}</p>
-                        <p><strong>Valid Until:</strong> ${new Date(validUntil).toLocaleDateString('en-NZ')}</p>
+                        <p><strong>Total Quote:</strong> $${parseFloat(quoteDetails.totalQuote || 0).toFixed(2)}</p>
+                        <p><strong>Valid Until:</strong> ${new Date(quoteDetails.validUntil).toLocaleDateString('en-NZ')}</p>
                     </div>
                     
                     <p>The customer will receive an email with your quote and can accept or decline it.</p>
@@ -399,7 +356,7 @@ export default async function handler(req, res) {
         }
     }
     
-    res.status(200).json({ success: true, message: 'Quote submitted and created in Xero.' });
+    res.status(200).json({ success: true, message: 'Quote submitted successfully with PDF generation.' });
 
   } catch (error) {
     console.error("A top-level error occurred in quote-submit:", error);

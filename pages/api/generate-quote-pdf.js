@@ -56,8 +56,8 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     // Return template preview
     try {
-      const templateResponse = await fetch(`${req.headers.origin || 'http://localhost:3000'}/quote-template.html`);
-      const templateHTML = await templateResponse.text();
+      const { getQuoteTemplate } = await import('../../lib/pdfGenerator.js');
+      const templateHTML = getQuoteTemplate();
       
       res.setHeader('Content-Type', 'text/html');
       return res.status(200).send(templateHTML);

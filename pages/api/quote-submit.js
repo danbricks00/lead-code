@@ -3,6 +3,116 @@ import { generateQuotePDF } from '../../lib/pdfGenerator.js';
 import { sendEmail } from '../../lib/emailHelper';
 import crypto from "crypto";
 
+// Create HTML backup quote when PDF generation fails
+function createHTMLQuote(quoteData) {
+    const formatCurrency = (amount) => {
+        const num = parseFloat(amount);
+        return isNaN(num) ? '0.00' : num.toFixed(2);
+    };
+
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-NZ', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    };
+
+    const roomRows = quoteData.rooms.map(room => `
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ddd;">${room.name || 'N/A'}</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${room.dimensions || 'N/A'}</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${room.sqm ? formatCurrency(room.sqm) + 'm²' : 'N/A'}</td>
+        </tr>
+    `).join('');
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Quote ${quoteData.quoteId}</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .header { background: #667eea; color: white; padding: 20px; text-align: center; border-radius: 8px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        th { background: #f5f5f5; font-weight: bold; }
+        .total-row { background: #667eea; color: white; font-weight: bold; }
+        .summary { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔧 KIWI TRADE - QUOTE</h1>
+        <p>Quote ID: ${quoteData.quoteId}</p>
+        <p>Date: ${formatDate(quoteData.quoteDate)}</p>
+        <p>Valid Until: ${formatDate(quoteData.validUntil)}</p>
+    </div>
+
+    <div class="section">
+        <h2>Customer Details</h2>
+        <p><strong>Name:</strong> ${quoteData.customerName}</p>
+        <p><strong>Email:</strong> ${quoteData.customerEmail}</p>
+        <p><strong>Phone:</strong> ${quoteData.customerPhone || 'N/A'}</p>
+        <p><strong>Address:</strong> ${quoteData.customerAddress || 'N/A'}</p>
+        <p><strong>Service:</strong> ${quoteData.serviceType}</p>
+    </div>
+
+    <div class="section">
+        <h2>Tradesperson Details</h2>
+        <p><strong>Name:</strong> ${quoteData.tradespersonName}</p>
+        <p><strong>Email:</strong> ${quoteData.tradespersonEmail}</p>
+        <p><strong>Phone:</strong> ${quoteData.tradespersonPhone}</p>
+        <p><strong>License:</strong> ${quoteData.tradespersonLicense}</p>
+    </div>
+
+    <div class="section">
+        <h2>Project Details</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Room Name</th>
+                    <th>Dimensions</th>
+                    <th>Square Meters</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${roomRows}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="summary">
+        <h2>Quote Summary</h2>
+        <table>
+            <tr><td><strong>Labour:</strong></td><td style="text-align: right;">$${formatCurrency(quoteData.totals.labour)}</td></tr>
+            <tr><td><strong>Materials:</strong></td><td style="text-align: right;">$${formatCurrency(quoteData.totals.materials)}</td></tr>
+            <tr><td><strong>Travel:</strong></td><td style="text-align: right;">$${formatCurrency(quoteData.totals.travel)}</td></tr>
+            <tr><td><strong>Installation:</strong></td><td style="text-align: right;">$${formatCurrency(quoteData.totals.installation)}</td></tr>
+            <tr style="border-top: 2px solid #333;"><td><strong>Subtotal (excl. GST):</strong></td><td style="text-align: right;"><strong>$${formatCurrency(quoteData.totals.subtotal)}</strong></td></tr>
+            <tr><td><strong>GST (15%):</strong></td><td style="text-align: right;">$${formatCurrency(quoteData.totals.gst)}</td></tr>
+            <tr class="total-row"><td><strong>TOTAL (incl. GST):</strong></td><td style="text-align: right;"><strong>$${formatCurrency(quoteData.totals.final)}</strong></td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h3>Terms & Conditions</h3>
+        <p>• This quote is valid for 14 days from the date of issue.</p>
+        <p>• Payment terms: 50% deposit required to commence work, balance due upon completion.</p>
+        <p>• All work is covered by our comprehensive warranty.</p>
+        <p>• We are fully licensed and insured for your peace of mind.</p>
+    </div>
+
+    <p style="text-align: center; color: #666; margin-top: 30px;">
+        Thank you for choosing Kiwi Trade for your underfloor heating needs.
+    </p>
+</body>
+</html>`;
+}
+
 function verifyToken(id, ts) {
     const hmac = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET);
     hmac.update(`${id}|${ts}`);
@@ -63,8 +173,9 @@ export default async function handler(req, res) {
       tradespersonName
     });
 
-    // Generate PDF using our new system
-    let pdfBuffer;
+    // Generate PDF using our new system with HTML backup
+    let pdfBuffer = null;
+    let htmlQuote = null;
     try {
         // Debug quote details
         console.log('📋 Quote details received:', JSON.stringify(quoteDetails, null, 2));
@@ -115,11 +226,19 @@ export default async function handler(req, res) {
         
         console.log('📊 Final quote data for PDF:', JSON.stringify(quoteData, null, 2));
 
-        pdfBuffer = await generateQuotePDF(quoteData);
-        console.log(`✅ PDF generated successfully for Quote ${quoteId}`);
-    } catch (pdfError) {
-        console.error("PDF Generation Error:", pdfError);
-        return res.status(500).json({ success: false, error: "Failed to generate PDF quote." });
+        try {
+            pdfBuffer = await generateQuotePDF(quoteData);
+            console.log(`✅ PDF generated successfully for Quote ${quoteId}`);
+        } catch (pdfError) {
+            console.error("❌ PDF Generation failed, creating HTML backup:", pdfError);
+            
+            // Create HTML backup quote
+            htmlQuote = createHTMLQuote(quoteData);
+            console.log(`✅ HTML backup created for Quote ${quoteId}`);
+        }
+    } catch (generalError) {
+        console.error("General Quote Generation Error:", generalError);
+        return res.status(500).json({ success: false, error: "Failed to generate quote." });
     }
 
     // Update Google Sheet with quote data
@@ -245,15 +364,24 @@ export default async function handler(req, res) {
     if (recipients.length === 0) {
         console.error('❌ No valid email recipients found. ADMIN_EMAIL:', ADMIN_EMAIL, 'tradespersonEmail:', tradespersonEmail);
     } else {
-        const emailOptions = {
-            to: recipients,
-            subject: `ACTION REQUIRED: Review Quote for ${customerName}`,
-            html: emailHtml,
-            attachments: [{
+        // Create attachment - PDF if available, HTML backup if not
+        const attachment = pdfBuffer ? 
+            {
                 filename: `Quote_${quoteId}.pdf`,
                 content: pdfBuffer,
                 contentType: 'application/pdf'
-            }]
+            } :
+            {
+                filename: `Quote_${quoteId}.html`,
+                content: htmlQuote,
+                contentType: 'text/html'
+            };
+
+        const emailOptions = {
+            to: recipients,
+            subject: `ACTION REQUIRED: Review Quote for ${customerName} - $${parseFloat(totalQuote || 0).toFixed(2)}`,
+            html: emailHtml,
+            attachments: [attachment]
         };
 
         try {
@@ -306,15 +434,24 @@ export default async function handler(req, res) {
             </div>
         `;
 
-        const customerEmailOptions = {
-            to: customerEmail.trim(),
-            subject: `📋 Your Quote for ${serviceType} - ${quoteId}`,
-            html: customerEmailHtml,
-            attachments: [{
+        // Create attachment - PDF if available, HTML backup if not
+        const customerAttachment = pdfBuffer ? 
+            {
                 filename: `Quote_${quoteId}.pdf`,
                 content: pdfBuffer,
                 contentType: 'application/pdf'
-            }]
+            } :
+            {
+                filename: `Quote_${quoteId}.html`,
+                content: htmlQuote,
+                contentType: 'text/html'
+            };
+
+        const customerEmailOptions = {
+            to: customerEmail.trim(),
+            subject: `📋 Your Quote for ${serviceType} - $${parseFloat(totalQuote || 0).toFixed(2)} - ${quoteId}`,
+            html: customerEmailHtml,
+            attachments: [customerAttachment]
         };
 
         try {
@@ -360,15 +497,24 @@ export default async function handler(req, res) {
             </div>
         `;
 
-        const tradespersonEmailOptions = {
-            to: tradespersonEmail.trim(),
-            subject: `📋 Quote Sent to Customer - ${serviceType} - ${quoteId}`,
-            html: tradespersonEmailHtml,
-            attachments: [{
+        // Create attachment - PDF if available, HTML backup if not
+        const tradespersonAttachment = pdfBuffer ? 
+            {
                 filename: `Quote_${quoteId}.pdf`,
                 content: pdfBuffer,
                 contentType: 'application/pdf'
-            }]
+            } :
+            {
+                filename: `Quote_${quoteId}.html`,
+                content: htmlQuote,
+                contentType: 'text/html'
+            };
+
+        const tradespersonEmailOptions = {
+            to: tradespersonEmail.trim(),
+            subject: `📋 Quote Sent to Customer - ${serviceType} - $${parseFloat(totalQuote || 0).toFixed(2)} - ${quoteId}`,
+            html: tradespersonEmailHtml,
+            attachments: [tradespersonAttachment]
         };
 
         try {

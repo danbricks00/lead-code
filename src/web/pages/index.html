@@ -1559,6 +1559,50 @@
             areaSizes: ''
         };
 
+        // Room collection variables
+        let totalRooms = 0;
+        let currentRoom = 0;
+        let roomDetails = [];
+
+        // Smart dimension parsing function
+        function parseDimensions(input) {
+            const cleanInput = input.toLowerCase().replace(/[^\d\.\sx]/g, '').trim();
+            
+            // Pattern 1: Direct square meters (e.g., "25", "25.5", "25 sqm")
+            const directSqmMatch = cleanInput.match(/^(\d+\.?\d*)\s*$/);
+            if (directSqmMatch) {
+                const sqm = parseFloat(directSqmMatch[1]);
+                return {
+                    originalInput: input,
+                    sqm: sqm,
+                    dimensions: null,
+                    format: 'direct_sqm'
+                };
+            }
+            
+            // Pattern 2: Dimensions (e.g., "10 x 5", "7.07 x 7.07", "4m x 3m")
+            const dimensionMatch = cleanInput.match(/(\d+\.?\d*)\s*x\s*(\d+\.?\d*)/);
+            if (dimensionMatch) {
+                const width = parseFloat(dimensionMatch[1]);
+                const length = parseFloat(dimensionMatch[2]);
+                const sqm = width * length;
+                return {
+                    originalInput: input,
+                    sqm: sqm,
+                    dimensions: { width, length },
+                    format: 'dimensions'
+                };
+            }
+            
+            return null; // Invalid format
+        }
+
+        function handleRoomDetails() {
+            if (currentRoom < totalRooms) {
+                addMessage(`What's the name of room ${currentRoom + 1}?`);
+            }
+        }
+
         function resetChatState() {
             chatState = {
                 step: 'welcome',
@@ -1701,22 +1745,90 @@
                         addMessage('How many areas are you planning to install underfloor heating in?');
                         break;
                     case 'areas_count':
+                        const roomCount = parseInt(message);
+                        if (isNaN(roomCount) || roomCount < 1) {
+                            addMessage('Please enter a valid number of areas (e.g., 1, 2, 3).');
+                            return;
+                        }
+                        totalRooms = roomCount;
+                        currentRoom = 0;
+                        roomDetails = [];
                         chatState.areasCount = message;
-                        chatState.step = 'area_sizes';
-                        addMessage('How big is each area? You can list like: kitchen 12m², living room 25m².');
+                        chatState.step = 'room_details';
+                        handleRoomDetails();
                         break;
-                    case 'area_sizes':
-                        chatState.areaSizes = message;
-                        chatState.step = 'collect_details_intro';
-                        addMessage("Before we proceed, we need to collect some of your details to allocate a tradesman that services your area.");
-                        setTimeout(() => {
-                            addTypingIndicator();
-                            setTimeout(() => {
-                                removeTypingIndicator();
-                                chatState.step = 'customer_name';
-                                addMessage("What's your name?");
-                            }, 800);
-                        }, 1500);
+
+                    case 'room_details':
+                        if (currentRoom < totalRooms) {
+                            // Collect room name
+                            if (!roomDetails[currentRoom]) {
+                                roomDetails[currentRoom] = { name: message };
+                                addMessage(`What are the dimensions of the ${message}?
+                                
+You can enter:
+• Direct square meters: "25" or "25.5"
+• Length x Width: "10 x 5" or "7.07 x 7.07"
+• With units: "4m x 3m" or "25 sqm"`);
+                            } else {
+                                // Parse room dimensions intelligently
+                                const parsed = parseDimensions(message);
+                                
+                                if (!parsed) {
+                                    addMessage(`Sorry, I couldn't understand that format. Please try:
+• Direct square meters: "25" or "25.5"
+• Length x Width: "10 x 5" or "7.07 x 7.07"
+• With units: "4m x 3m" or "25 sqm"`);
+                                    return;
+                                }
+                                
+                                // Store structured data
+                                roomDetails[currentRoom].dimensions = parsed.originalInput;
+                                roomDetails[currentRoom].sqm = parsed.sqm;
+                                roomDetails[currentRoom].parsedDimensions = parsed.dimensions;
+                                roomDetails[currentRoom].format = parsed.format;
+                                
+                                // Provide confirmation
+                                if (parsed.format === 'direct_sqm') {
+                                    addMessage(`✅ ${roomDetails[currentRoom].name}: ${parsed.sqm} square meters`);
+                                } else {
+                                    addMessage(`✅ ${roomDetails[currentRoom].name}: ${parsed.dimensions.width}m x ${parsed.dimensions.length}m = ${parsed.sqm} square meters`);
+                                }
+                                
+                                currentRoom++;
+                                
+                                if (currentRoom < totalRooms) {
+                                    setTimeout(() => {
+                                        addMessage(`What's the name of room ${currentRoom + 1}?`);
+                                    }, 1000);
+                                } else {
+                                    // Calculate total and move to next step
+                                    const totalSqm = roomDetails.reduce((sum, room) => sum + room.sqm, 0);
+                                    chatState.areaSizes = roomDetails.map(room => {
+                                        if (room.format === 'direct_sqm') {
+                                            return `${room.name}: ${room.sqm}m²`;
+                                        } else {
+                                            return `${room.name}: ${room.parsedDimensions.width}m x ${room.parsedDimensions.length}m (${room.sqm}m²)`;
+                                        }
+                                    }).join(', ');
+                                    
+                                    setTimeout(() => {
+                                        addMessage(`Perfect! Total area: ${totalSqm.toFixed(1)} square meters across ${totalRooms} room(s).`);
+                                        setTimeout(() => {
+                                            chatState.step = 'collect_details_intro';
+                                            addMessage("Before we proceed, we need to collect some of your details to allocate a tradesman that services your area.");
+                                            setTimeout(() => {
+                                                addTypingIndicator();
+                                                setTimeout(() => {
+                                                    removeTypingIndicator();
+                                                    chatState.step = 'customer_name';
+                                                    addMessage("What's your name?");
+                                                }, 800);
+                                            }, 1500);
+                                        }, 2000);
+                                    }, 1000);
+                                }
+                            }
+                        }
                         break;
                     case 'customer_name':
                         chatState.customerName = message;

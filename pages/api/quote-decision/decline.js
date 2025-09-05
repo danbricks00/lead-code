@@ -17,7 +17,7 @@ async function getSheetsClient() {
 }
 
 function verifyToken(id, ts) {
-    const hmac = crypto.createHmac("sha26", process.env.QUOTE_LINK_SECRET);
+    const hmac = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET);
     hmac.update(`${id}|${ts}`);
     return hmac.digest("hex");
 }
@@ -28,8 +28,11 @@ function formatTimestamp(isoString) {
         const date = new Date(isoString);
         return date.toLocaleString('en-NZ', {
             timeZone: 'Pacific/Auckland',
-            dateStyle: 'medium',
-            timeStyle: 'short'
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
         }) + ' NZT';
     } catch (e) {
         return isoString; // Fallback to original string if parsing fails
@@ -102,6 +105,26 @@ export default async function handler(req, res) {
         }
         
         const targetRow = rows[rowIndex];
+        
+        // Check if quote has expired (Valid Until date)
+        const validUntilIndex = header.findIndex(col => 
+            col && (col.toLowerCase().includes('valid until') || 
+                   col.toLowerCase().includes('expiry') || 
+                   col.toLowerCase().includes('expires'))
+        );
+        
+        if (validUntilIndex !== -1 && targetRow[validUntilIndex]) {
+            const validUntilDate = new Date(targetRow[validUntilIndex]);
+            const now = new Date();
+            
+            if (validUntilDate < now) {
+                const expiredMessage = encodeURIComponent(
+                    "This quote has expired and is no longer valid. Please contact us to request a new quote."
+                );
+                return res.redirect(`/quote-status?status=error&message=${expiredMessage}`);
+            }
+        }
+        
         const decisionIndex = header.indexOf('Decision');
         const decisionTimestampIndex = header.indexOf('Decision Timestamp');
 

@@ -175,7 +175,12 @@ export default async function handler(req, res) {
     const { tradespersonName, tradespersonEmail } = quoteDetails;
     const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
     const approveLink = generateAdminDecisionLink('approve', quoteId);
-    const declineLink = generateAdminDecisionLink('decline', quoteId);
+    const declineFormLink = (() => {
+        const ts = Date.now().toString();
+        const token = verifyToken(quoteId, ts);
+        const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
+        return `https://${baseUrl}/admin/decline-form?quoteId=${quoteId}&ts=${ts}&token=${token}`;
+    })();
 
     console.log('DEBUG - Email details:', { 
         tradespersonName, 
@@ -205,7 +210,7 @@ export default async function handler(req, res) {
             
             <div style="margin: 20px 0; text-align: center;">
                 <a href="${approveLink}" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-right: 10px;">✅ Approve & Send to Customer</a>
-                <a href="${declineLink}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px;">❌ Decline Quote</a>
+                <a href="${declineFormLink}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px;">❌ Decline Quote</a>
             </div>
             
             <p><em>Quote ID: ${quoteId}</em></p>

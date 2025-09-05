@@ -29,6 +29,8 @@ const QuoteSubmitPage = () => {
   const [parsedRooms, setParsedRooms] = useState([]);
   const [leadDetails, setLeadDetails] = useState(null); // To store fetched lead data
   const [isEditing, setIsEditing] = useState(false); // New state for edit mode
+  const [isResubmission, setIsResubmission] = useState(false); // Track if this is a resubmission
+  const [declineReason, setDeclineReason] = useState(''); // Store admin's decline reason
   
   // Set default expiry date to 2 weeks from now
   const defaultExpiryDate = new Date();
@@ -83,6 +85,42 @@ const QuoteSubmitPage = () => {
             });
             setIsEditing(true);
           }
+
+          // Check for existing quote data (resubmission)
+          try {
+            const quoteResponse = await fetch(`/api/get-quote-details?quoteId=${quoteId}`);
+            const quoteResult = await quoteResponse.json();
+            
+            if (quoteResult.success && quoteResult.quote) {
+              const quote = quoteResult.quote;
+              
+              // Check if this is a declined quote that can be resubmitted
+              if (quote['Admin Status'] === 'Declined' && quote['Reesubmission Allowed'] === 'Yes') {
+                setIsResubmission(true);
+                setDeclineReason(quote['Decline Reason'] || 'Quote needs revision');
+                
+                // Pre-populate the form with existing quote data
+                if (quote['TradesPerson Name']) setTradesperson(prev => ({...prev, name: quote['TradesPerson Name']}));
+                if (quote['TradePerson Email']) setTradesperson(prev => ({...prev, email: quote['TradePerson Email']}));
+                
+                setCosts({
+                  labourRate: quote['Labour Cost'] || '',
+                  labourHours: quote['Labour Hour'] || '',
+                  materialsCost: quote['Materials Cost'] || '',
+                  materialsQuantity: quote['Materials Quanitity'] || '',
+                  travelCost: quote['Travel Cost'] || '',
+                  travelDistance: quote['Travel Distance'] || '',
+                  installationCost: quote['Installation Cost'] || '',
+                });
+                
+                setNotes(quote['Notes'] || '');
+                if (quote['Quote Valid Unitl']) setValidUntil(quote['Quote Valid Unitl']);
+              }
+            }
+          } catch (quoteError) {
+            console.log("[FORM] No existing quote data found (normal for new quotes)");
+          }
+
         } catch (error) {
           console.error("[FORM] Fatal fetch error, enabling edit mode.", error);
           setLeadDetails({
@@ -215,8 +253,22 @@ const QuoteSubmitPage = () => {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h1 style={styles.header}>Quote Submission Form</h1>
+        <h1 style={styles.header}>
+          {isResubmission ? '🔄 Quote Resubmission Form' : 'Quote Submission Form'}
+        </h1>
         <p><strong>Quote ID:</strong> {quoteId}</p>
+        
+        {isResubmission && (
+          <div style={styles.resubmissionBanner}>
+            <h3 style={styles.bannerTitle}>⚠️ Quote Declined - Revision Required</h3>
+            <p style={styles.bannerText}>
+              <strong>Admin Feedback:</strong> {declineReason}
+            </p>
+            <p style={styles.bannerInstructions}>
+              Please review the feedback above and update your quote accordingly before resubmitting.
+            </p>
+          </div>
+        )}
 
         <div style={styles.section}>
           <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
@@ -540,6 +592,32 @@ const styles = {
     cursor: 'pointer',
     fontSize: '14px',
     marginTop: '10px'
+  },
+
+  // Resubmission banner styles
+  resubmissionBanner: {
+    background: '#fff3cd',
+    border: '2px solid #ffeaa7',
+    borderRadius: '8px',
+    padding: '20px',
+    margin: '20px 0',
+    borderLeft: '5px solid #f39c12'
+  },
+  bannerTitle: {
+    color: '#856404',
+    margin: '0 0 10px 0',
+    fontSize: '1.2em'
+  },
+  bannerText: {
+    color: '#856404',
+    margin: '5px 0',
+    lineHeight: '1.4'
+  },
+  bannerInstructions: {
+    color: '#856404',
+    margin: '10px 0 0 0',
+    fontStyle: 'italic',
+    fontSize: '0.9em'
   }
 };
 

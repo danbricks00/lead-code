@@ -73,47 +73,56 @@ export default async function handler(req, res) {
         const leadId = quoteData['LeadiD'];
         console.log(`[3] Extracted LeadiD: ${leadId}`);
 
-        // 2. Find all lead details from the "Leads" tab
-        const leadData = await getSheetsData({
-            sheets, spreadsheetId,
-            tab: 'Leads',
-            searchColumn: 'Lead',
-            searchValue: leadId,
-            columnsToFetch: [
-                'CustomerName', 'CustomerEmail', 'CustomerPhone', 
-                'ServiceType', 'ProjectDetails', 'ProjectSize', 'Location', 'Budget', 'Timeline',
-                'SpecificDetails', 'Status', 'Lead', 'EmailStatus', 'Rooms', 'TotalSqm'
-            ]
-        });
-        console.log(`[4] Result from "Leads" tab:`, leadData ? JSON.stringify(leadData) : 'null');
-
-        // 3. If Rooms column is not found by name, try to get it by position
-        if (leadData && !leadData.Rooms) {
-            console.log('[5] Rooms column not found by name, trying to get by position...');
-            try {
-                const range = 'Leads!A:Z';
-                const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
-                const rows = response.data.values;
-                
-                if (rows && rows.length >= 2) {
-                    const header = rows[0];
-                    const dataRow = rows.find(row => row[header.indexOf('Lead')] === leadId);
-                    
-                    if (dataRow) {
-                        // Try to find Rooms data in the last few columns (where we store it)
-                        for (let i = Math.max(0, dataRow.length - 3); i < dataRow.length; i++) {
-                            const cellValue = dataRow[i];
-                            if (cellValue && cellValue.startsWith('[') && cellValue.includes('sqm')) {
-                                leadData.Rooms = cellValue;
-                                console.log(`[6] Found Rooms data in column ${i}:`, cellValue);
-                                break;
-                            }
+        // 2. Get all data from the "Leads" tab to handle any column structure
+        console.log('[4] Getting all lead data to handle flexible column structure...');
+        let leadData;
+        try {
+            const range = 'Leads!A:Z';
+            const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
+            const rows = response.data.values;
+            
+            if (!rows || rows.length < 2) {
+                throw new Error('No data found in Leads sheet');
+            }
+            
+            const header = rows[0];
+            const dataRow = rows.find(row => row[header.indexOf('Lead')] === leadId);
+            
+            if (!dataRow) {
+                throw new Error(`Lead with ID ${leadId} not found in Leads sheet`);
+            }
+            
+            // Build leadData object by mapping headers to values
+            leadData = {};
+            header.forEach((headerName, index) => {
+                if (headerName && dataRow[index]) {
+                    leadData[headerName] = dataRow[index];
+                }
+            });
+            
+            console.log(`[5] Lead data retrieved:`, JSON.stringify(leadData, null, 2));
+            
+            // Look for room data in any column that might contain it
+            if (!leadData.Rooms) {
+                console.log('[6] Looking for room data in all columns...');
+                for (let i = 0; i < dataRow.length; i++) {
+                    const cellValue = dataRow[i];
+                    if (cellValue && typeof cellValue === 'string') {
+                        // Check if this looks like room data (JSON array with sqm)
+                        if ((cellValue.startsWith('[') && cellValue.includes('sqm')) || 
+                            (cellValue.includes('"sqm"') && cellValue.includes('"name"'))) {
+                            leadData.Rooms = cellValue;
+                            console.log(`[7] Found room data in column "${header[i]}" (index ${i}):`, cellValue);
+                            break;
                         }
                     }
                 }
-            } catch (error) {
-                console.error('[ERROR] Failed to get Rooms data by position:', error);
             }
+            
+            console.log(`[8] Final lead data:`, JSON.stringify(leadData, null, 2));
+        } catch (error) {
+            console.error('[ERROR] Failed to get lead data:', error);
+            throw error;
         }
 
         if (!leadData) {

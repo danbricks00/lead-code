@@ -70,21 +70,25 @@ const QuoteSubmitPage = () => {
           if (result.success && result.data) {
             console.log('[FORM] Success. Setting lead details:', result.data);
             setLeadDetails(result.data);
-            if (result.data.Rooms) {
+
+            // Make room data lookup case-insensitive to handle inconsistencies
+            const roomDataString = result.data.Rooms || result.data.rooms; 
+
+            if (roomDataString) {
                 try {
-                    const roomsData = JSON.parse(result.data.Rooms);
+                    const roomsData = JSON.parse(roomDataString);
                     setParsedRooms(Array.isArray(roomsData) ? roomsData : []);
                     
                     // Auto-populate materials quantity with total square meters if available
                     if (roomsData && Array.isArray(roomsData)) {
                         const totalSqm = roomsData.reduce((sum, room) => {
-                            return sum + (room.sqm || 0);
+                            return sum + (parseFloat(room.sqm) || 0);
                         }, 0);
                         
                         if (totalSqm > 0) {
                             setCosts(prev => ({
                                 ...prev,
-                                materialsQuantity: totalSqm.toString()
+                                materialsQuantity: totalSqm.toFixed(1).toString()
                             }));
                             console.log(`[FORM] Auto-populated materials quantity: ${totalSqm} sqm`);
                         }

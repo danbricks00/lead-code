@@ -169,16 +169,18 @@
         
         /* Mobile menu toggle button */
         .menu-toggle {
-            display: inline-flex;
+            display: none; /* Hidden by default, shown on mobile */
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 44px; 
-            height: 44px;
+            width: 48px; 
+            height: 48px;
             border: none;
             background: transparent;
             cursor: pointer;
             border-radius: 8px;
             transition: background-color 0.3s;
+            position: relative;
         }
         
         .menu-toggle:hover {
@@ -186,12 +188,13 @@
         }
         
         .menu-toggle .bar {
-            width: 25px; 
+            width: 28px; 
             height: 3px; 
             background: #1a1a1a; 
             margin: 3px 0; 
             transition: 0.3s; 
             border-radius: 2px;
+            display: block;
         }
         
         .menu-toggle[aria-expanded="true"] .bar:nth-child(2) {
@@ -207,10 +210,10 @@
         }
         
         /* Desktop vs mobile/tablet visibility */
-        @media (min-width: 1200px) {
+        @media (min-width: 900px) {
             .nav-desktop { 
                 display: flex; 
-                gap: 1.5rem; 
+                gap: 1.2rem; 
             }
             .menu-toggle { 
                 display: none; 
@@ -218,12 +221,41 @@
         }
         
         /* Mobile Navigation - Universal Mobile Styles */
-        @media (max-width: 768px) {
+        @media (max-width: 899px) {
             .nav-desktop { 
-                display: none; 
+                display: none !important; 
             }
             .menu-toggle { 
-                display: inline-flex !important; 
+                display: flex !important; 
+            }
+            
+            /* Ensure navigation is compact on mobile */
+            .nav-container {
+                padding: 0 15px;
+                height: 100%;
+            }
+            
+            .nav-logo h2 {
+                font-size: 1.6rem;
+            }
+            
+            .nav-logo .logo-icon {
+                font-size: 1.8rem;
+            }
+        }
+        
+        /* Extra styles for very small screens */
+        @media (max-width: 480px) {
+            .nav-container {
+                padding: 0 10px;
+            }
+            
+            .nav-logo h2 {
+                font-size: 1.4rem;
+            }
+            
+            .nav-logo .logo-icon {
+                font-size: 1.6rem;
             }
         }
         

@@ -143,7 +143,7 @@
         .nav-link.login-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
+        } /*media Query for Mobile responsiveness Navigation */
         @media (max-width: 480px) {
             .nav-container {
                 padding: 0 10px;
@@ -699,25 +699,10 @@
             border: none !important;
         }
 
-        /* Extra override for dark mode specifically */
-        @media (prefers-color-scheme: dark) {
-            .user-message, div.user-message, .message.user-message {
-                background-color: #1a73e8 !important;
-                color: white !important;
-            }
-        }
-
-        /* Force user message styling in all color schemes */
-        .message.user-message {
-            background: #007bff !important;
-            background-color: #007bff !important;
-            color: white !important;
-        }
-
-        /* Override any Chrome theme or system colors */
-        .user-message,
-        div.user-message,
+        /* AGGRESSIVE OVERRIDES FOR ALL BROWSERS AND THEMES */
         .message.user-message,
+        div.user-message,
+        .user-message,
         div.message.user-message {
             background: #007bff !important;
             background-color: #007bff !important;
@@ -725,13 +710,45 @@
             border: none !important;
         }
 
-        /* Override autofill and system colors */
+        .message.bot-message,
+        div.bot-message,
+        .bot-message,
+        div.message.bot-message {
+            background: #f1f0f0 !important;
+            background-color: #f1f0f0 !important;
+            color: black !important;
+        }
+
+        /* Override Chrome's forced dark mode colors */
+        @media (prefers-color-scheme: dark) {
+            .message.user-message,
+            div.user-message,
+            .user-message,
+            div.message.user-message {
+                background: #007bff !important;
+                background-color: #007bff !important;
+                color: white !important;
+            }
+            
+            .message.bot-message,
+            div.bot-message,
+            .bot-message,
+            div.message.bot-message {
+                background: #f1f0f0 !important;
+                background-color: #f1f0f0 !important;
+                color: black !important;
+            }
+        }
+
+        /* Override any system or browser theme interference */
         .user-message:-webkit-autofill,
         .user-message:-webkit-autofill:hover,
-        .user-message:-webkit-autofill:focus {
+        .user-message:-webkit-autofill:focus,
+        .user-message:-webkit-autofill:active {
             background: #007bff !important;
             background-color: #007bff !important;
             color: white !important;
+            -webkit-box-shadow: 0 0 0 30px #007bff inset !important;
         }
         
         .quick-options { 

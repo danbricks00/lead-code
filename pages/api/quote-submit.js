@@ -1,5 +1,5 @@
 import { getGoogleSheetsClient, getSpreadsheetId } from '../../lib/googleSheets.js';
-import { generateQuotePDF, generateQuoteDOCX } from '../../lib/pdfGenerator.js';
+import { generateQuotePDF, generateQuoteHTML, generateQuoteDOCX } from '../../lib/pdfGenerator.js';
 import { sendEmail } from '../../lib/emailHelper';
 import crypto from "crypto";
 
@@ -232,18 +232,25 @@ export default async function handler(req, res) {
             pdfBuffer = await generateQuotePDF(quoteData);
             console.log(`✅ PDF generated successfully for Quote ${quoteId}`);
         } catch (pdfError) {
-            console.error("❌ PDF Generation failed, trying DOCX backup:", pdfError);
+            console.error("❌ PDF Generation failed, trying HTML backup:", pdfError);
             
             try {
-                // Try DOCX backup first
-                docxBuffer = await generateQuoteDOCX(quoteData);
-                console.log(`✅ DOCX backup created successfully for Quote ${quoteId}`);
-            } catch (docxError) {
-                console.error("❌ DOCX Generation also failed, creating HTML backup:", docxError);
+                // Try formatted HTML backup (maintains all styling)
+                htmlQuote = generateQuoteHTML(quoteData);
+                console.log(`✅ Professional HTML quote created for Quote ${quoteId}`);
+            } catch (htmlError) {
+                console.error("❌ HTML Generation also failed, trying DOCX backup:", htmlError);
                 
-                // Create HTML backup as final fallback
-                htmlQuote = createHTMLQuote(quoteData);
-                console.log(`✅ HTML backup created for Quote ${quoteId}`);
+                try {
+                    // DOCX as final fallback (basic formatting only)
+                    docxBuffer = await generateQuoteDOCX(quoteData);
+                    console.log(`✅ DOCX backup created as final fallback for Quote ${quoteId}`);
+                } catch (docxError) {
+                    console.error("❌ All quote generation methods failed:", docxError);
+                    // Create basic HTML as absolute last resort
+                    htmlQuote = createHTMLQuote(quoteData);
+                    console.log(`⚠️ Basic HTML backup created for Quote ${quoteId}`);
+                }
             }
         }
     } catch (generalError) {
@@ -374,13 +381,19 @@ export default async function handler(req, res) {
     if (recipients.length === 0) {
         console.error('❌ No valid email recipients found. ADMIN_EMAIL:', ADMIN_EMAIL, 'tradespersonEmail:', tradespersonEmail);
     } else {
-        // Create attachment - PDF preferred, DOCX backup, HTML final fallback
+        // Create attachment - PDF preferred, HTML backup (maintains formatting), DOCX final fallback
         let attachment;
         if (pdfBuffer) {
             attachment = {
                 filename: `Quote_${quoteId}.pdf`,
                 content: pdfBuffer,
                 contentType: 'application/pdf'
+            };
+        } else if (htmlQuote) {
+            attachment = {
+                filename: `Quote_${quoteId}.html`,
+                content: Buffer.from(htmlQuote, 'utf8'),
+                contentType: 'text/html'
             };
         } else if (docxBuffer) {
             attachment = {
@@ -390,9 +403,9 @@ export default async function handler(req, res) {
             };
         } else {
             attachment = {
-                filename: `Quote_${quoteId}.html`,
-                content: htmlQuote,
-                contentType: 'text/html'
+                filename: `Quote_${quoteId}.txt`,
+                content: Buffer.from(`Quote ${quoteId} - Error generating attachments`, 'utf8'),
+                contentType: 'text/plain'
             };
         }
 
@@ -466,6 +479,12 @@ export default async function handler(req, res) {
                 content: pdfBuffer,
                 contentType: 'application/pdf'
             };
+        } else if (htmlQuote) {
+            customerAttachment = {
+                filename: `Quote_${quoteId}.html`,
+                content: Buffer.from(htmlQuote, 'utf8'),
+                contentType: 'text/html'
+            };
         } else if (docxBuffer) {
             customerAttachment = {
                 filename: `Quote_${quoteId}.docx`,
@@ -474,9 +493,9 @@ export default async function handler(req, res) {
             };
         } else {
             customerAttachment = {
-                filename: `Quote_${quoteId}.html`,
-                content: htmlQuote,
-                contentType: 'text/html'
+                filename: `Quote_${quoteId}.txt`,
+                content: Buffer.from(`Quote ${quoteId} - Error generating attachments`, 'utf8'),
+                contentType: 'text/plain'
             };
         }
 
@@ -549,6 +568,12 @@ export default async function handler(req, res) {
                 content: pdfBuffer,
                 contentType: 'application/pdf'
             };
+        } else if (htmlQuote) {
+            tradespersonAttachment = {
+                filename: `Quote_${quoteId}.html`,
+                content: Buffer.from(htmlQuote, 'utf8'),
+                contentType: 'text/html'
+            };
         } else if (docxBuffer) {
             tradespersonAttachment = {
                 filename: `Quote_${quoteId}.docx`,
@@ -557,9 +582,9 @@ export default async function handler(req, res) {
             };
         } else {
             tradespersonAttachment = {
-                filename: `Quote_${quoteId}.html`,
-                content: htmlQuote,
-                contentType: 'text/html'
+                filename: `Quote_${quoteId}.txt`,
+                content: Buffer.from(`Quote ${quoteId} - Error generating attachments`, 'utf8'),
+                contentType: 'text/plain'
             };
         }
 

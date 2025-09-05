@@ -1,5 +1,5 @@
 import { getGoogleSheetsClient, getSpreadsheetId } from '../../lib/googleSheets.js';
-import { xero, initializeXero } from "../../lib/xero";
+import { initializeXeroDirectApi, makeXeroApiCall, getXeroQuoteAsPdf } from '../../lib/xeroDirectApi.js';
 import nodemailer from "nodemailer";
 import crypto from "crypto";
 import { google } from "googleapis";
@@ -49,32 +49,47 @@ export default async function handler(req, res) {
         return res.status(403).json({ success: false, error: 'Invalid or expired link.' });
     }
     
-    // --- XERO INTEGRATION ---
-    let xeroClient, tenantId;
+    // --- XERO INTEGRATION (DIRECT API) ---
+    let xeroConfig;
     try {
-        xeroClient = await initializeXero();
-        tenantId = xeroClient.tenants[0].tenantId;
+        xeroConfig = await initializeXeroDirectApi();
+        console.log('Xero Direct API initialized successfully');
     } catch (initError) {
-        console.error("Xero Initialization Error:", initError);
-        return res.status(500).json({ success: false, error: "Failed during Xero client initialization." });
+        console.error("Xero Direct API Initialization Error:", initError);
+        return res.status(500).json({ success: false, error: "Failed during Xero API initialization." });
     }
 
     // 1. Find or Create Contact in Xero
     let contactID;
     const { customerName, customerEmail, customerPhone } = leadDetails;
     try {
-      const getContactResponse = await xeroClient.accountingApi.getContacts(tenantId, null, `EmailAddress=="${customerEmail}"`);
-      if (getContactResponse.body.contacts && getContactResponse.body.contacts.length > 0) {
-          contactID = getContactResponse.body.contacts[0].contactID;
+      // Search for existing contact by email
+      const contactsResponse = await makeXeroApiCall(
+        `Contacts?where=EmailAddress%3D%3D"${encodeURIComponent(customerEmail)}"`,
+        'GET',
+        null,
+        xeroConfig
+      );
+      
+      if (contactsResponse.Contacts && contactsResponse.Contacts.length > 0) {
+          contactID = contactsResponse.Contacts[0].ContactID;
           console.log(`Found existing Xero contact: ${contactID}`);
       } else {
-          const newContact = { contacts: [{ name: customerName, emailAddress: customerEmail, phones: [{ phoneType: 'DEFAULT', phoneNumber: customerPhone }] }] };
-          const createContactResponse = await xeroClient.accountingApi.createContacts(tenantId, newContact);
-          contactID = createContactResponse.body.contacts[0].contactID;
+          // Create new contact
+          const newContactData = {
+            Contacts: [{
+              Name: customerName,
+              EmailAddress: customerEmail,
+              Phones: [{ PhoneType: 'DEFAULT', PhoneNumber: customerPhone }]
+            }]
+          };
+          
+          const createContactResponse = await makeXeroApiCall('Contacts', 'POST', newContactData, xeroConfig);
+          contactID = createContactResponse.Contacts[0].ContactID;
           console.log(`Created new Xero contact: ${contactID}`);
       }
     } catch (contactError) {
-        console.error("Xero Contact Error:", contactError.response ? JSON.stringify(contactError.response.body, null, 2) : contactError);
+        console.error("Xero Contact Error:", contactError);
         return res.status(500).json({ success: false, error: "Failed to find or create Xero contact." });
     }
 
@@ -85,42 +100,38 @@ export default async function handler(req, res) {
         travelCost, travelDistance, installationCost, totalQuote, notes, validUntil
     } = quoteDetails;
     try {
-      const quoteToCreate = {
-          quotes: [{
-              contact: { contactID: contactID },
-              date: new Date().toISOString().split('T')[0], // Today's date
-              expiryDate: new Date(validUntil).toISOString().split('T')[0],
-              title: `Quote for ${leadDetails.ServiceType || 'services'} for ${leadDetails.CustomerName}`,
-              summary: notes,
-              lineItems: [
-                  { description: 'Labour', quantity: labourHours, unitAmount: labourRate, accountCode: '200' },
-                  { description: 'Materials', quantity: materialsQuantity, unitAmount: materialsCost, accountCode: '200' },
-                  { description: 'Travel', quantity: travelDistance, unitAmount: travelCost, accountCode: '200' },
-                  { description: 'Installation', quantity: 1, unitAmount: installationCost, accountCode: '200' }
+      const quoteData = {
+          Quotes: [{
+              Contact: { ContactID: contactID },
+              Date: new Date().toISOString().split('T')[0], // Today's date
+              ExpiryDate: new Date(validUntil).toISOString().split('T')[0],
+              Title: `Quote for ${leadDetails.ServiceType || 'services'} for ${leadDetails.CustomerName}`,
+              Summary: notes,
+              LineItems: [
+                  { Description: 'Labour', Quantity: labourHours, UnitAmount: labourRate, AccountCode: '200' },
+                  { Description: 'Materials', Quantity: materialsQuantity, UnitAmount: materialsCost, AccountCode: '200' },
+                  { Description: 'Travel', Quantity: travelDistance, UnitAmount: travelCost, AccountCode: '200' },
+                  { Description: 'Installation', Quantity: 1, UnitAmount: installationCost, AccountCode: '200' }
               ],
-              status: 'DRAFT' // Draft until admin approves
+              Status: 'DRAFT' // Draft until admin approves
           }]
       };
       
-      const createQuoteResponse = await xeroClient.accountingApi.createQuotes(tenantId, quoteToCreate);
-      xeroQuoteId = createQuoteResponse.body.quotes[0].quoteID;
+      const createQuoteResponse = await makeXeroApiCall('Quotes', 'POST', quoteData, xeroConfig);
+      xeroQuoteId = createQuoteResponse.Quotes[0].QuoteID;
       console.log(`Successfully created Xero Quote (Draft): ${xeroQuoteId}`);
     } catch (quoteError) {
-        console.error("Xero Create Quote Error:", quoteError.response ? JSON.stringify(quoteError.response.body, null, 2) : quoteError);
-        if (quoteError.response && quoteError.response.body && quoteError.response.body.Elements) {
-            console.error("Validation Errors:", JSON.stringify(quoteError.response.body.Elements[0].ValidationErrors, null, 2));
-        }
+        console.error("Xero Create Quote Error:", quoteError);
         return res.status(500).json({ success: false, error: "Failed to create quote in Xero." });
     }
 
     // 3. Get PDF of the Quote from Xero
     let pdfBuffer;
     try {
-        const quotePdf = await xeroClient.accountingApi.getQuoteAsPdf(tenantId, xeroQuoteId, { headers: { 'Accept': 'application/pdf' } });
-        pdfBuffer = Buffer.from(quotePdf.body);
+        pdfBuffer = await getXeroQuoteAsPdf(xeroQuoteId, xeroConfig);
         console.log(`Successfully downloaded PDF for Quote ${xeroQuoteId}`);
     } catch (pdfError) {
-        console.error("Xero Get PDF Error:", pdfError.response ? JSON.stringify(pdfError.response.body, null, 2) : pdfError);
+        console.error("Xero Get PDF Error:", pdfError);
         return res.status(500).json({ success: false, error: "Failed to download PDF quote from Xero." });
     }
 

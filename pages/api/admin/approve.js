@@ -1,5 +1,5 @@
 import { getGoogleSheetsClient, getSpreadsheetId } from "../../../lib/googleSheets.js";
-import { xero, initializeXero } from "../../../lib/xero";
+import { initializeXeroDirectApi, makeXeroApiCall, getXeroQuoteAsPdf } from "../../../lib/xeroDirectApi.js";
 import { sendEmail } from '../../../lib/emailHelper';
 import crypto from "crypto";
 import { google } from "googleapis"; // This might be removable if not used directly
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const tenantId = await initializeXero();
+        const xeroConfig = await initializeXeroDirectApi();
         const sheets = getGoogleSheetsClient();
         const spreadsheetId = getSpreadsheetId();
 
@@ -77,11 +77,10 @@ export default async function handler(req, res) {
         if (!leadData) return res.redirect(`/quote-status?status=error&message=Lead data not found.`);
 
         // 2. Update Xero Quote status from DRAFT to SENT
-        await xero.accountingApi.updateQuote(tenantId, quoteData['Xero Quote iD'], { quotes: [{ status: 'SENT' }] });
+        await makeXeroApiCall(`Quotes/${quoteData['Xero Quote iD']}`, 'POST', { Quotes: [{ Status: 'SENT' }] }, xeroConfig);
         
         // 3. Get the final PDF from Xero
-        const quotePdf = await xero.accountingApi.getQuoteAsPdf(tenantId, quoteData['Xero Quote iD'], { headers: { 'Accept': 'application/pdf' } });
-        const pdfBuffer = Buffer.from(quotePdf.body);
+        const pdfBuffer = await getXeroQuoteAsPdf(quoteData['Xero Quote iD'], xeroConfig);
 
         // 4. Send the quote email to the customer with Xero PDF
         const customerEmailOptions = {

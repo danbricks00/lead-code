@@ -56,34 +56,38 @@ const QuoteSubmitPage = () => {
   useEffect(() => {
     if (isReady && quoteId) {
       const fetchLeadDetails = async () => {
+        console.log(`[FORM] useEffect triggered. Fetching details for quoteId: ${quoteId}`);
         try {
           const response = await fetch(`/api/get-lead-details?quoteId=${quoteId}`);
           const result = await response.json();
-          if (result.success && result.data) { // Check for result.data
+          
+          console.log('[FORM] API Response received:', result);
+
+          if (result.success && result.data) {
+            console.log('[FORM] Success. Setting lead details:', result.data);
             setLeadDetails(result.data);
             if (result.data.Rooms) {
                 try {
                     const roomsData = JSON.parse(result.data.Rooms);
                     setParsedRooms(Array.isArray(roomsData) ? roomsData : []);
                 } catch (e) {
-                    console.error("Failed to parse rooms data from API:", e);
+                    console.error("[FORM] Failed to parse rooms data:", e);
                     setParsedRooms([]);
                 }
             }
           } else {
-            console.error("API Error:", result.error || "Data object not found. Enabling edit mode.");
-            // If fetching fails, initialize an empty object to allow editing
+            console.error("[FORM] API Error:", result.error || "Data object not found. Enabling edit mode.");
             setLeadDetails({
-                'Customer Name': '', 'Customer Email': '', 'Customer Phone': '',
-                'Service Type': 'Underfloor Heating', 'Area': '', 'Suburb': '', 'Timeline': ''
+                'CustomerName': '', 'CustomerEmail': '', 'CustomerPhone': '',
+                'ServiceType': 'Underfloor Heating', 'Area': '', 'Suburb': '', 'Timelline': ''
             });
-            setIsEditing(true); // Automatically enable editing if data fetch fails
+            setIsEditing(true);
           }
         } catch (error) {
-          console.error("Failed to fetch lead details, enabling edit mode.", error);
+          console.error("[FORM] Fatal fetch error, enabling edit mode.", error);
           setLeadDetails({
-            'Customer Name': '', 'Customer Email': '', 'Customer Phone': '',
-            'Service Type': 'Underfloor Heating', 'Area': '', 'Suburb': '', 'Timeline': ''
+            'CustomerName': '', 'CustomerEmail': '', 'CustomerPhone': '',
+            'ServiceType': 'Underfloor Heating', 'Area': '', 'Suburb': '', 'Timelline': ''
           });
           setIsEditing(true);
         }

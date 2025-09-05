@@ -40,59 +40,63 @@ async function getSheetsData(options) {
 }
 
 export default async function handler(req, res) {
+    console.log("\n--- NEW GET-LEAD-DETAILS REQUEST ---");
     if (req.method !== 'GET') {
         return res.status(405).json({ success: false, error: 'Method Not Allowed' });
     }
 
     const { quoteId } = req.query;
+    console.log(`[1] Received request for QuoteID: ${quoteId}`);
     if (!quoteId) {
         return res.status(400).json({ success: false, error: 'Quote ID is required' });
     }
 
     try {
-        // Use the new centralized client
         const sheets = getGoogleSheetsClient();
         const spreadsheetId = getSpreadsheetId();
 
-        // 1. Find the quote in the "Quotes" tab to get the Lead ID.
-        console.log(`Searching for Quote ID: ${quoteId} in "Quotes" tab...`);
+        // 1. Find the quote in the "Quotes" tab
         const quoteData = await getSheetsData({
             sheets, spreadsheetId, 
             tab: 'Quotes', 
-            searchColumn: 'QuoteID', // CORRECTED HEADER
+            searchColumn: 'QuoteID',
             searchValue: quoteId, 
-            columnsToFetch: ['LeadiD'] // CORRECTED HEADER
+            columnsToFetch: ['LeadiD']
         });
+        console.log(`[2] Result from "Quotes" tab:`, quoteData ? JSON.stringify(quoteData) : 'null');
 
         if (!quoteData || !quoteData['LeadiD']) {
-            console.error(`Quote ID ${quoteId} not found in Quotes sheet or it has no LeadiD.`);
+            console.error(`[ERROR] Quote ID ${quoteId} not found in Quotes sheet or it has no LeadiD.`);
             return res.status(404).json({ success: false, error: 'Quote not found.' });
         }
-        console.log(`Found LeadiD: ${quoteData['LeadiD']}`);
+        
+        const leadId = quoteData['LeadiD'];
+        console.log(`[3] Extracted LeadiD: ${leadId}`);
 
-        // 2. Find all lead details from the "Leads" tab using the Lead ID.
-        const leadId = quoteData['LeadiD']; // CORRECTED HEADER
+        // 2. Find all lead details from the "Leads" tab
         const leadData = await getSheetsData({
             sheets, spreadsheetId,
             tab: 'Leads',
-            searchColumn: 'Lead', // CORRECTED HEADER
+            searchColumn: 'Lead',
             searchValue: leadId,
             columnsToFetch: [
                 'CustomerName', 'CustomerEmail', 'CustomerPhone', 
-                'ServiceType', 'Rooms', 'Area', 'Suburb', 'Timelline' // CORRECTED HEADERS
+                'ServiceType', 'Rooms', 'Area', 'Suburb', 'Timelline'
             ]
         });
+        console.log(`[4] Result from "Leads" tab:`, leadData ? JSON.stringify(leadData) : 'null');
 
         if (!leadData) {
-            console.error(`Lead with ID ${leadId} not found in Leads sheet.`);
+            console.error(`[ERROR] Lead with ID ${leadId} not found in Leads sheet.`);
             return res.status(404).json({ success: false, error: 'Lead data not found for this quote.' });
         }
         
-        console.log("Successfully fetched lead data:", leadData);
+        console.log("[5] Final leadData object being sent to frontend:", JSON.stringify(leadData, null, 2));
         res.status(200).json({ success: true, data: leadData });
 
     } catch (error) {
-        console.error('FATAL: Error fetching lead details:', error);
+        console.error('--- FATAL GET-LEAD-DETAILS ERROR ---');
+        console.error(error);
         res.status(500).json({ success: false, error: 'Failed to retrieve lead details from Google Sheets.' });
     }
 }

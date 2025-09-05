@@ -411,7 +411,12 @@ export default async function handler(req, res) {
         }
     }
 
-    // Send customer email with PDF attachment and web version link
+    // ⚠️ IMPORTANT: Customer emails are NOT sent automatically!
+    // Customers only receive emails after admin approval via /api/admin/approve
+    console.log(`📋 Quote ${quoteId} created and sent to admin for approval. Customer will be notified after approval.`);
+    
+    // REMOVED: Automatic customer email - this was sending quotes before admin approval!
+    /*
     if (customerEmail && customerEmail.trim()) {
         const customerEmailHtml = `
             <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
@@ -489,6 +494,7 @@ export default async function handler(req, res) {
             console.error('❌ Failed to send customer email:', emailError);
         }
     }
+    */ // End of commented-out automatic customer email section
 
     // Send tradesperson confirmation email with PDF attachment
     if (tradespersonEmail && tradespersonEmail.trim()) {

@@ -1,4 +1,4 @@
-import xero from '../../../lib/xero';
+import { xero } from '../../../lib/xero';
 
 export default async function handler(req, res) {
   console.log('Attempting to build Xero consent URL...');

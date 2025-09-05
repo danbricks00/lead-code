@@ -1,5 +1,6 @@
 import { getGoogleSheetsClient, getSpreadsheetId } from '../../lib/googleSheets.js';
 import { initializeXeroDirectApi, makeXeroApiCall, getXeroQuoteAsPdf } from '../../lib/xeroDirectApi.js';
+import { generateQuotePDF } from '../../lib/pdfGenerator.js';
 import nodemailer from "nodemailer";
 import crypto from "crypto";
 import { google } from "googleapis";
@@ -123,14 +124,40 @@ export default async function handler(req, res) {
         return res.status(500).json({ success: false, error: "Failed to create quote in Xero." });
     }
 
-    // 3. Get PDF of the Quote from Xero
+    // 3. Generate PDF using our new system
     let pdfBuffer;
     try {
-        pdfBuffer = await getXeroQuoteAsPdf(xeroQuoteId, xeroConfig);
-        console.log(`Successfully downloaded PDF for Quote ${xeroQuoteId}`);
+        // Prepare quote data for PDF generation
+        const quoteData = {
+            quoteId,
+            quoteDate: new Date().toISOString(),
+            validUntil: quoteDetails.validUntil,
+            customerName: customerName,
+            customerEmail: customerEmail,
+            customerPhone: customerPhone,
+            customerAddress: customerAddress,
+            serviceType: serviceType,
+            tradespersonName: quoteDetails.tradespersonName,
+            tradespersonEmail: quoteDetails.tradespersonEmail,
+            tradespersonPhone: quoteDetails.tradespersonPhone,
+            tradespersonLicense: 'Licensed Tradesperson',
+            rooms: leadDetails.Rooms ? JSON.parse(leadDetails.Rooms) : [],
+            totals: {
+                labour: (parseFloat(quoteDetails.labourRate) || 0) * (parseFloat(quoteDetails.labourHours) || 0),
+                materials: (parseFloat(quoteDetails.materialsCost) || 0) * (parseFloat(quoteDetails.materialsQuantity) || 0),
+                travel: (parseFloat(quoteDetails.travelCost) || 0) * (parseFloat(quoteDetails.travelDistance) || 0),
+                installation: parseFloat(quoteDetails.installationCost) || 0,
+                subtotal: parseFloat(quoteDetails.subtotal) || 0,
+                gst: parseFloat(quoteDetails.gst) || 0,
+                final: parseFloat(quoteDetails.totalQuote) || 0
+            }
+        };
+
+        pdfBuffer = await generateQuotePDF(quoteData);
+        console.log(`Successfully generated PDF for Quote ${quoteId}`);
     } catch (pdfError) {
-        console.error("Xero Get PDF Error:", pdfError);
-        return res.status(500).json({ success: false, error: "Failed to download PDF quote from Xero." });
+        console.error("PDF Generation Error:", pdfError);
+        return res.status(500).json({ success: false, error: "Failed to generate PDF quote." });
     }
 
     // 4. Update Google Sheet with Xero Quote ID and new status
@@ -254,6 +281,121 @@ export default async function handler(req, res) {
         } catch (emailError) {
             console.error('❌ Failed to send review email:', emailError);
             // Don't fail the whole process, just log the error
+        }
+    }
+
+    // Send customer email with PDF attachment and web version link
+    if (customerEmail && customerEmail.trim()) {
+        const customerEmailHtml = `
+            <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                    <h1 style="margin: 0; font-size: 24px;">📋 Your Quote is Ready!</h1>
+                </div>
+                <div style="background: #fff; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #ddd;">
+                    <p>Hi ${customerName},</p>
+                    <p>Your quote for <strong>${serviceType}</strong> is ready for review.</p>
+                    
+                    <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                        <h3 style="margin: 0 0 10px 0; color: #333;">Quote Summary:</h3>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Labour (${labourHours}h @ $${labourRate}/h):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(labourRate) * parseFloat(labourHours) || 0).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Materials (${materialsQuantity}m² @ $${materialsCost}/m²):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(materialsCost) * parseFloat(materialsQuantity) || 0).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Travel (${travelDistance}km @ $${travelCost}/km):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(travelCost) * parseFloat(travelDistance) || 0).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Installation:</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${parseFloat(installationCost || 0).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">Subtotal (excl. GST):</td><td style="text-align: right; padding: 8px 0; font-weight: bold;">$${parseFloat(subtotal || 0).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 5px 0;">GST (15%):</td><td style="text-align: right; padding: 5px 0;">$${parseFloat(gst || 0).toFixed(2)}</td></tr>
+                            <tr style="border-top: 2px solid #333;"><td style="padding: 8px 0; font-weight: bold; font-size: 1.1em;">Total (incl. GST):</td><td style="text-align: right; padding: 8px 0; font-weight: bold; font-size: 1.1em;">$${parseFloat(totalQuote || 0).toFixed(2)}</td></tr>
+                        </table>
+                    </div>
+                    
+                    <p><strong>Valid Until:</strong> ${new Date(validUntil).toLocaleDateString('en-NZ')}</p>
+                    ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ''}
+                    
+                    <div style="margin: 20px 0; text-align: center;">
+                        <a href="${approveLink}" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-right: 10px;">✅ Accept Quote</a>
+                        <a href="${declineLink}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px;">❌ Decline Quote</a>
+                    </div>
+                    
+                    <p style="margin-top: 20px; font-size: 12px; color: #666;">
+                        <strong>Web Version:</strong> <a href="${quoteViewLink}">View Quote Online</a><br>
+                        <strong>PDF Attachment:</strong> Your detailed quote is attached to this email.
+                    </p>
+                    
+                    <p><em>Quote ID: ${quoteId}</em></p>
+                </div>
+            </div>
+        `;
+
+        const customerEmailOptions = {
+            to: customerEmail.trim(),
+            subject: `📋 Your Quote for ${serviceType} - ${quoteId}`,
+            html: customerEmailHtml,
+            attachments: [{
+                filename: `Quote_${quoteId}.pdf`,
+                content: pdfBuffer,
+                contentType: 'application/pdf'
+            }]
+        };
+
+        try {
+            await sendEmail(customerEmailOptions);
+            console.log(`✅ Customer quote email sent successfully to: ${customerEmail}`);
+        } catch (emailError) {
+            console.error('❌ Failed to send customer email:', emailError);
+        }
+    }
+
+    // Send tradesperson confirmation email with PDF attachment
+    if (tradespersonEmail && tradespersonEmail.trim()) {
+        const tradespersonEmailHtml = `
+            <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
+                <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                    <h1 style="margin: 0; font-size: 24px;">📋 Quote Sent Successfully!</h1>
+                </div>
+                <div style="background: #fff; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #ddd;">
+                    <p>Hi ${quoteDetails.tradespersonName},</p>
+                    <p>Your quote for <strong>${customerName}</strong>'s <strong>${serviceType}</strong> has been sent successfully.</p>
+                    
+                    <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                        <h3 style="margin: 0 0 10px 0; color: #333;">Quote Details:</h3>
+                        <p><strong>Customer:</strong> ${customerName}</p>
+                        <p><strong>Service:</strong> ${serviceType}</p>
+                        <p><strong>Total Quote:</strong> $${parseFloat(totalQuote || 0).toFixed(2)}</p>
+                        <p><strong>Valid Until:</strong> ${new Date(validUntil).toLocaleDateString('en-NZ')}</p>
+                    </div>
+                    
+                    <p>The customer will receive an email with your quote and can accept or decline it.</p>
+                    <p>You will be notified immediately when they make their decision.</p>
+                    
+                    <div style="margin: 20px 0; text-align: center;">
+                        <a href="${quoteViewLink}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px;">View Quote Online</a>
+                    </div>
+                    
+                    <p style="margin-top: 20px; font-size: 12px; color: #666;">
+                        <strong>PDF Copy:</strong> A copy of the quote is attached to this email for your records.
+                    </p>
+                    
+                    <p><em>Quote ID: ${quoteId}</em></p>
+                </div>
+            </div>
+        `;
+
+        const tradespersonEmailOptions = {
+            to: tradespersonEmail.trim(),
+            subject: `📋 Quote Sent to Customer - ${serviceType} - ${quoteId}`,
+            html: tradespersonEmailHtml,
+            attachments: [{
+                filename: `Quote_${quoteId}.pdf`,
+                content: pdfBuffer,
+                contentType: 'application/pdf'
+            }]
+        };
+
+        try {
+            await sendEmail(tradespersonEmailOptions);
+            console.log(`✅ Tradesperson confirmation email sent successfully to: ${tradespersonEmail}`);
+        } catch (emailError) {
+            console.error('❌ Failed to send tradesperson email:', emailError);
         }
     }
     

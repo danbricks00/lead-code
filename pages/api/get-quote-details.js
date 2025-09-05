@@ -1,115 +1,146 @@
 import { getGoogleSheetsClient, getSpreadsheetId } from '../../lib/googleSheets.js';
-import crypto from 'crypto';
-
-function verifyToken(id, ts) {
-    const hmac = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET);
-    hmac.update(`${id}|${ts}`);
-    return hmac.digest("hex");
-}
-
-async function getSheetsData(sheets, spreadsheetId, tabName, searchColumn, searchValue) {
-    try {
-        const range = `${tabName}!A:Z`;
-        const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
-        const rows = response.data.values;
-        
-        if (!rows || rows.length < 2) {
-            console.log(`No data found in ${tabName} tab`);
-            return null;
-        }
-
-        const headers = rows[0];
-        const dataRows = rows.slice(1);
-        
-        // Find the column index for the search column
-        const searchColumnIndex = headers.indexOf(searchColumn);
-        if (searchColumnIndex === -1) {
-            console.error(`Column "${searchColumn}" not found in ${tabName} tab`);
-            return null;
-        }
-
-        // Find the row with matching search value
-        const matchingRowIndex = dataRows.findIndex(row => row[searchColumnIndex] === searchValue);
-        if (matchingRowIndex === -1) {
-            console.log(`No row found with ${searchColumn} = ${searchValue} in ${tabName} tab`);
-            return null;
-        }
-
-        const matchingRow = dataRows[matchingRowIndex];
-        
-        // Convert row to object using headers as keys
-        const result = {};
-        headers.forEach((header, index) => {
-            result[header] = matchingRow[index] || '';
-        });
-
-        return result;
-    } catch (error) {
-        console.error(`Error getting data from ${tabName}:`, error);
-        return null;
-    }
-}
 
 export default async function handler(req, res) {
-    if (req.method !== 'GET') {
-        return res.status(405).json({ success: false, error: 'Method Not Allowed' });
-    }
+  if (req.method !== 'GET') {
+    return res.status(405).json({ success: false, error: 'Method Not Allowed' });
+  }
 
-    const { quoteId, ts, token } = req.query;
+  try {
+    const { quoteId } = req.query;
 
     if (!quoteId) {
-        return res.status(400).json({ success: false, error: 'Quote ID is required' });
+      return res.status(400).json({ success: false, error: 'Quote ID is required' });
     }
 
-    // For quote viewing, we'll do a basic token validation if provided
-    if (ts && token) {
-        const expectedToken = verifyToken(quoteId, ts);
-        if (token !== expectedToken) {
-            return res.status(403).json({ success: false, error: 'Invalid or expired link' });
-        }
+    console.log('🔍 Fetching quote details for:', quoteId);
+
+    // Get Google Sheets client
+    const sheets = await getGoogleSheetsClient();
+    const spreadsheetId = getSpreadsheetId();
+
+    // Get quote data from Quotes sheet
+    const quotesRange = 'Quotes!A:Z';
+    const quotesResponse = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: quotesRange,
+    });
+
+    const quotesRows = quotesResponse.data.values || [];
+    if (quotesRows.length === 0) {
+      return res.status(404).json({ success: false, error: 'No quotes found' });
     }
 
-    try {
-        const sheets = getGoogleSheetsClient();
-        const spreadsheetId = getSpreadsheetId();
+    // Find the quote by ID
+    const headers = quotesRows[0];
+    const quoteRow = quotesRows.find(row => row[0] === quoteId);
 
-        console.log(`[1] Fetching quote data for Quote ID: ${quoteId}`);
+    if (!quoteRow) {
+      return res.status(404).json({ success: false, error: 'Quote not found' });
+    }
 
-        // Get quote data from Quotes tab
-        const quoteData = await getSheetsData(sheets, spreadsheetId, 'Quotes', 'QuoteID', quoteId);
-        if (!quoteData) {
-            return res.status(404).json({ success: false, error: 'Quote not found' });
-        }
+    // Map quote data
+    const quoteData = {};
+    headers.forEach((header, index) => {
+      if (quoteRow[index]) {
+        quoteData[header] = quoteRow[index];
+      }
+    });
 
-        console.log(`[2] Found quote data, Lead ID: ${quoteData['LeadiD']}`);
+    // Get lead data from Leads sheet
+    const leadsRange = 'Leads!A:Z';
+    const leadsResponse = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: leadsRange,
+    });
 
-        // Get lead data from Leads tab using the Lead ID from the quote
-        const leadData = await getSheetsData(sheets, spreadsheetId, 'Leads', 'Lead', quoteData['LeadiD']);
-        if (!leadData) {
-            console.log('[3] Lead data not found, quote data only');
-            return res.status(200).json({ 
-                success: true, 
-                quote: quoteData, 
-                lead: null,
-                message: 'Quote found but lead data missing'
-            });
-        }
+    const leadsRows = leadsResponse.data.values || [];
+    let leadData = {};
 
-        console.log(`[4] Successfully retrieved both quote and lead data`);
+    if (leadsRows.length > 0) {
+      const leadHeaders = leadsRows[0];
+      const leadRow = leadsRows.find(row => row[0] === quoteData.LeadId);
 
-        // Return combined data
-        return res.status(200).json({
-            success: true,
-            quote: quoteData,
-            lead: leadData
+      if (leadRow) {
+        leadHeaders.forEach((header, index) => {
+          if (leadRow[index]) {
+            leadData[header] = leadRow[index];
+          }
         });
-
-    } catch (error) {
-        console.error('Error in get-quote-details:', error);
-        return res.status(500).json({ 
-            success: false, 
-            error: 'Failed to retrieve quote details from Google Sheets',
-            details: error.message 
-        });
+      }
     }
+
+    // Parse rooms data if available
+    let rooms = [];
+    if (leadData.Rooms) {
+      try {
+        rooms = JSON.parse(leadData.Rooms);
+      } catch (e) {
+        console.log('Could not parse rooms data:', e);
+      }
+    }
+
+    // Calculate totals
+    const labourRate = parseFloat(quoteData.LabourRate) || 0;
+    const labourHours = parseFloat(quoteData.LabourHours) || 0;
+    const materialsCost = parseFloat(quoteData.MaterialsCost) || 0;
+    const materialsQuantity = parseFloat(quoteData.MaterialsQuantity) || 0;
+    const travelCost = parseFloat(quoteData.TravelCost) || 0;
+    const travelDistance = parseFloat(quoteData.TravelDistance) || 0;
+    const installationCost = parseFloat(quoteData.InstallationCost) || 0;
+
+    const labourTotal = labourRate * labourHours;
+    const materialsTotal = materialsCost * materialsQuantity;
+    const travelTotal = travelCost * travelDistance;
+    const subtotal = labourTotal + materialsTotal + travelTotal + installationCost;
+    const gst = subtotal * 0.15;
+    const finalTotal = subtotal + gst;
+
+    // Prepare response data
+    const responseData = {
+      quoteId: quoteData.QuoteId || quoteId,
+      quoteDate: quoteData.QuoteDate || new Date().toISOString(),
+      validUntil: quoteData.ValidUntil || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      customerName: leadData.CustomerName || 'N/A',
+      customerEmail: leadData.CustomerEmail || 'N/A',
+      customerPhone: leadData.CustomerPhone || 'N/A',
+      customerAddress: leadData.Location || 'N/A',
+      serviceType: leadData.ServiceType || 'Underfloor Heating',
+      tradespersonName: quoteData.TradespersonName || 'N/A',
+      tradespersonEmail: quoteData.TradespersonEmail || 'N/A',
+      tradespersonPhone: quoteData.TradespersonPhone || 'N/A',
+      tradespersonLicense: 'Licensed Tradesperson',
+      rooms: rooms.map(room => ({
+        name: room.name,
+        dimensions: room.dimensions || room.originalInput,
+        sqm: room.sqm,
+        labourHours: labourHours,
+        labourCost: labourTotal / (rooms.length || 1),
+        materialsCost: materialsTotal / (rooms.length || 1)
+      })),
+      totals: {
+        labour: labourTotal,
+        materials: materialsTotal,
+        travel: travelTotal,
+        installation: installationCost,
+        subtotal: subtotal,
+        gst: gst,
+        final: finalTotal
+      }
+    };
+
+    console.log('✅ Quote details retrieved successfully');
+
+    return res.status(200).json({
+      success: true,
+      quoteData: responseData
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching quote details:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch quote details',
+      details: error.message
+    });
+  }
 }

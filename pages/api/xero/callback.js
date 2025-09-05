@@ -24,6 +24,15 @@ export default async function handler(req, res) {
     console.log(JSON.stringify(tokenSet, null, 2));
     console.log('----------------------------------------------------');
 
+    // Store the token set for automatic refresh
+    try {
+      const { storeXeroTokenSet } = await import('../../../lib/xeroDirectApi.js');
+      await storeXeroTokenSet(tokenSet);
+      console.log('✅ Token set stored for automatic refresh');
+    } catch (storeError) {
+      console.error('❌ Failed to store token set:', storeError);
+    }
+
     await xero.setTokenSet(tokenSet);
     const tenants = await xero.updateTenants();
 

@@ -50,20 +50,22 @@ export default async function handler(req, res) {
     }
     
     // --- XERO INTEGRATION ---
-    const tenantId = await initializeXero();
+    const xeroClient = await initializeXero();
+    const tenantId = xeroClient.tenants[0].tenantId;
+
 
     // 1. Find or Create Contact in Xero
     let contactID;
     const { customerName, customerEmail, customerPhone } = leadDetails;
     
-    const getContactResponse = await xero.accountingApi.getContacts(tenantId, null, `EmailAddress=="${customerEmail}"`);
+    const getContactResponse = await xeroClient.accountingApi.getContacts(tenantId, null, `EmailAddress=="${customerEmail}"`);
     
     if (getContactResponse.body.contacts && getContactResponse.body.contacts.length > 0) {
         contactID = getContactResponse.body.contacts[0].contactID;
         console.log(`Found existing Xero contact: ${contactID}`);
     } else {
         const newContact = { contacts: [{ name: customerName, emailAddress: customerEmail, phones: [{ phoneType: 'DEFAULT', phoneNumber: customerPhone }] }] };
-        const createContactResponse = await xero.accountingApi.createContacts(tenantId, newContact);
+        const createContactResponse = await xeroClient.accountingApi.createContacts(tenantId, newContact);
         contactID = createContactResponse.body.contacts[0].contactID;
         console.log(`Created new Xero contact: ${contactID}`);
     }
@@ -91,12 +93,12 @@ export default async function handler(req, res) {
         }]
     };
     
-    const createQuoteResponse = await xero.accountingApi.createQuotes(tenantId, quoteToCreate);
+    const createQuoteResponse = await xeroClient.accountingApi.createQuotes(tenantId, quoteToCreate);
     const xeroQuoteId = createQuoteResponse.body.quotes[0].quoteID;
     console.log(`Successfully created Xero Quote (Draft): ${xeroQuoteId}`);
 
     // 3. Get PDF of the Quote from Xero
-    const quotePdf = await xero.accountingApi.getQuoteAsPdf(tenantId, xeroQuoteId, { headers: { 'Accept': 'application/pdf' } });
+    const quotePdf = await xeroClient.accountingApi.getQuoteAsPdf(tenantId, xeroQuoteId, { headers: { 'Accept': 'application/pdf' } });
     const pdfBuffer = Buffer.from(quotePdf.body);
     console.log(`Successfully downloaded PDF for Quote ${xeroQuoteId}`);
 

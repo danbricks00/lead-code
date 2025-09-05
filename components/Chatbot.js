@@ -90,7 +90,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
             start_questions: "Let's get started with a few details about your project.",
             ask_room_count: "How many areas are you planning to install underfloor heating in?",
             ask_room_name: `What is the name of room ${leadData.rooms.length + 1}? (e.g., Kitchen, Lounge)`,
-            ask_room_dimensions: `What are the dimensions of the ${context.roomName || leadData.rooms[leadData.rooms.length - 1]?.name}? (e.g., 12m² or 4m x 3m)`,
+            ask_room_dimensions: `What are the dimensions of the ${context.roomName || leadData.rooms[leadData.rooms.length - 1]?.name}? (e.g., 12m² or 4m x 3m or 4 x 3)`,
             ask_timeline: "What is your desired timeline for this project?",
             ask_timeline_details: "Could you please be more specific about your timeline?",
             pre_contact_details: "Great, that's all the project information we need. Now, let's get some contact details so we can send you the quote.",

@@ -1,6 +1,35 @@
 import { useRouter } from 'next/router';
 import React, { useState, useEffect } from 'react';
 
+// Enhanced dimension parsing function
+function parseDimensions(input) {
+  if (!input || typeof input !== 'string') return 0;
+  
+  const cleanInput = input.trim().toLowerCase();
+  
+  // Match patterns like "25", "25sqm", "25m²", "25 sqm", "25 m²"
+  const singleNumberMatch = cleanInput.match(/^(\d+(?:\.\d+)?)\s*(?:sqm?|m²|square\s*meters?)?$/);
+  if (singleNumberMatch) {
+    return parseFloat(singleNumberMatch[1]);
+  }
+  
+  // Match patterns like "4x3", "4 x 3", "4m x 3m", "4.5 x 6.2"
+  const dimensionsMatch = cleanInput.match(/^(\d+(?:\.\d+)?)\s*m?\s*[x×]\s*(\d+(?:\.\d+)?)\s*m?$/);
+  if (dimensionsMatch) {
+    const length = parseFloat(dimensionsMatch[1]);
+    const width = parseFloat(dimensionsMatch[2]);
+    return length * width;
+  }
+  
+  // If no pattern matches, try to extract the first number
+  const firstNumberMatch = cleanInput.match(/(\d+(?:\.\d+)?)/);
+  if (firstNumberMatch) {
+    return parseFloat(firstNumberMatch[1]);
+  }
+  
+  return 0;
+}
+
 const QuoteSubmitPage = () => {
   const router = useRouter();
   const { query, isReady } = router;
@@ -77,11 +106,21 @@ const QuoteSubmitPage = () => {
             if (roomDataString) {
                 try {
                     const roomsData = JSON.parse(roomDataString);
-                    setParsedRooms(Array.isArray(roomsData) ? roomsData : []);
+                    
+                    // Parse dimensions and calculate sqm for each room
+                    const parsedRoomsWithSqm = Array.isArray(roomsData) ? roomsData.map(room => {
+                        const parsedRoom = { ...room };
+                        if (room.dimensions && !room.sqm) {
+                            parsedRoom.sqm = parseDimensions(room.dimensions);
+                        }
+                        return parsedRoom;
+                    }) : [];
+                    
+                    setParsedRooms(parsedRoomsWithSqm);
                     
                     // Auto-populate materials quantity with total square meters if available
-                    if (roomsData && Array.isArray(roomsData)) {
-                        const totalSqm = roomsData.reduce((sum, room) => {
+                    if (parsedRoomsWithSqm && Array.isArray(parsedRoomsWithSqm)) {
+                        const totalSqm = parsedRoomsWithSqm.reduce((sum, room) => {
                             return sum + (parseFloat(room.sqm) || 0);
                         }, 0);
                         
@@ -201,6 +240,12 @@ const QuoteSubmitPage = () => {
   const handleRoomChange = (index, field, value) => {
     const updatedRooms = [...parsedRooms];
     updatedRooms[index] = { ...updatedRooms[index], [field]: value };
+    
+    // If dimensions field is changed, recalculate sqm
+    if (field === 'dimensions') {
+      updatedRooms[index].sqm = parseDimensions(value);
+    }
+    
     setParsedRooms(updatedRooms);
   };
 
@@ -426,7 +471,7 @@ const QuoteSubmitPage = () => {
                                         {room.dimensions || room.originalInput || 'N/A'}
                                     </td>
                                     <td style={styles.td}>
-                                        {room.sqm ? `${room.sqm}m²` : 'N/A'}
+                                        {room.sqm && !isNaN(room.sqm) && room.sqm > 0 ? `${parseFloat(room.sqm).toFixed(1)}m²` : 'N/A'}
                                     </td>
                                 </tr>
                             ))}
@@ -434,7 +479,7 @@ const QuoteSubmitPage = () => {
                                 <td style={styles.td}>Total</td>
                                 <td style={styles.td}>-</td>
                                 <td style={styles.td}>
-                                    {parsedRooms.reduce((sum, room) => sum + (room.sqm || 0), 0).toFixed(1)}m²
+                                    {parsedRooms.reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0).toFixed(1)}m²
                                 </td>
                             </tr>
                         </tbody>

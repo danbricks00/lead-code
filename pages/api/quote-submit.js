@@ -1,5 +1,5 @@
 import { getGoogleSheetsClient, getSpreadsheetId } from '../../lib/googleSheets.js';
-import { generateQuotePDF } from '../../lib/pdfGenerator.js';
+import { generateQuotePDF, generateQuoteDOCX } from '../../lib/pdfGenerator.js';
 import { sendEmail } from '../../lib/emailHelper';
 import crypto from "crypto";
 
@@ -173,8 +173,9 @@ export default async function handler(req, res) {
       tradespersonName
     });
 
-    // Generate PDF using our new system with HTML backup
+    // Generate PDF using our new system with DOCX and HTML backup
     let pdfBuffer = null;
+    let docxBuffer = null;
     let htmlQuote = null;
     try {
         // Debug quote details
@@ -230,11 +231,19 @@ export default async function handler(req, res) {
             pdfBuffer = await generateQuotePDF(quoteData);
             console.log(`✅ PDF generated successfully for Quote ${quoteId}`);
         } catch (pdfError) {
-            console.error("❌ PDF Generation failed, creating HTML backup:", pdfError);
+            console.error("❌ PDF Generation failed, trying DOCX backup:", pdfError);
             
-            // Create HTML backup quote
-            htmlQuote = createHTMLQuote(quoteData);
-            console.log(`✅ HTML backup created for Quote ${quoteId}`);
+            try {
+                // Try DOCX backup first
+                docxBuffer = await generateQuoteDOCX(quoteData);
+                console.log(`✅ DOCX backup created successfully for Quote ${quoteId}`);
+            } catch (docxError) {
+                console.error("❌ DOCX Generation also failed, creating HTML backup:", docxError);
+                
+                // Create HTML backup as final fallback
+                htmlQuote = createHTMLQuote(quoteData);
+                console.log(`✅ HTML backup created for Quote ${quoteId}`);
+            }
         }
     } catch (generalError) {
         console.error("General Quote Generation Error:", generalError);
@@ -364,18 +373,27 @@ export default async function handler(req, res) {
     if (recipients.length === 0) {
         console.error('❌ No valid email recipients found. ADMIN_EMAIL:', ADMIN_EMAIL, 'tradespersonEmail:', tradespersonEmail);
     } else {
-        // Create attachment - PDF if available, HTML backup if not
-        const attachment = pdfBuffer ? 
-            {
+        // Create attachment - PDF preferred, DOCX backup, HTML final fallback
+        let attachment;
+        if (pdfBuffer) {
+            attachment = {
                 filename: `Quote_${quoteId}.pdf`,
                 content: pdfBuffer,
                 contentType: 'application/pdf'
-            } :
-            {
+            };
+        } else if (docxBuffer) {
+            attachment = {
+                filename: `Quote_${quoteId}.docx`,
+                content: docxBuffer,
+                contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            };
+        } else {
+            attachment = {
                 filename: `Quote_${quoteId}.html`,
                 content: htmlQuote,
                 contentType: 'text/html'
             };
+        }
 
         const emailOptions = {
             to: recipients,
@@ -434,18 +452,27 @@ export default async function handler(req, res) {
             </div>
         `;
 
-        // Create attachment - PDF if available, HTML backup if not
-        const customerAttachment = pdfBuffer ? 
-            {
+        // Create attachment - PDF preferred, DOCX backup, HTML final fallback
+        let customerAttachment;
+        if (pdfBuffer) {
+            customerAttachment = {
                 filename: `Quote_${quoteId}.pdf`,
                 content: pdfBuffer,
                 contentType: 'application/pdf'
-            } :
-            {
+            };
+        } else if (docxBuffer) {
+            customerAttachment = {
+                filename: `Quote_${quoteId}.docx`,
+                content: docxBuffer,
+                contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            };
+        } else {
+            customerAttachment = {
                 filename: `Quote_${quoteId}.html`,
                 content: htmlQuote,
                 contentType: 'text/html'
             };
+        }
 
         const customerEmailOptions = {
             to: customerEmail.trim(),
@@ -507,18 +534,27 @@ export default async function handler(req, res) {
             </div>
         `;
 
-        // Create attachment - PDF if available, HTML backup if not
-        const tradespersonAttachment = pdfBuffer ? 
-            {
+        // Create attachment - PDF preferred, DOCX backup, HTML final fallback
+        let tradespersonAttachment;
+        if (pdfBuffer) {
+            tradespersonAttachment = {
                 filename: `Quote_${quoteId}.pdf`,
                 content: pdfBuffer,
                 contentType: 'application/pdf'
-            } :
-            {
+            };
+        } else if (docxBuffer) {
+            tradespersonAttachment = {
+                filename: `Quote_${quoteId}.docx`,
+                content: docxBuffer,
+                contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            };
+        } else {
+            tradespersonAttachment = {
                 filename: `Quote_${quoteId}.html`,
                 content: htmlQuote,
                 contentType: 'text/html'
             };
+        }
 
         const tradespersonEmailOptions = {
             to: tradespersonEmail.trim(),

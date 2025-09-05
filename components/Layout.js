@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -8,6 +8,19 @@ const Layout = ({ children }) => {
   const router = useRouter();
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatKey, setChatKey] = useState(Date.now()); // Key to force re-mount for reset
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    handleResize(); // Check on mount
+    window.addEventListener('resize', handleResize);
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleClose = () => setIsChatOpen(false); // This now just hides the chat
   
@@ -39,13 +52,40 @@ const Layout = ({ children }) => {
             <span role="img" aria-label="tool emoji">🔧</span>
             <Link href="/" style={styles.logoLink}>Kiwi Trade</Link>
           </div>
-          <div style={styles.navMenu}>
-            <Link href="/" style={router.pathname === '/' ? styles.activeLink : styles.navLink}>Home</Link>
-            <Link href="/about" style={router.pathname === '/about' ? styles.activeLink : styles.navLink}>About Us</Link>
-            <Link href="/contact" style={router.pathname === '/contact' ? styles.activeLink : styles.navLink}>Contact</Link>
-            <a href="#" style={styles.loginBtn}>Tradesman Login</a>
-          </div>
+          
+          {/* Desktop Navigation */}
+          {!isMobile && (
+            <div style={styles.navMenu}>
+              <Link href="/" style={router.pathname === '/' ? styles.activeLink : styles.navLink}>Home</Link>
+              <Link href="/about" style={router.pathname === '/about' ? styles.activeLink : styles.navLink}>About Us</Link>
+              <Link href="/contact" style={router.pathname === '/contact' ? styles.activeLink : styles.navLink}>Contact</Link>
+              <a href="#" style={styles.loginBtn}>Tradesman Login</a>
+            </div>
+          )}
+          
+          {/* Mobile Hamburger Button */}
+          {isMobile && (
+            <button 
+              style={styles.hamburger}
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle navigation"
+            >
+              <span style={{...styles.hamburgerLine, transform: isMobileMenuOpen ? 'rotate(45deg) translateY(8px)' : 'none'}}></span>
+              <span style={{...styles.hamburgerLine, opacity: isMobileMenuOpen ? 0 : 1}}></span>
+              <span style={{...styles.hamburgerLine, transform: isMobileMenuOpen ? 'rotate(-45deg) translateY(-8px)' : 'none'}}></span>
+            </button>
+          )}
         </nav>
+        
+        {/* Mobile Menu */}
+        {isMobileMenuOpen && (
+          <div style={styles.mobileMenu}>
+            <Link href="/" style={styles.mobileNavLink} onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
+            <Link href="/about" style={styles.mobileNavLink} onClick={() => setIsMobileMenuOpen(false)}>About Us</Link>
+            <Link href="/contact" style={styles.mobileNavLink} onClick={() => setIsMobileMenuOpen(false)}>Contact</Link>
+            <a href="#" style={styles.mobileLoginBtn} onClick={() => setIsMobileMenuOpen(false)}>Tradesman Login</a>
+          </div>
+        )}
       </header>
       <main style={styles.main}>
         {childrenWithProps}
@@ -117,6 +157,59 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '2rem',
+  },
+  hamburger: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '48px',
+    height: '48px',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    borderRadius: '8px',
+    transition: 'background-color 0.3s',
+  },
+  hamburgerLine: {
+    width: '28px',
+    height: '3px',
+    backgroundColor: '#333',
+    margin: '3px 0',
+    transition: '0.3s',
+    borderRadius: '2px',
+  },
+  mobileMenu: {
+    position: 'absolute',
+    top: '70px',
+    left: 0,
+    right: 0,
+    background: 'white',
+    boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+    borderRadius: '0 0 15px 15px',
+    padding: '15px',
+    zIndex: 999,
+  },
+  mobileNavLink: {
+    display: 'block',
+    padding: '12px 16px',
+    textDecoration: 'none',
+    color: '#333',
+    fontWeight: 500,
+    borderRadius: '8px',
+    marginBottom: '5px',
+    transition: 'background-color 0.3s',
+  },
+  mobileLoginBtn: {
+    display: 'block',
+    textAlign: 'center',
+    textDecoration: 'none',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    padding: '12px 16px',
+    borderRadius: '8px',
+    fontWeight: 600,
+    marginTop: '10px',
   },
   navLink: {
     textDecoration: 'none',

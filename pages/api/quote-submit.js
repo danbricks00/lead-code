@@ -5,20 +5,6 @@ import crypto from "crypto";
 import { google } from "googleapis";
 import { sendEmail } from '../../lib/emailHelper'; // Assuming you have a centralized email helper
 
-async function getSheetsClient() {
-    const { privateKey } = JSON.parse(process.env.GOOGLE_PRIVATE_KEY || '{}');
-    if (!privateKey) throw new Error("GOOGLE_PRIVATE_KEY is not set correctly.");
-    
-    const auth = new google.auth.JWT(
-        process.env.GOOGLE_CLIENT_EMAIL,
-        null,
-        privateKey,
-        ['https://www.googleapis.com/auth/spreadsheets']
-    );
-    await auth.authorize();
-    return google.sheets({ version: 'v4', auth });
-}
-
 function verifyToken(id, ts) {
     const hmac = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET);
     hmac.update(`${id}|${ts}`);

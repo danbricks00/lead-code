@@ -173,26 +173,27 @@ export default async function handler(req, res) {
       tradespersonName
     });
 
+    // Debug quote details
+    console.log('📋 Quote details received:', JSON.stringify(quoteDetails, null, 2));
+    console.log('📋 Lead details received:', JSON.stringify(leadDetails, null, 2));
+    
+    // Calculate totals with safe parsing - moved outside try block for email access
+    const labourRate = parseFloat(quoteDetails.labourRate) || 0;
+    const labourHours = parseFloat(quoteDetails.labourHours) || 0;
+    const materialsCost = parseFloat(quoteDetails.materialsCost) || 0;
+    const materialsQuantity = parseFloat(quoteDetails.materialsQuantity) || 0;
+    const travelCost = parseFloat(quoteDetails.travelCost) || 0;
+    const travelDistance = parseFloat(quoteDetails.travelDistance) || 0;
+    const installationCost = parseFloat(quoteDetails.installationCost) || 0;
+    const subtotal = parseFloat(quoteDetails.subtotal) || 0;
+    const gst = parseFloat(quoteDetails.gst) || 0;
+    const totalQuote = parseFloat(quoteDetails.totalQuote) || 0;
+
     // Generate PDF using our new system with DOCX and HTML backup
     let pdfBuffer = null;
     let docxBuffer = null;
     let htmlQuote = null;
     try {
-        // Debug quote details
-        console.log('📋 Quote details received:', JSON.stringify(quoteDetails, null, 2));
-        console.log('📋 Lead details received:', JSON.stringify(leadDetails, null, 2));
-        
-        // Calculate totals with safe parsing
-        const labourRate = parseFloat(quoteDetails.labourRate) || 0;
-        const labourHours = parseFloat(quoteDetails.labourHours) || 0;
-        const materialsCost = parseFloat(quoteDetails.materialsCost) || 0;
-        const materialsQuantity = parseFloat(quoteDetails.materialsQuantity) || 0;
-        const travelCost = parseFloat(quoteDetails.travelCost) || 0;
-        const travelDistance = parseFloat(quoteDetails.travelDistance) || 0;
-        const installationCost = parseFloat(quoteDetails.installationCost) || 0;
-        const subtotal = parseFloat(quoteDetails.subtotal) || 0;
-        const gst = parseFloat(quoteDetails.gst) || 0;
-        const totalQuote = parseFloat(quoteDetails.totalQuote) || 0;
         
         console.log('💰 Calculated values:', {
             labourRate, labourHours, materialsCost, materialsQuantity,

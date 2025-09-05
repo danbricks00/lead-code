@@ -9,12 +9,14 @@ const Layout = ({ children }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatKey, setChatKey] = useState(Date.now()); // Key to force re-mount for reset
 
-  const handleClose = () => setIsChatOpen(false);
+  const handleClose = () => setIsChatOpen(false); // This now just hides the chat
   
   const handleResetAndClose = () => {
+    // This function will now fully reset the chatbot by changing its key,
+    // which forces React to create a new instance.
+    setChatKey(Date.now());
+    // We can also close it, or leave it open to show the reset. Let's close it.
     setIsChatOpen(false);
-    // Change the key to force React to create a new instance of the Chatbot
-    setChatKey(Date.now()); 
   };
   
   // Pass a function to children to allow them to open the chat
@@ -52,18 +54,31 @@ const Layout = ({ children }) => {
         <p>&copy; {new Date().getFullYear()} Kiwi Trade. All rights reserved.</p>
       </footer>
 
-      {/* Chatbot Integration */}
-      {isChatOpen && (
-        <div style={styles.chatbotContainer}>
-          <Chatbot key={chatKey} handleClose={handleClose} handleReset={handleResetAndClose} />
-        </div>
-      )}
+      {/* --- Chatbot Integration --- */}
+      {/* 
+        The Chatbot is now always rendered to preserve its state.
+        We use CSS transforms to show/hide it.
+      */}
+      <div style={{
+        ...styles.chatbotContainer,
+        transform: isChatOpen ? 'translateY(0)' : 'translateY(calc(100% + 20px))',
+        transition: 'transform 0.3s ease-in-out',
+      }}>
+        <Chatbot key={chatKey} handleClose={handleClose} handleReset={handleResetAndClose} />
+      </div>
       
-      {!isChatOpen && (
-         <button style={styles.chatBubble} onClick={() => setIsChatOpen(true)}>
-           💬
-         </button>
-      )}
+      {/* The bubble is always visible, but we can hide it when the chat is open if we want */}
+      <button 
+        style={{
+          ...styles.chatBubble,
+          transform: isChatOpen ? 'scale(0)' : 'scale(1)',
+          transition: 'transform 0.2s ease-in-out',
+        }} 
+        onClick={() => setIsChatOpen(true)}
+        aria-label="Open chat"
+      >
+        💬
+      </button>
     </>
   );
 };
@@ -139,8 +154,30 @@ const styles = {
     borderTop: '1px solid #eee',
   },
   // Chatbot styles moved from index.js
-  chatbotContainer: { position: 'fixed', bottom: '20px', right: '20px', zIndex: 10001, width: '400px', height: '600px', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' },
-  chatBubble: { position: 'fixed', right: '20px', bottom: '20px', width: '60px', height: '60px', borderRadius: '50%', background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.3)', zIndex: 9999 },
+  chatbotContainer: { 
+    position: 'fixed', 
+    bottom: '20px', 
+    right: '20px', 
+    zIndex: 10001, 
+    width: '400px', 
+    height: '600px', 
+    boxShadow: '0 10px 30px rgba(0,0,0,0.3)' 
+  },
+  chatBubble: { 
+    position: 'fixed', 
+    right: '20px', 
+    bottom: '20px', 
+    width: '60px', 
+    height: '60px', 
+    borderRadius: '50%', 
+    background: 'linear-gradient(135deg, #667eea, #764ba2)', 
+    color: 'white', 
+    border: 'none', 
+    cursor: 'pointer', 
+    fontSize: '24px', 
+    boxShadow: '0 10px 30px rgba(0,0,0,0.3)', 
+    zIndex: 9999 
+  },
 };
 
 export default Layout;

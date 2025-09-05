@@ -61,7 +61,18 @@ export default async function handler(req, res) {
 
     // 1. Find or Create Contact in Xero
     let contactID;
-    const { customerName, customerEmail, customerPhone } = leadDetails;
+    // Extract customer details with fallbacks and proper field names
+    const customerName = leadDetails.CustomerName || leadDetails.customerName || 'Unknown Customer';
+    const customerEmail = leadDetails.CustomerEmail || leadDetails.customerEmail;
+    const customerPhone = leadDetails.CustomerPhone || leadDetails.customerPhone || '';
+    
+    console.log('DEBUG - Customer details extracted:', { customerName, customerEmail, customerPhone });
+    console.log('DEBUG - Full leadDetails object:', JSON.stringify(leadDetails, null, 2));
+    
+    if (!customerEmail) {
+        console.error('Customer email is missing from leadDetails');
+        return res.status(400).json({ success: false, error: "Customer email is required but missing from lead details." });
+    }
     try {
       // Search for existing contact by email
       const contactsResponse = await makeXeroApiCall(

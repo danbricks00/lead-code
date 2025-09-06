@@ -8,6 +8,8 @@ const CustomerQuoteView = () => {
   const [quoteInfo, setQuoteInfo] = useState(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [decisionMade, setDecisionMade] = useState(false);
 
   useEffect(() => {
     if (router.isReady) {
@@ -24,6 +26,10 @@ const CustomerQuoteView = () => {
 
           if (result.success) {
             setQuoteInfo(result.data);
+            // Check if decision was already made
+            if (result.data.quoteData.Decision) {
+              setDecisionMade(true);
+            }
           } else {
             setError(result.error || 'Could not retrieve quote.');
           }
@@ -37,9 +43,37 @@ const CustomerQuoteView = () => {
       fetchQuote();
     }
   }, [router.isReady, quoteId, ts, token]);
-  
-  const acceptLink = `/api/quote-decision/accept?quoteId=${quoteId}&ts=${ts}&token=${token}`;
-  const declineLink = `/api/quote-decision/decline?quoteId=${quoteId}&ts=${ts}&token=${token}`;
+
+  // Handle decision with client-side protection
+  const handleDecision = async (decision) => {
+    if (isProcessing || decisionMade) {
+      console.log('🚫 Decision already processing or made');
+      return;
+    }
+
+    setIsProcessing(true);
+    
+    try {
+      const decisionUrl = `/api/quote-decision/${decision}?quoteId=${quoteId}&ts=${ts}&token=${token}`;
+      
+      // Open in new window to prevent double-clicking
+      const newWindow = window.open(decisionUrl, '_blank');
+      
+      // Set decision as made immediately to prevent double-clicking
+      setDecisionMade(true);
+      
+      // Close the new window after a short delay
+      setTimeout(() => {
+        if (newWindow) {
+          newWindow.close();
+        }
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error processing decision:', error);
+      setIsProcessing(false);
+    }
+  };
 
   const renderContent = () => {
     if (isLoading) {
@@ -92,12 +126,42 @@ const CustomerQuoteView = () => {
             </div>
 
             {/* Decision Buttons */}
-            {quoteData.Decision ? (
-                <div style={styles.decisionMade}>Decision Already Made: {quoteData.Decision}</div>
+            {quoteData.Decision || decisionMade ? (
+                <div style={styles.decisionMade}>
+                    <div style={styles.decisionIcon}>✅</div>
+                    <div style={styles.decisionText}>
+                        <strong>Decision Already Made: {quoteData.Decision || 'Processing...'}</strong>
+                        {quoteData['Decision Timestamp'] && (
+                            <div style={styles.decisionTimestamp}>
+                                Made on: {new Date(quoteData['Decision Timestamp']).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })} NZT
+                            </div>
+                        )}
+                    </div>
+                </div>
             ) : (
                 <div style={styles.decisionButtons}>
-                    <a href={acceptLink} style={{...styles.button, ...styles.acceptButton}}>Accept Quote</a>
-                    <a href={declineLink} style={{...styles.button, ...styles.declineButton}}>Decline Quote</a>
+                    <button 
+                        onClick={() => handleDecision('accept')} 
+                        disabled={isProcessing}
+                        style={{
+                            ...styles.button, 
+                            ...styles.acceptButton,
+                            ...(isProcessing ? styles.disabledButton : {})
+                        }}
+                    >
+                        {isProcessing ? 'Processing...' : 'Accept Quote'}
+                    </button>
+                    <button 
+                        onClick={() => handleDecision('decline')} 
+                        disabled={isProcessing}
+                        style={{
+                            ...styles.button, 
+                            ...styles.declineButton,
+                            ...(isProcessing ? styles.disabledButton : {})
+                        }}
+                    >
+                        {isProcessing ? 'Processing...' : 'Decline Quote'}
+                    </button>
                 </div>
             )}
         </div>
@@ -124,10 +188,47 @@ const styles = {
     itemsTable: { width: '100%', borderCollapse: 'collapse', '& th, & td': { padding: '8px', border: '1px solid #ddd' } },
     totalSection: { display: 'flex', justifyContent: 'flex-end', marginTop: '20px' },
     decisionButtons: { display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '40px' },
-    button: { textDecoration: 'none', color: 'white', padding: '12px 25px', borderRadius: '5px', fontWeight: 'bold' },
+    button: { 
+        textDecoration: 'none', 
+        color: 'white', 
+        padding: '12px 25px', 
+        borderRadius: '5px', 
+        fontWeight: 'bold',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: '16px',
+        transition: 'all 0.3s ease'
+    },
     acceptButton: { backgroundColor: '#4caf50' },
     declineButton: { backgroundColor: '#f44336' },
-    decisionMade: { textAlign: 'center', marginTop: '40px', padding: '15px', borderRadius: '5px', backgroundColor: '#eee', fontWeight: 'bold' }
+    disabledButton: { 
+        backgroundColor: '#ccc', 
+        cursor: 'not-allowed',
+        opacity: 0.6
+    },
+    decisionMade: { 
+        textAlign: 'center', 
+        marginTop: '40px', 
+        padding: '20px', 
+        borderRadius: '10px', 
+        backgroundColor: '#e8f5e8', 
+        border: '2px solid #4caf50',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '15px'
+    },
+    decisionIcon: { fontSize: '24px' },
+    decisionText: { 
+        fontWeight: 'bold',
+        color: '#2e7d32'
+    },
+    decisionTimestamp: {
+        fontSize: '14px',
+        color: '#666',
+        marginTop: '5px',
+        fontWeight: 'normal'
+    }
 };
 
 export default CustomerQuoteView;

@@ -1,20 +1,6 @@
-import { google } from "googleapis";
-import nodemailer from "nodemailer";
+import { getGoogleSheetsClient, getSpreadsheetId } from "../../../lib/googleSheets.js";
+import { sendEmail } from '../../../lib/emailHelper';
 import crypto from "crypto";
-
-async function getSheetsClient() {
-    const { privateKey } = JSON.parse(process.env.GOOGLE_PRIVATE_KEY || '{}');
-    if (!privateKey) throw new Error("GOOGLE_PRIVATE_KEY is not set correctly.");
-
-    const auth = new google.auth.JWT(
-        process.env.GOOGLE_CLIENT_EMAIL,
-        null,
-        privateKey,
-        ['https://www.googleapis.com/auth/spreadsheets']
-    );
-    await auth.authorize();
-    return google.sheets({ version: 'v4', auth });
-}
 
 function verifyToken(id, ts) {
     const hmac = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET);
@@ -39,9 +25,8 @@ function formatTimestamp(isoString) {
     }
 }
 
-async function sendNotificationEmails(transporter, quoteData) {
+async function sendNotificationEmails(quoteData) {
     const customerMail = {
-        from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
         to: quoteData['Customer Email'],
         subject: `Confirmation: Your Quote has been Accepted`,
         html: `
@@ -59,22 +44,20 @@ async function sendNotificationEmails(transporter, quoteData) {
     };
 
     const tradespersonMail = {
-        from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
         to: quoteData['Tradesperson Email'],
         subject: `🎉 Quote Accepted by ${quoteData['Customer Name']}`,
         text: `Great news! Your quote for ${quoteData['Customer Name']} was accepted. Please contact them at ${quoteData['Customer Email']} to proceed.`
     };
     
     const adminMail = {
-        from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
         to: process.env.ADMIN_EMAIL,
         subject: `Quote Accepted: ${quoteData['Customer Name']}`,
         text: `The quote for ${quoteData['Customer Name']} was accepted. Tradesperson: ${quoteData['Tradesperson Name']}.`
     };
 
-    await transporter.sendMail(customerMail);
-    await transporter.sendMail(tradespersonMail);
-    await transporter.sendMail(adminMail);
+    await sendEmail(customerMail);
+    await sendEmail(tradespersonMail);
+    await sendEmail(adminMail);
 }
 
 
@@ -95,8 +78,8 @@ export default async function handler(req, res) {
     }
     
     try {
-        const sheets = await getSheetsClient();
-        const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+        const sheets = await getGoogleSheetsClient();
+        const spreadsheetId = getSpreadsheetId();
         const range = 'Quotes!A:Z';
 
         const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
@@ -170,12 +153,7 @@ export default async function handler(req, res) {
         });
 
         // --- Send Emails ---
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
-        });
-
-        await sendNotificationEmails(transporter, quoteDataForEmail);
+        await sendNotificationEmails(quoteDataForEmail);
         
         return res.redirect(`/quote-status?status=success&message=Your acceptance has been recorded!`);
 

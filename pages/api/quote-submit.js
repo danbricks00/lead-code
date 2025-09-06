@@ -1,5 +1,5 @@
 import { getGoogleSheetsClient, getSpreadsheetId } from '../../lib/googleSheets.js';
-import { generateQuotePDF } from '../../lib/pdfGenerator.js';
+import { generateQuotePDF, generateQuoteHTML, generateQuoteDOCX } from '../../lib/pdfGenerator.js';
 import { sendEmail } from '../../lib/emailHelper';
 import crypto from "crypto";
 
@@ -173,25 +173,27 @@ export default async function handler(req, res) {
       tradespersonName
     });
 
-    // Generate PDF using our new system with HTML backup
+    // Debug quote details
+    console.log('📋 Quote details received:', JSON.stringify(quoteDetails, null, 2));
+    console.log('📋 Lead details received:', JSON.stringify(leadDetails, null, 2));
+    
+    // Calculate totals with safe parsing - moved outside try block for email access
+    const labourRate = parseFloat(quoteDetails.labourRate) || 0;
+    const labourHours = parseFloat(quoteDetails.labourHours) || 0;
+    const materialsCost = parseFloat(quoteDetails.materialsCost) || 0;
+    const materialsQuantity = parseFloat(quoteDetails.materialsQuantity) || 0;
+    const travelCost = parseFloat(quoteDetails.travelCost) || 0;
+    const travelDistance = parseFloat(quoteDetails.travelDistance) || 0;
+    const installationCost = parseFloat(quoteDetails.installationCost) || 0;
+    const subtotal = parseFloat(quoteDetails.subtotal) || 0;
+    const gst = parseFloat(quoteDetails.gst) || 0;
+    const totalQuote = parseFloat(quoteDetails.totalQuote) || 0;
+
+    // Generate PDF using our new system with DOCX and HTML backup
     let pdfBuffer = null;
+    let docxBuffer = null;
     let htmlQuote = null;
     try {
-        // Debug quote details
-        console.log('📋 Quote details received:', JSON.stringify(quoteDetails, null, 2));
-        console.log('📋 Lead details received:', JSON.stringify(leadDetails, null, 2));
-        
-        // Calculate totals with safe parsing
-        const labourRate = parseFloat(quoteDetails.labourRate) || 0;
-        const labourHours = parseFloat(quoteDetails.labourHours) || 0;
-        const materialsCost = parseFloat(quoteDetails.materialsCost) || 0;
-        const materialsQuantity = parseFloat(quoteDetails.materialsQuantity) || 0;
-        const travelCost = parseFloat(quoteDetails.travelCost) || 0;
-        const travelDistance = parseFloat(quoteDetails.travelDistance) || 0;
-        const installationCost = parseFloat(quoteDetails.installationCost) || 0;
-        const subtotal = parseFloat(quoteDetails.subtotal) || 0;
-        const gst = parseFloat(quoteDetails.gst) || 0;
-        const totalQuote = parseFloat(quoteDetails.totalQuote) || 0;
         
         console.log('💰 Calculated values:', {
             labourRate, labourHours, materialsCost, materialsQuantity,
@@ -230,11 +232,26 @@ export default async function handler(req, res) {
             pdfBuffer = await generateQuotePDF(quoteData);
             console.log(`✅ PDF generated successfully for Quote ${quoteId}`);
         } catch (pdfError) {
-            console.error("❌ PDF Generation failed, creating HTML backup:", pdfError);
+            console.error("❌ PDF Generation failed, trying HTML backup:", pdfError);
             
-            // Create HTML backup quote
-            htmlQuote = createHTMLQuote(quoteData);
-            console.log(`✅ HTML backup created for Quote ${quoteId}`);
+            try {
+                // Try formatted HTML backup (maintains all styling)
+                htmlQuote = generateQuoteHTML(quoteData);
+                console.log(`✅ Professional HTML quote created for Quote ${quoteId}`);
+            } catch (htmlError) {
+                console.error("❌ HTML Generation also failed, trying DOCX backup:", htmlError);
+                
+                try {
+                    // DOCX as final fallback (basic formatting only)
+                    docxBuffer = await generateQuoteDOCX(quoteData);
+                    console.log(`✅ DOCX backup created as final fallback for Quote ${quoteId}`);
+                } catch (docxError) {
+                    console.error("❌ All quote generation methods failed:", docxError);
+                    // Create basic HTML as absolute last resort
+                    htmlQuote = createHTMLQuote(quoteData);
+                    console.log(`⚠️ Basic HTML backup created for Quote ${quoteId}`);
+                }
+            }
         }
     } catch (generalError) {
         console.error("General Quote Generation Error:", generalError);
@@ -364,18 +381,33 @@ export default async function handler(req, res) {
     if (recipients.length === 0) {
         console.error('❌ No valid email recipients found. ADMIN_EMAIL:', ADMIN_EMAIL, 'tradespersonEmail:', tradespersonEmail);
     } else {
-        // Create attachment - PDF if available, HTML backup if not
-        const attachment = pdfBuffer ? 
-            {
+        // Create attachment - PDF preferred, HTML backup (maintains formatting), DOCX final fallback
+        let attachment;
+        if (pdfBuffer) {
+            attachment = {
                 filename: `Quote_${quoteId}.pdf`,
                 content: pdfBuffer,
                 contentType: 'application/pdf'
-            } :
-            {
+            };
+        } else if (htmlQuote) {
+            attachment = {
                 filename: `Quote_${quoteId}.html`,
-                content: htmlQuote,
+                content: Buffer.from(htmlQuote, 'utf8'),
                 contentType: 'text/html'
             };
+        } else if (docxBuffer) {
+            attachment = {
+                filename: `Quote_${quoteId}.docx`,
+                content: docxBuffer,
+                contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            };
+        } else {
+            attachment = {
+                filename: `Quote_${quoteId}.txt`,
+                content: Buffer.from(`Quote ${quoteId} - Error generating attachments`, 'utf8'),
+                contentType: 'text/plain'
+            };
+        }
 
         const emailOptions = {
             to: recipients,
@@ -392,7 +424,12 @@ export default async function handler(req, res) {
         }
     }
 
-    // Send customer email with PDF attachment and web version link
+    // ⚠️ IMPORTANT: Customer emails are NOT sent automatically!
+    // Customers only receive emails after admin approval via /api/admin/approve
+    console.log(`📋 Quote ${quoteId} created and sent to admin for approval. Customer will be notified after approval.`);
+    
+    // REMOVED: Automatic customer email - this was sending quotes before admin approval!
+    /*
     if (customerEmail && customerEmail.trim()) {
         const customerEmailHtml = `
             <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
@@ -434,18 +471,33 @@ export default async function handler(req, res) {
             </div>
         `;
 
-        // Create attachment - PDF if available, HTML backup if not
-        const customerAttachment = pdfBuffer ? 
-            {
+        // Create attachment - PDF preferred, DOCX backup, HTML final fallback
+        let customerAttachment;
+        if (pdfBuffer) {
+            customerAttachment = {
                 filename: `Quote_${quoteId}.pdf`,
                 content: pdfBuffer,
                 contentType: 'application/pdf'
-            } :
-            {
+            };
+        } else if (htmlQuote) {
+            customerAttachment = {
                 filename: `Quote_${quoteId}.html`,
-                content: htmlQuote,
+                content: Buffer.from(htmlQuote, 'utf8'),
                 contentType: 'text/html'
             };
+        } else if (docxBuffer) {
+            customerAttachment = {
+                filename: `Quote_${quoteId}.docx`,
+                content: docxBuffer,
+                contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            };
+        } else {
+            customerAttachment = {
+                filename: `Quote_${quoteId}.txt`,
+                content: Buffer.from(`Quote ${quoteId} - Error generating attachments`, 'utf8'),
+                contentType: 'text/plain'
+            };
+        }
 
         const customerEmailOptions = {
             to: customerEmail.trim(),
@@ -461,6 +513,7 @@ export default async function handler(req, res) {
             console.error('❌ Failed to send customer email:', emailError);
         }
     }
+    */ // End of commented-out automatic customer email section
 
     // Send tradesperson confirmation email with PDF attachment
     if (tradespersonEmail && tradespersonEmail.trim()) {
@@ -507,18 +560,33 @@ export default async function handler(req, res) {
             </div>
         `;
 
-        // Create attachment - PDF if available, HTML backup if not
-        const tradespersonAttachment = pdfBuffer ? 
-            {
+        // Create attachment - PDF preferred, DOCX backup, HTML final fallback
+        let tradespersonAttachment;
+        if (pdfBuffer) {
+            tradespersonAttachment = {
                 filename: `Quote_${quoteId}.pdf`,
                 content: pdfBuffer,
                 contentType: 'application/pdf'
-            } :
-            {
+            };
+        } else if (htmlQuote) {
+            tradespersonAttachment = {
                 filename: `Quote_${quoteId}.html`,
-                content: htmlQuote,
+                content: Buffer.from(htmlQuote, 'utf8'),
                 contentType: 'text/html'
             };
+        } else if (docxBuffer) {
+            tradespersonAttachment = {
+                filename: `Quote_${quoteId}.docx`,
+                content: docxBuffer,
+                contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            };
+        } else {
+            tradespersonAttachment = {
+                filename: `Quote_${quoteId}.txt`,
+                content: Buffer.from(`Quote ${quoteId} - Error generating attachments`, 'utf8'),
+                contentType: 'text/plain'
+            };
+        }
 
         const tradespersonEmailOptions = {
             to: tradespersonEmail.trim(),

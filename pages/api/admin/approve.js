@@ -187,6 +187,42 @@ export default async function handler(req, res) {
                   <p style="margin: 5px 0; color: #2c3e50;"><strong>Quote ID:</strong> ${quoteId}</p>
                 </div>
 
+                <!-- Pricing Breakdown -->
+                <div style="background-color: #e8f5e8; border-radius: 6px; padding: 20px; margin-bottom: 25px;">
+                  <h3 style="color: #27ae60; margin: 0 0 15px 0; font-size: 18px;">💰 Cost Breakdown</h3>
+                  <div style="border-bottom: 1px solid #c8e6c9; padding-bottom: 15px; margin-bottom: 15px;">
+                    <p style="margin: 5px 0; color: #2c3e50; display: flex; justify-content: space-between;">
+                      <span><strong>Labour:</strong> ${parseFloat(quoteData.LabourHours || 0)} hours @ $${parseFloat(quoteData.LabourRate || 0).toFixed(2)}/hour</span>
+                      <span><strong>$${(parseFloat(quoteData.LabourRate || 0) * parseFloat(quoteData.LabourHours || 0)).toFixed(2)}</strong></span>
+                    </p>
+                    <p style="margin: 5px 0; color: #2c3e50; display: flex; justify-content: space-between;">
+                      <span><strong>Materials:</strong> ${parseFloat(quoteData.MaterialsQuantity || 0)} units @ $${parseFloat(quoteData.MaterialsCost || 0).toFixed(2)}/unit</span>
+                      <span><strong>$${(parseFloat(quoteData.MaterialsCost || 0) * parseFloat(quoteData.MaterialsQuantity || 0)).toFixed(2)}</strong></span>
+                    </p>
+                    <p style="margin: 5px 0; color: #2c3e50; display: flex; justify-content: space-between;">
+                      <span><strong>Travel:</strong> ${parseFloat(quoteData.TravelDistance || 0)} km @ $${parseFloat(quoteData.TravelCost || 0).toFixed(2)}/km</span>
+                      <span><strong>$${(parseFloat(quoteData.TravelCost || 0) * parseFloat(quoteData.TravelDistance || 0)).toFixed(2)}</strong></span>
+                    </p>
+                    <p style="margin: 5px 0; color: #2c3e50; display: flex; justify-content: space-between;">
+                      <span><strong>Installation & Setup:</strong></span>
+                      <span><strong>$${parseFloat(quoteData.InstallationCost || 0).toFixed(2)}</strong></span>
+                    </p>
+                  </div>
+                  <div style="border-bottom: 1px solid #c8e6c9; padding-bottom: 15px; margin-bottom: 15px;">
+                    <p style="margin: 5px 0; color: #2c3e50; display: flex; justify-content: space-between; font-size: 16px;">
+                      <span><strong>Subtotal:</strong></span>
+                      <span><strong>$${parseFloat(quoteData.Subtotal || 0).toFixed(2)}</strong></span>
+                    </p>
+                    <p style="margin: 5px 0; color: #2c3e50; display: flex; justify-content: space-between;">
+                      <span><strong>GST (15%):</strong></span>
+                      <span><strong>$${parseFloat(quoteData.GST || 0).toFixed(2)}</strong></span>
+                    </p>
+                  </div>
+                  <div style="background-color: #27ae60; color: white; padding: 15px; border-radius: 6px; text-align: center;">
+                    <p style="margin: 0; font-size: 24px; font-weight: bold;">TOTAL: $${parseFloat(quoteData.TotalQuote || 0).toFixed(2)}</p>
+                  </div>
+                </div>
+
                 <!-- Online Quote Viewer -->
                 <div style="background-color: #3498db; border-radius: 6px; padding: 20px; margin-bottom: 25px; text-align: center;">
                   <h3 style="color: white; margin: 0 0 15px 0; font-size: 18px;">🌐 View Your Quote Online</h3>

@@ -104,9 +104,10 @@ const Chatbot = ({ handleClose, handleReset }) => {
             ask_timeline: "What is your desired timeline for this project?",
             ask_timeline_details: "Could you please be more specific about your timeline?",
             pre_contact_details: "Great, that's all the project information we need. Now, let's get some contact details so we can send you the quote.",
-            ask_name: "Perfect. What is your full name?",
-            ask_phone: firstName ? `Thanks ${firstName}! What is your phone number?` : "What is your phone number?",
-            ask_suburb: firstName ? `Great ${firstName}! What suburb is the job located in? Start typing and select from the list.` : "Great. What suburb is the job located in? Start typing and select from the list.",
+            ask_first_name: "Perfect. What is your first name?",
+            ask_last_name: firstName ? `Thanks ${firstName}! What is your last name?` : "What is your last name?",
+            ask_phone: firstName ? `Great ${firstName}! What is your phone number?` : "What is your phone number?",
+            ask_suburb: firstName ? `Awesome ${firstName}! What suburb is the job located in? Start typing and select from the list.` : "Great. What suburb is the job located in? Start typing and select from the list.",
             ask_email: firstName ? `Finally ${firstName}, what is your email address?` : "Finally, what is your email address?",
         };
         if (questions[next]) {
@@ -118,7 +119,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
             nextStep('ask_room_count');
         }
         if (next === 'pre_contact_details') {
-            setTimeout(() => nextStep('ask_name'), 1200);
+            setTimeout(() => nextStep('ask_first_name'), 1200);
         }
     }, delay);
   };
@@ -159,8 +160,10 @@ const Chatbot = ({ handleClose, handleReset }) => {
             return value.trim().length > 1 ? null : "Please enter a valid name for the room.";
         case 'ask_room_dimensions':
             return value.trim().length > 0 ? null : "Please provide the dimensions (e.g., 25 for 25m², 10 x 5 for 50m², or 7.5 x 6.2 for 46.5m²).";
-        case 'ask_name':
-            return /^[a-zA-Z\s'-]{2,}$/.test(value) ? null : "Please enter a valid name.";
+        case 'ask_first_name':
+            return /^[a-zA-Z'-]{2,}$/.test(value) ? null : "Please enter a valid first name.";
+        case 'ask_last_name':
+            return /^[a-zA-Z\s'-]{2,}$/.test(value) ? null : "Please enter a valid last name.";
         case 'ask_phone':
             return /^[\d\s()+-]{7,}$/.test(value) ? null : "Please enter a valid phone number.";
         case 'ask_suburb':
@@ -219,8 +222,17 @@ const Chatbot = ({ handleClose, handleReset }) => {
             setProgressStep(1);
             nextStep('pre_contact_details');
             break;
-        case 'ask_name':
-            setLeadData(prev => ({ ...prev, customerName: input, name: input }));
+        case 'ask_first_name':
+            setLeadData(prev => ({ ...prev, firstName: input, name: input }));
+            nextStep('ask_last_name');
+            break;
+        case 'ask_last_name':
+            setLeadData(prev => ({ 
+                ...prev, 
+                lastName: input, 
+                customerName: `${prev.firstName} ${input}`,
+                name: prev.firstName // Keep first name for personalization
+            }));
             nextStep('ask_phone');
             break;
         case 'ask_phone':

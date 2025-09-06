@@ -411,12 +411,61 @@ export default async function handler(req, res) {
           );
 
           if (existingQuote) {
-            console.log('❌ Tradesman already submitted quote for this lead');
-            console.log('❌ Existing quote found:', existingQuote);
-            return res.status(400).json({
-              success: false,
-              error: 'You have already submitted a quote for this lead. Only one quote per tradesman per lead is allowed.'
-            });
+            console.log('🔍 Found existing quote for this tradesman and lead');
+            console.log('📊 Existing quote details:', existingQuote);
+            
+            // Get the header row to identify column positions
+            const header = rows[0];
+            const adminStatusIndex = header.indexOf('Admin Status');
+            const resubmissionAllowedIndex = header.indexOf('Reesubmission Allowed');
+            const quoteDateIndex = header.indexOf('Quote Date') || header.indexOf('Date');
+            
+            const adminStatus = adminStatusIndex !== -1 ? existingQuote[adminStatusIndex] : '';
+            const resubmissionAllowed = resubmissionAllowedIndex !== -1 ? existingQuote[resubmissionAllowedIndex] : '';
+            const quoteDate = quoteDateIndex !== -1 ? existingQuote[quoteDateIndex] : '';
+            
+            console.log('📋 Quote status check:', { adminStatus, resubmissionAllowed });
+            
+            // Check if resubmission is allowed after admin decline
+            if (adminStatus === 'Declined' && resubmissionAllowed === 'Yes') {
+              console.log('✅ RESUBMISSION ALLOWED: Admin declined but resubmission is permitted');
+              // Continue with submission - this will overwrite the declined quote
+            } else {
+              // Quote exists and no resubmission allowed
+              console.log('❌ Tradesman already submitted quote for this lead');
+              
+              const formatNZDate = (dateString) => {
+                if (!dateString) return 'an unknown date';
+                try {
+                  const date = new Date(dateString);
+                  return date.toLocaleString('en-NZ', {
+                    timeZone: 'Pacific/Auckland',
+                    day: '2-digit',
+                    month: '2-digit', 
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  }) + ' NZT';
+                } catch (e) {
+                  return dateString;
+                }
+              };
+              
+              const formattedDate = formatNZDate(quoteDate);
+              
+              return res.status(400).json({
+                success: false,
+                error: `You have already submitted a quote for this lead on ${formattedDate}. Only one quote per tradesman per lead is allowed.`,
+                quoteExists: true,
+                existingQuoteData: {
+                  quoteId: existingQuote[0], // QuoteID column (A)
+                  leadId: existingQuote[1],
+                  submissionDate: formattedDate,
+                  adminStatus: adminStatus || 'Pending',
+                  canResubmit: false
+                }
+              });
+            }
           }
           
           console.log('✅ No existing quote found - proceeding with submission');

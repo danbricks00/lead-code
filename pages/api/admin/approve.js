@@ -155,16 +155,21 @@ export default async function handler(req, res) {
         let pdfBuffer = null;
         let htmlQuote = null;
         
+        console.log('📊 Quote data for PDF generation:', JSON.stringify(quoteDataForPdf, null, 2));
+        
         try {
             pdfBuffer = await generateQuotePDF(quoteDataForPdf);
             console.log(`✅ PDF generated for approved quote: ${quoteId}`);
         } catch (pdfError) {
-            console.error("❌ PDF Generation failed, trying HTML backup:", pdfError);
+            console.error("❌ Admin PDF Generation failed:", pdfError);
+            console.error("❌ PDF Error details:", pdfError.message, pdfError.stack);
             try {
                 htmlQuote = generateQuoteHTML(quoteDataForPdf);
                 console.log(`✅ HTML backup generated for approved quote: ${quoteId}`);
             } catch (htmlError) {
-                console.error("❌ HTML Generation also failed:", htmlError);
+                console.error("❌ Admin HTML Generation also failed:", htmlError);
+                console.error("❌ HTML Error details:", htmlError.message, htmlError.stack);
+                console.error("❌ Quote data that failed:", JSON.stringify(quoteDataForPdf, null, 2));
                 return res.redirect(`/quote-status?status=error&message=Failed to generate quote document.`);
             }
         }

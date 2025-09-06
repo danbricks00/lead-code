@@ -85,8 +85,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
     setTimeout(() => {
         setIsLoading(false);
         setStep(next);
-        // Get the first name for personalization (direct access)
-        const firstName = leadData.firstName || '';
+        // Get the first name for personalization (from context or leadData)
+        const firstName = context.firstName || leadData.firstName || '';
         
         // Trigger the question for the new step
         const questions = {
@@ -217,7 +217,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
             break;
         case 'ask_first_name':
             setLeadData(prev => ({ ...prev, firstName: input, name: input }));
-            nextStep('ask_last_name');
+            nextStep('ask_last_name', 1200, { firstName: input });
             break;
         case 'ask_last_name':
             setLeadData(prev => ({ 

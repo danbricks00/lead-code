@@ -547,12 +547,50 @@ export default async function handler(req, res) {
         const decisionIndex = header.indexOf('Decision');
         const decisionTimestampIndex = header.indexOf('Decision Timestamp');
 
+        // ROBUST ONE-TIME DECISION CHECK
         if (decisionIndex !== -1 && targetRow[decisionIndex] && targetRow[decisionIndex].trim() !== '') {
             const decision = targetRow[decisionIndex];
             const timestamp = (decisionTimestampIndex !== -1) ? targetRow[decisionTimestampIndex] : '';
             const formattedTime = formatTimestamp(timestamp);
-            const message = `This quote was already ${decision.toLowerCase()} on ${formattedTime}.`;
-            return res.redirect(`/quote-status?status=error&message=${encodeURIComponent(message)}`);
+            
+            console.log(`🚫 DECISION ALREADY MADE: ${decision} on ${formattedTime}`);
+            
+            // Create a detailed error page showing the decision status
+            const errorMessage = `This quote was already ${decision.toLowerCase()} on ${formattedTime}.`;
+            const statusPage = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Quote Decision Already Made</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f7fa; }
+                        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
+                        .error-icon { font-size: 48px; margin-bottom: 20px; }
+                        .error-title { color: #dc3545; font-size: 24px; margin-bottom: 15px; }
+                        .error-message { color: #6c757d; font-size: 16px; margin-bottom: 20px; }
+                        .decision-info { background: #f8d7da; padding: 20px; border-radius: 8px; border: 1px solid #f5c6cb; margin: 20px 0; }
+                        .decision-status { color: #721c24; font-weight: bold; font-size: 18px; }
+                        .timestamp { color: #6c757d; font-size: 14px; margin-top: 10px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="error-icon">⚠️</div>
+                        <h1 class="error-title">Decision Already Made</h1>
+                        <p class="error-message">This quote decision has already been processed and cannot be changed.</p>
+                        <div class="decision-info">
+                            <div class="decision-status">Decision: ${decision}</div>
+                            <div class="timestamp">Made on: ${formattedTime}</div>
+                        </div>
+                        <p style="color: #6c757d; font-size: 14px;">
+                            If you believe this is an error, please contact our support team.
+                        </p>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            return res.status(400).send(statusPage);
         }
         
         // --- Update Sheet Data ---

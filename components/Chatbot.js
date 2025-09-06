@@ -220,7 +220,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
             nextStep('pre_contact_details');
             break;
         case 'ask_name':
-            setLeadData(prev => ({ ...prev, customerName: input }));
+            setLeadData(prev => ({ ...prev, customerName: input, name: input }));
             nextStep('ask_phone');
             break;
         case 'ask_phone':

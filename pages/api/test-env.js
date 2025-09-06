@@ -25,7 +25,10 @@ export default async function handler(req, res) {
       SITE_URL: process.env.SITE_URL || "NOT_SET",
       NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET ? "SET" : "NOT_SET",
       GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "NOT_SET",
-      GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ? "SET" : "NOT_SET"
+      GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ? "SET" : "NOT_SET",
+      // Quote System Variables
+      QUOTE_LINK_SECRET: process.env.QUOTE_LINK_SECRET ? "SET" : "NOT_SET",
+      NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL || "NOT_SET"
     };
 
     console.log("🔧 Environment variables status:", envVars);

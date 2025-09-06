@@ -1,8 +1,7 @@
 import { getGoogleSheetsClient, getSpreadsheetId } from "../../../lib/googleSheets.js";
-import { initializeXeroDirectApi, makeXeroApiCall, getXeroQuoteAsPdf } from "../../../lib/xeroDirectApi.js";
+import { generateQuotePDF, generateQuoteHTML, generateQuoteDOCX } from "../../../lib/pdfGenerator.js";
 import { sendEmail } from '../../../lib/emailHelper';
 import crypto from "crypto";
-import { google } from "googleapis"; // This might be removable if not used directly
 
 // --- Helper Functions ---
 function verifyToken(id, ts) {
@@ -60,44 +59,115 @@ export default async function handler(req, res) {
     }
 
     try {
-        const xeroConfig = await initializeXeroDirectApi();
-        const sheets = getGoogleSheetsClient();
+        const sheets = await getGoogleSheetsClient();
         const spreadsheetId = getSpreadsheetId();
 
-        // 1. Get Quote and Lead data from Sheets using robust function
+        // 1. Get Quote and Lead data from Sheets
         const quoteData = await findRowAndGetData({
             sheets, spreadsheetId, tab: 'Quotes',
             searchColumn: 'QuoteID', searchValue: quoteId,
-            columnsToFetch: ['Admin Status', 'Xero Quote iD', 'LeadiD']
+            columnsToFetch: [
+                'Admin Status', 'LeadiD', 'TradespersonName', 'TradespersonEmail', 'TradespersonPhone',
+                'LabourRate', 'LabourHours', 'MaterialsCost', 'MaterialsQuantity', 'TravelCost', 
+                'TravelDistance', 'InstallationCost', 'Subtotal', 'GST', 'TotalQuote', 'ValidUntil', 'Notes'
+            ]
         });
 
         if (!quoteData) return res.redirect(`/quote-status?status=error&message=Quote not found.`);
         if (quoteData['Admin Status'] === 'Approved') return res.redirect(`/quote-status?status=error&message=This quote has already been approved.`);
-        if (!quoteData['Xero Quote iD']) return res.redirect(`/quote-status?status=error&message=Error: Xero Quote ID not found.`);
 
         const leadData = await findRowAndGetData({
             sheets, spreadsheetId, tab: 'Leads',
             searchColumn: 'Lead', searchValue: quoteData['LeadiD'],
-            columnsToFetch: ['CustomerName', 'CustomerEmail', 'ServiceType']
+            columnsToFetch: ['CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Area', 'Suburb', 'Rooms']
         });
         
         if (!leadData) return res.redirect(`/quote-status?status=error&message=Lead data not found.`);
 
-        // 2. Update Xero Quote status from DRAFT to SENT
-        await makeXeroApiCall(`Quotes/${quoteData['Xero Quote iD']}`, 'POST', { Quotes: [{ Status: 'SENT' }] }, xeroConfig);
-        
-        // 3. Get the final PDF from Xero
-        const pdfBuffer = await getXeroQuoteAsPdf(quoteData['Xero Quote iD'], xeroConfig);
+        // 2. Generate PDF using our new system (NO XERO!)
+        const quoteDataForPdf = {
+            quoteId,
+            quoteDate: new Date().toISOString(),
+            validUntil: quoteData.ValidUntil || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+            customerName: leadData.CustomerName,
+            customerEmail: leadData.CustomerEmail,
+            customerPhone: leadData.CustomerPhone,
+            customerAddress: `${leadData.Area || ''}, ${leadData.Suburb || ''}`.trim(),
+            serviceType: leadData.ServiceType,
+            tradespersonName: quoteData.TradespersonName,
+            tradespersonEmail: quoteData.TradespersonEmail,
+            tradespersonPhone: quoteData.TradespersonPhone,
+            tradespersonLicense: 'Licensed Tradesperson',
+            rooms: leadData.Rooms ? JSON.parse(leadData.Rooms) : [],
+            totals: {
+                labour: parseFloat(quoteData.LabourRate || 0) * parseFloat(quoteData.LabourHours || 0),
+                materials: parseFloat(quoteData.MaterialsCost || 0) * parseFloat(quoteData.MaterialsQuantity || 0),
+                travel: parseFloat(quoteData.TravelCost || 0) * parseFloat(quoteData.TravelDistance || 0),
+                installation: parseFloat(quoteData.InstallationCost || 0),
+                subtotal: parseFloat(quoteData.Subtotal || 0),
+                gst: parseFloat(quoteData.GST || 0),
+                final: parseFloat(quoteData.TotalQuote || 0)
+            }
+        };
 
-        // 4. Generate customer decision links
+        // 3. Generate PDF/HTML/DOCX with our smart fallback system
+        let pdfBuffer = null;
+        let htmlQuote = null;
+        let docxBuffer = null;
+        
+        try {
+            pdfBuffer = await generateQuotePDF(quoteDataForPdf);
+            console.log(`✅ PDF generated for approved quote: ${quoteId}`);
+        } catch (pdfError) {
+            console.error("❌ PDF Generation failed, trying HTML backup:", pdfError);
+            try {
+                htmlQuote = generateQuoteHTML(quoteDataForPdf);
+                console.log(`✅ HTML backup generated for approved quote: ${quoteId}`);
+            } catch (htmlError) {
+                console.error("❌ HTML Generation failed, trying DOCX backup:", htmlError);
+                try {
+                    docxBuffer = await generateQuoteDOCX(quoteDataForPdf);
+                    console.log(`✅ DOCX backup generated for approved quote: ${quoteId}`);
+                } catch (docxError) {
+                    console.error("❌ All quote generation failed:", docxError);
+                    return res.redirect(`/quote-status?status=error&message=Failed to generate quote document.`);
+                }
+            }
+        }
+
+        // 4. Create attachment - PDF preferred, HTML backup, DOCX final fallback
+        let attachment;
+        if (pdfBuffer) {
+            attachment = {
+                filename: `Quote_${quoteId}.pdf`,
+                content: pdfBuffer,
+                contentType: 'application/pdf'
+            };
+        } else if (htmlQuote) {
+            attachment = {
+                filename: `Quote_${quoteId}.html`,
+                content: Buffer.from(htmlQuote, 'utf8'),
+                contentType: 'text/html'
+            };
+        } else if (docxBuffer) {
+            attachment = {
+                filename: `Quote_${quoteId}.docx`,
+                content: docxBuffer,
+                contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            };
+        } else {
+            return res.redirect(`/quote-status?status=error&message=Failed to generate quote attachment.`);
+        }
+
+        // 5. Generate customer decision links
         const acceptLink = generateCustomerDecisionLink('accept', quoteId);
         const declineLink = generateCustomerDecisionLink('decline', quoteId);
         const viewQuoteLink = generateQuoteViewLink(quoteId);
 
-        // 5. Send the quote email to the customer with Xero PDF
+        // 6. Send the quote email to the customer with our PDF system
         const customerEmailOptions = {
           to: leadData['CustomerEmail'],
-          subject: `🎯 Your Quote for ${leadData['ServiceType']} is Ready!`,
+          subject: `🎯 Your Quote for ${leadData['ServiceType']} - $${parseFloat(quoteData.TotalQuote || 0).toFixed(2)} is Ready!`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px;">
               <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -153,7 +223,7 @@ export default async function handler(req, res) {
               </div>
             </div>
           `,
-          attachments: [{ filename: `Quote_${quoteId}.pdf`, content: pdfBuffer, contentType: 'application/pdf' }]
+          attachments: [attachment]
         };
         
         await sendEmail(customerEmailOptions);
@@ -177,7 +247,7 @@ export default async function handler(req, res) {
         return res.redirect(`/quote-status?status=success&message=Quote approved and sent to the customer!`);
 
     } catch (error) {
-        console.error("Xero Quote Approval Error:", error.response ? JSON.stringify(error.response.body, null, 2) : error);
-        return res.redirect(`/quote-status?status=error&message=An internal server error occurred during Xero approval.`);
+        console.error("Quote Approval Error:", error);
+        return res.redirect(`/quote-status?status=error&message=An internal server error occurred during quote approval.`);
     }
 }

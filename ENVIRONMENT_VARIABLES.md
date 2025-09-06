@@ -49,6 +49,19 @@ NEXT_PUBLIC_BASE_URL=your-domain.com
 ADMIN_EMAIL=admin@kiwitrade.co.nz
 ```
 
+### PDF Generation Services
+```bash
+# Adobe PDF Services (500 free conversions/month - PRIMARY)
+ADOBE_PDF_CLIENT_ID=your_adobe_client_id_here
+ADOBE_PDF_CLIENT_SECRET=your_adobe_client_secret_here
+
+# PDFShift (50 free conversions/month - SECONDARY)
+PDFSHIFT_API_KEY=your_pdfshift_api_key_here
+
+# API2PDF (Paid service - $0.002 per PDF - FALLBACK)
+API2PDF_API_KEY=your_api2pdf_api_key_here
+```
+
 ## Setting Up Environment Variables
 
 ### 1. Google Cloud Console Setup

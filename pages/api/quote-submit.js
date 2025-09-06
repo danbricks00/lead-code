@@ -1,5 +1,5 @@
 import { getGoogleSheetsClient, getSpreadsheetId } from '../../lib/googleSheets.js';
-import { generateQuotePDF, generateQuoteHTML, generateQuoteDOCX } from '../../lib/pdfGenerator.js';
+import { generateQuotePDF, generateQuoteHTML } from '../../lib/pdfGenerator.js';
 import { sendEmail } from '../../lib/emailHelper';
 import crypto from "crypto";
 
@@ -189,9 +189,8 @@ export default async function handler(req, res) {
     const gst = parseFloat(quoteDetails.gst) || 0;
     const totalQuote = parseFloat(quoteDetails.totalQuote) || 0;
 
-    // Generate PDF using our new system with DOCX and HTML backup
+    // Generate PDF using our mobile-optimized system with HTML backup
     let pdfBuffer = null;
-    let docxBuffer = null;
     let htmlQuote = null;
     try {
         
@@ -235,22 +234,14 @@ export default async function handler(req, res) {
             console.error("❌ PDF Generation failed, trying HTML backup:", pdfError);
             
             try {
-                // Try formatted HTML backup (maintains all styling)
+                // Try formatted HTML backup (maintains all styling and mobile-friendly)
                 htmlQuote = generateQuoteHTML(quoteData);
                 console.log(`✅ Professional HTML quote created for Quote ${quoteId}`);
             } catch (htmlError) {
-                console.error("❌ HTML Generation also failed, trying DOCX backup:", htmlError);
-                
-                try {
-                    // DOCX as final fallback (basic formatting only)
-                    docxBuffer = await generateQuoteDOCX(quoteData);
-                    console.log(`✅ DOCX backup created as final fallback for Quote ${quoteId}`);
-                } catch (docxError) {
-                    console.error("❌ All quote generation methods failed:", docxError);
-                    // Create basic HTML as absolute last resort
-                    htmlQuote = createHTMLQuote(quoteData);
-                    console.log(`⚠️ Basic HTML backup created for Quote ${quoteId}`);
-                }
+                console.error("❌ HTML Generation also failed, using basic HTML backup:", htmlError);
+                // Create basic HTML as final fallback
+                htmlQuote = createHTMLQuote(quoteData);
+                console.log(`⚠️ Basic HTML backup created for Quote ${quoteId}`);
             }
         }
     } catch (generalError) {
@@ -394,12 +385,6 @@ export default async function handler(req, res) {
                 filename: `Quote_${quoteId}.html`,
                 content: Buffer.from(htmlQuote, 'utf8'),
                 contentType: 'text/html'
-            };
-        } else if (docxBuffer) {
-            attachment = {
-                filename: `Quote_${quoteId}.docx`,
-                content: docxBuffer,
-                contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
             };
         } else {
             attachment = {

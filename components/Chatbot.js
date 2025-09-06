@@ -85,15 +85,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
     setTimeout(() => {
         setIsLoading(false);
         setStep(next);
-        // Get the first name from the full name for personalization
-        const getFirstName = () => {
-            if (leadData.name) {
-                return leadData.name.split(' ')[0];
-            }
-            return '';
-        };
-        
-        const firstName = getFirstName();
+        // Get the first name for personalization (direct access)
+        const firstName = leadData.firstName || '';
         
         // Trigger the question for the new step
         const questions = {

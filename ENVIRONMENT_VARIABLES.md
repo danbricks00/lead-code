@@ -54,6 +54,8 @@ ADMIN_EMAIL=admin@kiwitrade.co.nz
 # Adobe PDF Services (500 free conversions/month - PRIMARY)
 ADOBE_PDF_CLIENT_ID=your_adobe_client_id_here
 ADOBE_PDF_CLIENT_SECRET=your_adobe_client_secret_here
+# Optional: Organization ID (if required by your Adobe account)
+ADOBE_PDF_ORGANIZATION_ID=your_organization_id_here
 
 # PDFShift (50 free conversions/month - SECONDARY)
 PDFSHIFT_API_KEY=your_pdfshift_api_key_here

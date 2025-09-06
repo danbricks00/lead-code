@@ -197,99 +197,40 @@ export default async function handler(req, res) {
         const declineLink = generateCustomerDecisionLink('decline', quoteId);
         const viewQuoteLink = generateQuoteViewLink(quoteId);
 
-        // 6. Send the quote email to the customer with our PDF system
+        // 6. Send UNIFIED quote email to customer (same format as tradesperson and admin)
         const customerEmailOptions = {
           to: leadData['CustomerEmail'],
-          subject: `🎯 Your Quote for ${leadData['ServiceType']} - $${parseFloat(quoteData.TotalQuote || 0).toFixed(2)} is Ready!`,
+          subject: `Quote ${quoteId} - Copy for ${leadData['CustomerName']}`,
           html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px;">
-              <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                
-                <!-- Header -->
-                <div style="text-align: center; margin-bottom: 30px;">
-                  <h1 style="color: #2c3e50; margin: 0; font-size: 28px;">📋 Your Quote is Ready!</h1>
-                  <p style="color: #7f8c8d; margin: 10px 0 0 0; font-size: 16px;">Professional quote for ${leadData['ServiceType']}</p>
-                </div>
-
-                <!-- Customer Details -->
-                <div style="background-color: #ecf0f1; border-radius: 6px; padding: 20px; margin-bottom: 25px;">
-                  <h3 style="color: #34495e; margin: 0 0 15px 0; font-size: 18px;">📋 Quote Details</h3>
-                  <p style="margin: 5px 0; color: #2c3e50;"><strong>Customer:</strong> ${leadData['CustomerName']}</p>
-                  <p style="margin: 5px 0; color: #2c3e50;"><strong>Service:</strong> ${leadData['ServiceType']}</p>
-                  <p style="margin: 5px 0; color: #2c3e50;"><strong>Location:</strong> ${leadData['Area'] || 'N/A'}, ${leadData['Suburb'] || 'N/A'}</p>
-                  <p style="margin: 5px 0; color: #2c3e50;"><strong>Quote ID:</strong> ${quoteId}</p>
-                </div>
-
-                <!-- Pricing Breakdown -->
-                <div style="background-color: #e8f5e8; border-radius: 6px; padding: 20px; margin-bottom: 25px;">
-                  <h3 style="color: #27ae60; margin: 0 0 15px 0; font-size: 18px;">💰 Cost Breakdown</h3>
-                  <div style="border-bottom: 1px solid #c8e6c9; padding-bottom: 15px; margin-bottom: 15px;">
-                    <p style="margin: 5px 0; color: #2c3e50; display: flex; justify-content: space-between;">
-                      <span><strong>Labour:</strong> ${parseFloat(quoteData.LabourHours || 0)} hours @ $${parseFloat(quoteData.LabourRate || 0).toFixed(2)}/hour</span>
-                      <span><strong>$${(parseFloat(quoteData.LabourRate || 0) * parseFloat(quoteData.LabourHours || 0)).toFixed(2)}</strong></span>
-                    </p>
-                    <p style="margin: 5px 0; color: #2c3e50; display: flex; justify-content: space-between;">
-                      <span><strong>Materials:</strong> ${parseFloat(quoteData.MaterialsQuantity || 0)} units @ $${parseFloat(quoteData.MaterialsCost || 0).toFixed(2)}/unit</span>
-                      <span><strong>$${(parseFloat(quoteData.MaterialsCost || 0) * parseFloat(quoteData.MaterialsQuantity || 0)).toFixed(2)}</strong></span>
-                    </p>
-                    <p style="margin: 5px 0; color: #2c3e50; display: flex; justify-content: space-between;">
-                      <span><strong>Travel:</strong> ${parseFloat(quoteData.TravelDistance || 0)} km @ $${parseFloat(quoteData.TravelCost || 0).toFixed(2)}/km</span>
-                      <span><strong>$${(parseFloat(quoteData.TravelCost || 0) * parseFloat(quoteData.TravelDistance || 0)).toFixed(2)}</strong></span>
-                    </p>
-                    <p style="margin: 5px 0; color: #2c3e50; display: flex; justify-content: space-between;">
-                      <span><strong>Installation & Setup:</strong></span>
-                      <span><strong>$${parseFloat(quoteData.InstallationCost || 0).toFixed(2)}</strong></span>
-                    </p>
-                  </div>
-                  <div style="border-bottom: 1px solid #c8e6c9; padding-bottom: 15px; margin-bottom: 15px;">
-                    <p style="margin: 5px 0; color: #2c3e50; display: flex; justify-content: space-between; font-size: 16px;">
-                      <span><strong>Subtotal:</strong></span>
-                      <span><strong>$${parseFloat(quoteData.Subtotal || 0).toFixed(2)}</strong></span>
-                    </p>
-                    <p style="margin: 5px 0; color: #2c3e50; display: flex; justify-content: space-between;">
-                      <span><strong>GST (15%):</strong></span>
-                      <span><strong>$${parseFloat(quoteData.GST || 0).toFixed(2)}</strong></span>
-                    </p>
-                  </div>
-                  <div style="background-color: #27ae60; color: white; padding: 15px; border-radius: 6px; text-align: center;">
-                    <p style="margin: 0; font-size: 24px; font-weight: bold;">TOTAL: $${parseFloat(quoteData.TotalQuote || 0).toFixed(2)}</p>
-                  </div>
-                </div>
-
-                <!-- Online Quote Viewer -->
-                <div style="background-color: #3498db; border-radius: 6px; padding: 20px; margin-bottom: 25px; text-align: center;">
-                  <h3 style="color: white; margin: 0 0 15px 0; font-size: 18px;">🌐 View Your Quote Online</h3>
-                  <p style="color: #ecf0f1; margin: 0 0 15px 0;">Click below to view your detailed quote in your browser:</p>
-                  <a href="${viewQuoteLink}" style="display: inline-block; background-color: white; color: #3498db; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">📖 View Quote Online</a>
-                </div>
-
-                <!-- Quick Decision Buttons -->
-                <div style="background-color: #f8f9fa; border-radius: 6px; padding: 25px; text-align: center;">
-                  <h3 style="color: #2c3e50; margin: 0 0 20px 0; font-size: 18px;">🎯 Quick Decision</h3>
-                  <p style="color: #5a6c7d; margin: 0 0 20px 0;">Make your decision directly from this email:</p>
-                  
-                  <div style="margin: 20px 0;">
-                    <a href="${acceptLink}" style="display: inline-block; background-color: #27ae60; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; margin: 0 10px;">✅ ACCEPT QUOTE</a>
-                    <a href="${declineLink}" style="display: inline-block; background-color: #e74c3c; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; margin: 0 10px;">❌ DECLINE QUOTE</a>
-                  </div>
-                  
-                  <p style="color: #7f8c8d; font-size: 14px; margin: 15px 0 0 0; font-style: italic;">Each button can only be used once for security</p>
-                </div>
-
-                <!-- PDF Attachment Notice -->
-                <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 15px; margin: 25px 0; text-align: center;">
-                  <p style="color: #856404; margin: 0; font-weight: bold;">📎 Professional PDF quote attached to this email</p>
-                </div>
-
-                <!-- Footer -->
-                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ecf0f1;">
-                  <p style="color: #7f8c8d; font-size: 14px; margin: 0;">
-                    Questions? Reply to this email or contact us directly.<br>
-                    <strong>Kiwi Trade Team</strong>
-                  </p>
-                </div>
-
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #2c3e50;">Quote Copy</h2>
+              <p>Here's your approved quote from ${quoteData.TradespersonName}.</p>
+              
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
+                <p><strong>Quote ID:</strong> ${quoteId}</p>
+                <p><strong>Customer:</strong> ${leadData['CustomerName']}</p>
+                <p><strong>Tradesperson:</strong> ${quoteData.TradespersonName}</p>
+                <p><strong>Service:</strong> ${leadData['ServiceType']}</p>
+                <p><strong>Total Amount:</strong> $${parseFloat(quoteData.TotalQuote || 0).toFixed(2)}</p>
+                <p><strong>Location:</strong> ${leadData['Area']}, ${leadData['Suburb']}</p>
               </div>
+
+              <!-- Quick Decision Buttons -->
+              <div style="background-color: #f8f9fa; border-radius: 6px; padding: 25px; text-align: center; margin: 20px 0;">
+                <h3 style="color: #2c3e50; margin: 0 0 20px 0; font-size: 18px;">🎯 Quick Decision</h3>
+                <p style="color: #5a6c7d; margin: 0 0 20px 0;">Make your decision directly from this email:</p>
+                
+                <div style="margin: 20px 0;">
+                  <a href="${acceptLink}" style="display: inline-block; background-color: #27ae60; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; margin: 0 10px;">✅ ACCEPT QUOTE</a>
+                  <a href="${declineLink}" style="display: inline-block; background-color: #e74c3c; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; margin: 0 10px;">❌ DECLINE QUOTE</a>
+                </div>
+                
+                <p style="color: #7f8c8d; font-size: 14px; margin: 15px 0 0 0; font-style: italic;">Each button can only be used once for security</p>
+              </div>
+              
+              <p>You can also view the quote online using the link: <a href="${viewQuoteLink}" style="color: #3498db;">${viewQuoteLink}</a></p>
+              <p>Questions? Contact ${quoteData.TradespersonName} at ${quoteData.TradespersonEmail}</p>
             </div>
           `,
           attachments: [attachment]

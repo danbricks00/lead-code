@@ -681,10 +681,10 @@ export default async function handler(req, res) {
             <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <h3 style="color: #27ae60; margin-top: 0;">What happens next:</h3>
               <ul style="margin: 10px 0; padding-left: 20px;">
-                <li>📄 Professional DOCX quote being generated</li>
+                <li>📄 Professional quote document being generated</li>
                 <li>📧 Customer will receive quote email with attachment</li>
-                <li>📧 Customer can view quote online and accept/decline</li>
-                <li>📊 Quote status will be updated in dashboard</li>
+                <li>📧 Customer can accept or decline the quote</li>
+                <li>📊 Quote status will be updated in system</li>
               </ul>
             </div>
 
@@ -739,7 +739,6 @@ export default async function handler(req, res) {
               <ul style="margin: 10px 0; padding-left: 20px;">
                 <li>✅ Quote submitted successfully</li>
                 <li>📧 Customer will receive quote with attachment</li>
-                <li>🌐 Customer can view quote online</li>
                 <li>📊 Quote status updated in system</li>
               </ul>
             </div>
@@ -803,15 +802,6 @@ export default async function handler(req, res) {
               </div>
             </div>
             
-            <!-- Box 2: Quote Viewer -->
-            <div style="background: #e3f2fd; padding: 25px; border-radius: 10px; margin: 25px 0; text-align: center; border-left: 5px solid #1976d2;">
-              <h3 style="color: #1976d2; margin-top: 0; font-size: 20px;">📄 Quote Viewer</h3>
-              <p style="margin: 15px 0; color: #424242; font-size: 16px;">Click below to view your complete quote with all details:</p>
-              <a href="${currentUrl}/api/view-quote?quoteId=${quoteData.quoteId}" 
-                 style="background: #1976d2; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-size: 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s ease;">
-                 📄 View Full Quote
-              </a>
-            </div>
             
             <!-- Box 3: Quote Actions -->
             <div style="background: #fff3cd; padding: 25px; border-radius: 10px; margin: 25px 0; text-align: center; border-left: 5px solid #ffc107;">

@@ -71,7 +71,7 @@ export default async function handler(req, res) {
                 'LabourRate', 'LabourHours', 'MaterialsCost', 'MaterialsQuantity', 'TravelCost', 
                 'TravelDistance', 'InstallationCost', 'Subtotal', 'GST', 'TotalQuote', 'ValidUntil', 'Notes',
                 'Labour Cost', 'Labour Hour', 'Materials Cost', 'Materials Quanitity', 'Travel Cost',
-                'Travel Distance', 'Installation Cost', 'Total Quote'
+                'Travel Distance', 'Installation Cost', 'Total Quote', 'Rooms', 'LeadId'
             ]
         });
 
@@ -87,18 +87,29 @@ export default async function handler(req, res) {
         if (!leadData) return res.redirect(`/quote-status?status=error&message=Lead data not found.`);
 
         // 2. Generate PDF using our new system with enhanced data (NO XERO!)
-        const rooms = leadData.Rooms ? JSON.parse(leadData.Rooms) : [];
+        // Use stored rooms data from quote submission, fallback to lead data
+        let rooms = [];
+        if (quoteData.Rooms) {
+            try {
+                rooms = JSON.parse(quoteData.Rooms);
+            } catch (e) {
+                console.log('Could not parse stored rooms data, using lead data');
+                rooms = leadData.Rooms ? JSON.parse(leadData.Rooms) : [];
+            }
+        } else {
+            rooms = leadData.Rooms ? JSON.parse(leadData.Rooms) : [];
+        }
         const totalSqm = rooms.reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0);
         
-        // Parse quote values - handle both column name formats
-        const labourRate = parseFloat(quoteData.LabourRate || quoteData['Labour Cost'] || 0);
-        const labourHours = parseFloat(quoteData.LabourHours || quoteData['Labour Hour'] || 0);
-        const materialsCost = parseFloat(quoteData.MaterialsCost || quoteData['Materials Cost'] || 0);
-        const materialsQuantity = parseFloat(quoteData.MaterialsQuantity || quoteData['Materials Quanitity'] || 0);
-        const travelCost = parseFloat(quoteData.TravelCost || quoteData['Travel Cost'] || 0);
-        const travelDistance = parseFloat(quoteData.TravelDistance || quoteData['Travel Distance'] || 0);
-        const installationCost = parseFloat(quoteData.InstallationCost || quoteData['Installation Cost'] || 0);
-        const totalQuote = parseFloat(quoteData.TotalQuote || quoteData['Total Quote'] || 0);
+        // Parse quote values - use stored data from quote submission
+        const labourRate = parseFloat(quoteData.LabourRate || 0);
+        const labourHours = parseFloat(quoteData.LabourHours || 0);
+        const materialsCost = parseFloat(quoteData.MaterialsCost || 0);
+        const materialsQuantity = parseFloat(quoteData.MaterialsQuantity || 0);
+        const travelCost = parseFloat(quoteData.TravelCost || 0);
+        const travelDistance = parseFloat(quoteData.TravelDistance || 0);
+        const installationCost = parseFloat(quoteData.InstallationCost || 0);
+        const totalQuote = parseFloat(quoteData.TotalQuote || 0);
         
         // Calculate per-room breakdown
         const roomsWithDetails = rooms.map(room => {

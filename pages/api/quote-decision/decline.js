@@ -25,22 +25,37 @@ function formatTimestamp(isoString) {
     }
 }
 
-async function sendNotificationEmails(quoteData) {
+async function sendNotificationEmails(quoteData, leadData = {}) {
     console.log('📧 Preparing notification emails for quote decline');
     console.log('📋 Quote data keys:', Object.keys(quoteData));
+    console.log('📋 Lead data keys:', Object.keys(leadData));
     
-    // Get customer email - try different possible column names
-    const customerEmail = quoteData['CustomerEmail'] || quoteData['Customer Email'] || quoteData['customerEmail'];
-    const customerName = quoteData['CustomerName'] || quoteData['Customer Name'] || quoteData['customerName'];
+    // Get customer email - try quote data first, then lead data
+    const customerEmail = quoteData['CustomerEmail'] || quoteData['Customer Email'] || quoteData['customerEmail'] || 
+                         leadData['CustomerEmail'] || leadData['Customer Email'] || leadData['customerEmail'];
+    const customerName = quoteData['CustomerName'] || quoteData['Customer Name'] || quoteData['customerName'] || 
+                        leadData['CustomerName'] || leadData['Customer Name'] || leadData['customerName'];
     
     // Get tradesperson email - try different possible column names  
-    const tradespersonEmail = quoteData['TradespersonEmail'] || quoteData['Tradesperson Email'] || quoteData['tradespersonEmail'];
-    const tradespersonName = quoteData['TradespersonName'] || quoteData['Tradesperson Name'] || quoteData['tradespersonName'];
+    const tradespersonEmail = quoteData['TradespersonEmail'] || quoteData['Tradesperson Email'] || quoteData['tradespersonEmail'] || 
+                             quoteData['TradePerson Email'] || quoteData['TradesPerson Email'];
+    const tradespersonName = quoteData['TradespersonName'] || quoteData['Tradesperson Name'] || quoteData['tradespersonName'] || 
+                            quoteData['TradePerson Name'] || quoteData['TradesPerson Name'];
     
     console.log('📧 Email recipients:');
     console.log('  - Customer:', customerEmail);
     console.log('  - Tradesperson:', tradespersonEmail);
     console.log('  - Admin:', process.env.ADMIN_EMAIL);
+
+    // Validate email addresses
+    if (!customerEmail) {
+        console.error('❌ Customer email not found in quote or lead data');
+        throw new Error('Customer email not found');
+    }
+    if (!tradespersonEmail) {
+        console.error('❌ Tradesperson email not found in quote data');
+        throw new Error('Tradesperson email not found');
+    }
 
     const customerMail = {
         to: customerEmail,
@@ -251,6 +266,34 @@ export default async function handler(req, res) {
         
         const targetRow = rows[rowIndex];
         
+        // Get lead ID to fetch customer information
+        const leadIdIndex = header.findIndex(col => col && (col.toLowerCase().includes('lead') || col.toLowerCase().includes('leadi')));
+        const leadId = leadIdIndex !== -1 ? targetRow[leadIdIndex] : null;
+        
+        // Fetch lead data to get customer information
+        let leadData = {};
+        if (leadId) {
+            try {
+                const leadResponse = await sheets.spreadsheets.values.get({ 
+                    spreadsheetId, 
+                    range: 'Leads!A:Z' 
+                });
+                const leadRows = leadResponse.data.values;
+                if (leadRows) {
+                    const leadHeader = leadRows[0];
+                    const leadRowIndex = leadRows.findIndex(row => row[0] === leadId);
+                    if (leadRowIndex !== -1) {
+                        const leadRow = leadRows[leadRowIndex];
+                        leadHeader.forEach((headerName, index) => {
+                            leadData[headerName] = leadRow[index] || '';
+                        });
+                    }
+                }
+            } catch (leadError) {
+                console.log('⚠️ Could not fetch lead data:', leadError.message);
+            }
+        }
+        
         // Check if quote has expired (Valid Until date)
         const validUntilIndex = header.findIndex(col => 
             col && (col.toLowerCase().includes('valid until') || 
@@ -345,7 +388,7 @@ export default async function handler(req, res) {
         });
 
         // --- Send Emails ---
-        await sendNotificationEmails(quoteDataForEmail);
+        await sendNotificationEmails(quoteDataForEmail, leadData);
         
         return res.redirect(`/quote-status?status=success&message=Your decision to decline has been recorded.`);
 

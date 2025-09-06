@@ -79,14 +79,14 @@ export default async function handler(req, res) {
       }
     }
 
-    // Calculate totals
-    const labourRate = parseFloat(quoteData.LabourRate) || 0;
-    const labourHours = parseFloat(quoteData.LabourHours) || 0;
-    const materialsCost = parseFloat(quoteData.MaterialsCost) || 0;
-    const materialsQuantity = parseFloat(quoteData.MaterialsQuantity) || 0;
-    const travelCost = parseFloat(quoteData.TravelCost) || 0;
-    const travelDistance = parseFloat(quoteData.TravelDistance) || 0;
-    const installationCost = parseFloat(quoteData.InstallationCost) || 0;
+    // Calculate totals - handle both column name formats
+    const labourRate = parseFloat(quoteData.LabourRate || quoteData['Labour Cost']) || 0;
+    const labourHours = parseFloat(quoteData.LabourHours || quoteData['Labour Hour']) || 0;
+    const materialsCost = parseFloat(quoteData.MaterialsCost || quoteData['Materials Cost']) || 0;
+    const materialsQuantity = parseFloat(quoteData.MaterialsQuantity || quoteData['Materials Quanitity']) || 0;
+    const travelCost = parseFloat(quoteData.TravelCost || quoteData['Travel Cost']) || 0;
+    const travelDistance = parseFloat(quoteData.TravelDistance || quoteData['Travel Distance']) || 0;
+    const installationCost = parseFloat(quoteData.InstallationCost || quoteData['Installation Cost']) || 0;
 
     const labourTotal = labourRate * labourHours;
     const materialsTotal = materialsCost * materialsQuantity;

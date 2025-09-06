@@ -69,7 +69,9 @@ export default async function handler(req, res) {
             columnsToFetch: [
                 'Admin Status', 'LeadiD', 'TradespersonName', 'TradespersonEmail', 'TradespersonPhone',
                 'LabourRate', 'LabourHours', 'MaterialsCost', 'MaterialsQuantity', 'TravelCost', 
-                'TravelDistance', 'InstallationCost', 'Subtotal', 'GST', 'TotalQuote', 'ValidUntil', 'Notes'
+                'TravelDistance', 'InstallationCost', 'Subtotal', 'GST', 'TotalQuote', 'ValidUntil', 'Notes',
+                'Labour Cost', 'Labour Hour', 'Materials Cost', 'Materials Quanitity', 'Travel Cost',
+                'Travel Distance', 'Installation Cost', 'Total Quote'
             ]
         });
 
@@ -88,14 +90,15 @@ export default async function handler(req, res) {
         const rooms = leadData.Rooms ? JSON.parse(leadData.Rooms) : [];
         const totalSqm = rooms.reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0);
         
-        // Parse quote values
-        const labourRate = parseFloat(quoteData.LabourRate || 0);
-        const labourHours = parseFloat(quoteData.LabourHours || 0);
-        const materialsCost = parseFloat(quoteData.MaterialsCost || 0);
-        const materialsQuantity = parseFloat(quoteData.MaterialsQuantity || 0);
-        const travelCost = parseFloat(quoteData.TravelCost || 0);
-        const travelDistance = parseFloat(quoteData.TravelDistance || 0);
-        const installationCost = parseFloat(quoteData.InstallationCost || 0);
+        // Parse quote values - handle both column name formats
+        const labourRate = parseFloat(quoteData.LabourRate || quoteData['Labour Cost'] || 0);
+        const labourHours = parseFloat(quoteData.LabourHours || quoteData['Labour Hour'] || 0);
+        const materialsCost = parseFloat(quoteData.MaterialsCost || quoteData['Materials Cost'] || 0);
+        const materialsQuantity = parseFloat(quoteData.MaterialsQuantity || quoteData['Materials Quanitity'] || 0);
+        const travelCost = parseFloat(quoteData.TravelCost || quoteData['Travel Cost'] || 0);
+        const travelDistance = parseFloat(quoteData.TravelDistance || quoteData['Travel Distance'] || 0);
+        const installationCost = parseFloat(quoteData.InstallationCost || quoteData['Installation Cost'] || 0);
+        const totalQuote = parseFloat(quoteData.TotalQuote || quoteData['Total Quote'] || 0);
         
         // Calculate per-room breakdown
         const roomsWithDetails = rooms.map(room => {
@@ -200,7 +203,7 @@ export default async function handler(req, res) {
         // 6. Send CUSTOMER-SPECIFIC quote email (different tracking journey)
         const customerEmailOptions = {
           to: leadData['CustomerEmail'],
-          subject: `🎯 Your Quote for ${leadData['ServiceType']} - $${parseFloat(quoteData.TotalQuote || 0).toFixed(2)} is Ready!`,
+          subject: `🎯 Your Quote for ${leadData['ServiceType']} - $${totalQuote.toFixed(2)} is Ready!`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
               <div style="background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
@@ -261,8 +264,8 @@ export default async function handler(req, res) {
                   <h3 style="color: #34495e; margin-top: 0;">📋 Quote Details:</h3>
                   <p><strong>Quote ID:</strong> ${quoteId}</p>
                   <p><strong>Service:</strong> ${leadData['ServiceType']}</p>
-                  <p><strong>Tradesperson:</strong> ${quoteData.TradespersonName}</p>
-                  <p><strong>Total Amount:</strong> $${parseFloat(quoteData.TotalQuote || 0).toFixed(2)}</p>
+                  <p><strong>Tradesperson:</strong> ${quoteData.TradespersonName || 'Professional Tradesperson'}</p>
+                  <p><strong>Total Amount:</strong> $${totalQuote.toFixed(2)}</p>
                   <p><strong>Location:</strong> ${leadData['Area']}, ${leadData['Suburb']}</p>
                 </div>
 
@@ -295,8 +298,8 @@ export default async function handler(req, res) {
                 <!-- Contact Information -->
                 <div style="background-color: #e8f5e8; border-radius: 8px; padding: 20px; margin: 20px 0;">
                   <h4 style="color: #27ae60; margin: 0 0 10px 0;">👷‍♂️ Your Tradesperson</h4>
-                  <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${quoteData.TradespersonName}</p>
-                  <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${quoteData.TradespersonEmail}</p>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${quoteData.TradespersonName || 'Professional Tradesperson'}</p>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${quoteData.TradespersonEmail || 'Contact via Kiwi Trade'}</p>
                   <p style="margin: 15px 0 0 0;">
                     <a href="mailto:${quoteData.TradespersonEmail}" style="display: inline-block; background: #27ae60; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">📧 Contact Tradesperson</a>
                   </p>

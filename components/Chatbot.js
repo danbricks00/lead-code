@@ -106,7 +106,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
             pre_contact_details: "Great, that's all the project information we need. Now, let's get some contact details so we can send you the quote.",
             ask_name: "Perfect. What is your full name?",
             ask_phone: firstName ? `Thanks ${firstName}! What is your phone number?` : "What is your phone number?",
-            ask_suburb: firstName ? `Great ${firstName}! Now, what is your suburb? Start typing and select from the list.` : "Great. Now, what is your suburb? Start typing and select from the list.",
+            ask_suburb: firstName ? `Great ${firstName}! What suburb is the job located in? Start typing and select from the list.` : "Great. What suburb is the job located in? Start typing and select from the list.",
             ask_email: firstName ? `Finally ${firstName}, what is your email address?` : "Finally, what is your email address?",
         };
         if (questions[next]) {

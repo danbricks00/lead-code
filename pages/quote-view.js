@@ -179,33 +179,33 @@ const QuoteViewPage = () => {
             <tbody>
               <tr>
                 <td style={styles.td}>Labour</td>
-                <td style={styles.td}>${quoteData['Labour Cost']}/hr</td>
-                <td style={styles.td}>{quoteData['Labour Hour']} hrs</td>
-                <td style={styles.td}>${(parseFloat(quoteData['Labour Cost']) * parseFloat(quoteData['Labour Hour'])).toFixed(2)}</td>
+                <td style={styles.td}>${(parseFloat(quoteData['Labour Cost'] || quoteData.LabourRate) || 0).toFixed(2)}/hr</td>
+                <td style={styles.td}>{quoteData['Labour Hour'] || quoteData.LabourHours || 0} hrs</td>
+                <td style={styles.td}>${((parseFloat(quoteData['Labour Cost'] || quoteData.LabourRate) || 0) * (parseFloat(quoteData['Labour Hour'] || quoteData.LabourHours) || 0)).toFixed(2)}</td>
               </tr>
               <tr>
                 <td style={styles.td}>Materials</td>
-                <td style={styles.td}>${quoteData['Materials Cost']}/sqm</td>
-                <td style={styles.td}>{quoteData['Materials Quanitity']} sqm</td>
-                <td style={styles.td}>${(parseFloat(quoteData['Materials Cost']) * parseFloat(quoteData['Materials Quanitity'])).toFixed(2)}</td>
+                <td style={styles.td}>${(parseFloat(quoteData['Materials Cost'] || quoteData.MaterialsCost) || 0).toFixed(2)}/sqm</td>
+                <td style={styles.td}>{quoteData['Materials Quanitity'] || quoteData.MaterialsQuantity || 0} sqm</td>
+                <td style={styles.td}>${((parseFloat(quoteData['Materials Cost'] || quoteData.MaterialsCost) || 0) * (parseFloat(quoteData['Materials Quanitity'] || quoteData.MaterialsQuantity) || 0)).toFixed(2)}</td>
               </tr>
               <tr>
                 <td style={styles.td}>Travel</td>
-                <td style={styles.td}>${quoteData['Travel Cost']}/km</td>
-                <td style={styles.td}>{quoteData['Travel Distance']} km</td>
-                <td style={styles.td}>${(parseFloat(quoteData['Travel Cost']) * parseFloat(quoteData['Travel Distance'])).toFixed(2)}</td>
+                <td style={styles.td}>${(parseFloat(quoteData['Travel Cost'] || quoteData.TravelCost) || 0).toFixed(2)}/km</td>
+                <td style={styles.td}>{quoteData['Travel Distance'] || quoteData.TravelDistance || 0} km</td>
+                <td style={styles.td}>${((parseFloat(quoteData['Travel Cost'] || quoteData.TravelCost) || 0) * (parseFloat(quoteData['Travel Distance'] || quoteData.TravelDistance) || 0)).toFixed(2)}</td>
               </tr>
               <tr>
                 <td style={styles.td}>Installation</td>
-                <td style={styles.td}>${quoteData['Installation Cost']}</td>
+                <td style={styles.td}>${(parseFloat(quoteData['Installation Cost'] || quoteData.InstallationCost) || 0).toFixed(2)}</td>
                 <td style={styles.td}>1</td>
-                <td style={styles.td}>${parseFloat(quoteData['Installation Cost']).toFixed(2)}</td>
+                <td style={styles.td}>${(parseFloat(quoteData['Installation Cost'] || quoteData.InstallationCost) || 0).toFixed(2)}</td>
               </tr>
             </tbody>
             <tfoot>
               <tr style={styles.totalRow}>
                 <td colSpan="3" style={styles.totalLabel}><strong>Total Quote:</strong></td>
-                <td style={styles.totalAmount}><strong>${parseFloat(quoteData['Total Quote']).toFixed(2)}</strong></td>
+                <td style={styles.totalAmount}><strong>${(parseFloat(quoteData['Total Quote'] || quoteData.TotalQuote) || 0).toFixed(2)}</strong></td>
               </tr>
             </tfoot>
           </table>

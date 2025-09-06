@@ -502,12 +502,7 @@ export default async function handler(req, res) {
                 content: Buffer.from(htmlQuote, 'utf8'),
                 contentType: 'text/html'
             };
-        } else if (docxBuffer) {
-            customerAttachment = {
-                filename: `Quote_${quoteId}.docx`,
-                content: docxBuffer,
-                contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-            };
+        // DOCX removed for better mobile experience
         } else {
             customerAttachment = {
                 filename: `Quote_${quoteId}.txt`,
@@ -591,12 +586,7 @@ export default async function handler(req, res) {
                 content: Buffer.from(htmlQuote, 'utf8'),
                 contentType: 'text/html'
             };
-        } else if (docxBuffer) {
-            tradespersonAttachment = {
-                filename: `Quote_${quoteId}.docx`,
-                content: docxBuffer,
-                contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-            };
+        // DOCX removed for better mobile experience
         } else {
             tradespersonAttachment = {
                 filename: `Quote_${quoteId}.txt`,

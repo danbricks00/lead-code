@@ -132,7 +132,9 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      quoteData: responseData
+      quote: quoteData, // Raw quote data from sheets
+      lead: leadData,   // Raw lead data from sheets
+      quoteData: responseData // Formatted data for PDF generation
     });
 
   } catch (error) {

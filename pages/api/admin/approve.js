@@ -1,5 +1,5 @@
 import { getGoogleSheetsClient, getSpreadsheetId } from "../../../lib/googleSheets.js";
-import { generateQuotePDF, generateQuoteHTML, generateQuoteDOCX } from "../../../lib/pdfGenerator.js";
+import { generateQuotePDF, generateQuoteHTML } from "../../../lib/pdfGenerator.js";
 import { sendEmail } from '../../../lib/emailHelper';
 import crypto from "crypto";
 
@@ -110,10 +110,9 @@ export default async function handler(req, res) {
             }
         };
 
-        // 3. Generate PDF/HTML/DOCX with our smart fallback system
+        // 3. Generate PDF/HTML with our mobile-optimized fallback system
         let pdfBuffer = null;
         let htmlQuote = null;
-        let docxBuffer = null;
         
         try {
             pdfBuffer = await generateQuotePDF(quoteDataForPdf);
@@ -124,18 +123,12 @@ export default async function handler(req, res) {
                 htmlQuote = generateQuoteHTML(quoteDataForPdf);
                 console.log(`✅ HTML backup generated for approved quote: ${quoteId}`);
             } catch (htmlError) {
-                console.error("❌ HTML Generation failed, trying DOCX backup:", htmlError);
-                try {
-                    docxBuffer = await generateQuoteDOCX(quoteDataForPdf);
-                    console.log(`✅ DOCX backup generated for approved quote: ${quoteId}`);
-                } catch (docxError) {
-                    console.error("❌ All quote generation failed:", docxError);
-                    return res.redirect(`/quote-status?status=error&message=Failed to generate quote document.`);
-                }
+                console.error("❌ HTML Generation also failed:", htmlError);
+                return res.redirect(`/quote-status?status=error&message=Failed to generate quote document.`);
             }
         }
 
-        // 4. Create attachment - PDF preferred, HTML backup, DOCX final fallback
+        // 4. Create attachment - PDF preferred, HTML mobile-friendly backup
         let attachment;
         if (pdfBuffer) {
             attachment = {
@@ -148,12 +141,6 @@ export default async function handler(req, res) {
                 filename: `Quote_${quoteId}.html`,
                 content: Buffer.from(htmlQuote, 'utf8'),
                 contentType: 'text/html'
-            };
-        } else if (docxBuffer) {
-            attachment = {
-                filename: `Quote_${quoteId}.docx`,
-                content: docxBuffer,
-                contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
             };
         } else {
             return res.redirect(`/quote-status?status=error&message=Failed to generate quote attachment.`);

@@ -90,6 +90,60 @@ async function sendNotificationEmails(quoteData) {
         `,
     };
 
+    const tradespersonMail = {
+        to: tradespersonEmail,
+        subject: `Quote Decision: ${customerName} Declined Your Quote`,
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
+              <div style="background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                
+                <!-- Header -->
+                <div style="text-align: center; margin-bottom: 40px;">
+                  <div style="display: inline-block; background: linear-gradient(135deg, #6c757d 0%, #495057 100%); padding: 20px; border-radius: 50%; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);">
+                    <div style="font-size: 48px; color: white;">💼</div>
+                  </div>
+                  <h1 style="color: #6c757d; margin: 0; font-size: 32px; font-weight: bold;">Quote Update</h1>
+                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">Customer has made their decision</p>
+                </div>
+
+                <!-- Decision Summary -->
+                <div style="background: #f8d7da; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #f5c6cb; text-align: center;">
+                  <h3 style="color: #721c24; margin: 0 0 15px 0; font-size: 20px;">📝 Decision</h3>
+                  <p style="color: #721c24; margin: 0; font-size: 24px; font-weight: bold;">Quote Declined</p>
+                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 14px;">The customer has chosen not to proceed at this time</p>
+                </div>
+
+                <!-- Customer Details -->
+                <div style="background: #e8f4fd; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #b8daff;">
+                  <h3 style="color: #0066cc; margin: 0 0 20px 0; font-size: 20px;">👤 Customer Details</h3>
+                  <div style="background: white; padding: 20px; border-radius: 8px;">
+                    <p style="margin: 5px 0; color: #495057;"><strong>Customer:</strong> ${customerName}</p>
+                    <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${customerEmail}</p>
+                    <p style="margin: 5px 0; color: #495057;"><strong>Decision Date:</strong> ${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })} NZT</p>
+                  </div>
+                </div>
+
+                <!-- Encouragement -->
+                <div style="background: #fff3cd; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #ffeaa7; text-align: center;">
+                  <h3 style="color: #856404; margin: 0 0 15px 0; font-size: 20px;">💪 Keep Going!</h3>
+                  <p style="color: #856404; margin: 0; font-size: 16px;">Every "no" brings you closer to a "yes". Stay positive and keep providing excellent quotes!</p>
+                </div>
+
+                <!-- Footer -->
+                <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+                  <p style="color: #6c757d; font-size: 16px; font-weight: bold; margin: 0 0 10px 0;">
+                    🔄 Ready for the next opportunity!
+                  </p>
+                  <p style="color: #6c757d; font-size: 14px; margin: 0;">
+                    <strong>Kiwi Trade Team</strong> - Supporting your success
+                  </p>
+                </div>
+
+              </div>
+            </div>
+        `
+    };
+
     const adminMail = {
         to: process.env.ADMIN_EMAIL,
         subject: `📉 Quote Analytics: ${customerName} Declined`,
@@ -144,6 +198,10 @@ async function sendNotificationEmails(quoteData) {
         console.log('📧 Sending customer acknowledgment email...');
         await sendEmail(customerMail);
         console.log('✅ Customer email sent successfully');
+        
+        console.log('📧 Sending tradesperson notification email...');
+        await sendEmail(tradespersonMail);
+        console.log('✅ Tradesperson email sent successfully');
         
         console.log('📧 Sending admin analytics email...');
         await sendEmail(adminMail);

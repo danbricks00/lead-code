@@ -573,13 +573,26 @@ export default async function handler(req, res) {
               quoteData.projectDetails,
               quoteData.projectSize,
               quoteData.budget,
-              quoteData.timeline
+              quoteData.timeline,
+              // Add detailed breakdown data for admin approval
+              quoteData.labourRate,
+              quoteData.labourHours,
+              quoteData.materialsCost,
+              quoteData.materialsQuantity,
+              quoteData.travelCost,
+              quoteData.travelDistance,
+              quoteData.installationCost,
+              quoteData.subtotal,
+              quoteData.gst,
+              quoteData.totalQuote,
+              JSON.stringify(quoteData.rooms || []), // Store rooms data as JSON
+              quoteData.leadId // Store lead ID for reference
             ]
           ];
 
           await sheets.spreadsheets.values.append({
             spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-            range: 'Quotes!A:T',
+            range: 'Quotes!A:AF',
             valueInputOption: 'RAW',
             insertDataOption: 'INSERT_ROWS',
             resource: { values }

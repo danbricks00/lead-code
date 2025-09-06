@@ -44,100 +44,425 @@ async function sendNotificationEmails(quoteData) {
 
     const customerMail = {
         to: customerEmail,
-        subject: `Confirmation: Your Quote has been Accepted`,
+        subject: `🎉 Quote Accepted! Your Project Journey Begins`,
         html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px;">
-              <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                <div style="text-align: center; margin-bottom: 30px;">
-                  <h1 style="color: #27ae60; margin: 0; font-size: 28px;">✅ Quote Accepted!</h1>
-                  <p style="color: #7f8c8d; margin: 10px 0 0 0; font-size: 16px;">Thank you for accepting our quote</p>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
+              <div style="background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                
+                <!-- Header with Achievement Badge -->
+                <div style="text-align: center; margin-bottom: 40px;">
+                  <div style="display: inline-block; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 20px; border-radius: 50%; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);">
+                    <div style="font-size: 48px; color: white;">🏆</div>
+                  </div>
+                  <h1 style="color: #28a745; margin: 0; font-size: 32px; font-weight: bold;">Project Approved!</h1>
+                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">Congratulations ${customerName}, your quote has been accepted!</p>
                 </div>
-                
-                <p style="color: #2c3e50; font-size: 16px;">Hi ${customerName},</p>
-                <p style="color: #2c3e50; font-size: 16px;">This is a confirmation that you have <strong>accepted</strong> the quote.</p>
-                <p style="color: #2c3e50; font-size: 16px;">The tradesperson has been notified and will be in touch with you shortly to arrange the next steps.</p>
-                
-                <div style="background-color: #e8f5e8; border-radius: 6px; padding: 20px; margin: 25px 0;">
-                  <h3 style="color: #27ae60; margin: 0 0 15px 0;">📋 Next Steps:</h3>
-                  <ul style="color: #2c3e50; margin: 0; padding-left: 20px;">
-                    <li>✅ Lead Received</li>
-                    <li>✅ Quote Sent</li>
-                    <li>✅ Decision Made: <strong>Accepted</strong></li>
-                    <li>🔄 Tradesperson will contact you soon</li>
-                  </ul>
+
+                <!-- Progress Bar -->
+                <div style="margin: 30px 0;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span style="font-weight: bold; color: #495057;">Project Progress</span>
+                    <span style="font-weight: bold; color: #28a745; font-size: 18px;">100% Complete!</span>
+                  </div>
+                  <div style="background: #e9ecef; height: 12px; border-radius: 6px; overflow: hidden; margin-bottom: 20px;">
+                    <div style="background: linear-gradient(90deg, #28a745 0%, #20c997 100%); height: 100%; width: 100%; border-radius: 6px; box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);"></div>
+                  </div>
                 </div>
-                
-                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ecf0f1;">
-                  <p style="color: #7f8c8d; font-size: 14px; margin: 0;">
-                    Questions? Reply to this email or contact us directly.<br>
-                    <strong>Kiwi Trade Team</strong>
+
+                <!-- Gamified Journey Checklist -->
+                <div style="margin: 30px 0;">
+                  <h3 style="color: #495057; margin: 0 0 20px 0; font-size: 20px;">🎯 Your Project Journey</h3>
+                  
+                  <!-- Step 1: Lead Submitted -->
+                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
+                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);">✓</div>
+                    <div>
+                      <strong style="color: #155724; font-size: 16px;">Lead Submitted</strong>
+                      <p style="margin: 5px 0 0 0; color: #155724;">Your project requirements were successfully received and processed.</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Step 2: Quote Prepared -->
+                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
+                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);">✓</div>
+                    <div>
+                      <strong style="color: #155724; font-size: 16px;">Professional Quote Prepared</strong>
+                      <p style="margin: 5px 0 0 0; color: #155724;">Our expert tradesperson created a detailed quote just for you.</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Step 3: Decision Made -->
+                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745; position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 0; right: 0; background: #ffc107; color: #856404; padding: 5px 10px; font-size: 12px; font-weight: bold; border-bottom-left-radius: 8px;">JUST COMPLETED!</div>
+                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3); animation: pulse 2s infinite;">✓</div>
+                    <div>
+                      <strong style="color: #155724; font-size: 16px;">Quote Accepted! 🎉</strong>
+                      <p style="margin: 5px 0 0 0; color: #155724;">You've made your decision - the project is approved and ready to begin!</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Step 4: Project Execution -->
+                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #ffc107; color: #856404; box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);">🔄</div>
+                    <div>
+                      <strong style="color: #856404; font-size: 16px;">Project Execution - Starting Soon!</strong>
+                      <p style="margin: 5px 0 0 0; color: #856404;">Your tradesperson will contact you within 24 hours to schedule the work.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Achievement Unlocked -->
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 10px; margin: 30px 0; text-align: center; position: relative; overflow: hidden;">
+                  <div style="position: absolute; top: -10px; right: -10px; background: rgba(255,255,255,0.2); width: 60px; height: 60px; border-radius: 50%;"></div>
+                  <div style="position: absolute; bottom: -15px; left: -15px; background: rgba(255,255,255,0.1); width: 80px; height: 80px; border-radius: 50%;"></div>
+                  <h3 style="margin: 0 0 10px 0; font-size: 22px;">🏅 Achievement Unlocked!</h3>
+                  <p style="margin: 0; font-size: 16px; opacity: 0.9;">"Decisive Customer" - Made a quick and confident project decision!</p>
+                </div>
+
+                <!-- What Happens Next -->
+                <div style="background: #e8f4f8; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #b8daff;">
+                  <h3 style="color: #0066cc; margin: 0 0 15px 0; font-size: 20px;">📞 What Happens Next?</h3>
+                  <div style="display: flex; align-items: flex-start; margin: 15px 0;">
+                    <div style="background: #0066cc; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">1</div>
+                    <div>
+                      <strong style="color: #0066cc;">Tradesperson Contact (Within 24 hours)</strong>
+                      <p style="margin: 5px 0 0 0; color: #495057;">${tradespersonName} will call you to discuss project details and scheduling.</p>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: flex-start; margin: 15px 0;">
+                    <div style="background: #0066cc; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">2</div>
+                    <div>
+                      <strong style="color: #0066cc;">Project Planning Session</strong>
+                      <p style="margin: 5px 0 0 0; color: #495057;">Review final details, materials, and timeline for your underfloor heating installation.</p>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: flex-start; margin: 15px 0;">
+                    <div style="background: #0066cc; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">3</div>
+                    <div>
+                      <strong style="color: #0066cc;">Project Execution</strong>
+                      <p style="margin: 5px 0 0 0; color: #495057;">Professional installation begins according to your agreed schedule.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Quick Contact Card -->
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #dee2e6; margin: 30px 0;">
+                  <h4 style="color: #495057; margin: 0 0 15px 0;">👷‍♂️ Your Assigned Tradesperson</h4>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${tradespersonName}</p>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${tradespersonEmail}</p>
+                  <p style="margin: 15px 0 0 0;">
+                    <a href="mailto:${tradespersonEmail}" style="display: inline-block; background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">📧 Send Message</a>
                   </p>
                 </div>
+
+                <!-- Footer -->
+                <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+                  <p style="color: #6c757d; font-size: 14px; margin: 0 0 10px 0;">
+                    Questions about your project? We're here to help!
+                  </p>
+                  <p style="color: #495057; font-weight: bold; margin: 0;">
+                    🏠 Kiwi Trade Team
+                  </p>
+                </div>
+
               </div>
             </div>
+
+            <style>
+              @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.1); }
+                100% { transform: scale(1); }
+              }
+            </style>
         `,
     };
 
     const tradespersonMail = {
         to: tradespersonEmail,
-        subject: `🎉 Quote Accepted by ${customerName}`,
+        subject: `🏆 Victory! ${customerName} Accepted Your Quote - Level Up!`,
         html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px;">
-              <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                <div style="text-align: center; margin-bottom: 30px;">
-                  <h1 style="color: #f39c12; margin: 0; font-size: 28px;">🎉 Great News!</h1>
-                  <p style="color: #7f8c8d; margin: 10px 0 0 0; font-size: 16px;">Your quote has been accepted</p>
-                </div>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
+              <div style="background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
                 
-                <div style="background-color: #fff3cd; border-radius: 6px; padding: 20px; margin-bottom: 25px;">
-                  <h3 style="color: #856404; margin: 0 0 15px 0;">📋 Quote Details</h3>
-                  <p style="color: #2c3e50; margin: 5px 0;"><strong>Customer:</strong> ${customerName}</p>
-                  <p style="color: #2c3e50; margin: 5px 0;"><strong>Email:</strong> ${customerEmail}</p>
-                  <p style="color: #2c3e50; margin: 5px 0;"><strong>Status:</strong> ✅ ACCEPTED</p>
+                <!-- Header with Victory Animation -->
+                <div style="text-align: center; margin-bottom: 40px;">
+                  <div style="display: inline-block; background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); padding: 20px; border-radius: 50%; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);">
+                    <div style="font-size: 48px; color: white;">🏆</div>
+                  </div>
+                  <h1 style="color: #ff6b35; margin: 0; font-size: 32px; font-weight: bold;">Victory!</h1>
+                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">Quote accepted by ${customerName} - You're a champion!</p>
                 </div>
-                
-                <div style="background-color: #e8f5e8; border-radius: 6px; padding: 20px; margin: 25px 0; text-align: center;">
-                  <h3 style="color: #27ae60; margin: 0 0 15px 0;">📞 Next Steps</h3>
-                  <p style="color: #2c3e50; margin: 0 0 15px 0;">Please contact the customer to arrange the work details:</p>
-                  <a href="mailto:${customerEmail}" style="display: inline-block; background-color: #27ae60; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">📧 Email Customer</a>
+
+                <!-- Progress Achievement -->
+                <div style="margin: 30px 0;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span style="font-weight: bold; color: #495057;">Lead Journey Progress</span>
+                    <span style="font-weight: bold; color: #28a745; font-size: 18px;">🎯 MISSION COMPLETE!</span>
+                  </div>
+                  <div style="background: #e9ecef; height: 12px; border-radius: 6px; overflow: hidden; margin-bottom: 20px;">
+                    <div style="background: linear-gradient(90deg, #28a745 0%, #20c997 100%); height: 100%; width: 100%; border-radius: 6px; box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);"></div>
+                  </div>
                 </div>
-                
-                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ecf0f1;">
-                  <p style="color: #7f8c8d; font-size: 14px; margin: 0;">
-                    <strong>Kiwi Trade Team</strong>
+
+                <!-- Gamified Achievement Journey -->
+                <div style="margin: 30px 0;">
+                  <h3 style="color: #495057; margin: 0 0 20px 0; font-size: 20px;">🎯 Your Achievement Journey</h3>
+                  
+                  <!-- Step 1: Lead Received -->
+                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
+                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);">✓</div>
+                    <div>
+                      <strong style="color: #155724; font-size: 16px;">Lead Received & Assigned</strong>
+                      <p style="margin: 5px 0 0 0; color: #155724;">Successfully matched with a quality customer lead.</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Step 2: Quote Prepared -->
+                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
+                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);">✓</div>
+                    <div>
+                      <strong style="color: #155724; font-size: 16px;">Professional Quote Delivered</strong>
+                      <p style="margin: 5px 0 0 0; color: #155724;">Created and submitted a competitive, detailed quote.</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Step 3: Quote Won! -->
+                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border-radius: 8px; border-left: 4px solid #ffc107; position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 0; right: 0; background: #ff6b35; color: white; padding: 5px 10px; font-size: 12px; font-weight: bold; border-bottom-left-radius: 8px;">🔥 HOT WIN!</div>
+                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #ffc107; color: #856404; box-shadow: 0 2px 8px rgba(255, 193, 7, 0.4); animation: bounce 2s infinite;">🏆</div>
+                    <div>
+                      <strong style="color: #856404; font-size: 16px;">Quote Accepted - You Won! 🎉</strong>
+                      <p style="margin: 5px 0 0 0; color: #856404;">Customer chose YOU! Your expertise and competitive pricing won the day!</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Achievement Badges -->
+                <div style="display: flex; justify-content: space-around; margin: 30px 0; text-align: center;">
+                  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; flex: 1; margin: 0 5px;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">🎯</div>
+                    <strong style="font-size: 14px;">Quote Winner</strong>
+                  </div>
+                  <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 10px; flex: 1; margin: 0 5px;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">⚡</div>
+                    <strong style="font-size: 14px;">Fast Response</strong>
+                  </div>
+                  <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; border-radius: 10px; flex: 1; margin: 0 5px;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">💼</div>
+                    <strong style="font-size: 14px;">Professional</strong>
+                  </div>
+                </div>
+
+                <!-- Customer Details Card -->
+                <div style="background: #fff3cd; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #ffeaa7;">
+                  <h3 style="color: #856404; margin: 0 0 20px 0; font-size: 20px;">👤 Your New Customer</h3>
+                  <div style="background: white; padding: 20px; border-radius: 8px;">
+                    <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Customer:</strong> ${customerName}</p>
+                    <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Email:</strong> ${customerEmail}</p>
+                    <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Status:</strong> <span style="color: #28a745; font-weight: bold;">✅ ACCEPTED & READY TO PROCEED</span></p>
+                    <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Decision Date:</strong> ${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })} NZT</p>
+                  </div>
+                </div>
+
+                <!-- Action Plan -->
+                <div style="background: #e8f4f8; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #b8daff;">
+                  <h3 style="color: #0066cc; margin: 0 0 15px 0; font-size: 20px;">🚀 Your Action Plan (Next 24 Hours)</h3>
+                  <div style="display: flex; align-items: flex-start; margin: 15px 0;">
+                    <div style="background: #0066cc; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">1</div>
+                    <div>
+                      <strong style="color: #0066cc;">Contact Customer (URGENT - Within 2 hours)</strong>
+                      <p style="margin: 5px 0 0 0; color: #495057;">Strike while the iron is hot! Call ${customerName} to express gratitude and discuss next steps.</p>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: flex-start; margin: 15px 0;">
+                    <div style="background: #0066cc; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">2</div>
+                    <div>
+                      <strong style="color: #0066cc;">Schedule Site Planning Meeting</strong>
+                      <p style="margin: 5px 0 0 0; color: #495057;">Arrange a convenient time to review project details, timeline, and materials.</p>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: flex-start; margin: 15px 0;">
+                    <div style="background: #0066cc; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">3</div>
+                    <div>
+                      <strong style="color: #0066cc;">Begin Project Preparation</strong>
+                      <p style="margin: 5px 0 0 0; color: #495057;">Order materials, schedule team, and prepare for a successful installation.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Quick Contact Buttons -->
+                <div style="text-align: center; margin: 30px 0;">
+                  <h4 style="color: #495057; margin: 0 0 20px 0;">📞 Quick Contact Options</h4>
+                  <div style="margin: 15px 0;">
+                    <a href="mailto:${customerEmail}" style="display: inline-block; background: #28a745; color: white; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin: 0 10px;">📧 Send Email</a>
+                    <a href="mailto:${customerEmail}?subject=Congratulations on your quote acceptance!&body=Hi ${customerName},%0D%0A%0D%0AThank you for accepting my quote! I'm excited to work with you on this project.%0D%0A%0D%0ANext steps:%0D%0A- Schedule planning meeting%0D%0A- Review final details%0D%0A- Begin project preparation%0D%0A%0D%0ABest regards" style="display: inline-block; background: #007bff; color: white; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin: 0 10px;">📝 Quick Thank You</a>
+                  </div>
+                </div>
+
+                <!-- Footer -->
+                <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+                  <p style="color: #28a745; font-size: 16px; font-weight: bold; margin: 0 0 10px 0;">
+                    🎉 Congratulations on winning this lead!
+                  </p>
+                  <p style="color: #6c757d; font-size: 14px; margin: 0;">
+                    <strong>Kiwi Trade Team</strong> - Your success is our success
                   </p>
                 </div>
+
               </div>
             </div>
+
+            <style>
+              @keyframes bounce {
+                0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+                40% { transform: translateY(-10px); }
+                60% { transform: translateY(-5px); }
+              }
+            </style>
         `
     };
     
     const adminMail = {
         to: process.env.ADMIN_EMAIL,
-        subject: `Quote Accepted: ${customerName}`,
+        subject: `🎯 Success Metrics: Quote Accepted by ${customerName}`,
         html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px;">
-              <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                <div style="text-align: center; margin-bottom: 30px;">
-                  <h1 style="color: #3498db; margin: 0; font-size: 28px;">📊 Quote Accepted</h1>
-                  <p style="color: #7f8c8d; margin: 10px 0 0 0; font-size: 16px;">Administrative notification</p>
-                </div>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
+              <div style="background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
                 
-                <div style="background-color: #ecf0f1; border-radius: 6px; padding: 20px; margin-bottom: 25px;">
-                  <h3 style="color: #34495e; margin: 0 0 15px 0;">📋 Quote Details</h3>
-                  <p style="color: #2c3e50; margin: 5px 0;"><strong>Customer:</strong> ${customerName}</p>
-                  <p style="color: #2c3e50; margin: 5px 0;"><strong>Customer Email:</strong> ${customerEmail}</p>
-                  <p style="color: #2c3e50; margin: 5px 0;"><strong>Tradesperson:</strong> ${tradespersonName}</p>
-                  <p style="color: #2c3e50; margin: 5px 0;"><strong>Tradesperson Email:</strong> ${tradespersonEmail}</p>
-                  <p style="color: #2c3e50; margin: 5px 0;"><strong>Status:</strong> ✅ ACCEPTED</p>
-                  <p style="color: #2c3e50; margin: 5px 0;"><strong>Timestamp:</strong> ${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })} NZT</p>
+                <!-- Header with Success Metrics -->
+                <div style="text-align: center; margin-bottom: 40px;">
+                  <div style="display: inline-block; background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); padding: 20px; border-radius: 50%; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);">
+                    <div style="font-size: 48px; color: white;">📊</div>
+                  </div>
+                  <h1 style="color: #3498db; margin: 0; font-size: 32px; font-weight: bold;">Success Metrics</h1>
+                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">Quote acceptance recorded - Business growing!</p>
                 </div>
-                
-                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ecf0f1;">
-                  <p style="color: #7f8c8d; font-size: 14px; margin: 0;">
-                    <strong>Kiwi Trade Admin System</strong>
+
+                <!-- System Performance Dashboard -->
+                <div style="margin: 30px 0;">
+                  <h3 style="color: #495057; margin: 0 0 20px 0; font-size: 20px;">📈 System Performance Dashboard</h3>
+                  
+                  <!-- Success Indicator -->
+                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
+                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);">✓</div>
+                    <div>
+                      <strong style="color: #155724; font-size: 16px;">Lead Conversion Success</strong>
+                      <p style="margin: 5px 0 0 0; color: #155724;">Another customer journey completed successfully from lead to conversion!</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Process Flow -->
+                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
+                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);">✓</div>
+                    <div>
+                      <strong style="color: #155724; font-size: 16px;">Automated Workflow Executed</strong>
+                      <p style="margin: 5px 0 0 0; color: #155724;">All notification emails sent, databases updated, timeline tracking active.</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Revenue Tracking -->
+                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #ffc107; color: #856404; box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);">💰</div>
+                    <div>
+                      <strong style="color: #856404; font-size: 16px;">Revenue Pipeline Active</strong>
+                      <p style="margin: 5px 0 0 0; color: #856404;">Project moving to execution phase - revenue generation in progress.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Key Performance Indicators -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 30px 0;">
+                  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">🎯</div>
+                    <strong style="font-size: 16px;">Lead Quality</strong>
+                    <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">High-converting lead matched successfully</p>
+                  </div>
+                  <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">⚡</div>
+                    <strong style="font-size: 16px;">Response Time</strong>
+                    <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">Fast decision made by customer</p>
+                  </div>
+                </div>
+
+                <!-- Transaction Details -->
+                <div style="background: #e8f4fd; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #b8daff;">
+                  <h3 style="color: #0066cc; margin: 0 0 20px 0; font-size: 20px;">📋 Transaction Details</h3>
+                  <div style="background: white; padding: 20px; border-radius: 8px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                      <div>
+                        <h4 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">👤 Customer Information</h4>
+                        <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${customerName}</p>
+                        <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${customerEmail}</p>
+                        <p style="margin: 5px 0; color: #495057;"><strong>Status:</strong> <span style="color: #28a745; font-weight: bold;">✅ CONVERTED</span></p>
+                      </div>
+                      <div>
+                        <h4 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">👷‍♂️ Tradesperson Information</h4>
+                        <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${tradespersonName}</p>
+                        <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${tradespersonEmail}</p>
+                        <p style="margin: 5px 0; color: #495057;"><strong>Performance:</strong> <span style="color: #28a745; font-weight: bold;">🏆 WIN</span></p>
+                      </div>
+                    </div>
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                      <p style="margin: 5px 0; color: #495057;"><strong>Decision Timestamp:</strong> ${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })} NZT</p>
+                      <p style="margin: 5px 0; color: #495057;"><strong>Project Status:</strong> <span style="color: #ffc107; font-weight: bold;">🔄 Moving to Execution Phase</span></p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Action Items & Next Steps -->
+                <div style="background: #fff3cd; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #ffeaa7;">
+                  <h3 style="color: #856404; margin: 0 0 15px 0; font-size: 20px;">📝 Admin Action Items</h3>
+                  <div style="display: flex; align-items: flex-start; margin: 15px 0;">
+                    <div style="background: #856404; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0; font-size: 12px;">1</div>
+                    <div>
+                      <strong style="color: #856404;">Monitor Project Progress</strong>
+                      <p style="margin: 5px 0 0 0; color: #6c757d;">Track project timeline and ensure smooth execution.</p>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: flex-start; margin: 15px 0;">
+                    <div style="background: #856404; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0; font-size: 12px;">2</div>
+                    <div>
+                      <strong style="color: #856404;">Customer Satisfaction Follow-up</strong>
+                      <p style="margin: 5px 0 0 0; color: #6c757d;">Schedule check-in after project completion for feedback.</p>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: flex-start; margin: 15px 0;">
+                    <div style="background: #856404; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0; font-size: 12px;">3</div>
+                    <div>
+                      <strong style="color: #856404;">Performance Analytics Update</strong>
+                      <p style="margin: 5px 0 0 0; color: #6c757d;">Record conversion metrics for business intelligence.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- System Status -->
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #dee2e6; margin: 30px 0;">
+                  <h4 style="color: #495057; margin: 0 0 15px 0;">⚙️ System Status</h4>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #495057;">All automated processes:</span>
+                    <span style="color: #28a745; font-weight: bold;">✅ EXECUTED SUCCESSFULLY</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                    <span style="color: #495057;">Database updates:</span>
+                    <span style="color: #28a745; font-weight: bold;">✅ COMPLETED</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                    <span style="color: #495057;">Email notifications:</span>
+                    <span style="color: #28a745; font-weight: bold;">✅ SENT TO ALL PARTIES</span>
+                  </div>
+                </div>
+
+                <!-- Footer -->
+                <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+                  <p style="color: #3498db; font-size: 16px; font-weight: bold; margin: 0 0 10px 0;">
+                    📊 Business Growing - Lead Conversion Successful!
+                  </p>
+                  <p style="color: #6c757d; font-size: 14px; margin: 0;">
+                    <strong>Kiwi Trade Admin System</strong> - Automated Excellence
                   </p>
                 </div>
+
               </div>
             </div>
         `

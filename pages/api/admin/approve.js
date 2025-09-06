@@ -197,40 +197,122 @@ export default async function handler(req, res) {
         const declineLink = generateCustomerDecisionLink('decline', quoteId);
         const viewQuoteLink = generateQuoteViewLink(quoteId);
 
-        // 6. Send UNIFIED quote email to customer (same format as tradesperson and admin)
+        // 6. Send CUSTOMER-SPECIFIC quote email (different tracking journey)
         const customerEmailOptions = {
           to: leadData['CustomerEmail'],
-          subject: `Quote ${quoteId} - Copy for ${leadData['CustomerName']}`,
+          subject: `🎯 Your Quote for ${leadData['ServiceType']} - $${parseFloat(quoteData.TotalQuote || 0).toFixed(2)} is Ready!`,
           html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #2c3e50;">Quote Copy</h2>
-              <p>Here's your approved quote from ${quoteData.TradespersonName}.</p>
-              
-              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #34495e; margin-top: 0;">Quote Details:</h3>
-                <p><strong>Quote ID:</strong> ${quoteId}</p>
-                <p><strong>Customer:</strong> ${leadData['CustomerName']}</p>
-                <p><strong>Tradesperson:</strong> ${quoteData.TradespersonName}</p>
-                <p><strong>Service:</strong> ${leadData['ServiceType']}</p>
-                <p><strong>Total Amount:</strong> $${parseFloat(quoteData.TotalQuote || 0).toFixed(2)}</p>
-                <p><strong>Location:</strong> ${leadData['Area']}, ${leadData['Suburb']}</p>
-              </div>
-
-              <!-- Quick Decision Buttons -->
-              <div style="background-color: #f8f9fa; border-radius: 6px; padding: 25px; text-align: center; margin: 20px 0;">
-                <h3 style="color: #2c3e50; margin: 0 0 20px 0; font-size: 18px;">🎯 Quick Decision</h3>
-                <p style="color: #5a6c7d; margin: 0 0 20px 0;">Make your decision directly from this email:</p>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
+              <div style="background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
                 
-                <div style="margin: 20px 0;">
-                  <a href="${acceptLink}" style="display: inline-block; background-color: #27ae60; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; margin: 0 10px;">✅ ACCEPT QUOTE</a>
-                  <a href="${declineLink}" style="display: inline-block; background-color: #e74c3c; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; margin: 0 10px;">❌ DECLINE QUOTE</a>
+                <!-- Header with Approval Badge -->
+                <div style="text-align: center; margin-bottom: 40px;">
+                  <div style="display: inline-block; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 20px; border-radius: 50%; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);">
+                    <div style="font-size: 48px; color: white;">✅</div>
+                  </div>
+                  <h1 style="color: #28a745; margin: 0; font-size: 32px; font-weight: bold;">Quote Approved!</h1>
+                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">Your professional quote is ready for review</p>
                 </div>
-                
-                <p style="color: #7f8c8d; font-size: 14px; margin: 15px 0 0 0; font-style: italic;">Each button can only be used once for security</p>
+
+                <!-- Customer Journey Progress -->
+                <div style="margin: 30px 0;">
+                  <h3 style="color: #495057; margin: 0 0 20px 0; font-size: 20px;">📋 Your Quote Journey</h3>
+                  
+                  <!-- Step 1: Lead Submitted -->
+                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
+                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white;">✓</div>
+                    <div>
+                      <strong style="color: #155724; font-size: 16px;">Lead Submitted</strong>
+                      <p style="margin: 5px 0 0 0; color: #155724;">Your project requirements were received and processed.</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Step 2: Quote Prepared -->
+                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
+                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white;">✓</div>
+                    <div>
+                      <strong style="color: #155724; font-size: 16px;">Quote Prepared</strong>
+                      <p style="margin: 5px 0 0 0; color: #155724;">Professional tradesperson created your detailed quote.</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Step 3: Admin Approval -->
+                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745; position: relative;">
+                    <div style="position: absolute; top: 0; right: 0; background: #ffc107; color: #856404; padding: 5px 10px; font-size: 12px; font-weight: bold; border-bottom-left-radius: 8px;">JUST COMPLETED!</div>
+                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white;">✓</div>
+                    <div>
+                      <strong style="color: #155724; font-size: 16px;">Quote Approved & Sent! 🎉</strong>
+                      <p style="margin: 5px 0 0 0; color: #155724;">Admin reviewed and approved - now ready for your decision!</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Step 4: Your Decision -->
+                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #ffc107; color: #856404;">⏳</div>
+                    <div>
+                      <strong style="color: #856404; font-size: 16px;">Your Decision - Awaiting Response</strong>
+                      <p style="margin: 5px 0 0 0; color: #856404;">Review the quote and accept or decline when ready.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Quote Details -->
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <h3 style="color: #34495e; margin-top: 0;">📋 Quote Details:</h3>
+                  <p><strong>Quote ID:</strong> ${quoteId}</p>
+                  <p><strong>Service:</strong> ${leadData['ServiceType']}</p>
+                  <p><strong>Tradesperson:</strong> ${quoteData.TradespersonName}</p>
+                  <p><strong>Total Amount:</strong> $${parseFloat(quoteData.TotalQuote || 0).toFixed(2)}</p>
+                  <p><strong>Location:</strong> ${leadData['Area']}, ${leadData['Suburb']}</p>
+                </div>
+
+                <!-- Quick Decision Buttons -->
+                <div style="background-color: #e8f4f8; border-radius: 10px; padding: 25px; text-align: center; margin: 20px 0; border: 2px solid #b8daff;">
+                  <h3 style="color: #0066cc; margin: 0 0 15px 0; font-size: 20px;">🎯 Make Your Decision</h3>
+                  <p style="color: #495057; margin: 0 0 20px 0;">Review the attached PDF and choose your next step:</p>
+                  
+                  <div style="margin: 20px 0;">
+                    <a href="${acceptLink}" style="display: inline-block; background-color: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; margin: 0 10px;">✅ ACCEPT QUOTE</a>
+                    <a href="${declineLink}" style="display: inline-block; background-color: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; margin: 0 10px;">❌ DECLINE QUOTE</a>
+                  </div>
+                  
+                  <p style="color: #6c757d; font-size: 14px; margin: 15px 0 0 0; font-style: italic;">Secure one-click decision buttons</p>
+                </div>
+
+                <!-- PDF Attachment Notice -->
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 10px; margin: 30px 0; text-align: center;">
+                  <h3 style="margin: 0 0 10px 0; font-size: 22px;">📎 Professional PDF Attached</h3>
+                  <p style="margin: 0; font-size: 16px; opacity: 0.9;">Same detailed quote document that your tradesperson and admin received</p>
+                </div>
+
+                <!-- Online Quote Viewer -->
+                <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                  <h4 style="color: #495057; margin: 0 0 10px 0;">🌐 Alternative: View Online</h4>
+                  <p style="margin: 0 0 15px 0; color: #6c757d;">You can also view your quote in your browser:</p>
+                  <a href="${viewQuoteLink}" style="color: #007bff; word-break: break-all;">${viewQuoteLink}</a>
+                </div>
+
+                <!-- Contact Information -->
+                <div style="background-color: #e8f5e8; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                  <h4 style="color: #27ae60; margin: 0 0 10px 0;">👷‍♂️ Your Tradesperson</h4>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${quoteData.TradespersonName}</p>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${quoteData.TradespersonEmail}</p>
+                  <p style="margin: 15px 0 0 0;">
+                    <a href="mailto:${quoteData.TradespersonEmail}" style="display: inline-block; background: #27ae60; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">📧 Contact Tradesperson</a>
+                  </p>
+                </div>
+
+                <!-- Footer -->
+                <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+                  <p style="color: #28a745; font-size: 16px; font-weight: bold; margin: 0 0 10px 0;">
+                    🎉 Your quote is ready - decision time!
+                  </p>
+                  <p style="color: #6c757d; font-size: 14px; margin: 0;">
+                    <strong>Kiwi Trade Team</strong> - Professional service, every time
+                  </p>
+                </div>
+
               </div>
-              
-              <p>You can also view the quote online using the link: <a href="${viewQuoteLink}" style="color: #3498db;">${viewQuoteLink}</a></p>
-              <p>Questions? Contact ${quoteData.TradespersonName} at ${quoteData.TradespersonEmail}</p>
             </div>
           `,
           attachments: [attachment]

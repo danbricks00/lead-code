@@ -84,7 +84,34 @@ export default async function handler(req, res) {
         
         if (!leadData) return res.redirect(`/quote-status?status=error&message=Lead data not found.`);
 
-        // 2. Generate PDF using our new system (NO XERO!)
+        // 2. Generate PDF using our new system with enhanced data (NO XERO!)
+        const rooms = leadData.Rooms ? JSON.parse(leadData.Rooms) : [];
+        const totalSqm = rooms.reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0);
+        
+        // Parse quote values
+        const labourRate = parseFloat(quoteData.LabourRate || 0);
+        const labourHours = parseFloat(quoteData.LabourHours || 0);
+        const materialsCost = parseFloat(quoteData.MaterialsCost || 0);
+        const materialsQuantity = parseFloat(quoteData.MaterialsQuantity || 0);
+        const travelCost = parseFloat(quoteData.TravelCost || 0);
+        const travelDistance = parseFloat(quoteData.TravelDistance || 0);
+        const installationCost = parseFloat(quoteData.InstallationCost || 0);
+        
+        // Calculate per-room breakdown
+        const roomsWithDetails = rooms.map(room => {
+            const roomSqm = parseFloat(room.sqm) || 0;
+            const roomRatio = totalSqm > 0 ? roomSqm / totalSqm : 0;
+            
+            return {
+                name: room.name,
+                dimensions: room.dimensions || room.originalInput,
+                sqm: roomSqm,
+                labourHours: roomRatio * labourHours,
+                labourCost: roomRatio * (labourRate * labourHours),
+                materialsCost: roomRatio * (materialsCost * materialsQuantity)
+            };
+        });
+
         const quoteDataForPdf = {
             quoteId,
             quoteDate: new Date().toISOString(),
@@ -98,12 +125,26 @@ export default async function handler(req, res) {
             tradespersonEmail: quoteData.TradespersonEmail,
             tradespersonPhone: quoteData.TradespersonPhone,
             tradespersonLicense: 'Licensed Tradesperson',
-            rooms: leadData.Rooms ? JSON.parse(leadData.Rooms) : [],
+            rooms: roomsWithDetails,
+            // Add detailed breakdown for quote summary
+            breakdown: {
+                labourRate: labourRate,
+                labourHours: labourHours,
+                labourTotal: labourRate * labourHours,
+                materialsCost: materialsCost,
+                materialsQuantity: materialsQuantity,
+                materialsTotal: materialsCost * materialsQuantity,
+                travelCost: travelCost,
+                travelDistance: travelDistance,
+                travelTotal: travelCost * travelDistance,
+                installationCost: installationCost,
+                totalSqm: totalSqm
+            },
             totals: {
-                labour: parseFloat(quoteData.LabourRate || 0) * parseFloat(quoteData.LabourHours || 0),
-                materials: parseFloat(quoteData.MaterialsCost || 0) * parseFloat(quoteData.MaterialsQuantity || 0),
-                travel: parseFloat(quoteData.TravelCost || 0) * parseFloat(quoteData.TravelDistance || 0),
-                installation: parseFloat(quoteData.InstallationCost || 0),
+                labour: labourRate * labourHours,
+                materials: materialsCost * materialsQuantity,
+                travel: travelCost * travelDistance,
+                installation: installationCost,
                 subtotal: parseFloat(quoteData.Subtotal || 0),
                 gst: parseFloat(quoteData.GST || 0),
                 final: parseFloat(quoteData.TotalQuote || 0)

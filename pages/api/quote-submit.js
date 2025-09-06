@@ -199,7 +199,25 @@ export default async function handler(req, res) {
             travelCost, travelDistance, installationCost, subtotal, gst, totalQuote
         });
         
-        // Prepare quote data for PDF generation
+        // Prepare enhanced quote data with detailed breakdown for PDF generation
+        const rooms = leadDetails.Rooms ? JSON.parse(leadDetails.Rooms) : [];
+        const totalSqm = rooms.reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0);
+        
+        // Calculate per-room breakdown if we have room data
+        const roomsWithDetails = rooms.map(room => {
+            const roomSqm = parseFloat(room.sqm) || 0;
+            const roomRatio = totalSqm > 0 ? roomSqm / totalSqm : 0;
+            
+            return {
+                name: room.name,
+                dimensions: room.dimensions || room.originalInput,
+                sqm: roomSqm,
+                labourHours: roomRatio * labourHours,
+                labourCost: roomRatio * (labourRate * labourHours),
+                materialsCost: roomRatio * (materialsCost * materialsQuantity)
+            };
+        });
+
         const quoteData = {
             quoteId,
             quoteDate: new Date().toISOString(),
@@ -213,7 +231,21 @@ export default async function handler(req, res) {
             tradespersonEmail: tradespersonEmail,
             tradespersonPhone: tradespersonPhone,
             tradespersonLicense: 'Licensed Tradesperson',
-            rooms: leadDetails.Rooms ? JSON.parse(leadDetails.Rooms) : [],
+            rooms: roomsWithDetails,
+            // Add detailed breakdown for quote summary
+            breakdown: {
+                labourRate: labourRate,
+                labourHours: labourHours,
+                labourTotal: labourRate * labourHours,
+                materialsCost: materialsCost,
+                materialsQuantity: materialsQuantity,
+                materialsTotal: materialsCost * materialsQuantity,
+                travelCost: travelCost,
+                travelDistance: travelDistance,
+                travelTotal: travelCost * travelDistance,
+                installationCost: installationCost,
+                totalSqm: totalSqm
+            },
             totals: {
                 labour: labourRate * labourHours,
                 materials: materialsCost * materialsQuantity,

@@ -26,31 +26,134 @@ function formatTimestamp(isoString) {
 }
 
 async function sendNotificationEmails(quoteData) {
+    console.log('📧 Preparing notification emails for quote decline');
+    console.log('📋 Quote data keys:', Object.keys(quoteData));
+    
+    // Get customer email - try different possible column names
+    const customerEmail = quoteData['CustomerEmail'] || quoteData['Customer Email'] || quoteData['customerEmail'];
+    const customerName = quoteData['CustomerName'] || quoteData['Customer Name'] || quoteData['customerName'];
+    
+    // Get tradesperson email - try different possible column names  
+    const tradespersonEmail = quoteData['TradespersonEmail'] || quoteData['Tradesperson Email'] || quoteData['tradespersonEmail'];
+    const tradespersonName = quoteData['TradespersonName'] || quoteData['Tradesperson Name'] || quoteData['tradespersonName'];
+    
+    console.log('📧 Email recipients:');
+    console.log('  - Customer:', customerEmail);
+    console.log('  - Tradesperson:', tradespersonEmail);
+    console.log('  - Admin:', process.env.ADMIN_EMAIL);
+
     const customerMail = {
-        to: quoteData['Customer Email'],
-        subject: `Confirmation: Your Quote has been Declined`,
+        to: customerEmail,
+        subject: `Thank You for Your Consideration - Future Opportunities Await`,
         html: `
-            <p>Hi ${quoteData['Customer Name']},</p>
-            <p>This is a confirmation that you have <strong>declined</strong> the quote.</p>
-            <p>Thank you for considering our services.</p>
-            <hr>
-            <p><strong>Status:</strong></p>
-            <ul>
-                <li>✅ Lead Received</li>
-                <li>✅ Quote Sent</li>
-                <li>❌ Decision Made: Declined</li>
-            </ul>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
+              <div style="background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                
+                <!-- Header with Respectful Design -->
+                <div style="text-align: center; margin-bottom: 40px;">
+                  <div style="display: inline-block; background: linear-gradient(135deg, #6c757d 0%, #495057 100%); padding: 20px; border-radius: 50%; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);">
+                    <div style="font-size: 48px; color: white;">🤝</div>
+                  </div>
+                  <h1 style="color: #6c757d; margin: 0; font-size: 32px; font-weight: bold;">Thank You</h1>
+                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">We appreciate you considering our services, ${customerName}</p>
+                </div>
+
+                <!-- Journey Completion -->
+                <div style="margin: 30px 0;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span style="font-weight: bold; color: #495057;">Your Journey With Us</span>
+                    <span style="font-weight: bold; color: #6c757d; font-size: 18px;">Decision Complete</span>
+                  </div>
+                  <div style="background: #e9ecef; height: 12px; border-radius: 6px; overflow: hidden; margin-bottom: 20px;">
+                    <div style="background: linear-gradient(90deg, #6c757d 0%, #495057 100%); height: 100%; width: 100%; border-radius: 6px;"></div>
+                  </div>
+                </div>
+
+                <!-- Understanding Message -->
+                <div style="background: #e2e3e5; color: #495057; padding: 25px; border-radius: 10px; margin: 30px 0; text-align: center;">
+                  <h3 style="margin: 0 0 15px 0; font-size: 22px;">We Completely Understand</h3>
+                  <p style="margin: 0; font-size: 16px;">Choosing the right tradesperson is an important decision. We respect your choice and thank you for the opportunity to quote on your project.</p>
+                </div>
+
+                <!-- Footer -->
+                <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+                  <p style="color: #6c757d; font-size: 16px; font-weight: bold; margin: 0 0 10px 0;">
+                    🙏 Thank you for considering Kiwi Trade
+                  </p>
+                  <p style="color: #6c757d; font-size: 14px; margin: 0;">
+                    <strong>Kiwi Trade Team</strong> - Here when you need us
+                  </p>
+                </div>
+
+              </div>
+            </div>
         `,
     };
 
     const adminMail = {
         to: process.env.ADMIN_EMAIL,
-        subject: `Quote Declined: ${quoteData['Customer Name']}`,
-        text: `The quote for ${quoteData['Customer Name']} was declined by the customer.`
+        subject: `📉 Quote Analytics: ${customerName} Declined`,
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
+              <div style="background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                
+                <!-- Header -->
+                <div style="text-align: center; margin-bottom: 40px;">
+                  <div style="display: inline-block; background: linear-gradient(135deg, #6c757d 0%, #495057 100%); padding: 20px; border-radius: 50%; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);">
+                    <div style="font-size: 48px; color: white;">📉</div>
+                  </div>
+                  <h1 style="color: #6c757d; margin: 0; font-size: 32px; font-weight: bold;">Quote Analytics</h1>
+                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">Customer decision analysis and insights</p>
+                </div>
+
+                <!-- Decision Summary -->
+                <div style="background: #f8d7da; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #f5c6cb; text-align: center;">
+                  <h3 style="color: #721c24; margin: 0 0 15px 0; font-size: 20px;">📊 Decision Result</h3>
+                  <p style="color: #721c24; margin: 0; font-size: 24px; font-weight: bold;">Quote Declined</p>
+                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 14px;">Lead conversion was not successful</p>
+                </div>
+
+                <!-- Transaction Details -->
+                <div style="background: #e8f4fd; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #b8daff;">
+                  <h3 style="color: #0066cc; margin: 0 0 20px 0; font-size: 20px;">📋 Transaction Details</h3>
+                  <div style="background: white; padding: 20px; border-radius: 8px;">
+                    <p style="margin: 5px 0; color: #495057;"><strong>Customer:</strong> ${customerName}</p>
+                    <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${customerEmail}</p>
+                    <p style="margin: 5px 0; color: #495057;"><strong>Tradesperson:</strong> ${tradespersonName}</p>
+                    <p style="margin: 5px 0; color: #495057;"><strong>Status:</strong> <span style="color: #dc3545; font-weight: bold;">❌ NOT CONVERTED</span></p>
+                    <p style="margin: 5px 0; color: #495057;"><strong>Timestamp:</strong> ${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })} NZT</p>
+                  </div>
+                </div>
+
+                <!-- Footer -->
+                <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+                  <p style="color: #6c757d; font-size: 16px; font-weight: bold; margin: 0 0 10px 0;">
+                    📊 Analytics Complete - Learning Opportunity Identified
+                  </p>
+                  <p style="color: #6c757d; font-size: 14px; margin: 0;">
+                    <strong>Kiwi Trade Admin System</strong> - Continuous Improvement
+                  </p>
+                </div>
+
+              </div>
+            </div>
+        `
     };
 
-    await sendEmail(customerMail);
-    await sendEmail(adminMail);
+    try {
+        console.log('📧 Sending customer acknowledgment email...');
+        await sendEmail(customerMail);
+        console.log('✅ Customer email sent successfully');
+        
+        console.log('📧 Sending admin analytics email...');
+        await sendEmail(adminMail);
+        console.log('✅ Admin email sent successfully');
+        
+        console.log('✅ All notification emails sent successfully');
+    } catch (error) {
+        console.error('❌ Error sending notification emails:', error);
+        throw error;
+    }
 }
 
 

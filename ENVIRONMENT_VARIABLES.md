@@ -37,6 +37,18 @@ ALLOW_GOOGLE_AUTH=true
 NEXT_PUBLIC_ALLOW_GOOGLE_AUTH=true
 ```
 
+### Quote System Configuration
+```bash
+# Secret key for generating secure quote approval/decline links
+QUOTE_LINK_SECRET=your-secure-random-string-here
+
+# Base URL for the application (used in email links)
+NEXT_PUBLIC_BASE_URL=your-domain.com
+
+# Admin email address for quote notifications
+ADMIN_EMAIL=admin@kiwitrade.co.nz
+```
+
 ## Setting Up Environment Variables
 
 ### 1. Google Cloud Console Setup
@@ -178,6 +190,11 @@ USER_SHEET_ID=1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms
 # Auth Controls
 ALLOW_GOOGLE_AUTH=true
 NEXT_PUBLIC_ALLOW_GOOGLE_AUTH=true
+
+# Quote System
+QUOTE_LINK_SECRET=kiwi-trade-quote-security-secret-2024
+NEXT_PUBLIC_BASE_URL=your-domain.com
+ADMIN_EMAIL=admin@kiwitrade.co.nz
 
 # Debug
 DEBUG_AUTH=true

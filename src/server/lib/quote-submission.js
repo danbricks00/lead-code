@@ -554,40 +554,39 @@ export default async function handler(req, res) {
           
           const values = [
             [
-              new Date().toISOString(),
-              quoteData.quoteId,
-              quoteData.leadId, // LeadiD column
-              quoteData.tradesmanName, // TradesPerson Name
-              quoteData.tradesmanEmail, // TradePerson Email
-              quoteData.tradesmanName, // TradePerson Name (duplicate column)
-              'submitted', // Customer Status
-              'submitted', // TradePerson Status
-              'Not Required', // Admin Status
-              '', // Xero Quote iD
-              quoteData.labourRate, // Labour Cost
-              quoteData.labourHours, // Labour Hour
-              quoteData.materialsCost, // Materials Cost
-              quoteData.materialsCost, // Materials Cost (duplicate)
-              quoteData.materialsQuantity, // Materials Quanitity
-              quoteData.travelCost, // Travel Cost
-              quoteData.travelDistance, // Travel Distance
-              quoteData.installationCost, // Installation Cost
-              quoteData.totalQuote, // Total Quote
-              quoteData.additionalNotes || '', // Notes
-              quoteData.validUntil, // Quote Valid Unitl
-              'No', // Reesubmission Allowed
-              '', // Empty columns
-              '', // Empty columns
-              '', // Empty columns
-              '', // Empty columns
-              '', // Empty columns
-              JSON.stringify(quoteData.rooms || []), // Breakdown
-              quoteData.additionalNotes || '', // Notes (duplicate)
-              quoteData.validUntil, // Valid Unitl
-              'submitted', // Quote Status
-              '', // Online Quote Url
-              '', // Accept URL
-              '' // Decline URL
+              // Standardized column structure (A through AF)
+              new Date().toISOString(), // A: Timestamp
+              quoteData.quoteId, // B: QuoteID
+              quoteData.leadId, // C: LeadID
+              quoteData.tradesmanName, // D: TradespersonName
+              quoteData.tradesmanEmail, // E: TradespersonEmail
+              quoteData.tradesmanPhone, // F: TradespersonPhone
+              'submitted', // G: CustomerStatus
+              'submitted', // H: TradespersonStatus
+              'Not Required', // I: AdminStatus
+              '', // J: XeroQuoteID
+              quoteData.labourRate, // K: LabourRate
+              quoteData.labourHours, // L: LabourHours
+              quoteData.materialsCost, // M: MaterialsCost
+              quoteData.materialsQuantity, // N: MaterialsQuantity
+              quoteData.travelCost, // O: TravelCost
+              quoteData.travelDistance, // P: TravelDistance
+              quoteData.installationCost, // Q: InstallationCost
+              quoteData.totalQuote, // R: TotalQuote
+              quoteData.additionalNotes || '', // S: Notes
+              quoteData.validUntil, // T: ValidUntil
+              'No', // U: ResubmissionAllowed
+              '', // V: Decision
+              '', // W: DecisionTimestamp
+              quoteData.customerName, // X: CustomerName
+              quoteData.customerEmail, // Y: CustomerEmail
+              quoteData.customerPhone, // Z: CustomerPhone
+              quoteData.serviceType, // AA: ServiceType
+              quoteData.location, // AB: Location
+              quoteData.timeline, // AC: Timeline
+              quoteData.budget || '', // AD: Budget
+              JSON.stringify(quoteData.rooms || []), // AE: Rooms
+              '' // AF: Breakdown
             ]
           ];
 

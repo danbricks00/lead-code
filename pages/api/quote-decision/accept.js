@@ -638,13 +638,13 @@ export default async function handler(req, res) {
             return res.status(400).send(statusPage);
         }
         
-        // --- Update Sheet Data ---
+        // --- Update Sheet Data using exact schema column names ---
         const updateData = {
-            'Decision': 'Accepted',
-            'Decision Timestamp': new Date().toISOString(),
-            'Customer Status': 'Quote Decision',
-            'Tradesperson Status': 'Quote Decision',
-            'Admin Status': 'Accepted',
+            'Decison': 'Accepted',
+            'DecisonTimeStamp': new Date().toISOString(),
+            'CustomerStatus': 'Quote Decision',
+            'TradePersonStatus': 'Quote Decision',
+            'AdminPersonStatus': 'Accepted',
         };
 
         const quoteDataForEmail = {};

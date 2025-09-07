@@ -57,8 +57,8 @@ export default async function handler(req, res) {
 
     const sheets = getGoogleSheetsClient();
     
-    // Using the EXACT headers from your Google Sheets "Leads" tab
-    console.log("Appending data to 'Leads' tab with exact format...");
+    // Using the EXACT "Leads" tab schema as specified
+    console.log("Appending data to 'Leads' tab with exact schema...");
     await appendRowToSheet(sheets, "Leads", [
       leadId,                                    // Lead
       customerName,                              // CustomerName

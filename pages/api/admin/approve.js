@@ -62,26 +62,26 @@ export default async function handler(req, res) {
         const sheets = await getGoogleSheetsClient();
         const spreadsheetId = getSpreadsheetId();
 
-        // 1. Get Quote and Lead data from Sheets
+        // 1. Get Quote and Lead data from Sheets using exact schema
         const quoteData = await findRowAndGetData({
             sheets, spreadsheetId, tab: 'Quotes',
             searchColumn: 'QuoteID', searchValue: quoteId,
             columnsToFetch: [
-                'Admin Status', 'LeadiD', 'TradespersonName', 'TradespersonEmail', 'TradespersonPhone',
-                'LabourRate', 'LabourHours', 'MaterialsCost', 'MaterialsQuantity', 'TravelCost', 
-                'TravelDistance', 'InstallationCost', 'Subtotal', 'GST', 'TotalQuote', 'ValidUntil', 'Notes',
-                'Labour Cost', 'Labour Hour', 'Materials Cost', 'Materials Quanitity', 'Travel Cost',
-                'Travel Distance', 'Installation Cost', 'Total Quote', 'Rooms', 'LeadId'
+                'AdminPersonStatus', 'LeadID', 'TradePersonName', 'TradePersonEmail', 'TradePersonPhone',
+                'LabourRate', 'LabourHours', 'LaboutTotal', 'MaterialsCost', 'MaterialsQuantity', 'MaterialsTotal',
+                'TravelCost', 'TravelDistance', 'TravelTotal', 'InstallationCost', 'Subtotal', 'GST', 'TotalQuote', 
+                'Notes', 'ValidUnitl', 'ResubmissionAllowed', 'Decison', 'DecisonTimeStamp',
+                'CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Location', 'Timeline', 'Budget', 'Rooms', 'BreakDown'
             ]
         });
 
         if (!quoteData) return res.redirect(`/quote-status?status=error&message=Quote not found.`);
-        if (quoteData['Admin Status'] === 'Approved') return res.redirect(`/quote-status?status=error&message=This quote has already been approved.`);
+        if (quoteData['AdminPersonStatus'] === 'Approved') return res.redirect(`/quote-status?status=error&message=This quote has already been approved.`);
 
         const leadData = await findRowAndGetData({
             sheets, spreadsheetId, tab: 'Leads',
-            searchColumn: 'Lead', searchValue: quoteData['LeadiD'],
-            columnsToFetch: ['CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Area', 'Suburb', 'Rooms']
+            searchColumn: 'Lead', searchValue: quoteData['LeadID'],
+            columnsToFetch: ['CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Area', 'Suburb', 'Rooms', 'Budget', 'Timelline', 'Specfic Details']
         });
         
         if (!leadData) return res.redirect(`/quote-status?status=error&message=Lead data not found.`);
@@ -101,15 +101,15 @@ export default async function handler(req, res) {
         }
         const totalSqm = rooms.reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0);
         
-        // Parse quote values - use stored data from quote submission (same as quote-submit.js)
-        const labourRate = parseFloat(quoteData.LabourRate || quoteData['Labour Cost'] || 0);
-        const labourHours = parseFloat(quoteData.LabourHours || quoteData['Labour Hour'] || 0);
-        const materialsCost = parseFloat(quoteData.MaterialsCost || quoteData['Materials Cost'] || 0);
-        const materialsQuantity = parseFloat(quoteData.MaterialsQuantity || quoteData['Materials Quanitity'] || 0);
-        const travelCost = parseFloat(quoteData.TravelCost || quoteData['Travel Cost'] || 0);
-        const travelDistance = parseFloat(quoteData.TravelDistance || quoteData['Travel Distance'] || 0);
-        const installationCost = parseFloat(quoteData.InstallationCost || quoteData['Installation Cost'] || 0);
-        const totalQuote = parseFloat(quoteData.TotalQuote || quoteData['Total Quote'] || 0);
+        // Parse quote values using exact schema column names
+        const labourRate = parseFloat(quoteData.LabourRate || 0);
+        const labourHours = parseFloat(quoteData.LabourHours || 0);
+        const materialsCost = parseFloat(quoteData.MaterialsCost || 0);
+        const materialsQuantity = parseFloat(quoteData.MaterialsQuantity || 0);
+        const travelCost = parseFloat(quoteData.TravelCost || 0);
+        const travelDistance = parseFloat(quoteData.TravelDistance || 0);
+        const installationCost = parseFloat(quoteData.InstallationCost || 0);
+        const totalQuote = parseFloat(quoteData.TotalQuote || 0);
         
         // Calculate subtotal and GST (same logic as quote-submit.js)
         const subtotal = labourRate * labourHours + materialsCost * materialsQuantity + travelCost * travelDistance + installationCost;

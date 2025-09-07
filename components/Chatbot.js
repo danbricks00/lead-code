@@ -32,9 +32,10 @@ const Chatbot = ({ handleClose, handleReset }) => {
   const [suburbSearch, setSuburbSearch] = useState('');
   const [suburbSuggestions, setSuburbSuggestions] = useState([]);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [editingField, setEditingField] = useState(null); // Track which field is being edited
   const messagesEndRef = useRef(null);
 
-  const progressSteps = ["Project Details", "Your Details", "Submit"];
+  const progressSteps = ["Project Details", "Your Details", "Review & Submit"];
   const [progressStep, setProgressStep] = useState(0);
 
   // Initial welcome message
@@ -186,6 +187,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
             ask_phone: firstName ? `Great ${firstName}! What is your phone number?` : "What is your phone number?",
             ask_suburb: firstName ? `Awesome ${firstName}! What suburb is the job located in? Start typing and select from the list.` : "Great. What suburb is the job located in? Start typing and select from the list.",
             ask_email: firstName ? `Finally ${firstName}, what is your email address?` : "Finally, what is your email address?",
+            review_data: "Please review all your information below. Click on any field to edit it, or click 'Submit Quote Request' if everything looks correct.",
         };
         if (questions[next]) {
             addMessage(questions[next]);
@@ -231,6 +233,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
   const validateInput = (currentStep, value) => {
     switch (currentStep) {
         case 'ask_room_count':
+        case 'roomCount':
             const count = parseInt(value, 10);
             return !isNaN(count) && count > 0 && count < 20 ? null : "Please enter a valid number between 1 and 20.";
         case 'ask_room_name':
@@ -393,21 +396,149 @@ const Chatbot = ({ handleClose, handleReset }) => {
             nextStep('ask_email');
             break;
         case 'ask_email':
-            // CRITICAL FIX: Add email to existing leadData, don't create a new object
-            const finalData = {
-                ...leadData,
+            // Add email to leadData and move to review step
+            setLeadData(prev => ({
+                ...prev,
                 customerEmail: input,
                 serviceType: 'Underfloor Heating',
                 // Ensure budget field is included (fallback to empty string if missing)
-                budget: leadData.budget || '',
-            };
-            setLeadData(finalData); // This state update is for UI consistency if needed
-            handleLeadSubmission(finalData);
-            setStep('completed');
+                budget: prev.budget || '',
+            }));
+            setProgressStep(2);
+            nextStep('review_data');
+            break;
+        case 'review_data':
+            // Handle field editing in review mode
+            if (editingField) {
+                handleFieldEdit(editingField, input);
+                setEditingField(null);
+                setInputValue('');
+                nextStep('review_data');
+            }
             break;
         default:
             break;
     }
+  };
+
+  // Handle field editing in review mode
+  const handleFieldEdit = (fieldKey, newValue) => {
+    const validation = validateInput(fieldKey, newValue);
+    if (validation) {
+      addMessage(`❌ ${validation}`, true);
+      return;
+    }
+
+    setLeadData(prev => {
+      const updated = { ...prev };
+      
+      // Handle different field types
+      switch (fieldKey) {
+        case 'roomCount':
+          const newCount = parseInt(newValue, 10);
+          if (newCount > updated.rooms.length) {
+            // Add new rooms if count increased
+            for (let i = updated.rooms.length; i < newCount; i++) {
+              updated.rooms.push({
+                name: '',
+                dimensions: '',
+                sqm: 0,
+                parsedDimensions: null,
+                format: ''
+              });
+            }
+          } else if (newCount < updated.rooms.length) {
+            // Remove rooms if count decreased
+            updated.rooms = updated.rooms.slice(0, newCount);
+          }
+          updated.roomCount = newCount;
+          break;
+        case 'firstName':
+          updated.firstName = newValue;
+          updated.name = newValue;
+          break;
+        case 'lastName':
+          updated.lastName = newValue;
+          updated.customerName = `${updated.firstName} ${newValue}`;
+          break;
+        case 'customerPhone':
+          updated.customerPhone = newValue;
+          break;
+        case 'customerEmail':
+          updated.customerEmail = newValue;
+          break;
+        case 'suburb':
+          const selectedZone = zoneData.find(zone => zone.suburb.toLowerCase() === newValue.toLowerCase());
+          if (selectedZone) {
+            updated.suburb = selectedZone.suburb;
+            updated.area = selectedZone.area;
+          }
+          break;
+        case 'timeline':
+          updated.timeline = newValue;
+          break;
+        case 'budget':
+          updated.budget = newValue;
+          break;
+        default:
+          // Handle room fields
+          if (fieldKey.startsWith('room_')) {
+            const [roomIndex, field] = fieldKey.split('_').slice(1);
+            const roomIndexNum = parseInt(roomIndex);
+            if (updated.rooms[roomIndexNum]) {
+              if (field === 'name') {
+                updated.rooms[roomIndexNum].name = newValue;
+              } else if (field === 'dimensions') {
+                const parsed = parseDimensions(newValue);
+                if (parsed) {
+                  updated.rooms[roomIndexNum].dimensions = parsed.originalInput;
+                  updated.rooms[roomIndexNum].sqm = parsed.sqm;
+                  updated.rooms[roomIndexNum].parsedDimensions = parsed.dimensions;
+                  updated.rooms[roomIndexNum].format = parsed.format;
+                }
+              }
+            }
+          }
+          break;
+      }
+      
+      return updated;
+    });
+    
+    addMessage(`✅ Updated ${getFieldDisplayName(fieldKey)} to: ${newValue}`, true);
+  };
+
+  // Get display name for fields
+  const getFieldDisplayName = (fieldKey) => {
+    const fieldNames = {
+      firstName: 'First Name',
+      lastName: 'Last Name',
+      customerPhone: 'Phone Number',
+      customerEmail: 'Email Address',
+      suburb: 'Suburb',
+      timeline: 'Timeline',
+      budget: 'Budget',
+      room_name: 'Room Name',
+      room_dimensions: 'Room Dimensions'
+    };
+    return fieldNames[fieldKey] || fieldKey;
+  };
+
+  // Start editing a field
+  const startEditing = (fieldKey) => {
+    setEditingField(fieldKey);
+    setInputValue('');
+    addMessage(`Please enter the new value for ${getFieldDisplayName(fieldKey)}:`, true);
+  };
+
+  // Submit the final lead data
+  const submitLeadData = () => {
+    const finalData = {
+      ...leadData,
+      serviceType: 'Underfloor Heating',
+    };
+    handleLeadSubmission(finalData);
+    setStep('completed');
   };
 
   const handleSubmit = (e) => {
@@ -449,8 +580,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
   };
 
   const isChatEnded = isCompleted || step === 'completed';
-  // Show text input for all steps except suburb search, timeline options, and budget options
-  const showTextInput = !isChatEnded && !['ask_suburb', 'ask_timeline', 'ask_budget'].includes(step);
+  // Show text input for all steps except suburb search, timeline options, budget options, and review data
+  const showTextInput = !isChatEnded && !['ask_suburb', 'ask_timeline', 'ask_budget', 'review_data'].includes(step) && !editingField;
 
   const timelineOptions = ["Immediately", "In a week", "In a couple of months", "Other"];
   
@@ -539,6 +670,73 @@ const Chatbot = ({ handleClose, handleReset }) => {
         </div>
       )}
 
+      {step === 'review_data' && !isLoading && (
+        <div style={styles.reviewContainer}>
+          <div style={styles.reviewSection}>
+            <h3 style={styles.reviewSectionTitle}>📋 Project Details</h3>
+            <div style={styles.reviewField}>
+              <span style={styles.reviewLabel}>Number of Rooms:</span>
+              <span style={styles.reviewValue}>{leadData.roomCount}</span>
+              <button onClick={() => startEditing('roomCount')} style={styles.editButton}>Edit</button>
+            </div>
+            {leadData.rooms.map((room, index) => (
+              <div key={index} style={styles.roomReview}>
+                <div style={styles.reviewField}>
+                  <span style={styles.reviewLabel}>Room {index + 1} Name:</span>
+                  <span style={styles.reviewValue}>{room.name}</span>
+                  <button onClick={() => startEditing(`room_${index}_name`)} style={styles.editButton}>Edit</button>
+                </div>
+                <div style={styles.reviewField}>
+                  <span style={styles.reviewLabel}>Dimensions:</span>
+                  <span style={styles.reviewValue}>{room.dimensions} ({room.sqm}m²)</span>
+                  <button onClick={() => startEditing(`room_${index}_dimensions`)} style={styles.editButton}>Edit</button>
+                </div>
+              </div>
+            ))}
+            <div style={styles.reviewField}>
+              <span style={styles.reviewLabel}>Timeline:</span>
+              <span style={styles.reviewValue}>{leadData.timeline}</span>
+              <button onClick={() => startEditing('timeline')} style={styles.editButton}>Edit</button>
+            </div>
+            <div style={styles.reviewField}>
+              <span style={styles.reviewLabel}>Budget:</span>
+              <span style={styles.reviewValue}>{leadData.budget}</span>
+              <button onClick={() => startEditing('budget')} style={styles.editButton}>Edit</button>
+            </div>
+          </div>
+
+          <div style={styles.reviewSection}>
+            <h3 style={styles.reviewSectionTitle}>👤 Your Contact Details</h3>
+            <div style={styles.reviewField}>
+              <span style={styles.reviewLabel}>Name:</span>
+              <span style={styles.reviewValue}>{leadData.customerName}</span>
+              <button onClick={() => startEditing('firstName')} style={styles.editButton}>Edit</button>
+            </div>
+            <div style={styles.reviewField}>
+              <span style={styles.reviewLabel}>Phone:</span>
+              <span style={styles.reviewValue}>{leadData.customerPhone}</span>
+              <button onClick={() => startEditing('customerPhone')} style={styles.editButton}>Edit</button>
+            </div>
+            <div style={styles.reviewField}>
+              <span style={styles.reviewLabel}>Email:</span>
+              <span style={styles.reviewValue}>{leadData.customerEmail}</span>
+              <button onClick={() => startEditing('customerEmail')} style={styles.editButton}>Edit</button>
+            </div>
+            <div style={styles.reviewField}>
+              <span style={styles.reviewLabel}>Location:</span>
+              <span style={styles.reviewValue}>{leadData.suburb}, {leadData.area}</span>
+              <button onClick={() => startEditing('suburb')} style={styles.editButton}>Edit</button>
+            </div>
+          </div>
+
+          <div style={styles.reviewActions}>
+            <button onClick={submitLeadData} style={styles.submitButton}>
+              ✅ Submit Quote Request
+            </button>
+          </div>
+        </div>
+      )}
+
       {showTextInput && (
         <form onSubmit={handleSubmit} style={styles.chatbotInput}>
           <input
@@ -578,7 +776,17 @@ const styles = {
   progressBarSteps: { display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '5px', color: '#ccc' },
   progressStep: { transition: 'color 0.4s ease' },
   progressBar: { width: '100%', backgroundColor: '#555', borderRadius: '5px', height: '8px' },
-  progress: { height: '100%', backgroundColor: '#4caf50', borderRadius: '5px', transition: 'width 0.4s ease-in-out' }
+  progress: { height: '100%', backgroundColor: '#4caf50', borderRadius: '5px', transition: 'width 0.4s ease-in-out' },
+  reviewContainer: { padding: '15px', borderTop: '1px solid #eee', backgroundColor: '#f9f9f9', maxHeight: '400px', overflowY: 'auto' },
+  reviewSection: { marginBottom: '20px', backgroundColor: 'white', borderRadius: '8px', padding: '15px', border: '1px solid #ddd' },
+  reviewSectionTitle: { margin: '0 0 15px 0', fontSize: '16px', fontWeight: 'bold', color: '#333', borderBottom: '2px solid #4caf50', paddingBottom: '5px' },
+  reviewField: { display: 'flex', alignItems: 'center', marginBottom: '10px', padding: '8px', backgroundColor: '#f8f9fa', borderRadius: '5px', border: '1px solid #e9ecef' },
+  reviewLabel: { fontWeight: 'bold', minWidth: '120px', color: '#495057', fontSize: '14px' },
+  reviewValue: { flex: 1, margin: '0 10px', color: '#212529', fontSize: '14px' },
+  editButton: { background: '#007bff', color: 'white', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', cursor: 'pointer', '&:hover': { background: '#0056b3' } },
+  roomReview: { marginBottom: '15px', padding: '10px', backgroundColor: '#f1f3f4', borderRadius: '5px', border: '1px solid #dee2e6' },
+  reviewActions: { textAlign: 'center', marginTop: '20px', paddingTop: '15px', borderTop: '2px solid #4caf50' },
+  submitButton: { background: '#28a745', color: 'white', border: 'none', borderRadius: '8px', padding: '12px 24px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', '&:hover': { background: '#218838' } }
 };
 
 export default Chatbot;

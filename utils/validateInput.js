@@ -14,6 +14,7 @@ const invalidDomainPatterns = [
   /\.x$/i,              // .x pattern
   /\.\d+\.\d+$/i,       // .number.number pattern
   /\.\d+$/i,            // .number pattern
+  /\.x\.\w+\.\w+$/i,    // .x.anything.anything pattern (like .x.net.nz)
 ];
 
 // Valid TLD patterns for common domains

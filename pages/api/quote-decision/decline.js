@@ -47,13 +47,15 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
     console.log('  - Tradesperson:', tradespersonEmail);
     console.log('  - Admin:', process.env.ADMIN_EMAIL);
 
-    // Validate email addresses
-    if (!customerEmail) {
+    // Validate email addresses - more robust validation
+    if (!customerEmail || customerEmail === 'undefined' || customerEmail === 'N/A (Column not found)') {
         console.error('❌ Customer email not found in quote or lead data');
+        console.error('❌ Customer email value:', customerEmail);
         throw new Error('Customer email not found');
     }
-    if (!tradespersonEmail) {
+    if (!tradespersonEmail || tradespersonEmail === 'undefined' || tradespersonEmail === 'N/A (Column not found)') {
         console.error('❌ Tradesperson email not found in quote data');
+        console.error('❌ Tradesperson email value:', tradespersonEmail);
         throw new Error('Tradesperson email not found');
     }
 

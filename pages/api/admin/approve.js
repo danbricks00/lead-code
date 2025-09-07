@@ -86,7 +86,7 @@ export default async function handler(req, res) {
         
         if (!leadData) return res.redirect(`/quote-status?status=error&message=Lead data not found.`);
 
-        // 2. Generate PDF using our new system with enhanced data (NO XERO!)
+        // 2. Generate PDF using EXACT SAME logic as quote-submit.js (working system)
         // Use stored rooms data from quote submission, fallback to lead data
         let rooms = [];
         if (quoteData.Rooms) {
@@ -101,17 +101,21 @@ export default async function handler(req, res) {
         }
         const totalSqm = rooms.reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0);
         
-        // Parse quote values - use stored data from quote submission
-        const labourRate = parseFloat(quoteData.LabourRate || 0);
-        const labourHours = parseFloat(quoteData.LabourHours || 0);
-        const materialsCost = parseFloat(quoteData.MaterialsCost || 0);
-        const materialsQuantity = parseFloat(quoteData.MaterialsQuantity || 0);
-        const travelCost = parseFloat(quoteData.TravelCost || 0);
-        const travelDistance = parseFloat(quoteData.TravelDistance || 0);
-        const installationCost = parseFloat(quoteData.InstallationCost || 0);
-        const totalQuote = parseFloat(quoteData.TotalQuote || 0);
+        // Parse quote values - use stored data from quote submission (same as quote-submit.js)
+        const labourRate = parseFloat(quoteData.LabourRate || quoteData['Labour Cost'] || 0);
+        const labourHours = parseFloat(quoteData.LabourHours || quoteData['Labour Hour'] || 0);
+        const materialsCost = parseFloat(quoteData.MaterialsCost || quoteData['Materials Cost'] || 0);
+        const materialsQuantity = parseFloat(quoteData.MaterialsQuantity || quoteData['Materials Quanitity'] || 0);
+        const travelCost = parseFloat(quoteData.TravelCost || quoteData['Travel Cost'] || 0);
+        const travelDistance = parseFloat(quoteData.TravelDistance || quoteData['Travel Distance'] || 0);
+        const installationCost = parseFloat(quoteData.InstallationCost || quoteData['Installation Cost'] || 0);
+        const totalQuote = parseFloat(quoteData.TotalQuote || quoteData['Total Quote'] || 0);
         
-        // Calculate per-room breakdown
+        // Calculate subtotal and GST (same logic as quote-submit.js)
+        const subtotal = labourRate * labourHours + materialsCost * materialsQuantity + travelCost * travelDistance + installationCost;
+        const gst = subtotal * 0.15;
+        
+        // Calculate per-room breakdown (same as quote-submit.js)
         const roomsWithDetails = rooms.map(room => {
             const roomSqm = parseFloat(room.sqm) || 0;
             const roomRatio = totalSqm > 0 ? roomSqm / totalSqm : 0;
@@ -126,6 +130,7 @@ export default async function handler(req, res) {
             };
         });
 
+        // EXACT SAME data structure as quote-submit.js
         const quoteDataForPdf = {
             quoteId,
             quoteDate: new Date().toISOString(),
@@ -135,12 +140,12 @@ export default async function handler(req, res) {
             customerPhone: leadData.CustomerPhone,
             customerAddress: `${leadData.Area || ''}, ${leadData.Suburb || ''}`.trim(),
             serviceType: leadData.ServiceType,
-            tradespersonName: quoteData.TradespersonName,
-            tradespersonEmail: quoteData.TradespersonEmail,
-            tradespersonPhone: quoteData.TradespersonPhone,
+            tradespersonName: quoteData.TradespersonName || quoteData['TradePerson Name'] || 'Professional Tradesperson',
+            tradespersonEmail: quoteData.TradespersonEmail || quoteData['TradePerson Email'] || 'contact@kiwitrade.co.nz',
+            tradespersonPhone: quoteData.TradespersonPhone || quoteData['TradePerson Phone'] || 'Contact via Kiwi Trade',
             tradespersonLicense: 'Licensed Tradesperson',
             rooms: roomsWithDetails,
-            // Add detailed breakdown for quote summary
+            // EXACT SAME breakdown structure as quote-submit.js
             breakdown: {
                 labourRate: labourRate,
                 labourHours: labourHours,
@@ -154,14 +159,15 @@ export default async function handler(req, res) {
                 installationCost: installationCost,
                 totalSqm: totalSqm
             },
+            // EXACT SAME totals structure as quote-submit.js
             totals: {
                 labour: labourRate * labourHours,
                 materials: materialsCost * materialsQuantity,
                 travel: travelCost * travelDistance,
                 installation: installationCost,
-                subtotal: parseFloat(quoteData.Subtotal || 0),
-                gst: parseFloat(quoteData.GST || 0),
-                final: parseFloat(quoteData.TotalQuote || 0)
+                subtotal: subtotal,
+                gst: gst,
+                final: totalQuote
             }
         };
 
@@ -212,8 +218,10 @@ export default async function handler(req, res) {
         const viewQuoteLink = generateQuoteViewLink(quoteId);
 
         // 6. Send CUSTOMER-SPECIFIC quote email (different tracking journey)
+        // Always CC the super admin for recordkeeping
         const customerEmailOptions = {
           to: leadData['CustomerEmail'],
+          cc: process.env.ADMIN_EMAIL, // Always CC super admin
           subject: `🎯 Your Quote for ${leadData['ServiceType']} - $${totalQuote.toFixed(2)} is Ready!`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
@@ -275,9 +283,47 @@ export default async function handler(req, res) {
                   <h3 style="color: #34495e; margin-top: 0;">📋 Quote Details:</h3>
                   <p><strong>Quote ID:</strong> ${quoteId}</p>
                   <p><strong>Service:</strong> ${leadData['ServiceType']}</p>
-                  <p><strong>Tradesperson:</strong> ${quoteData.TradespersonName || 'Professional Tradesperson'}</p>
+                  <p><strong>Tradesperson:</strong> ${quoteDataForPdf.tradespersonName}</p>
                   <p><strong>Total Amount:</strong> $${totalQuote.toFixed(2)}</p>
                   <p><strong>Location:</strong> ${leadData['Area']}, ${leadData['Suburb']}</p>
+                  <p><strong>Valid Until:</strong> ${new Date(quoteDataForPdf.validUntil).toLocaleDateString('en-NZ')}</p>
+                </div>
+
+                <!-- Quote Breakdown -->
+                <div style="background: #e8f4f8; padding: 20px; border-radius: 8px; margin: 20px 0; border: 2px solid #b8daff;">
+                  <h3 style="color: #0066cc; margin-top: 0;">💰 Quote Breakdown:</h3>
+                  <div style="background: white; padding: 15px; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                      <span><strong>Labour & Installation:</strong></span>
+                      <span>$${quoteDataForPdf.totals.labour.toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                      <span><strong>Materials & Equipment:</strong></span>
+                      <span>$${quoteDataForPdf.totals.materials.toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                      <span><strong>Travel & Transport:</strong></span>
+                      <span>$${quoteDataForPdf.totals.travel.toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                      <span><strong>Installation:</strong></span>
+                      <span>$${quoteDataForPdf.totals.installation.toFixed(2)}</span>
+                    </div>
+                    <hr style="margin: 15px 0; border: none; border-top: 1px solid #dee2e6;">
+                    <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                      <span><strong>Subtotal (excl. GST):</strong></span>
+                      <span>$${quoteDataForPdf.totals.subtotal.toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                      <span><strong>GST (15%):</strong></span>
+                      <span>$${quoteDataForPdf.totals.gst.toFixed(2)}</span>
+                    </div>
+                    <hr style="margin: 15px 0; border: none; border-top: 2px solid #007bff;">
+                    <div style="display: flex; justify-content: space-between; margin: 8px 0; font-size: 18px; font-weight: bold; color: #007bff;">
+                      <span><strong>TOTAL (incl. GST):</strong></span>
+                      <span>$${quoteDataForPdf.totals.final.toFixed(2)}</span>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Quick Decision Buttons -->
@@ -309,10 +355,11 @@ export default async function handler(req, res) {
                 <!-- Contact Information -->
                 <div style="background-color: #e8f5e8; border-radius: 8px; padding: 20px; margin: 20px 0;">
                   <h4 style="color: #27ae60; margin: 0 0 10px 0;">👷‍♂️ Your Tradesperson</h4>
-                  <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${quoteData.TradespersonName || 'Professional Tradesperson'}</p>
-                  <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${quoteData.TradespersonEmail || 'Contact via Kiwi Trade'}</p>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${quoteDataForPdf.tradespersonName}</p>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${quoteDataForPdf.tradespersonEmail}</p>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Phone:</strong> ${quoteDataForPdf.tradespersonPhone}</p>
                   <p style="margin: 15px 0 0 0;">
-                    <a href="mailto:${quoteData.TradespersonEmail}" style="display: inline-block; background: #27ae60; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">📧 Contact Tradesperson</a>
+                    <a href="mailto:${quoteDataForPdf.tradespersonEmail}" style="display: inline-block; background: #27ae60; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">📧 Contact Tradesperson</a>
                   </p>
                 </div>
 

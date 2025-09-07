@@ -105,7 +105,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
       if (sqm > 500) return null;
       return {
         originalInput: originalInput,
-        sqm: sqm,
+        sqm: Math.round(sqm * 1000) / 1000, // Round to 3 decimal places (mm precision)
         dimensions: null,
         format: 'direct_sqm'
       };
@@ -119,7 +119,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
       if (sqm > 500) return null;
       return {
         originalInput: originalInput,
-        sqm: sqm,
+        sqm: Math.round(sqm * 1000) / 1000, // Round to 3 decimal places (mm precision)
         dimensions: null,
         format: 'direct_sqm'
       };
@@ -136,7 +136,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
       if (sqm > 500) return null; // Additional total area check
       return {
         originalInput: originalInput,
-        sqm: sqm,
+        sqm: Math.round(sqm * 1000) / 1000, // Round to 3 decimal places (mm precision)
         dimensions: { width, length },
         format: 'dimensions'
       };
@@ -153,7 +153,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
       if (sqm > 500) return null; // Additional total area check
       return {
         originalInput: originalInput,
-        sqm: sqm,
+        sqm: Math.round(sqm * 1000) / 1000, // Round to 3 decimal places (mm precision)
         dimensions: { width, length },
         format: 'dimensions'
       };
@@ -251,11 +251,16 @@ const Chatbot = ({ handleClose, handleReset }) => {
             }
             return null;
         case 'ask_first_name':
-            return /^[a-zA-Z'-]{2,}$/.test(value) ? null : "Please enter a valid first name.";
+            // Allow alphabet characters, hyphens, apostrophes, and periods (for initials like P.J)
+            return /^[a-zA-Z'-\.]{2,}$/.test(value) ? null : "Please enter a valid first name (letters only, e.g., John, P.J, Mary-Jane).";
         case 'ask_last_name':
-            return /^[a-zA-Z\s'-]{2,}$/.test(value) ? null : "Please enter a valid last name.";
+            // Allow alphabet characters, spaces, hyphens, apostrophes, and periods (for initials like P.J)
+            return /^[a-zA-Z\s'-\.]{2,}$/.test(value) ? null : "Please enter a valid last name (letters only, e.g., Smith, P.J, O'Connor).";
         case 'ask_phone':
-            return /^[\d\s()+-]{7,}$/.test(value) ? null : "Please enter a valid phone number.";
+            // Allow only numbers and + sign, 6-10 digits total
+            const cleanPhone = value.replace(/[\s()-]/g, ''); // Remove spaces, parentheses, hyphens
+            const phoneRegex = /^\+?[0-9]{6,10}$/;
+            return phoneRegex.test(cleanPhone) ? null : "Please enter a valid phone number (6-10 digits, + allowed for international).";
         case 'ask_suburb':
             // Validation now checks if the selected suburb exists in our initial list
             return zoneData.some(zone => zone.suburb.toLowerCase() === value.toLowerCase()) 

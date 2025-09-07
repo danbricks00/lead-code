@@ -1589,19 +1589,60 @@
                   // Continue with submission - backend will catch duplicates
               }
              
-                           try {
-                  console.log('📤 Submitting quote data:', data);
-                  console.log('📧 Tradesman Email:', data.tradesmanEmail);
-                  console.log('📞 Tradesman Phone:', data.tradesmanPhone);
-                  console.log('💰 Total Amount:', data.totalAmount);
-                  console.log('🔢 Quote ID:', data.quoteId);
-                  console.log('📋 Lead ID:', data.leadId);
-                 
-                 const response = await fetch('/api/quote-submission', {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify(data)
-                 });
+             try {
+                 console.log('📤 Submitting quote data:', data);
+                 console.log('📧 Tradesman Email:', data.tradesmanEmail);
+                 console.log('📞 Tradesman Phone:', data.tradesmanPhone);
+                 console.log('💰 Total Amount:', data.totalAmount);
+                 console.log('🔢 Quote ID:', data.quoteId);
+                 console.log('📋 Lead ID:', data.leadId);
+                
+                // Structure data to match backend expectations
+                const submissionData = {
+                    quoteId: data.quoteId,
+                    ts: data.ts,
+                    token: data.token,
+                    quoteDetails: {
+                        labourRate: data.labourRate,
+                        labourHours: data.labourHours,
+                        materialsCost: data.materialRate,
+                        materialsQuantity: data.materialSQM,
+                        travelCost: data.travelAmount,
+                        travelDistance: data.travelDistance || 0,
+                        installationCost: data.installationAmount,
+                        subtotal: data.labourSubtotal + data.materialSubtotal + data.installationSubtotal,
+                        gst: (data.labourSubtotal + data.materialSubtotal + data.installationSubtotal) * 0.15,
+                        totalQuote: data.totalAmount,
+                        notes: data.notes || '',
+                        validUntil: data.validUntil || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        tradespersonName: data.tradesmanName,
+                        tradespersonEmail: data.tradesmanEmail,
+                        tradespersonPhone: data.tradesmanPhone
+                    },
+                    leadDetails: {
+                        Lead: data.leadId,
+                        CustomerName: data.customerName,
+                        CustomerEmail: data.customerEmail,
+                        CustomerPhone: data.customerPhone,
+                        ServiceType: data.serviceType,
+                        Rooms: data.rooms || '[]',
+                        Area: data.area,
+                        Suburb: data.suburb,
+                        Budget: data.budget,
+                        Timelline: data.timeline,
+                        'Specfic Details': data.projectDetails,
+                        Time: new Date().toISOString(),
+                        status: 'Quote Submitted'
+                    }
+                };
+                
+                console.log('📤 Structured submission data:', submissionData);
+                
+                const response = await fetch('/api/quote-submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(submissionData)
+                });
                  
                  console.log('📥 Response status:', response.status);
                  

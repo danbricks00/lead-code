@@ -696,6 +696,49 @@
                     return;
                 }
                 
+                // Add summary table at the top
+                let summaryHTML = `
+                    <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #28a745;">
+                        <h4 style="margin: 0 0 15px 0; color: #155724;">📊 Room Summary</h4>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                            <thead>
+                                <tr style="background: #d4edda;">
+                                    <th style="padding: 8px; text-align: left; border: 1px solid #c3e6cb;">Room Name</th>
+                                    <th style="padding: 8px; text-align: center; border: 1px solid #c3e6cb;">Customer Input</th>
+                                    <th style="padding: 8px; text-align: center; border: 1px solid #c3e6cb;">Dimensions</th>
+                                    <th style="padding: 8px; text-align: right; border: 1px solid #c3e6cb;">Square Meters</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                rooms.forEach((room, index) => {
+                    const roomSqm = parseFloat(room.sqm) || 0;
+                    const roomDimensions = room.dimensions || 'N/A';
+                    const originalInput = room.originalInput || 'N/A';
+                    
+                    summaryHTML += `
+                        <tr style="background: ${index % 2 === 0 ? '#f8f9fa' : 'white'};">
+                            <td style="padding: 8px; border: 1px solid #c3e6cb; font-weight: bold;">${room.name || `Room ${index + 1}`}</td>
+                            <td style="padding: 8px; border: 1px solid #c3e6cb; text-align: center; font-family: monospace;">${originalInput}</td>
+                            <td style="padding: 8px; border: 1px solid #c3e6cb; text-align: center; font-family: monospace;">${roomDimensions}</td>
+                            <td style="padding: 8px; border: 1px solid #c3e6cb; text-align: right; font-weight: bold; color: #28a745;">${roomSqm.toFixed(1)} m²</td>
+                        </tr>
+                    `;
+                });
+                
+                summaryHTML += `
+                            </tbody>
+                            <tfoot>
+                                <tr style="background: #28a745; color: white; font-weight: bold;">
+                                    <td style="padding: 10px; border: 1px solid #1e7e34;" colspan="3">TOTAL AREA</td>
+                                    <td style="padding: 10px; border: 1px solid #1e7e34; text-align: right; font-size: 16px;">${totalSqm.toFixed(1)} m²</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                `;
+                
                 let roomsHTML = '';
                 let totalSqm = 0;
                 let totalLabourHours = 0;
@@ -754,8 +797,16 @@
                             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; align-items: start;">
                                 <div>
                                     <h4 style="margin: 0 0 10px 0; color: #333;">${roomName}</h4>
-                                    <p style="margin: 0; color: #666; font-size: 14px;">${roomDimensions}</p>
-                                    <p style="margin: 5px 0 0 0; color: #28a745; font-weight: bold;">${roomSqm.toFixed(1)} m²</p>
+                                    <div style="background: #f8f9fa; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+                                        <div style="font-size: 12px; color: #666; margin-bottom: 4px;">
+                                            <strong>Customer Input:</strong> ${room.originalInput || roomDimensions}
+                                        </div>
+                                        <div style="font-size: 12px; color: #495057;">
+                                            <strong>Parsed:</strong> ${roomDimensions}
+                                        </div>
+                                    </div>
+                                    <p style="margin: 5px 0 0 0; color: #28a745; font-weight: bold; font-size: 16px;">${roomSqm.toFixed(1)} m²</p>
+                                    ${room.format === 'unparseable' ? '<p style="margin: 5px 0 0 0; color: #dc3545; font-size: 12px;">⚠️ Could not parse dimensions</p>' : ''}
                                 </div>
                                 
                                 <div>
@@ -858,7 +909,7 @@
                     `;
                 });
                 
-                roomsListEl.innerHTML = roomsHTML;
+                roomsListEl.innerHTML = summaryHTML + roomsHTML;
                 
                 // Add event listeners to all the new multiplier inputs
                 addRoomMultiplierListeners(rooms);
@@ -1270,12 +1321,31 @@
                             const leadRooms = typeof lead.rooms === 'string' ? JSON.parse(lead.rooms) : lead.rooms;
                             console.log('🏠 Processing room data:', leadRooms);
                             
+                            // Parse room dimensions using smart parser
+                            const parsedRooms = leadRooms.map(room => {
+                                const parsed = parseRoomDimensions(room.dimensions);
+                                return {
+                                    name: room.name || 'Unnamed Room',
+                                    dimensions: `${parsed.length.toFixed(2)}m x ${parsed.width.toFixed(2)}m`,
+                                    sqm: parsed.sqm,
+                                    originalInput: parsed.originalInput,
+                                    format: parsed.format,
+                                    length: parsed.length,
+                                    width: parsed.width
+                                };
+                            });
+                            
+                            console.log('✅ Parsed rooms:', parsedRooms);
+                            
                             // Update global rooms array
-                            rooms = leadRooms;
+                            rooms = parsedRooms;
                             
                             populateRoomDetails(rooms);
                         } catch (error) {
                             console.error('❌ Error parsing room data:', error);
+                            // Clear rooms array if parsing fails
+                            rooms = [];
+                            populateRoomDetails(rooms);
                         }
                     } else {
                         console.log('ℹ️ No room data available in lead');
@@ -1297,6 +1367,73 @@
         
         // Room management functions
         let rooms = []; // Global array to store rooms
+        
+        // Smart room dimensions parser
+        function parseRoomDimensions(dimensionsString) {
+            if (!dimensionsString || typeof dimensionsString !== 'string') {
+                return { length: 0, width: 0, sqm: 0, originalInput: dimensionsString || '' };
+            }
+            
+            const input = dimensionsString.trim();
+            console.log('🔍 Parsing room dimensions:', input);
+            
+            // Pattern 1: Single number (assumed to be square meters)
+            // e.g., "25", "25.5", "25m²"
+            const singleNumberMatch = input.match(/^(\d+(?:\.\d+)?)\s*(?:m²|sqm|m2)?$/i);
+            if (singleNumberMatch) {
+                const sqm = parseFloat(singleNumberMatch[1]);
+                const side = Math.sqrt(sqm);
+                return {
+                    length: side,
+                    width: side,
+                    sqm: sqm,
+                    originalInput: input,
+                    format: 'square'
+                };
+            }
+            
+            // Pattern 2: Two numbers separated by x (with optional units)
+            // e.g., "7 x 7", "7.5 x 6.2", "7m x 7m", "7.00m x 7.00m"
+            const twoNumbersMatch = input.match(/^(\d+(?:\.\d+)?)\s*(?:m)?\s*x\s*(\d+(?:\.\d+)?)\s*(?:m)?$/i);
+            if (twoNumbersMatch) {
+                const length = parseFloat(twoNumbersMatch[1]);
+                const width = parseFloat(twoNumbersMatch[2]);
+                const sqm = length * width;
+                return {
+                    length: length,
+                    width: width,
+                    sqm: sqm,
+                    originalInput: input,
+                    format: 'dimensions'
+                };
+            }
+            
+            // Pattern 3: Try to extract any two numbers from the string
+            // e.g., "Kitchen 7 x 7", "Room 1: 7.5 x 6.2"
+            const anyNumbersMatch = input.match(/(\d+(?:\.\d+)?).*?(\d+(?:\.\d+)?)/);
+            if (anyNumbersMatch) {
+                const length = parseFloat(anyNumbersMatch[1]);
+                const width = parseFloat(anyNumbersMatch[2]);
+                const sqm = length * width;
+                return {
+                    length: length,
+                    width: width,
+                    sqm: sqm,
+                    originalInput: input,
+                    format: 'extracted'
+                };
+            }
+            
+            // If no pattern matches, return zeros
+            console.warn('⚠️ Could not parse dimensions:', input);
+            return {
+                length: 0,
+                width: 0,
+                sqm: 0,
+                originalInput: input,
+                format: 'unparseable'
+            };
+        }
         
         // Function to add a room from the input fields
         function addRoomFromInput() {

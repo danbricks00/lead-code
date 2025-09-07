@@ -257,6 +257,53 @@ export default async function handler(req, res) {
             }
         };
         
+        // Normalize totals and add robust placeholder mappings
+        const labourTotal = labourRate * labourHours;
+        const materialsTotal = materialsCost * materialsQuantity;
+        const travelTotal = travelCost * travelDistance;
+        
+        // Ensure totals are present and computed correctly
+        if (!quoteData.totals.subtotal || quoteData.totals.subtotal === 0) {
+            quoteData.totals.subtotal = labourTotal + materialsTotal + travelTotal + installationCost;
+        }
+        if (!quoteData.totals.gst || quoteData.totals.gst === 0) {
+            quoteData.totals.gst = quoteData.totals.subtotal * 0.15;
+        }
+        if (!quoteData.totals.final || quoteData.totals.final === 0) {
+            quoteData.totals.final = quoteData.totals.subtotal + quoteData.totals.gst;
+        }
+        
+        // Create NZD-formatted strings for display
+        const formatNZD = (amount) => `$${parseFloat(amount).toFixed(2)}`;
+        const subtotalFormatted = formatNZD(quoteData.totals.subtotal);
+        const gstFormatted = formatNZD(quoteData.totals.gst);
+        const totalFormatted = formatNZD(quoteData.totals.final);
+        
+        // Add robust aliases for template compatibility
+        quoteData.subtotal = quoteData.totals.subtotal;
+        quoteData.gst = quoteData.totals.gst;
+        quoteData.total = quoteData.totals.final;
+        quoteData.grand_total = quoteData.totals.final;
+        quoteData.totalQuote = quoteData.totals.final;
+        
+        // Add formatted versions
+        quoteData.subtotalFormatted = subtotalFormatted;
+        quoteData.gstFormatted = gstFormatted;
+        quoteData.totalFormatted = totalFormatted;
+        
+        console.log('💰 Injected totals:', {
+            numeric: {
+                subtotal: quoteData.totals.subtotal,
+                gst: quoteData.totals.gst,
+                final: quoteData.totals.final
+            },
+            formatted: {
+                subtotal: subtotalFormatted,
+                gst: gstFormatted,
+                total: totalFormatted
+            }
+        });
+        
         console.log('📊 Final quote data for PDF:', JSON.stringify(quoteData, null, 2));
 
         try {

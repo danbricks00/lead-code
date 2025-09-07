@@ -101,8 +101,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
     const sqmNotationMatch = cleanInput.match(/^(\d+\.?\d*)\s*m[²2]\s*$/);
     if (sqmNotationMatch) {
       const sqm = parseFloat(sqmNotationMatch[1]);
-      // VALIDATION: Maximum reasonable room size (500 sqm)
-      if (sqm > 500) return null;
+      // VALIDATION: Maximum reasonable room size (1000 sqm)
+      if (sqm > 1000) return null;
       return {
         originalInput: originalInput,
         sqm: Math.round(sqm * 1000) / 1000, // Round to 3 decimal places (mm precision)
@@ -115,8 +115,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
     const directSqmMatch = cleanInput.match(/^(\d+\.?\d*)\s*(?:sqm|sq\s*m|square\s*meters?)?\s*$/);
     if (directSqmMatch) {
       const sqm = parseFloat(directSqmMatch[1]);
-      // VALIDATION: Maximum reasonable room size (500 sqm)
-      if (sqm > 500) return null;
+      // VALIDATION: Maximum reasonable room size (1000 sqm)
+      if (sqm > 1000) return null;
       return {
         originalInput: originalInput,
         sqm: Math.round(sqm * 1000) / 1000, // Round to 3 decimal places (mm precision)
@@ -130,10 +130,10 @@ const Chatbot = ({ handleClose, handleReset }) => {
     if (dimensionWithUnitsMatch) {
       const width = parseFloat(dimensionWithUnitsMatch[1]);
       const length = parseFloat(dimensionWithUnitsMatch[2]);
-      // VALIDATION: Maximum reasonable room dimensions (25m x 25m = 625 sqm)
-      if (width > 25 || length > 25) return null;
+      // VALIDATION: Maximum reasonable room dimensions (50m x 50m = 2500 sqm)
+      if (width > 50 || length > 50) return null;
       const sqm = width * length;
-      if (sqm > 500) return null; // Additional total area check
+      if (sqm > 1000) return null; // Additional total area check
       return {
         originalInput: originalInput,
         sqm: Math.round(sqm * 1000) / 1000, // Round to 3 decimal places (mm precision)
@@ -147,10 +147,10 @@ const Chatbot = ({ handleClose, handleReset }) => {
     if (dimensionMatch) {
       const width = parseFloat(dimensionMatch[1]);
       const length = parseFloat(dimensionMatch[2]);
-      // VALIDATION: Maximum reasonable room dimensions (25m x 25m = 625 sqm)
-      if (width > 25 || length > 25) return null;
+      // VALIDATION: Maximum reasonable room dimensions (50m x 50m = 2500 sqm)
+      if (width > 50 || length > 50) return null;
       const sqm = width * length;
-      if (sqm > 500) return null; // Additional total area check
+      if (sqm > 1000) return null; // Additional total area check
       return {
         originalInput: originalInput,
         sqm: Math.round(sqm * 1000) / 1000, // Round to 3 decimal places (mm precision)
@@ -176,7 +176,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
             ask_room_count: "How many areas are you planning to install underfloor heating in?",
             ask_room_name: `What is the name of room ${leadData.rooms.length + 1}? (e.g., Kitchen, Lounge)`,
             ask_room_dimensions: `What are the dimensions of the ${context.roomName || leadData.rooms[leadData.rooms.length - 1]?.name}?`,
-            ask_room_dimensions_help: `Dimensions options:\n• Square meters: 25 (for 25m²)\n• Dimensions: 10 x 5 (for 50m²)\n• Metric dimensions: 7m x 7m (for 49m²)\n• Decimals welcome: 7.5 x 6.2, 25.01 x 1.02 (for precise measurements)\n• Maximum size: 25m x 25m (500m²)\n• Only use: numbers, decimal points, 'x', 'm', and spaces`,
+            ask_room_dimensions_help: `Dimensions options:\n• Square meters: 25 (for 25m²)\n• Dimensions: 10 x 5 (for 50m²)\n• Metric dimensions: 7m x 7m (for 49m²)\n• Decimals welcome: 7.5 x 6.2, 25.01 x 1.02 (for precise measurements)\n• Maximum size: 50m x 50m (1000m²)\n• Only use: numbers, decimal points, 'x', 'm', and spaces`,
             ask_timeline: "What is your desired timeline for this project?",
             ask_timeline_details: "Could you please be more specific about your timeline?",
             ask_budget: "What is your budget range for this underfloor heating project?",
@@ -258,7 +258,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
                 if (!allowedChars.test(value.toLowerCase())) {
                     return "Please use only numbers (0-9), decimal points, 'x', 'm', and spaces.";
                 }
-                return "Please provide valid room dimensions (max 25m x 25m).";
+                return "Please provide valid room dimensions (max 50m x 50m, 1000m²).";
             }
             return null;
         case 'ask_first_name':
@@ -316,7 +316,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
 • Direct square meters: "25", "25.5", "12m2", "12m²"
 • Length x Width: "10 x 5", "7.07 x 7.07", "4.0 x 12.0", "25.01 x 1.02"
 • With units: "4m x 12m", "4.0m x 12.0m", "25.1m x 1.2m"
-• Maximum room size: 25m x 25m (500 sqm)
+• Maximum room size: 50m x 50m (1000 sqm)
 • Only use: numbers (0-9), decimal points, 'x', 'm', and spaces`);
                 return;
             }

@@ -297,7 +297,11 @@ export async function sendToSheets(leadData) {
           leadData.specificDetails || '', // Specific details
           customerEmailSent ? 'Sent' : 'Failed',
           tradesmanNotified ? 'Sent' : 'Failed',
-          'New'
+          'New',
+          JSON.stringify(leadData.rooms || []), // Rooms data as JSON string
+          leadData.totalSqm || '', // Total square meters
+          leadData.area || '', // Area
+          leadData.suburb || '' // Suburb
         ]
       ];
 

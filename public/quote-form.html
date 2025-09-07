@@ -723,7 +723,7 @@
                                 <div>
                                     <h4 style="margin: 0 0 10px 0; color: #333;">${roomName}</h4>
                                     <p style="margin: 0; color: #666; font-size: 14px;">${roomDimensions}</p>
-                                    <p style="margin: 5px 0 0 0; color: #28a745; font-weight: bold;">${roomSqm.toFixed(1)} m²</p>
+                                    <p style="margin: 5px 0 0 0; color: #28a745; font-weight: bold;">${roomSqm.toFixed(3)} m²</p>
                                 </div>
                                 
                                 <div>
@@ -828,7 +828,7 @@
                 addRoomMultiplierListeners(rooms);
                 
                 // Update totals based on room calculations
-                document.getElementById('materialSQM').value = totalSqm.toFixed(1);
+                document.getElementById('materialSQM').value = totalSqm.toFixed(3);
                 document.getElementById('labourHours').value = totalLabourHours.toFixed(1);
                 
                 // Recalculate totals
@@ -962,7 +962,7 @@
                 });
                 
                 // Update form totals
-                document.getElementById('materialSQM').value = totalSqm.toFixed(1);
+                document.getElementById('materialSQM').value = totalSqm.toFixed(3);
                 document.getElementById('labourHours').value = totalLabourHours.toFixed(1);
                 
                 // Update installation total if there are manual installation costs
@@ -974,7 +974,7 @@
                 calculateTotals();
                 
                 console.log('✅ Room totals recalculated:', {
-                    totalSqm: totalSqm.toFixed(1),
+                    totalSqm: totalSqm.toFixed(3),
                     totalLabourHours: totalLabourHours.toFixed(1),
                     totalLabourCost: totalLabourCost.toFixed(0),
                     totalMaterialsCost: totalMaterialsCost.toFixed(0),
@@ -1243,13 +1243,13 @@
                         const totalSqm = rooms.reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0);
                         const totalSqmElement = document.getElementById('totalSqm');
                         if (totalSqmElement) {
-                            totalSqmElement.textContent = `${totalSqm.toFixed(1)} sqm`;
+                            totalSqmElement.textContent = `${totalSqm.toFixed(3)} sqm`;
                         }
                         
                         // Update project size field
                         const projectSizeElement = document.getElementById('projectSize');
                         if (projectSizeElement) {
-                            projectSizeElement.value = `${totalSqm.toFixed(1)} sqm`;
+                            projectSizeElement.value = `${totalSqm.toFixed(3)} sqm`;
                         }
                         
                     } catch (error) {

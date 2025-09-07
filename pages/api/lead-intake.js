@@ -43,7 +43,7 @@ export default async function handler(req, res) {
 
   const {
     customerName, customerEmail, customerPhone, serviceType, rooms, 
-    area, suburb, timeline,
+    area, suburb, timeline, budget, specificDetails, projectDetails, projectSize
   } = req.body;
 
   if (!customerName || !customerEmail) {

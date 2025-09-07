@@ -257,6 +257,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
                 ...leadData,
                 customerEmail: input,
                 serviceType: 'Underfloor Heating',
+                // Ensure budget field is included (fallback to empty string if missing)
+                budget: leadData.budget || '',
             };
             setLeadData(finalData); // This state update is for UI consistency if needed
             handleLeadSubmission(finalData);

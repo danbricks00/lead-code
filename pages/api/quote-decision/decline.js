@@ -365,9 +365,7 @@ export default async function handler(req, res) {
         // --- Update Sheet Data ---
         console.log('📝 Updating quote decision in Google Sheets...');
         
-        // Find the correct column indices for updating
-        const decisionIndex = header.indexOf('Decision');
-        const decisionTimestampIndex = header.indexOf('Decision Timestamp');
+        // Find the correct column indices for updating (reuse existing variables)
         const customerStatusIndex = header.indexOf('Customer Status');
         const tradespersonStatusIndex = header.indexOf('Tradesperson Status');
         const adminStatusIndex = header.indexOf('Admin Status');

@@ -433,7 +433,19 @@ export default async function handler(req, res) {
         // 5. Update Sheet Status to final using correct schema column names
         const headerResponse = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Quotes!A1:AJ1' });
         const header = headerResponse.data.values[0];
-        const updates = { 'AdminPersonStatus': 'Approved', 'CustomerStatus': 'Quote Sent' };
+        const updates = { 
+            'AdminPersonStatus': 'Approved', 
+            'CustomerStatus': 'Quote Sent',
+            'Decision': 'Admin Approved',
+            'DecisionTimestamp': new Date().toLocaleString("en-NZ", {
+                timeZone: "Pacific/Auckland",
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit"
+            }).replace(",", "")
+        };
         let targetRow = (await sheets.spreadsheets.values.get({ spreadsheetId, range: `Quotes!A${quoteData.rowIndex}:AJ${quoteData.rowIndex}` })).data.values[0];
         
         header.forEach((colName, index) => {

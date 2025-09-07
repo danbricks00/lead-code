@@ -740,7 +740,8 @@ export default async function handler(req, res) {
         }
         
         // DECISION LOCK LOGIC (for valid quotes)
-        if (currentDecision && currentDecision.trim() !== '') {
+        // Allow customer to accept even if admin pre-approved, but prevent if already accepted/declined by customer
+        if (currentDecision && currentDecision.trim() !== '' && currentDecision !== 'Admin Approved') {
             const formattedTime = formatTimestamp(currentDecisionTimestamp);
             console.log(`🚫 DECISION ALREADY MADE: ${currentDecision} on ${formattedTime}`);
             

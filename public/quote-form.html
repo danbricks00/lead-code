@@ -199,6 +199,38 @@
         <div class="form-group">
             <h3>🏠 Room Details & Custom Pricing</h3>
             <div id="roomDetailsContainer">
+                <!-- Room Input Section -->
+                <div class="room-input-section" style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #28a745;">
+                    <h4 style="margin-top: 0; color: #155724;">📐 Add Room Dimensions</h4>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                        <strong>💡 Instructions:</strong> Add each room with its dimensions. The system will automatically calculate square meters and apply pricing.
+                    </p>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 15px; align-items: end; margin-bottom: 15px;">
+                        <div>
+                            <label for="roomNameInput">Room Name:</label>
+                            <input type="text" id="roomNameInput" placeholder="e.g., Kitchen, Bathroom" style="width: 100%;">
+                        </div>
+                        <div>
+                            <label for="roomLengthInput">Length (m):</label>
+                            <input type="number" id="roomLengthInput" step="0.1" min="0" placeholder="e.g., 3.5" style="width: 100%;">
+                        </div>
+                        <div>
+                            <label for="roomWidthInput">Width (m):</label>
+                            <input type="number" id="roomWidthInput" step="0.1" min="0" placeholder="e.g., 2.8" style="width: 100%;">
+                        </div>
+                        <div>
+                            <button type="button" id="addRoomBtn" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">
+                                ➕ Add Room
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="roomsList" style="margin-top: 20px;">
+                        <!-- Rooms will be dynamically added here -->
+                    </div>
+                </div>
+                
                 <div class="room-details-section">
                     <h4>Room Type Multipliers (Customizable)</h4>
                     <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
@@ -816,6 +848,10 @@
                                     <div style="margin-top: 10px; font-size: 12px; color: #666;">
                                         ${complexityIndicator} Complexity
                                     </div>
+                                    <button type="button" onclick="removeRoom(${index})" 
+                                            style="margin-top: 10px; background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                        🗑️ Remove
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1040,6 +1076,26 @@
                 }
             });
             
+            // Add room management event listeners
+            const addRoomBtn = document.getElementById('addRoomBtn');
+            if (addRoomBtn) {
+                addRoomBtn.addEventListener('click', addRoomFromInput);
+                console.log('✅ Added event listener to Add Room button');
+            }
+            
+            // Add Enter key support for room inputs
+            const roomInputs = ['roomNameInput', 'roomLengthInput', 'roomWidthInput'];
+            roomInputs.forEach(inputId => {
+                const inputEl = document.getElementById(inputId);
+                if (inputEl) {
+                    inputEl.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            addRoomFromInput();
+                        }
+                    });
+                }
+            });
+            
             // Add special listeners for base rate changes that affect room calculations
             const labourRateEl = document.getElementById('labourRate');
             const materialRateEl = document.getElementById('materialRate');
@@ -1211,14 +1267,21 @@
                     // Process room data if available
                     if (lead.rooms) {
                         try {
-                            const rooms = typeof lead.rooms === 'string' ? JSON.parse(lead.rooms) : lead.rooms;
-                            console.log('🏠 Processing room data:', rooms);
+                            const leadRooms = typeof lead.rooms === 'string' ? JSON.parse(lead.rooms) : lead.rooms;
+                            console.log('🏠 Processing room data:', leadRooms);
+                            
+                            // Update global rooms array
+                            rooms = leadRooms;
+                            
                             populateRoomDetails(rooms);
                         } catch (error) {
                             console.error('❌ Error parsing room data:', error);
                         }
                     } else {
                         console.log('ℹ️ No room data available in lead');
+                        // Clear rooms array if no data
+                        rooms = [];
+                        populateRoomDetails(rooms);
                     }
                     
                     console.log('✅ Lead data loaded successfully');
@@ -1229,6 +1292,57 @@
             } catch (error) {
                 console.error('❌ Error loading lead data:', error);
                 alert('Error loading lead data. Please try again.');
+            }
+        }
+        
+        // Room management functions
+        let rooms = []; // Global array to store rooms
+        
+        // Function to add a room from the input fields
+        function addRoomFromInput() {
+            const roomName = document.getElementById('roomNameInput').value.trim();
+            const roomLength = parseFloat(document.getElementById('roomLengthInput').value);
+            const roomWidth = parseFloat(document.getElementById('roomWidthInput').value);
+            
+            if (!roomName) {
+                alert('Please enter a room name');
+                return;
+            }
+            
+            if (!roomLength || !roomWidth || roomLength <= 0 || roomWidth <= 0) {
+                alert('Please enter valid length and width (greater than 0)');
+                return;
+            }
+            
+            const sqm = roomLength * roomWidth;
+            const dimensions = `${roomLength}m x ${roomWidth}m`;
+            
+            const newRoom = {
+                name: roomName,
+                dimensions: dimensions,
+                sqm: sqm,
+                originalInput: dimensions
+            };
+            
+            rooms.push(newRoom);
+            
+            // Clear input fields
+            document.getElementById('roomNameInput').value = '';
+            document.getElementById('roomLengthInput').value = '';
+            document.getElementById('roomWidthInput').value = '';
+            
+            // Refresh the rooms display
+            populateRoomDetails(rooms);
+            
+            console.log('✅ Room added:', newRoom);
+        }
+        
+        // Function to remove a room
+        function removeRoom(index) {
+            if (confirm('Are you sure you want to remove this room?')) {
+                rooms.splice(index, 1);
+                populateRoomDetails(rooms);
+                console.log('🗑️ Room removed at index:', index);
             }
         }
         

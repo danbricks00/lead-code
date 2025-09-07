@@ -43,13 +43,13 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
     console.log('📋 Quote data keys:', Object.keys(quoteData));
     console.log('📋 Lead data keys:', Object.keys(leadData));
     
-    // Get customer email - using correct schema column names
+    // Get customer email - using exact schema column names (AC: CustomerEmail, AB: CustomerName)
     const customerEmail = quoteData['CustomerEmail'] || leadData['CustomerEmail'];
     const customerName = quoteData['CustomerName'] || leadData['CustomerName'];
     
-    // Get tradesperson email - using correct schema column names
-    const tradespersonEmail = quoteData['TradesmanEmail'];
-    const tradespersonName = quoteData['TradesmanName'];
+    // Get tradesperson email - using exact schema column names (E: TradePersonEmail, D: TradePersonName)
+    const tradespersonEmail = quoteData['TradePersonEmail'];
+    const tradespersonName = quoteData['TradePersonName'];
     
     console.log('📧 Email recipients:');
     console.log('  - Customer:', customerEmail);
@@ -68,10 +68,10 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
         throw new Error('Tradesperson email not found');
     }
 
-    // Build finalQuoteData for PDF generation (same structure as quote-submit.js)
+    // Build finalQuoteData for PDF generation using exact schema column names
     const finalQuoteData = {
-        quoteId: quoteData['QuoteID'],
-        quoteDate: new Date().toLocaleString('en-NZ', {
+        quoteId: quoteData['QuoteID'], // B: QuoteID
+        quoteDate: quoteData['TimeStamp'] || new Date().toLocaleString('en-NZ', {
             timeZone: 'Pacific/Auckland',
             day: '2-digit',
             month: '2-digit',
@@ -79,38 +79,38 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
             hour: '2-digit',
             minute: '2-digit'
         }),
-        validUntil: quoteData['ValidUntil'] || 'N/A',
-        customerName: customerName,
-        customerEmail: customerEmail,
-        customerPhone: quoteData['CustomerPhone'] || '',
-        customerAddress: `${leadData['Area'] || ''} ${leadData['Suburb'] || ''}`.trim(),
-        serviceType: leadData['ServiceType'] || '',
-        tradespersonName: tradespersonName || 'Professional Tradesperson',
-        tradespersonEmail: tradespersonEmail || 'contact@kiwitrade.co.nz',
-        tradespersonPhone: quoteData['TradesmanPhone'] || 'Contact via Kiwi Trade',
+        validUntil: quoteData['ValidUntil'] || 'N/A', // X: ValidUntil
+        customerName: customerName, // AB: CustomerName
+        customerEmail: customerEmail, // AC: CustomerEmail
+        customerPhone: quoteData['CustomerPhone'] || '', // AD: CustomerPhone
+        customerAddress: quoteData['Location'] || `${leadData['Area'] || ''} ${leadData['Suburb'] || ''}`.trim(), // AF: Location
+        serviceType: quoteData['ServiceType'] || leadData['ServiceType'] || '', // AE: ServiceType
+        tradespersonName: tradespersonName || 'Professional Tradesperson', // D: TradePersonName
+        tradespersonEmail: tradespersonEmail || 'contact@kiwitrade.co.nz', // E: TradePersonEmail
+        tradespersonPhone: quoteData['TradePersonPhone'] || 'Contact via Kiwi Trade', // F: TradePersonPhone
         tradespersonLicense: 'Licensed Tradesperson',
         rooms: [],
         breakdown: {
-            labourRate: parseFloat(quoteData['LabourRate'] || 0),
-            labourHours: parseFloat(quoteData['LabourHours'] || 0),
-            labourTotal: parseFloat(quoteData['LabourTotal'] || 0),
-            materialsCost: parseFloat(quoteData['MaterialsCost'] || 0),
-            materialsQuantity: parseFloat(quoteData['MaterialsQuantity'] || 0),
-            materialsTotal: parseFloat(quoteData['MaterialsTotal'] || 0),
-            travelCost: parseFloat(quoteData['TravelCost'] || 0),
-            travelDistance: parseFloat(quoteData['TravelDistance'] || 0),
-            travelTotal: parseFloat(quoteData['TravelTotal'] || 0),
-            installationCost: parseFloat(quoteData['InstallationCost'] || 0),
+            labourRate: parseFloat(quoteData['LabourRate'] || 0), // J: LabourRate
+            labourHours: parseFloat(quoteData['LabourHours'] || 0), // K: LabourHours
+            labourTotal: parseFloat(quoteData['LabourTotal'] || 0), // L: LabourTotal
+            materialsCost: parseFloat(quoteData['MaterialsCost'] || 0), // M: MaterialsCost
+            materialsQuantity: parseFloat(quoteData['MaterialsQuantity'] || 0), // N: MaterialsQuantity
+            materialsTotal: parseFloat(quoteData['MaterialsTotal'] || 0), // O: MaterialsTotal
+            travelCost: parseFloat(quoteData['TravelCost'] || 0), // P: TravelCost
+            travelDistance: parseFloat(quoteData['TravelDistance'] || 0), // Q: TravelDistance
+            travelTotal: parseFloat(quoteData['TravelTotal'] || 0), // R: TravelTotal
+            installationCost: parseFloat(quoteData['InstallationCost'] || 0), // S: InstallationCost
             totalSqm: 0
         },
         totals: {
-            labour: parseFloat(quoteData['LabourTotal'] || 0),
-            materials: parseFloat(quoteData['MaterialsTotal'] || 0),
-            travel: parseFloat(quoteData['TravelTotal'] || 0),
-            installation: parseFloat(quoteData['InstallationCost'] || 0),
-            subtotal: parseFloat(quoteData['Subtotal'] || 0),
-            gst: parseFloat(quoteData['GST'] || 0),
-            final: parseFloat(quoteData['FinalTotal'] || 0)
+            labour: parseFloat(quoteData['LabourTotal'] || 0), // L: LabourTotal
+            materials: parseFloat(quoteData['MaterialsTotal'] || 0), // O: MaterialsTotal
+            travel: parseFloat(quoteData['TravelTotal'] || 0), // R: TravelTotal
+            installation: parseFloat(quoteData['InstallationCost'] || 0), // S: InstallationCost
+            subtotal: parseFloat(quoteData['Subtotal'] || 0), // T: Subtotal
+            gst: parseFloat(quoteData['GST'] || 0), // U: GST
+            final: parseFloat(quoteData['TotalQuote'] || 0) // V: TotalQuote
         }
     };
 
@@ -188,8 +188,8 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                       <div>
                         <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Service:</strong> ${finalQuoteData.serviceType}</p>
-                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Budget:</strong> ${leadData['Budget'] || 'Not specified'}</p>
-                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Timeline:</strong> ${leadData['Timelline'] || leadData['Timeline'] || 'Not specified'}</p>
+                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Budget:</strong> ${quoteData['Budget'] || leadData['Budget'] || 'Not specified'}</p>
+                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Timeline:</strong> ${quoteData['Timeline'] || leadData['Timelline'] || leadData['Timeline'] || 'Not specified'}</p>
                       </div>
                       <div>
                         <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Tradesperson:</strong> ${finalQuoteData.tradespersonName}</p>
@@ -612,7 +612,7 @@ export default async function handler(req, res) {
         }
         
         const header = rows[0];
-        const rowIndex = rows.findIndex(row => row[1] === quoteId); // QuoteID is in column B (index 1)
+        const rowIndex = rows.findIndex(row => row[1] === quoteId); // QuoteID is in column B (index 1) according to schema
 
         if (rowIndex === -1) {
             return res.redirect(`/quote-status?status=error&message=Quote ID not found.`);
@@ -620,7 +620,7 @@ export default async function handler(req, res) {
         
         const targetRow = rows[rowIndex];
         
-        // Get lead ID to fetch customer information (LeadID is in column C, index 2)
+        // Get lead ID to fetch customer information (LeadID is in column C, index 2) according to schema
         const leadId = targetRow[2] || null;
         
         // Fetch lead data to get customer information

@@ -667,42 +667,124 @@ export default async function handler(req, res) {
             }
         }
         
-        // Check for existing decision using correct schema column names
+        // Check for existing decision and expiry using correct schema column names
         const decisionIndex = header.indexOf('Decision');
         const decisionTimestampIndex = header.indexOf('DecisionTimestamp');
-
-        // ONE-TIME DECISION ENFORCEMENT
-        if (decisionIndex !== -1 && targetRow[decisionIndex] && targetRow[decisionIndex].trim() !== '') {
-            const decision = targetRow[decisionIndex];
-            const timestamp = (decisionTimestampIndex !== -1) ? targetRow[decisionTimestampIndex] : '';
-            const formattedTime = formatTimestamp(timestamp);
+        const validUntilIndex = header.indexOf('ValidUntil');
+        
+        const currentDecision = decisionIndex !== -1 ? targetRow[decisionIndex] : '';
+        const currentDecisionTimestamp = decisionTimestampIndex !== -1 ? targetRow[decisionTimestampIndex] : '';
+        const validUntil = validUntilIndex !== -1 ? targetRow[validUntilIndex] : '';
+        
+        // Check if quote has expired
+        let isExpired = false;
+        if (validUntil) {
+            try {
+                const validUntilDate = new Date(validUntil);
+                const now = new Date();
+                isExpired = validUntilDate < now;
+            } catch (error) {
+                console.log('⚠️ Could not parse ValidUntil date:', validUntil);
+            }
+        }
+        
+        // EXPIRY LOCK LOGIC
+        if (isExpired) {
+            console.log(`⏰ QUOTE EXPIRED: ValidUntil ${validUntil} is in the past`);
             
-            console.log(`🚫 DECISION ALREADY MADE: ${decision} on ${formattedTime}`);
+            // If quote expired and no decision made yet, lock it as "Expired"
+            if (!currentDecision || currentDecision.trim() === '') {
+                console.log('🔒 Locking expired quote as "Expired"');
+                
+                // Update the sheet to mark as expired
+                const updateData = {
+                    'Decision': 'Expired',
+                    'DecisionTimestamp': getNZTimestamp(new Date()),
+                };
+                
+                const quoteDataForUpdate = {};
+                header.forEach((headerName, index) => {
+                    quoteDataForUpdate[headerName] = targetRow[index] || '';
+                    if (updateData[headerName] !== undefined) {
+                        targetRow[index] = updateData[headerName];
+                        quoteDataForUpdate[headerName] = updateData[headerName];
+                    }
+                });
+                
+                await sheets.spreadsheets.values.update({
+                    spreadsheetId,
+                    range: `Quotes!A${rowIndex + 1}`,
+                    valueInputOption: 'USER_ENTERED',
+                    requestBody: { values: [targetRow] },
+                });
+            }
             
-            // Return user-friendly HTML page for already-made decision
-            const statusPage = `
+            // Always return expired page (whether just locked or already expired)
+            const expiredPage = `
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>Decision Already Made</title>
+                    <title>Quote Expired</title>
                     <style>
                         body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f7fa; }
                         .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
                         .error-icon { font-size: 48px; margin-bottom: 20px; }
                         .error-title { color: #dc3545; font-size: 24px; margin-bottom: 15px; }
                         .error-message { color: #6c757d; font-size: 16px; margin-bottom: 20px; }
-                        .decision-info { background: #f8d7da; padding: 20px; border-radius: 8px; border: 1px solid #f5c6cb; margin: 20px 0; }
-                        .decision-status { color: #721c24; font-weight: bold; font-size: 18px; }
+                        .expiry-info { background: #f8d7da; padding: 20px; border-radius: 8px; border: 1px solid #f5c6cb; margin: 20px 0; }
+                        .expiry-status { color: #721c24; font-weight: bold; font-size: 18px; }
+                        .timestamp { color: #6c757d; font-size: 14px; margin-top: 10px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="error-icon">❌</div>
+                        <h1>Quote Expired</h1>
+                        <p>This quote expired on ${validUntil}.</p>
+                        <div class="expiry-info">
+                            <div class="expiry-status">Quote Status: Expired</div>
+                            <div class="timestamp">Expired on: ${validUntil}</div>
+                        </div>
+                        <p style="color: #6c757d; font-size: 14px;">
+                            Please contact us again via the website to request a new quote.
+                        </p>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            return res.status(200).send(expiredPage);
+        }
+        
+        // DECISION LOCK LOGIC (for valid quotes)
+        if (currentDecision && currentDecision.trim() !== '') {
+            const formattedTime = formatTimestamp(currentDecisionTimestamp);
+            console.log(`🚫 DECISION ALREADY MADE: ${currentDecision} on ${formattedTime}`);
+            
+            // Return user-friendly HTML page for already-made decision
+            const statusPage = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Quote Decision Already Made</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f7fa; }
+                        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
+                        .error-icon { font-size: 48px; margin-bottom: 20px; }
+                        .error-title { color: #ffc107; font-size: 24px; margin-bottom: 15px; }
+                        .error-message { color: #6c757d; font-size: 16px; margin-bottom: 20px; }
+                        .decision-info { background: #fff3cd; padding: 20px; border-radius: 8px; border: 1px solid #ffeaa7; margin: 20px 0; }
+                        .decision-status { color: #856404; font-weight: bold; font-size: 18px; }
                         .timestamp { color: #6c757d; font-size: 14px; margin-top: 10px; }
                     </style>
                 </head>
                 <body>
                     <div class="container">
                         <div class="error-icon">⚠️</div>
-                        <h1>Decision already made</h1>
-                        <p>This quote was already marked as ${decision} on ${formattedTime}.</p>
+                        <h1>Quote Decision Already Made</h1>
+                        <p>You already chose ${currentDecision} on ${formattedTime}.</p>
                         <div class="decision-info">
-                            <div class="decision-status">Decision: ${decision}</div>
+                            <div class="decision-status">Decision: ${currentDecision}</div>
                             <div class="timestamp">Made on: ${formattedTime}</div>
                         </div>
                         <p style="color: #6c757d; font-size: 14px;">
@@ -713,14 +795,14 @@ export default async function handler(req, res) {
                 </html>
             `;
             
-            return res.status(400).send(statusPage);
+            return res.status(200).send(statusPage);
         }
         
         // --- Update Sheet Data using correct schema column names ---
         const nzTimestamp = getNZTimestamp();
         const updateData = {
             'Decision': 'Accepted',
-            'DecisionTimeStamp': nzTimestamp,
+            'DecisionTimestamp': nzTimestamp,
         };
 
         const quoteDataForEmail = {};

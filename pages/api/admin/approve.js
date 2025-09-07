@@ -394,27 +394,64 @@ export default async function handler(req, res) {
                                     </div>
                                 </div>
                                 <div style="border-top: 1px solid #e9ecef; padding-top: 20px;">
-                                    <h4 style="color: #495057; margin: 0 0 15px 0; font-size: 16px;">💰 Quote Breakdown</h4>
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-                                        <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                                            <div style="font-size: 24px; margin-bottom: 5px;">🔨</div>
-                                            <div style="font-weight: bold; color: #495057;">Labour</div>
-                                            <div style="color: #28a745; font-weight: bold;">$${(labourRate * labourHours).toFixed(2)}</div>
-                                        </div>
-                                        <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                                            <div style="font-size: 24px; margin-bottom: 5px;">🧱</div>
-                                            <div style="font-weight: bold; color: #495057;">Materials</div>
-                                            <div style="color: #28a745; font-weight: bold;">$${(materialsCost * materialsQuantity).toFixed(2)}</div>
-                                        </div>
-                                        <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                                            <div style="font-size: 24px; margin-bottom: 5px;">🚗</div>
-                                            <div style="font-weight: bold; color: #495057;">Travel</div>
-                                            <div style="color: #28a745; font-weight: bold;">$${(travelCost * travelDistance).toFixed(2)}</div>
-                                        </div>
-                                    </div>
-                                    <div style="text-align: center; margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 10px; color: white;">
-                                        <div style="font-size: 32px; font-weight: bold;">Total: $${totalQuote.toFixed(2)}</div>
-                                        <div style="font-size: 14px; opacity: 0.9;">Including GST</div>
+                                    <h4 style="color: #495057; margin: 0 0 15px 0; font-size: 16px;">💰 Detailed Quote Breakdown</h4>
+                                    
+                                    <!-- Detailed Breakdown Table -->
+                                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                        <table style="width: 100%; border-collapse: collapse;">
+                                            <thead>
+                                                <tr style="background: #e9ecef;">
+                                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: bold;">Item</th>
+                                                    <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: bold;">Rate</th>
+                                                    <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: bold;">Quantity</th>
+                                                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6; font-weight: bold;">Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">🔨 Labour & Installation</td>
+                                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">$${labourRate.toFixed(2)}/hr</td>
+                                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">${labourHours.toFixed(1)} hrs</td>
+                                                    <td style="padding: 12px; text-align: right; border-bottom: 1px solid #dee2e6; font-weight: bold;">$${labourTotal.toFixed(2)}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">🧱 Materials & Equipment</td>
+                                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">$${materialsCost.toFixed(2)}/unit</td>
+                                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">${materialsQuantity.toFixed(0)} units</td>
+                                                    <td style="padding: 12px; text-align: right; border-bottom: 1px solid #dee2e6; font-weight: bold;">$${materialsTotal.toFixed(2)}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">🚗 Travel & Transport</td>
+                                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">$${travelCost.toFixed(2)}/km</td>
+                                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">${travelDistance.toFixed(0)} km</td>
+                                                    <td style="padding: 12px; text-align: right; border-bottom: 1px solid #dee2e6; font-weight: bold;">$${travelTotal.toFixed(2)}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">⚙️ Installation Setup</td>
+                                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">-</td>
+                                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">1</td>
+                                                    <td style="padding: 12px; text-align: right; border-bottom: 1px solid #dee2e6; font-weight: bold;">$${installationCost.toFixed(2)}</td>
+                                                </tr>
+                                                <tr style="background: #e9ecef; font-weight: bold;">
+                                                    <td style="padding: 12px; border-bottom: 2px solid #dee2e6;">Subtotal</td>
+                                                    <td style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">-</td>
+                                                    <td style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">-</td>
+                                                    <td style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">$${subtotal.toFixed(2)}</td>
+                                                </tr>
+                                                <tr style="background: #e9ecef; font-weight: bold;">
+                                                    <td style="padding: 12px; border-bottom: 2px solid #dee2e6;">GST (15%)</td>
+                                                    <td style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">-</td>
+                                                    <td style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">-</td>
+                                                    <td style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">$${gst.toFixed(2)}</td>
+                                                </tr>
+                                                <tr style="background: #28a745; color: white; font-weight: bold;">
+                                                    <td style="padding: 15px; font-size: 18px;">TOTAL QUOTE</td>
+                                                    <td style="padding: 15px; text-align: center; font-size: 18px;">-</td>
+                                                    <td style="padding: 15px; text-align: center; font-size: 18px;">-</td>
+                                                    <td style="padding: 15px; text-align: right; font-size: 18px;">$${totalQuote.toFixed(2)}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>

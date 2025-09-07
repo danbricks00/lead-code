@@ -19,8 +19,14 @@ const invalidDomainPatterns = [
 // Valid TLD patterns for common domains
 const validTLDPatterns = [
   /\.(com|co|org|net|edu|gov|mil|int)$/i,  // Generic TLDs
-  /\.(co\.uk|com\.au|co\.nz|co\.za|co\.jp|co\.kr|co\.in|co\.br|co\.mx|co\.ca)$/i,  // Country-specific TLDs
-  /\.(uk|au|nz|za|jp|kr|in|br|mx|ca|de|fr|it|es|nl|se|no|dk|fi|pl|cz|hu|ro|bg|hr|si|sk|ee|lv|lt|mt|cy|ie|pt|gr|lu|at|be|ch|li|is|fo|gl|ad|mc|sm|va|gi|je|gg|im|ax|sj|bv|hm|tf|aq|gs|fk|sh|ac|ta|io|cc|tv|me|ly|as|mp|gu|vi|pr|us|dm|lc|vc|ag|bb|gd|kn|ms|tc|vg|ai|bm|ky|fk|gi|je|gg|im|ax|sj|bv|hm|tf|aq|gs|fk|sh|ac|ta|io|cc|tv|me|ly|as|mp|gu|vi|pr|us|dm|lc|vc|ag|bb|gd|kn|ms|tc|vg|ai|bm|ky)$/i  // Country codes
+  
+  // New Zealand domains (comprehensive support)
+  /\.(co\.nz|org\.nz|net\.nz|ac\.nz|govt\.nz|school\.nz|iwi\.nz|maori\.nz)$/i,  // NZ second-level domains
+  /\.nz$/i,  // Direct .nz domains
+  
+  // Other country-specific TLDs
+  /\.(co\.uk|com\.au|co\.za|co\.jp|co\.kr|co\.in|co\.br|co\.mx|co\.ca)$/i,  // Country-specific TLDs
+  /\.(uk|au|za|jp|kr|in|br|mx|ca|de|fr|it|es|nl|se|no|dk|fi|pl|cz|hu|ro|bg|hr|si|sk|ee|lv|lt|mt|cy|ie|pt|gr|lu|at|be|ch|li|is|fo|gl|ad|mc|sm|va|gi|je|gg|im|ax|sj|bv|hm|tf|aq|gs|fk|sh|ac|ta|io|cc|tv|me|ly|as|mp|gu|vi|pr|us|dm|lc|vc|ag|bb|gd|kn|ms|tc|vg|ai|bm|ky)$/i  // Country codes
 ];
 
 // Sanitize phone number (remove spaces, dashes, brackets)
@@ -103,7 +109,7 @@ export function getInvalidMessage(type, value = '') {
     case 'phone':
       return "That doesn't look like a NZ phone number, try 0211234567 or +64211234567";
     case 'email':
-      return "Please enter a valid email address (e.g., user@outlook.com, user@gmail.com)";
+      return "Please enter a valid email address (e.g., user@outlook.com, user@example.co.nz, user@company.nz)";
     case 'numeric':
       return "Please enter a valid number";
     case 'date':

@@ -328,28 +328,22 @@ export default async function handler(req, res) {
         return res.status(500).json({ success: false, error: "Failed to generate quote." });
     }
 
-    // Update Google Sheet with quote data
+    // Append quote data to Google Sheets "Quotes" tab
     const sheets = await getGoogleSheetsClient();
     const spreadsheetId = getSpreadsheetId();
     
     try {
-        // Update existing quote row with your EXACT Google Sheets format
-        const quotesRange = 'Quotes!A:Z';
-        const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: quotesRange });
-        const rows = response.data.values;
+        // Get NZ local time for QuoteDate
+        const nzTimestamp = new Date().toLocaleString('en-NZ', {
+            timeZone: 'Pacific/Auckland',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
         
-        if (!rows || rows.length < 2) {
-            throw new Error('No quotes found in sheet');
-        }
-        
-        const header = rows[0];
-        const quoteIndex = rows.findIndex(row => row[1] === quoteId); // QuoteID is column B
-        
-        if (quoteIndex === -1) {
-            throw new Error('Quote not found in sheet');
-        }
-        
-        // Recreate roomsWithDetails for Google Sheets update (same logic as above)
+        // Recreate roomsWithDetails for Google Sheets (same logic as above)
         const rooms = leadDetails.Rooms ? JSON.parse(leadDetails.Rooms) : [];
         const totalSqm = rooms.reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0);
         const roomsWithDetails = rooms.map(room => {
@@ -366,54 +360,42 @@ export default async function handler(req, res) {
             };
         });
         
-        // Update the existing quote row with your EXACT format
-        // Ensure all values are properly formatted for Google Sheets
-        const updatedRow = [
-            new Date().toISOString(),           // TimeStamp (A)
-            quoteId,                            // QuoteID (B)
-            leadDetails.Lead || leadDetails.LeadId, // LeadID (C)
-            tradespersonName || '',             // TradePersonName (D)
-            tradespersonEmail || '',            // TradePersonEmail (E)
-            tradespersonPhone || '',            // TradePersonPhone (F)
-            "Quote Submitted",                  // CustomerStatus (G)
-            "Quote Submitted",                  // TradePersonStatus (H)
-            "Pending Review",                   // AdminPersonStatus (I)
-            parseFloat(quoteDetails.labourRate) || 0,            // LabourRate (J)
-            parseFloat(quoteDetails.labourHours) || 0,           // LabourHours (K)
-            (parseFloat(quoteDetails.labourRate) || 0) * (parseFloat(quoteDetails.labourHours) || 0), // LabourTotal (L)
-            parseFloat(quoteDetails.materialsCost) || 0,         // MaterialsCost (M)
-            parseFloat(quoteDetails.materialsQuantity) || 0,     // MaterialsQuantity (N)
-            (parseFloat(quoteDetails.materialsCost) || 0) * (parseFloat(quoteDetails.materialsQuantity) || 0), // MaterialsTotal (O)
-            parseFloat(quoteDetails.travelCost) || 0,            // TravelCost (P)
-            parseFloat(quoteDetails.travelDistance) || 0,        // TravelDistance (Q)
-            (parseFloat(quoteDetails.travelCost) || 0) * (parseFloat(quoteDetails.travelDistance) || 0), // TravelTotal (R)
-            parseFloat(quoteDetails.installationCost) || 0,      // InstallationCost (S)
-            parseFloat(quoteDetails.subtotal) || 0,              // Subtotal (T)
-            parseFloat(quoteDetails.gst) || 0,                   // GST (U)
-            parseFloat(quoteDetails.totalQuote) || 0,            // TotalQuote (V)
-            quoteDetails.notes || '',           // Notes (W)
-            quoteDetails.validUntil || '',      // ValidUntil (X)
-            'false',                            // ResubmissionAllowed (Y)
-            '',                                 // Decison (Z)
-            '',                                 // DecisonTimeStamp (AA)
-            customerName || '',                 // CustomerName (AB)
-            customerEmail || '',                // CustomerEmail (AC)
-            customerPhone || '',                // CustomerPhone (AD)
-            serviceType || '',                  // ServiceType (AE)
-            customerAddress || '',              // Location (AF)
-            leadDetails.Timelline || leadDetails.Timeline || '', // Timeline (AG)
-            leadDetails.Budget || '',           // Budget (AH)
-            JSON.stringify(roomsWithDetails),   // Rooms (AI)
-            JSON.stringify(quoteDataForPdf.breakdown), // BreakDown (AJ)
+        // Append new row to "Quotes" tab with ALL financial data
+        // Schema: QuoteID, LeadID, TradesmanName, QuoteAmount, Notes, CustomerEmail, TradesmanEmail, Decision, DecisionTimestamp, ValidUntil, QuoteDate, LabourRate, LabourHours, LabourTotal, MaterialsCost, MaterialsQuantity, MaterialsTotal, TravelCost, TravelDistance, TravelTotal, InstallationCost, Subtotal, GST, FinalTotal
+        const newQuoteRow = [
+            quoteId,                            // QuoteID
+            leadDetails.Lead || leadDetails.LeadId, // LeadID
+            tradespersonName || '',             // TradesmanName
+            parseFloat(quoteDetails.totalQuote) || 0, // QuoteAmount (number, no currency formatting)
+            quoteDetails.notes || '',           // Notes
+            customerEmail || '',                // CustomerEmail
+            tradespersonEmail || '',            // TradesmanEmail
+            '',                                 // Decision (empty at creation)
+            '',                                 // DecisionTimestamp (empty at creation)
+            quoteDetails.validUntil || '',      // ValidUntil
+            nzTimestamp,                        // QuoteDate (NZ local time DD/MM/YYYY HH:mm)
+            parseFloat(quoteDetails.labourRate) || 0,            // LabourRate
+            parseFloat(quoteDetails.labourHours) || 0,           // LabourHours
+            (parseFloat(quoteDetails.labourRate) || 0) * (parseFloat(quoteDetails.labourHours) || 0), // LabourTotal
+            parseFloat(quoteDetails.materialsCost) || 0,         // MaterialsCost
+            parseFloat(quoteDetails.materialsQuantity) || 0,     // MaterialsQuantity
+            (parseFloat(quoteDetails.materialsCost) || 0) * (parseFloat(quoteDetails.materialsQuantity) || 0), // MaterialsTotal
+            parseFloat(quoteDetails.travelCost) || 0,            // TravelCost
+            parseFloat(quoteDetails.travelDistance) || 0,        // TravelDistance
+            (parseFloat(quoteDetails.travelCost) || 0) * (parseFloat(quoteDetails.travelDistance) || 0), // TravelTotal
+            parseFloat(quoteDetails.installationCost) || 0,      // InstallationCost
+            parseFloat(quoteDetails.subtotal) || 0,              // Subtotal
+            parseFloat(quoteDetails.gst) || 0,                   // GST
+            parseFloat(quoteDetails.totalQuote) || 0,            // FinalTotal
         ];
         
-        console.log('📊 Google Sheets Update - Tradesperson Data:', {
+        console.log('📊 Google Sheets Append - Tradesperson Data:', {
             tradespersonName: tradespersonName,
             tradespersonEmail: tradespersonEmail,
             tradespersonPhone: tradespersonPhone
         });
         
-        console.log('📊 Google Sheets Update - Financial Data:', {
+        console.log('📊 Google Sheets Append - Financial Data:', {
             labourRate: quoteDetails.labourRate,
             labourHours: quoteDetails.labourHours,
             materialsCost: quoteDetails.materialsCost,
@@ -426,17 +408,17 @@ export default async function handler(req, res) {
             totalQuote: quoteDetails.totalQuote
         });
         
-        console.log('📊 Google Sheets Update - Full Row Data:', updatedRow);
+        console.log('📊 Google Sheets Append - Full Row Data:', newQuoteRow);
         
-        // Update the specific row
-        await sheets.spreadsheets.values.update({
+        // Append the new row to "Quotes" tab
+        await sheets.spreadsheets.values.append({
             spreadsheetId,
-            range: `Quotes!A${quoteIndex + 1}`,
+            range: 'Quotes!A:Z',
             valueInputOption: 'USER_ENTERED',
-            requestBody: { values: [updatedRow] }
+            requestBody: { values: [newQuoteRow] }
         });
 
-        console.log(`✅ Quote data saved to Google Sheets: ${quoteId}`);
+        console.log(`[SHEETS] Quote ${quoteId} written to Quotes tab (Lead ${leadDetails.Lead || leadDetails.LeadId}) with totals and breakdown.`);
     } catch (sheetsError) {
         console.error("Google Sheets Error:", sheetsError);
         // Don't fail the whole process, just log the error

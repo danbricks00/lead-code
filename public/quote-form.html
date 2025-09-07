@@ -1138,6 +1138,13 @@
                 
                 // Fetch lead data from API
                 loadLeadData(leadId);
+            } else {
+                // Check if quoteId is provided instead of leadId
+                const quoteId = urlParams.get('quoteId');
+                if (quoteId) {
+                    console.log('📋 QuoteId provided, looking up leadId...');
+                    loadLeadDataFromQuoteId(quoteId);
+                }
             }
             
             // Populate token from URL
@@ -1154,6 +1161,51 @@
              addValidationListeners(); // Add validation listeners
              calculateTotals(); // Initial calculation
         });
+        
+        // Function to load lead data from quoteId (looks up leadId first)
+        async function loadLeadDataFromQuoteId(quoteId) {
+            try {
+                console.log('🔍 Looking up leadId for quoteId:', quoteId);
+                
+                const response = await fetch(`/api/get-lead-details?quoteId=${encodeURIComponent(quoteId)}`);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const leadData = data.data;
+                    const leadId = leadData.Lead || leadData.leadId;
+                    
+                    if (leadId) {
+                        console.log('✅ Found leadId:', leadId, 'for quoteId:', quoteId);
+                        document.getElementById('leadId').value = leadId;
+                        document.getElementById('leadIdDisplay').textContent = leadId;
+                        
+                        // Now load the full lead data
+                        await loadLeadData(leadId);
+                    } else {
+                        console.error('❌ No leadId found in quote data');
+                        showError('Quote found but no associated lead ID');
+                    }
+                } else {
+                    console.error('❌ Failed to find quote:', data.error);
+                    showError('Quote not found: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('❌ Error looking up quote:', error);
+                showError('Error looking up quote: ' + error.message);
+            }
+        }
+        
+        // Function to show error message
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = 'background: #f8d7da; color: #721c24; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #f5c6cb;';
+            errorDiv.innerHTML = `
+                <h3>❌ Error Loading Quote Form</h3>
+                <p>${message}</p>
+                <p>Please check the URL and try again, or contact support if the problem persists.</p>
+            `;
+            document.body.insertBefore(errorDiv, document.body.firstChild);
+        }
         
         // Function to load lead data from API
         async function loadLeadData(leadId) {

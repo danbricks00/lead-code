@@ -4,7 +4,7 @@
 
 **IMPORTANT**: These column names must be EXACTLY as specified below, with no extra spaces, typos, or variations.
 
-### Column Structure (A through AF):
+### Column Structure (A through AE):
 
 | Column | Header Name | Description | Example |
 |--------|-------------|-------------|---------|
@@ -17,29 +17,28 @@
 | G | `CustomerStatus` | Status for customer | submitted |
 | H | `TradespersonStatus` | Status for tradesperson | submitted |
 | I | `AdminStatus` | Admin approval status | Not Required |
-| J | `XeroQuoteID` | Xero integration ID (if used) | (empty) |
-| K | `LabourRate` | Hourly labour rate | 50 |
-| L | `LabourHours` | Total labour hours | 10 |
-| M | `MaterialsCost` | Cost per unit of materials | 20 |
-| N | `MaterialsQuantity` | Quantity of materials | 124 |
-| O | `TravelCost` | Cost per km for travel | 1 |
-| P | `TravelDistance` | Distance in km | 10 |
-| Q | `InstallationCost` | Installation cost | 10 |
-| R | `TotalQuote` | Final quote amount | 3450 |
-| S | `Notes` | Additional notes | Test quote |
-| T | `ValidUntil` | Quote expiry date | 2025-09-20 |
-| U | `ResubmissionAllowed` | Can be resubmitted | No |
-| V | `Decision` | Customer decision | (empty) |
-| W | `DecisionTimestamp` | When decision was made | (empty) |
-| X | `CustomerName` | Customer full name | Dan Bui |
-| Y | `CustomerEmail` | Customer email | dan@example.com |
-| Z | `CustomerPhone` | Customer phone | 275059901 |
-| AA | `ServiceType` | Type of service | Underfloor Heating |
-| AB | `Location` | Project location | West Auckland, Titirangi |
-| AC | `Timeline` | Project timeline | October 18 |
-| AD | `Budget` | Customer budget | (empty) |
-| AE | `Rooms` | Room data as JSON | [{"name":"Kitchen","dimensions":"4m x 4m"}] |
-| AF | `Breakdown` | Detailed breakdown | (empty) |
+| J | `LabourRate` | Hourly labour rate | 50 |
+| K | `LabourHours` | Total labour hours | 10 |
+| L | `MaterialsCost` | Cost per unit of materials | 20 |
+| M | `MaterialsQuantity` | Quantity of materials | 124 |
+| N | `TravelCost` | Cost per km for travel | 1 |
+| O | `TravelDistance` | Distance in km | 10 |
+| P | `InstallationCost` | Installation cost | 10 |
+| Q | `TotalQuote` | Final quote amount | 3450 |
+| R | `Notes` | Additional notes | Test quote |
+| S | `ValidUntil` | Quote expiry date | 2025-09-20 |
+| T | `ResubmissionAllowed` | Can be resubmitted | No |
+| U | `Decision` | Customer decision | (empty) |
+| V | `DecisionTimestamp` | When decision was made | (empty) |
+| W | `CustomerName` | Customer full name | Dan Bui |
+| X | `CustomerEmail` | Customer email | dan@example.com |
+| Y | `CustomerPhone` | Customer phone | 275059901 |
+| Z | `ServiceType` | Type of service | Underfloor Heating |
+| AA | `Location` | Project location | West Auckland, Titirangi |
+| AB | `Timeline` | Project timeline | October 18 |
+| AC | `Budget` | Customer budget | (empty) |
+| AD | `Rooms` | Room data as JSON | [{"name":"Kitchen","dimensions":"4m x 4m"}] |
+| AE | `Breakdown` | Detailed breakdown | (empty) |
 
 ## Setup Instructions
 

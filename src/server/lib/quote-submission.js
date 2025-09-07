@@ -554,7 +554,7 @@ export default async function handler(req, res) {
           
           const values = [
             [
-              // Standardized column structure (A through AF)
+              // Standardized column structure (A through AE) - NO XERO
               new Date().toISOString(), // A: Timestamp
               quoteData.quoteId, // B: QuoteID
               quoteData.leadId, // C: LeadID
@@ -564,35 +564,34 @@ export default async function handler(req, res) {
               'submitted', // G: CustomerStatus
               'submitted', // H: TradespersonStatus
               'Not Required', // I: AdminStatus
-              '', // J: XeroQuoteID
-              quoteData.labourRate, // K: LabourRate
-              quoteData.labourHours, // L: LabourHours
-              quoteData.materialsCost, // M: MaterialsCost
-              quoteData.materialsQuantity, // N: MaterialsQuantity
-              quoteData.travelCost, // O: TravelCost
-              quoteData.travelDistance, // P: TravelDistance
-              quoteData.installationCost, // Q: InstallationCost
-              quoteData.totalQuote, // R: TotalQuote
-              quoteData.additionalNotes || '', // S: Notes
-              quoteData.validUntil, // T: ValidUntil
-              'No', // U: ResubmissionAllowed
-              '', // V: Decision
-              '', // W: DecisionTimestamp
-              quoteData.customerName, // X: CustomerName
-              quoteData.customerEmail, // Y: CustomerEmail
-              quoteData.customerPhone, // Z: CustomerPhone
-              quoteData.serviceType, // AA: ServiceType
-              quoteData.location, // AB: Location
-              quoteData.timeline, // AC: Timeline
-              quoteData.budget || '', // AD: Budget
-              JSON.stringify(quoteData.rooms || []), // AE: Rooms
-              '' // AF: Breakdown
+              quoteData.labourRate, // J: LabourRate
+              quoteData.labourHours, // K: LabourHours
+              quoteData.materialsCost, // L: MaterialsCost
+              quoteData.materialsQuantity, // M: MaterialsQuantity
+              quoteData.travelCost, // N: TravelCost
+              quoteData.travelDistance, // O: TravelDistance
+              quoteData.installationCost, // P: InstallationCost
+              quoteData.totalQuote, // Q: TotalQuote
+              quoteData.additionalNotes || '', // R: Notes
+              quoteData.validUntil, // S: ValidUntil
+              'No', // T: ResubmissionAllowed
+              '', // U: Decision
+              '', // V: DecisionTimestamp
+              quoteData.customerName, // W: CustomerName
+              quoteData.customerEmail, // X: CustomerEmail
+              quoteData.customerPhone, // Y: CustomerPhone
+              quoteData.serviceType, // Z: ServiceType
+              quoteData.location, // AA: Location
+              quoteData.timeline, // AB: Timeline
+              quoteData.budget || '', // AC: Budget
+              JSON.stringify(quoteData.rooms || []), // AD: Rooms
+              '' // AE: Breakdown
             ]
           ];
 
           await sheets.spreadsheets.values.append({
             spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-            range: 'Quotes!A:AF',
+            range: 'Quotes!A:AE',
             valueInputOption: 'RAW',
             insertDataOption: 'INSERT_ROWS',
             resource: { values }

@@ -114,7 +114,7 @@ export default async function handler(req, res) {
             sheets, spreadsheetId, tab: 'Quotes',
             searchColumn: 'QuoteID', searchValue: quoteId,
             columnsToFetch: [
-                // Standardized column names (primary)
+                // Standardized column names (primary) - NO XERO
                 'AdminStatus', 'LeadID', 'TradespersonName', 'TradespersonEmail', 'TradespersonPhone',
                 'LabourRate', 'LabourHours', 'MaterialsCost', 'MaterialsQuantity', 'TravelCost', 
                 'TravelDistance', 'InstallationCost', 'TotalQuote', 'ValidUntil', 'Notes', 'Rooms',

@@ -3,6 +3,18 @@ import { sendEmail } from '../../../lib/emailHelper';
 import { generateQuotePDF } from '../../../lib/pdfGenerator.js';
 import crypto from "crypto";
 
+// NZ timestamp helper function
+function getNZTimestamp(date = new Date()) {
+    return date.toLocaleString("en-NZ", {
+        timeZone: "Pacific/Auckland",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+    }).replace(",", "");
+}
+
 function verifyToken(id, ts) {
     const hmac = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET);
     hmac.update(`${id}|${ts}`);
@@ -26,17 +38,7 @@ function formatTimestamp(isoString) {
     }
 }
 
-function getNZTimestamp() {
-    const now = new Date();
-    return now.toLocaleString('en-NZ', {
-        timeZone: 'Pacific/Auckland',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
+// Remove old getNZTimestamp function - using the new helper function above
 
 async function sendNotificationEmails(quoteData, leadData = {}) {
     console.log('📧 Preparing notification emails for quote acceptance');
@@ -50,6 +52,12 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
     // Get tradesperson email - using exact schema column names (E: TradePersonEmail, D: TradePersonName)
     const tradespersonEmail = quoteData['TradePersonEmail'];
     const tradespersonName = quoteData['TradePersonName'];
+    
+    // Get other fields from exact schema
+    const serviceType = quoteData['ServiceType'] || leadData['ServiceType'] || '';
+    const budget = quoteData['Budget'] || leadData['Budget'] || '';
+    const timeline = quoteData['Timeline'] || leadData['Timelline'] || leadData['Timeline'] || '';
+    const validUntil = quoteData['ValidUntil'] || 'N/A';
     
     console.log('📧 Email recipients:');
     console.log('  - Customer:', customerEmail);
@@ -71,20 +79,13 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
     // Build finalQuoteData for PDF generation using exact schema column names
     const finalQuoteData = {
         quoteId: quoteData['QuoteID'], // B: QuoteID
-        quoteDate: quoteData['TimeStamp'] || new Date().toLocaleString('en-NZ', {
-            timeZone: 'Pacific/Auckland',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        }),
-        validUntil: quoteData['ValidUntil'] || 'N/A', // X: ValidUntil
+        quoteDate: quoteData['TimeStamp'] || getNZTimestamp(), // A: TimeStamp
+        validUntil: validUntil, // X: ValidUntil
         customerName: customerName, // AB: CustomerName
         customerEmail: customerEmail, // AC: CustomerEmail
         customerPhone: quoteData['CustomerPhone'] || '', // AD: CustomerPhone
         customerAddress: quoteData['Location'] || `${leadData['Area'] || ''} ${leadData['Suburb'] || ''}`.trim(), // AF: Location
-        serviceType: quoteData['ServiceType'] || leadData['ServiceType'] || '', // AE: ServiceType
+        serviceType: serviceType, // AE: ServiceType
         tradespersonName: tradespersonName || 'Professional Tradesperson', // D: TradePersonName
         tradespersonEmail: tradespersonEmail || 'contact@kiwitrade.co.nz', // E: TradePersonEmail
         tradespersonPhone: quoteData['TradePersonPhone'] || 'Contact via Kiwi Trade', // F: TradePersonPhone
@@ -188,8 +189,8 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                       <div>
                         <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Service:</strong> ${finalQuoteData.serviceType}</p>
-                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Budget:</strong> ${quoteData['Budget'] || leadData['Budget'] || 'Not specified'}</p>
-                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Timeline:</strong> ${quoteData['Timeline'] || leadData['Timelline'] || leadData['Timeline'] || 'Not specified'}</p>
+                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Budget:</strong> ${budget || 'Not specified'}</p>
+                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
                       </div>
                       <div>
                         <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Tradesperson:</strong> ${finalQuoteData.tradespersonName}</p>
@@ -719,7 +720,7 @@ export default async function handler(req, res) {
         const nzTimestamp = getNZTimestamp();
         const updateData = {
             'Decision': 'Accepted',
-            'DecisionTimestamp': nzTimestamp,
+            'DecisionTimeStamp': nzTimestamp,
         };
 
         const quoteDataForEmail = {};

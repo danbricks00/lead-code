@@ -3,6 +3,18 @@ import { generateQuotePDF, generateQuoteHTML } from '../../lib/pdfGenerator.js';
 import { sendEmail } from '../../lib/emailHelper';
 import crypto from "crypto";
 
+// NZ timestamp helper function
+function getNZTimestamp(date = new Date()) {
+    return date.toLocaleString("en-NZ", {
+        timeZone: "Pacific/Auckland",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+    }).replace(",", "");
+}
+
 // Create HTML backup quote when PDF generation fails
 function createHTMLQuote(quoteData) {
     const formatCurrency = (amount) => {
@@ -164,6 +176,31 @@ export default async function handler(req, res) {
     const tradespersonEmail = quoteDetails.tradespersonEmail || '';
     const tradespersonName = quoteDetails.tradespersonName || '';
     const tradespersonPhone = quoteDetails.tradespersonPhone || '';
+    const notes = quoteDetails.notes || '';
+    const validUntil = quoteDetails.validUntil || '';
+    const location = customerAddress;
+    const timeline = leadDetails.Timelline || leadDetails.Timeline || leadDetails.timeline || '';
+    const budget = leadDetails.Budget || leadDetails.budget || '';
+    
+    // Create breakdown and totals objects for schema
+    const breakdown = {
+        labourRate: labourRate,
+        labourHours: labourHours,
+        labourTotal: labourRate * labourHours,
+        materialsCost: materialsCost,
+        materialsQuantity: materialsQuantity,
+        materialsTotal: materialsCost * materialsQuantity,
+        travelCost: travelCost,
+        travelDistance: travelDistance,
+        travelTotal: travelCost * travelDistance,
+        installationCost: installationCost
+    };
+    
+    const totals = {
+        subtotal: subtotal,
+        gst: gst,
+        final: totalQuote
+    };
     
     console.log('📊 Quote submission data:', {
       quoteId,
@@ -340,15 +377,8 @@ export default async function handler(req, res) {
     const spreadsheetId = getSpreadsheetId();
     
     try {
-        // Get NZ local time for QuoteDate
-        const nzTimestamp = new Date().toLocaleString('en-NZ', {
-            timeZone: 'Pacific/Auckland',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        // Get NZ local time for QuoteDate using helper function
+        const nzStamp = getNZTimestamp();
         
         // Recreate roomsWithDetails for Google Sheets (same logic as above)
         const rooms = leadDetails.Rooms ? JSON.parse(leadDetails.Rooms) : [];
@@ -367,46 +397,45 @@ export default async function handler(req, res) {
             };
         });
         
-        // Append new row to "Quotes" tab with EXACT schema A:AJ (36 columns)
-        // Schema: TimeStamp, QuoteID, LeadID, TradePersonName, TradePersonEmail, TradePersonPhone, CustomerStatus, TradePersonStatus, AdminPersonStatus, LabourRate, LabourHours, LabourTotal, MaterialsCost, MaterialsQuantity, MaterialsTotal, TravelCost, TravelDistance, TravelTotal, InstallationCost, Subtotal, GST, TotalQuote, Notes, ValidUntil, ResubmissionAllowed, Decision, DecisionTimeStamp, CustomerName, CustomerEmail, CustomerPhone, ServiceType, Location, Timeline, Budget, Rooms, BreakDown
-        const newQuoteRow = [
-            nzTimestamp,                        // A: TimeStamp (NZ local time DD/MM/YYYY HH:mm)
-            quoteId,                            // B: QuoteID
+        // Create exact schema array as specified
+        const values = [[
+            nzStamp,                        // A: TimeStamp (NZ time: DD/MM/YYYY HH:mm)
+            quoteId,                        // B: QuoteID (UUID)
             leadDetails.Lead || leadDetails.LeadId, // C: LeadID
-            tradespersonName || '',             // D: TradePersonName
-            tradespersonEmail || '',            // E: TradePersonEmail
-            tradespersonPhone || '',            // F: TradePersonPhone
-            'Quote Pending',                    // G: CustomerStatus
-            'Not Submitted',                    // H: TradePersonStatus
-            'Not Required',                     // I: AdminPersonStatus
-            parseFloat(quoteDetails.labourRate) || 0,            // J: LabourRate
-            parseFloat(quoteDetails.labourHours) || 0,           // K: LabourHours
-            (parseFloat(quoteDetails.labourRate) || 0) * (parseFloat(quoteDetails.labourHours) || 0), // L: LabourTotal
-            parseFloat(quoteDetails.materialsCost) || 0,         // M: MaterialsCost
-            parseFloat(quoteDetails.materialsQuantity) || 0,     // N: MaterialsQuantity
-            (parseFloat(quoteDetails.materialsCost) || 0) * (parseFloat(quoteDetails.materialsQuantity) || 0), // O: MaterialsTotal
-            parseFloat(quoteDetails.travelCost) || 0,            // P: TravelCost
-            parseFloat(quoteDetails.travelDistance) || 0,        // Q: TravelDistance
-            (parseFloat(quoteDetails.travelCost) || 0) * (parseFloat(quoteDetails.travelDistance) || 0), // R: TravelTotal
-            parseFloat(quoteDetails.installationCost) || 0,      // S: InstallationCost
-            parseFloat(quoteDetails.subtotal) || 0,              // T: Subtotal
-            parseFloat(quoteDetails.gst) || 0,                   // U: GST
-            parseFloat(quoteDetails.totalQuote) || 0,            // V: TotalQuote
-            quoteDetails.notes || '',           // W: Notes
-            quoteDetails.validUntil || '',      // X: ValidUntil
-            '',                                 // Y: ResubmissionAllowed (blank for now)
-            '',                                 // Z: Decision (empty at creation)
-            '',                                 // AA: DecisionTimeStamp (empty at creation)
-            customerName || '',                 // AB: CustomerName
-            customerEmail || '',                // AC: CustomerEmail
-            customerPhone || '',                // AD: CustomerPhone
-            serviceType || '',                  // AE: ServiceType
-            customerAddress || '',              // AF: Location
-            leadDetails.Timelline || leadDetails.Timeline || leadDetails.timeline || '', // AG: Timeline
-            leadDetails.Budget || leadDetails.budget || '',      // AH: Budget
-            leadDetails.Rooms || '',            // AI: Rooms (JSON string)
-            JSON.stringify(roomsWithDetails) || '', // AJ: BreakDown (JSON string)
-        ];
+            tradespersonName,                // D: TradePersonName
+            tradespersonEmail,               // E: TradePersonEmail
+            tradespersonPhone,               // F: TradePersonPhone
+            "Quote Pending",                 // G: CustomerStatus (default)
+            "Not Submitted",                 // H: TradePersonStatus (default)
+            "Not Required",                  // I: AdminPersonStatus (default)
+            breakdown.labourRate,            // J: LabourRate
+            breakdown.labourHours,           // K: LabourHours
+            breakdown.labourTotal,           // L: LabourTotal
+            breakdown.materialsCost,         // M: MaterialsCost
+            breakdown.materialsQuantity,     // N: MaterialsQuantity
+            breakdown.materialsTotal,        // O: MaterialsTotal
+            breakdown.travelCost,            // P: TravelCost
+            breakdown.travelDistance,        // Q: TravelDistance
+            breakdown.travelTotal,           // R: TravelTotal
+            breakdown.installationCost,      // S: InstallationCost
+            totals.subtotal,                 // T: Subtotal
+            totals.gst,                      // U: GST
+            totals.final,                    // V: TotalQuote
+            notes || "",                     // W: Notes
+            validUntil,                      // X: ValidUntil
+            "",                              // Y: ResubmissionAllowed (blank for now)
+            "",                              // Z: Decision (blank until accept/decline)
+            "",                              // AA: DecisionTimeStamp (blank until decision)
+            customerName,                    // AB: CustomerName
+            customerEmail,                   // AC: CustomerEmail
+            customerPhone,                   // AD: CustomerPhone
+            serviceType,                     // AE: ServiceType
+            location,                        // AF: Location
+            timeline,                        // AG: Timeline
+            budget,                          // AH: Budget
+            JSON.stringify(rooms || []),     // AI: Rooms (as JSON string)
+            JSON.stringify(breakdown || {})  // AJ: BreakDown (entire breakdown as JSON)
+        ]];
         
         console.log('📊 Google Sheets Append - Tradesperson Data:', {
             tradespersonName: tradespersonName,
@@ -427,17 +456,17 @@ export default async function handler(req, res) {
             totalQuote: quoteDetails.totalQuote
         });
         
-        console.log('📊 Google Sheets Append - Full Row Data:', newQuoteRow);
+        console.log('📊 Google Sheets Append - Full Row Data:', values[0]);
         
         // Append the new row to "Quotes" tab (36 columns: A to AJ)
         await sheets.spreadsheets.values.append({
             spreadsheetId,
             range: 'Quotes!A:AJ',
             valueInputOption: 'USER_ENTERED',
-            requestBody: { values: [newQuoteRow] }
+            requestBody: { values }
         });
 
-        console.log(`[SHEETS] Quote ${quoteId} written to Quotes tab (Lead ${leadDetails.Lead || leadDetails.LeadId}) with full breakdown.`);
+        console.log(`[SHEETS] Quote ${quoteId} written to Quotes tab (Lead ${leadDetails.Lead || leadDetails.LeadId}).`);
     } catch (sheetsError) {
         console.error("Google Sheets Error:", sheetsError);
         // Don't fail the whole process, just log the error

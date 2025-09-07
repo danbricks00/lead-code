@@ -175,7 +175,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
             start_questions: "Let's get started with a few details about your project.",
             ask_room_count: "How many areas are you planning to install underfloor heating in?",
             ask_room_name: `What is the name of room ${leadData.rooms.length + 1}? (e.g., Kitchen, Lounge)`,
-            ask_room_dimensions: `What are the dimensions of the ${context.roomName || leadData.rooms[leadData.rooms.length - 1]?.name}? You can enter:\n• Square meters: 25 (for 25m²)\n• Dimensions: 10 x 5 (for 50m²)\n• Metric dimensions: 7m x 7m (for 49m²)\n• Decimals welcome: 7.5 x 6.2 (for 46.5m²)\n• Maximum size: 25m x 25m (500m²)\n• Only use: numbers, decimal points, 'x', 'm', and spaces`,
+            ask_room_dimensions: `What are the dimensions of the ${context.roomName || leadData.rooms[leadData.rooms.length - 1]?.name}?`,
+            ask_room_dimensions_help: `Dimensions options:\n• Square meters: 25 (for 25m²)\n• Dimensions: 10 x 5 (for 50m²)\n• Metric dimensions: 7m x 7m (for 49m²)\n• Decimals welcome: 7.5 x 6.2 (for 46.5m²)\n• Maximum size: 25m x 25m (500m²)\n• Only use: numbers, decimal points, 'x', 'm', and spaces`,
             ask_timeline: "What is your desired timeline for this project?",
             ask_timeline_details: "Could you please be more specific about your timeline?",
             ask_budget: "What is your budget range for this underfloor heating project?",
@@ -291,6 +292,10 @@ const Chatbot = ({ handleClose, handleReset }) => {
                 rooms: [...prev.rooms, { name: input, dimensions: '' }]
             }));
             nextStep('ask_room_dimensions', 1200, { roomName: input });
+            // Show help message after a short delay
+            setTimeout(() => {
+                addMessage(questions.ask_room_dimensions_help, 'bot');
+            }, 1500);
             break;
         case 'ask_room_dimensions':
             // Parse room dimensions intelligently

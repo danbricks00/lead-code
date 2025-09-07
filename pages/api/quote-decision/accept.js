@@ -637,29 +637,41 @@ export default async function handler(req, res) {
         }
         
         // --- Update Sheet Data ---
-        const updateData = {
-            'Decision': 'Accepted',
-            'Decision Timestamp': new Date().toISOString(),
-            'Customer Status': 'Quote Decision',
-            'Tradesperson Status': 'Quote Decision',
-            'Admin Status': 'Accepted',
-        };
+        console.log('📝 Updating quote decision in Google Sheets...');
+        
+        // Find the correct column indices for updating
+        const decisionIndex = header.indexOf('Decision');
+        const decisionTimestampIndex = header.indexOf('Decision Timestamp');
+        const customerStatusIndex = header.indexOf('Customer Status');
+        const tradespersonStatusIndex = header.indexOf('Tradesperson Status');
+        const adminStatusIndex = header.indexOf('Admin Status');
 
+        // Update the target row with decision data
+        if (decisionIndex !== -1) targetRow[decisionIndex] = 'Accepted';
+        if (decisionTimestampIndex !== -1) targetRow[decisionTimestampIndex] = new Date().toISOString();
+        if (customerStatusIndex !== -1) targetRow[customerStatusIndex] = 'Quote Decision';
+        if (tradespersonStatusIndex !== -1) targetRow[tradespersonStatusIndex] = 'Quote Decision';
+        if (adminStatusIndex !== -1) targetRow[adminStatusIndex] = 'Accepted';
+
+        // Prepare data for email notifications
         const quoteDataForEmail = {};
         header.forEach((headerName, index) => {
             quoteDataForEmail[headerName] = targetRow[index] || '';
-            if (updateData[headerName] !== undefined) {
-                targetRow[index] = updateData[headerName];
-                quoteDataForEmail[headerName] = updateData[headerName];
-            }
         });
 
-        await sheets.spreadsheets.values.update({
-            spreadsheetId,
-            range: `Quotes!A${rowIndex + 1}`,
-            valueInputOption: 'USER_ENTERED',
-            requestBody: { values: [targetRow] },
-        });
+        // Update the Google Sheet
+        try {
+            await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: `Quotes!A${rowIndex + 1}:Z${rowIndex + 1}`,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: { values: [targetRow] },
+            });
+            console.log('✅ Quote decision updated in Google Sheets');
+        } catch (updateError) {
+            console.error('❌ Error updating Google Sheets:', updateError);
+            throw new Error('Failed to update quote decision: ' + updateError.message);
+        }
 
         // --- Send Emails ---
         await sendNotificationEmails(quoteDataForEmail, leadData);

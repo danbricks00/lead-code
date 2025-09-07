@@ -140,9 +140,17 @@ export default async function handler(req, res) {
         const installationCost = parseFloat(quoteData.InstallationCost || 0);
         const totalQuote = parseFloat(quoteData.TotalQuote || 0);
         
-        // Calculate subtotal and GST (same logic as quote-submit.js)
-        const subtotal = labourRate * labourHours + materialsCost * materialsQuantity + travelCost * travelDistance + installationCost;
-        const gst = subtotal * 0.15;
+        // Use actual totals from Google Sheets (from quote submission form)
+        const subtotal = parseFloat(quoteData.Subtotal || 0);
+        const gst = parseFloat(quoteData.GST || 0);
+        const finalTotal = parseFloat(quoteData.TotalQuote || 0);
+        
+        console.log('💰 Admin/Approve - Using actual totals from Google Sheets:', {
+            subtotal: subtotal,
+            gst: gst,
+            finalTotal: finalTotal,
+            totalQuote: totalQuote
+        });
         
         // Calculate per-room breakdown (same as quote-submit.js)
         const roomsWithDetails = rooms.map(room => {
@@ -188,15 +196,15 @@ export default async function handler(req, res) {
                 installationCost: installationCost,
                 totalSqm: totalSqm
             },
-            // EXACT SAME totals structure as quote-submit.js
+            // EXACT SAME totals structure as quote-submit.js - using actual values from Google Sheets
             totals: {
                 labour: labourRate * labourHours,
                 materials: materialsCost * materialsQuantity,
                 travel: travelCost * travelDistance,
                 installation: installationCost,
-                subtotal: subtotal,
-                gst: gst,
-                final: totalQuote
+                subtotal: subtotal,        // From Google Sheets (quote submission form)
+                gst: gst,                  // From Google Sheets (quote submission form)
+                final: finalTotal          // From Google Sheets (quote submission form)
             }
         };
 
@@ -251,7 +259,7 @@ export default async function handler(req, res) {
         const customerEmailOptions = {
           to: leadData['CustomerEmail'],
           cc: process.env.ADMIN_EMAIL, // Always CC super admin
-          subject: `🎯 Your Quote for ${leadData['ServiceType']} - $${totalQuote.toFixed(2)} is Ready!`,
+          subject: `🎯 Your Quote for ${leadData['ServiceType']} - $${finalTotal.toFixed(2)} is Ready!`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
               <div style="background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
@@ -313,7 +321,7 @@ export default async function handler(req, res) {
                   <p><strong>Quote ID:</strong> ${quoteId}</p>
                   <p><strong>Service:</strong> ${leadData['ServiceType']}</p>
                   <p><strong>Tradesperson:</strong> ${quoteDataForPdf.tradespersonName}</p>
-                  <p><strong>Total Amount:</strong> $${totalQuote.toFixed(2)}</p>
+                  <p><strong>Total Amount:</strong> $${finalTotal.toFixed(2)}</p>
                   <p><strong>Your Budget:</strong> ${leadData['Budget'] || 'Not specified'}</p>
                   <p><strong>Timeline:</strong> ${leadData['Timelline'] || leadData['Timeline'] || 'Not specified'}</p>
                   <p><strong>Location:</strong> ${leadData['Area']}, ${leadData['Suburb']}</p>

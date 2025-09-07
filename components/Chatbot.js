@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ChatMessage from './ChatMessage';
 
 const ProgressBar = ({ steps, currentStep, isCompleted }) => {
@@ -80,6 +80,66 @@ const Chatbot = ({ handleClose, handleReset }) => {
     setMessages(prev => [...prev, { id: Date.now(), content, isUser }]);
   };
 
+  // Smart dimension parsing function (same as HTML demo)
+  const parseDimensions = (input) => {
+    const originalInput = input;
+    const cleanInput = input.toLowerCase().trim();
+    
+    // Pattern 1: Square meter notation (e.g., "12m2", "12m²", "25.5m2", "25.5m²")
+    const sqmNotationMatch = cleanInput.match(/^(\d+\.?\d*)\s*m[²2]\s*$/);
+    if (sqmNotationMatch) {
+      const sqm = parseFloat(sqmNotationMatch[1]);
+      return {
+        originalInput: originalInput,
+        sqm: sqm,
+        dimensions: null,
+        format: 'direct_sqm'
+      };
+    }
+    
+    // Pattern 2: Direct square meters (e.g., "25", "25.5", "25 sqm")
+    const directSqmMatch = cleanInput.match(/^(\d+\.?\d*)\s*(?:sqm|sq\s*m|square\s*meters?)?\s*$/);
+    if (directSqmMatch) {
+      const sqm = parseFloat(directSqmMatch[1]);
+      return {
+        originalInput: originalInput,
+        sqm: sqm,
+        dimensions: null,
+        format: 'direct_sqm'
+      };
+    }
+    
+    // Pattern 3: Dimensions with units (e.g., "4m x 12m", "4.0m x 12.0m", "4.5m x 3.2m")
+    const dimensionWithUnitsMatch = cleanInput.match(/^(\d+\.?\d*)\s*m\s*x\s*(\d+\.?\d*)\s*m\s*$/);
+    if (dimensionWithUnitsMatch) {
+      const width = parseFloat(dimensionWithUnitsMatch[1]);
+      const length = parseFloat(dimensionWithUnitsMatch[2]);
+      const sqm = width * length;
+      return {
+        originalInput: originalInput,
+        sqm: sqm,
+        dimensions: { width, length },
+        format: 'dimensions'
+      };
+    }
+    
+    // Pattern 4: Dimensions without units (e.g., "4 x 12", "4.0 x 12.0", "4.5 x 3.2")
+    const dimensionMatch = cleanInput.match(/^(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*$/);
+    if (dimensionMatch) {
+      const width = parseFloat(dimensionMatch[1]);
+      const length = parseFloat(dimensionMatch[2]);
+      const sqm = width * length;
+      return {
+        originalInput: originalInput,
+        sqm: sqm,
+        dimensions: { width, length },
+        format: 'dimensions'
+      };
+    }
+    
+    return null; // Invalid format
+  };
+
   const nextStep = (next, delay = 1200, context = {}) => {
     setIsLoading(true);
     setTimeout(() => {
@@ -153,7 +213,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
         case 'ask_room_name':
             return value.trim().length > 1 ? null : "Please enter a valid name for the room.";
         case 'ask_room_dimensions':
-            return value.trim().length > 0 ? null : "Please provide the dimensions (e.g., 25 for 25m², 10 x 5 for 50m², or 7.5 x 6.2 for 46.5m²).";
+            const parsed = parseDimensions(value);
+            return parsed ? null : "Please provide valid dimensions (e.g., 25 for 25m², 10 x 5 for 50m², or 7.5 x 6.2 for 46.5m²).";
         case 'ask_first_name':
             return /^[a-zA-Z'-]{2,}$/.test(value) ? null : "Please enter a valid first name.";
         case 'ask_last_name':
@@ -192,9 +253,33 @@ const Chatbot = ({ handleClose, handleReset }) => {
             nextStep('ask_room_dimensions', 1200, { roomName: input });
             break;
         case 'ask_room_dimensions':
+            // Parse room dimensions intelligently
+            const parsed = parseDimensions(input);
+            
+            if (!parsed) {
+                addMessage(`Sorry, I couldn't understand that format. Please try:
+• Direct square meters: "25", "25.5", "12m2", "12m²"
+• Length x Width: "10 x 5", "7.07 x 7.07", "4.0 x 12.0"
+• With units: "4m x 12m", "4.0m x 12.0m"
+• Square meter notation: "25 sqm", "25.5 square meters"`);
+                return;
+            }
+            
             const updatedRooms = [...leadData.rooms];
-            updatedRooms[updatedRooms.length - 1].dimensions = input;
+            const currentRoom = updatedRooms[updatedRooms.length - 1];
+            currentRoom.dimensions = parsed.originalInput;
+            currentRoom.sqm = parsed.sqm;
+            currentRoom.parsedDimensions = parsed.dimensions;
+            currentRoom.format = parsed.format;
+            
             setLeadData(prev => ({ ...prev, rooms: updatedRooms }));
+            
+            // Provide confirmation
+            if (parsed.format === 'direct_sqm') {
+                addMessage(`✅ ${currentRoom.name}: ${parsed.sqm} square meters`);
+            } else {
+                addMessage(`✅ ${currentRoom.name}: ${parsed.dimensions.width}m x ${parsed.dimensions.length}m = ${parsed.sqm} square meters`);
+            }
 
             if (updatedRooms.length < leadData.roomCount) {
                 nextStep('ask_room_name');
@@ -313,15 +398,12 @@ const Chatbot = ({ handleClose, handleReset }) => {
 
   const timelineOptions = ["Immediately", "In a week", "In a couple of months", "Other"];
   
-  // Calculate reasonable budget options based on room data
-  const calculateBudgetOptions = () => {
+  // Calculate reasonable budget options based on room data (memoized for performance)
+  const budgetOptions = useMemo(() => {
     const totalSqm = leadData.rooms.reduce((sum, room) => {
       const sqm = parseFloat(room.sqm) || 0;
       return sum + sqm;
     }, 0);
-    
-    // Base pricing: approximately $150-200 per sqm for underfloor heating
-    const basePrice = totalSqm * 175; // Average of $175 per sqm
     
     return [
       `Under $5,000`,
@@ -332,9 +414,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
       `Over $50,000`,
       `I'd like a quote first`
     ];
-  };
-  
-  const budgetOptions = calculateBudgetOptions();
+  }, [leadData.rooms]);
 
   return (
     <div style={styles.chatbotContainer}>

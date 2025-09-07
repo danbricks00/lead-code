@@ -68,15 +68,44 @@ export default async function handler(req, res) {
             searchColumn: 'QuoteID', searchValue: quoteId,
             columnsToFetch: [
                 'AdminPersonStatus', 'LeadID', 'TradePersonName', 'TradePersonEmail', 'TradePersonPhone',
-                'LabourRate', 'LabourHours', 'LaboutTotal', 'MaterialsCost', 'MaterialsQuantity', 'MaterialsTotal',
+                'LabourRate', 'LabourHours', 'LabourTotal', 'MaterialsCost', 'MaterialsQuantity', 'MaterialsTotal',
                 'TravelCost', 'TravelDistance', 'TravelTotal', 'InstallationCost', 'Subtotal', 'GST', 'TotalQuote', 
-                'Notes', 'ValidUnitl', 'ResubmissionAllowed', 'Decison', 'DecisonTimeStamp',
+                'Notes', 'ValidUntil', 'ResubmissionAllowed', 'Decison', 'DecisonTimeStamp',
                 'CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Location', 'Timeline', 'Budget', 'Rooms', 'BreakDown'
             ]
         });
 
         if (!quoteData) return res.redirect(`/quote-status?status=error&message=Quote not found.`);
-        if (quoteData['AdminPersonStatus'] === 'Approved') return res.redirect(`/quote-status?status=error&message=This quote has already been approved.`);
+        
+        // ONE-TIME ENFORCEMENT: Check if already approved
+        if (quoteData['AdminPersonStatus'] === 'Approved') {
+            const statusPage = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Quote Already Approved</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f7fa; }
+                        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
+                        .error-icon { font-size: 48px; margin-bottom: 20px; }
+                        .error-title { color: #dc3545; font-size: 24px; margin-bottom: 15px; }
+                        .error-message { color: #6c757d; font-size: 16px; margin-bottom: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="error-icon">⚠️</div>
+                        <h1>Quote Already Approved</h1>
+                        <p>This quote has already been approved and cannot be approved again.</p>
+                        <p style="color: #6c757d; font-size: 14px;">
+                            If you believe this is an error, please contact the system administrator.
+                        </p>
+                    </div>
+                </body>
+                </html>
+            `;
+            return res.status(400).send(statusPage);
+        }
 
         const leadData = await findRowAndGetData({
             sheets, spreadsheetId, tab: 'Leads',

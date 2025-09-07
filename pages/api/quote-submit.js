@@ -315,7 +315,7 @@ export default async function handler(req, res) {
             "Pending Review",                   // AdminPersonStatus
             quoteDetails.labourRate,            // LabourRate
             quoteDetails.labourHours,           // LabourHours
-            quoteDetails.labourRate * quoteDetails.labourHours, // LaboutTotal
+            quoteDetails.labourRate * quoteDetails.labourHours, // LabourTotal
             quoteDetails.materialsCost,         // MaterialsCost
             quoteDetails.materialsQuantity,     // MaterialsQuantity
             quoteDetails.materialsCost * quoteDetails.materialsQuantity, // MaterialsTotal
@@ -327,7 +327,7 @@ export default async function handler(req, res) {
             quoteDetails.gst,                   // GST
             quoteDetails.totalQuote,            // TotalQuote
             quoteDetails.notes || '',           // Notes
-            quoteDetails.validUntil,            // ValidUnitl
+            quoteDetails.validUntil,            // ValidUntil
             'false',                            // ResubmissionAllowed
             '',                                 // Decison
             '',                                 // DecisonTimeStamp

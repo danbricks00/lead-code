@@ -89,7 +89,7 @@ export default async function handler(req, res) {
         "Not Required",             // AdminPersonStatus
         "",                         // LabourRate
         "",                         // LabourHours
-        "",                         // LaboutTotal
+        "",                         // LabourTotal
         "",                         // MaterialsCost
         "",                         // MaterialsQuantity
         "",                         // MaterialsTotal
@@ -101,7 +101,7 @@ export default async function handler(req, res) {
         "",                         // GST
         "",                         // TotalQuote
         "",                         // Notes
-        "",                         // ValidUnitl
+        "",                         // ValidUntil
         "",                         // ResubmissionAllowed
         "",                         // Decison
         "",                         // DecisonTimeStamp

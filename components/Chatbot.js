@@ -80,15 +80,29 @@ const Chatbot = ({ handleClose, handleReset }) => {
     setMessages(prev => [...prev, { id: Date.now(), content, isUser }]);
   };
 
-  // Smart dimension parsing function (same as HTML demo)
+  // Smart dimension parsing function with validation to prevent phone numbers
   const parseDimensions = (input) => {
     const originalInput = input;
     const cleanInput = input.toLowerCase().trim();
+    
+    // VALIDATION: Only allow digits, decimal points, 'x', 'm', and spaces
+    const allowedChars = /^[0-9\.\sxm²2]*$/;
+    if (!allowedChars.test(cleanInput)) {
+      return null; // Invalid characters
+    }
+    
+    // VALIDATION: Check for phone number patterns (8+ digits in a row)
+    const phonePattern = /\d{8,}/;
+    if (phonePattern.test(cleanInput)) {
+      return null; // Looks like a phone number
+    }
     
     // Pattern 1: Square meter notation (e.g., "12m2", "12m²", "25.5m2", "25.5m²")
     const sqmNotationMatch = cleanInput.match(/^(\d+\.?\d*)\s*m[²2]\s*$/);
     if (sqmNotationMatch) {
       const sqm = parseFloat(sqmNotationMatch[1]);
+      // VALIDATION: Maximum reasonable room size (500 sqm)
+      if (sqm > 500) return null;
       return {
         originalInput: originalInput,
         sqm: sqm,
@@ -101,6 +115,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
     const directSqmMatch = cleanInput.match(/^(\d+\.?\d*)\s*(?:sqm|sq\s*m|square\s*meters?)?\s*$/);
     if (directSqmMatch) {
       const sqm = parseFloat(directSqmMatch[1]);
+      // VALIDATION: Maximum reasonable room size (500 sqm)
+      if (sqm > 500) return null;
       return {
         originalInput: originalInput,
         sqm: sqm,
@@ -114,7 +130,10 @@ const Chatbot = ({ handleClose, handleReset }) => {
     if (dimensionWithUnitsMatch) {
       const width = parseFloat(dimensionWithUnitsMatch[1]);
       const length = parseFloat(dimensionWithUnitsMatch[2]);
+      // VALIDATION: Maximum reasonable room dimensions (25m x 25m = 625 sqm)
+      if (width > 25 || length > 25) return null;
       const sqm = width * length;
+      if (sqm > 500) return null; // Additional total area check
       return {
         originalInput: originalInput,
         sqm: sqm,
@@ -128,7 +147,10 @@ const Chatbot = ({ handleClose, handleReset }) => {
     if (dimensionMatch) {
       const width = parseFloat(dimensionMatch[1]);
       const length = parseFloat(dimensionMatch[2]);
+      // VALIDATION: Maximum reasonable room dimensions (25m x 25m = 625 sqm)
+      if (width > 25 || length > 25) return null;
       const sqm = width * length;
+      if (sqm > 500) return null; // Additional total area check
       return {
         originalInput: originalInput,
         sqm: sqm,
@@ -153,7 +175,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
             start_questions: "Let's get started with a few details about your project.",
             ask_room_count: "How many areas are you planning to install underfloor heating in?",
             ask_room_name: `What is the name of room ${leadData.rooms.length + 1}? (e.g., Kitchen, Lounge)`,
-            ask_room_dimensions: `What are the dimensions of the ${context.roomName || leadData.rooms[leadData.rooms.length - 1]?.name}? You can enter:\n• Square meters: 25 (for 25m²)\n• Dimensions: 10 x 5 (for 50m²)\n• Metric dimensions: 7m x 7m (for 49m²)\n• Decimals welcome: 7.5 x 6.2 (for 46.5m²)`,
+            ask_room_dimensions: `What are the dimensions of the ${context.roomName || leadData.rooms[leadData.rooms.length - 1]?.name}? You can enter:\n• Square meters: 25 (for 25m²)\n• Dimensions: 10 x 5 (for 50m²)\n• Metric dimensions: 7m x 7m (for 49m²)\n• Decimals welcome: 7.5 x 6.2 (for 46.5m²)\n• Maximum size: 25m x 25m (500m²)\n• Only use: numbers, decimal points, 'x', 'm', and spaces`,
             ask_timeline: "What is your desired timeline for this project?",
             ask_timeline_details: "Could you please be more specific about your timeline?",
             ask_budget: "What is your budget range for this underfloor heating project?",
@@ -214,7 +236,20 @@ const Chatbot = ({ handleClose, handleReset }) => {
             return value.trim().length > 1 ? null : "Please enter a valid name for the room.";
         case 'ask_room_dimensions':
             const parsed = parseDimensions(value);
-            return parsed ? null : "Please provide valid dimensions (e.g., 25 for 25m², 10 x 5 for 50m², or 7.5 x 6.2 for 46.5m²).";
+            if (!parsed) {
+                // Check for phone number pattern specifically
+                const phonePattern = /\d{8,}/;
+                if (phonePattern.test(value)) {
+                    return "This looks like a phone number. Please enter room dimensions instead (e.g., 25 for 25m², 10 x 5 for 50m²).";
+                }
+                // Check for invalid characters
+                const allowedChars = /^[0-9\.\sxm²2]*$/;
+                if (!allowedChars.test(value.toLowerCase())) {
+                    return "Please use only numbers (0-9), decimal points, 'x', 'm', and spaces.";
+                }
+                return "Please provide valid room dimensions (max 25m x 25m).";
+            }
+            return null;
         case 'ask_first_name':
             return /^[a-zA-Z'-]{2,}$/.test(value) ? null : "Please enter a valid first name.";
         case 'ask_last_name':
@@ -257,11 +292,12 @@ const Chatbot = ({ handleClose, handleReset }) => {
             const parsed = parseDimensions(input);
             
             if (!parsed) {
-                addMessage(`Sorry, I couldn't understand that format. Please try:
+                addMessage(`Sorry, I couldn't understand that format. Please enter room dimensions using only numbers and 'x' for multiplication:
 • Direct square meters: "25", "25.5", "12m2", "12m²"
 • Length x Width: "10 x 5", "7.07 x 7.07", "4.0 x 12.0"
 • With units: "4m x 12m", "4.0m x 12.0m"
-• Square meter notation: "25 sqm", "25.5 square meters"`);
+• Maximum room size: 25m x 25m (500 sqm)
+• Only use: numbers (0-9), decimal points, 'x', 'm', and spaces`);
                 return;
             }
             

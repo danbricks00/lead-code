@@ -30,18 +30,55 @@ async function findRowAndGetData(options) {
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
     const rows = response.data.values;
     if (!rows || rows.length < 2) return null;
-    const header = rows[0];
+    
+    // Find the actual header row (skip empty rows at the top)
+    let headerRowIndex = 0;
+    let header = rows[0];
+    
+    // Look for a row that contains the search column
+    for (let i = 0; i < rows.length; i++) {
+        if (rows[i] && rows[i].includes(searchColumn)) {
+            headerRowIndex = i;
+            header = rows[i];
+            break;
+        }
+    }
+    
+    console.log(`🔍 Found header row at index ${headerRowIndex} for tab ${tab}`);
+    console.log(`🔍 Header row:`, header);
+    
     const searchColumnIndex = header.indexOf(searchColumn);
-    if (searchColumnIndex === -1) throw new Error(`Column "${searchColumn}" not found in tab "${tab}".`);
-    const dataRow = rows.find(row => row[searchColumnIndex] === searchValue);
-    if (!dataRow) return null;
+    if (searchColumnIndex === -1) {
+        console.error(`❌ Column "${searchColumn}" not found in tab "${tab}". Available columns:`, header);
+        throw new Error(`Column "${searchColumn}" not found in tab "${tab}".`);
+    }
+    
+    // Look for the data row starting from after the header
+    const dataRows = rows.slice(headerRowIndex + 1);
+    const dataRow = dataRows.find(row => row && row[searchColumnIndex] === searchValue);
+    if (!dataRow) {
+        console.error(`❌ No data row found for ${searchColumn} = ${searchValue}`);
+        return null;
+    }
+    
+    const actualRowIndex = rows.indexOf(dataRow) + 1; // 1-based index for Google Sheets
+    console.log(`🔍 Found data row at index ${actualRowIndex} for ${searchColumn} = ${searchValue}`);
+    
     const result = {
-        rowIndex: rows.indexOf(dataRow) + 1 // 1-based index
+        rowIndex: actualRowIndex
     };
+    
     columnsToFetch.forEach(columnName => {
         const index = header.indexOf(columnName);
-        result[columnName] = index !== -1 ? dataRow[index] || '' : 'N/A (Column not found)';
+        if (index !== -1) {
+            result[columnName] = dataRow[index] || '';
+            console.log(`🔍 ${columnName}: "${result[columnName]}" (from column ${index})`);
+        } else {
+            result[columnName] = 'N/A (Column not found)';
+            console.log(`❌ ${columnName}: Column not found in header`);
+        }
     });
+    
     return result;
 }
 

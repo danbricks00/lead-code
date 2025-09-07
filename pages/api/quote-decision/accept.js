@@ -603,7 +603,7 @@ export default async function handler(req, res) {
     try {
         const sheets = await getGoogleSheetsClient();
         const spreadsheetId = getSpreadsheetId();
-        const range = 'Quotes!A:X';
+        const range = 'Quotes!A:AJ';
 
         const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
         const rows = response.data.values;

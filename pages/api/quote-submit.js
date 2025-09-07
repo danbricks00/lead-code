@@ -367,33 +367,34 @@ export default async function handler(req, res) {
             };
         });
         
-        // Append new row to "Quotes" tab with EXACT schema order as specified by user
-        // Schema: QuoteID, LeadID, TradesmanName, QuoteAmount, Notes, CustomerEmail, TradesmanEmail, Decision, DecisionTimestamp, ValidUntil, QuoteDate, LabourRate, LabourHours, LabourTotal, MaterialsCost, MaterialsQuantity, MaterialsTotal, TravelCost, TravelDistance, TravelTotal, InstallationCost, Subtotal, GST, FinalTotal
+        // Append new row to "Quotes" tab with 36 columns (A:AJ) - fill remaining columns with empty values
+        // Schema: QuoteID, LeadID, TradesmanName, QuoteAmount, Notes, CustomerEmail, TradesmanEmail, Decision, DecisionTimestamp, ValidUntil, QuoteDate, LabourRate, LabourHours, LabourTotal, MaterialsCost, MaterialsQuantity, MaterialsTotal, TravelCost, TravelDistance, TravelTotal, InstallationCost, Subtotal, GST, FinalTotal, [12 more empty columns to reach AJ]
         const newQuoteRow = [
-            quoteId,                            // QuoteID
-            leadDetails.Lead || leadDetails.LeadId, // LeadID
-            tradespersonName || '',             // TradesmanName
-            parseFloat(quoteDetails.totalQuote) || 0, // QuoteAmount
-            quoteDetails.notes || '',           // Notes
-            customerEmail || '',                // CustomerEmail
-            tradespersonEmail || '',            // TradesmanEmail
-            '',                                 // Decision (empty at creation)
-            '',                                 // DecisionTimestamp (empty at creation)
-            quoteDetails.validUntil || '',      // ValidUntil
-            nzTimestamp,                        // QuoteDate (NZ local time DD/MM/YYYY HH:mm)
-            parseFloat(quoteDetails.labourRate) || 0,            // LabourRate
-            parseFloat(quoteDetails.labourHours) || 0,           // LabourHours
-            (parseFloat(quoteDetails.labourRate) || 0) * (parseFloat(quoteDetails.labourHours) || 0), // LabourTotal
-            parseFloat(quoteDetails.materialsCost) || 0,         // MaterialsCost
-            parseFloat(quoteDetails.materialsQuantity) || 0,     // MaterialsQuantity
-            (parseFloat(quoteDetails.materialsCost) || 0) * (parseFloat(quoteDetails.materialsQuantity) || 0), // MaterialsTotal
-            parseFloat(quoteDetails.travelCost) || 0,            // TravelCost
-            parseFloat(quoteDetails.travelDistance) || 0,        // TravelDistance
-            (parseFloat(quoteDetails.travelCost) || 0) * (parseFloat(quoteDetails.travelDistance) || 0), // TravelTotal
-            parseFloat(quoteDetails.installationCost) || 0,      // InstallationCost
-            parseFloat(quoteDetails.subtotal) || 0,              // Subtotal
-            parseFloat(quoteDetails.gst) || 0,                   // GST
-            parseFloat(quoteDetails.totalQuote) || 0,            // FinalTotal
+            quoteId,                            // A: QuoteID
+            leadDetails.Lead || leadDetails.LeadId, // B: LeadID
+            tradespersonName || '',             // C: TradesmanName
+            parseFloat(quoteDetails.totalQuote) || 0, // D: QuoteAmount
+            quoteDetails.notes || '',           // E: Notes
+            customerEmail || '',                // F: CustomerEmail
+            tradespersonEmail || '',            // G: TradesmanEmail
+            '',                                 // H: Decision (empty at creation)
+            '',                                 // I: DecisionTimestamp (empty at creation)
+            quoteDetails.validUntil || '',      // J: ValidUntil
+            nzTimestamp,                        // K: QuoteDate (NZ local time DD/MM/YYYY HH:mm)
+            parseFloat(quoteDetails.labourRate) || 0,            // L: LabourRate
+            parseFloat(quoteDetails.labourHours) || 0,           // M: LabourHours
+            (parseFloat(quoteDetails.labourRate) || 0) * (parseFloat(quoteDetails.labourHours) || 0), // N: LabourTotal
+            parseFloat(quoteDetails.materialsCost) || 0,         // O: MaterialsCost
+            parseFloat(quoteDetails.materialsQuantity) || 0,     // P: MaterialsQuantity
+            (parseFloat(quoteDetails.materialsCost) || 0) * (parseFloat(quoteDetails.materialsQuantity) || 0), // Q: MaterialsTotal
+            parseFloat(quoteDetails.travelCost) || 0,            // R: TravelCost
+            parseFloat(quoteDetails.travelDistance) || 0,        // S: TravelDistance
+            (parseFloat(quoteDetails.travelCost) || 0) * (parseFloat(quoteDetails.travelDistance) || 0), // T: TravelTotal
+            parseFloat(quoteDetails.installationCost) || 0,      // U: InstallationCost
+            parseFloat(quoteDetails.subtotal) || 0,              // V: Subtotal
+            parseFloat(quoteDetails.gst) || 0,                   // W: GST
+            parseFloat(quoteDetails.totalQuote) || 0,            // X: FinalTotal
+            '', '', '', '', '', '', '', '', '', '', '', ''       // Y:AJ: Empty columns to reach 36 total
         ];
         
         console.log('📊 Google Sheets Append - Tradesperson Data:', {
@@ -417,10 +418,10 @@ export default async function handler(req, res) {
         
         console.log('📊 Google Sheets Append - Full Row Data:', newQuoteRow);
         
-        // Append the new row to "Quotes" tab (24 columns: A to X)
+        // Append the new row to "Quotes" tab (36 columns: A to AJ)
         await sheets.spreadsheets.values.append({
             spreadsheetId,
-            range: 'Quotes!A:X',
+            range: 'Quotes!A:AJ',
             valueInputOption: 'USER_ENTERED',
             requestBody: { values: [newQuoteRow] }
         });

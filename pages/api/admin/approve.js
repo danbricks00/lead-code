@@ -70,12 +70,14 @@ export default async function handler(req, res) {
                 'AdminPersonStatus', 'LeadID', 'TradePersonName', 'TradePersonEmail', 'TradePersonPhone',
                 'LabourRate', 'LabourHours', 'LabourTotal', 'MaterialsCost', 'MaterialsQuantity', 'MaterialsTotal',
                 'TravelCost', 'TravelDistance', 'TravelTotal', 'InstallationCost', 'Subtotal', 'GST', 'TotalQuote', 
-                'Notes', 'ValidUntil', 'ResubmissionAllowed', 'Decison', 'DecisonTimeStamp',
+                'Notes', 'ValidUnitl', 'ResubmissionAllowed', 'Decison', 'DecisonTimeStamp',
                 'CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Location', 'Timeline', 'Budget', 'Rooms', 'BreakDown'
             ]
         });
 
         if (!quoteData) return res.redirect(`/quote-status?status=error&message=Quote not found.`);
+        
+        console.log('🔍 Admin/Approve - Quote data retrieved from Google Sheets:', quoteData);
         
         // ONE-TIME ENFORCEMENT: Check if already approved
         if (quoteData['AdminPersonStatus'] === 'Approved') {
@@ -145,11 +147,11 @@ export default async function handler(req, res) {
         const gst = parseFloat(quoteData.GST || 0);
         const finalTotal = parseFloat(quoteData.TotalQuote || 0);
         
-        console.log('💰 Admin/Approve - Using actual totals from Google Sheets:', {
-            subtotal: subtotal,
-            gst: gst,
-            finalTotal: finalTotal,
-            totalQuote: totalQuote
+        console.log('💰 Admin/Approve - Using actual totals from Google Sheets:', { 
+            subtotal, gst, finalTotal, 
+            totalQuote: quoteData.TotalQuote,
+            subtotalRaw: quoteData.Subtotal,
+            gstRaw: quoteData.GST
         });
         
         // Calculate per-room breakdown (same as quote-submit.js)
@@ -171,7 +173,7 @@ export default async function handler(req, res) {
         const quoteDataForPdf = {
             quoteId,
             quoteDate: new Date().toISOString(),
-            validUntil: quoteData.ValidUntil || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+            validUntil: quoteData.ValidUnitl || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
             customerName: leadData.CustomerName,
             customerEmail: leadData.CustomerEmail,
             customerPhone: leadData.CustomerPhone,

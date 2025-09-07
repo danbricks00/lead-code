@@ -19,10 +19,22 @@ function formatTimestamp(isoString) {
             year: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
-        }) + ' NZT';
+        });
     } catch (e) {
         return isoString; // Fallback to original string if parsing fails
     }
+}
+
+function getNZTimestamp() {
+    const now = new Date();
+    return now.toLocaleString('en-NZ', {
+        timeZone: 'Pacific/Auckland',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
 }
 
 async function sendNotificationEmails(quoteData, leadData = {}) {
@@ -589,10 +601,11 @@ export default async function handler(req, res) {
             }
         }
         
-        const decisionIndex = header.indexOf('Decision');
-        const decisionTimestampIndex = header.indexOf('Decision Timestamp');
+        // Check for existing decision using exact schema column names
+        const decisionIndex = header.indexOf('Decison');
+        const decisionTimestampIndex = header.indexOf('DecisonTimeStamp');
 
-        // ROBUST ONE-TIME DECISION CHECK
+        // ONE-TIME DECISION ENFORCEMENT
         if (decisionIndex !== -1 && targetRow[decisionIndex] && targetRow[decisionIndex].trim() !== '') {
             const decision = targetRow[decisionIndex];
             const timestamp = (decisionTimestampIndex !== -1) ? targetRow[decisionTimestampIndex] : '';
@@ -600,13 +613,12 @@ export default async function handler(req, res) {
             
             console.log(`🚫 DECISION ALREADY MADE: ${decision} on ${formattedTime}`);
             
-            // Create a detailed error page showing the decision status
-            const errorMessage = `This quote was already ${decision.toLowerCase()} on ${formattedTime}.`;
+            // Return user-friendly HTML page for already-made decision
             const statusPage = `
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>Quote Decision Already Made</title>
+                    <title>Decision Already Made</title>
                     <style>
                         body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f7fa; }
                         .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
@@ -621,8 +633,8 @@ export default async function handler(req, res) {
                 <body>
                     <div class="container">
                         <div class="error-icon">⚠️</div>
-                        <h1 class="error-title">Decision Already Made</h1>
-                        <p class="error-message">This quote decision has already been processed and cannot be changed.</p>
+                        <h1>Decision already made</h1>
+                        <p>This quote was already marked as ${decision} on ${formattedTime}.</p>
                         <div class="decision-info">
                             <div class="decision-status">Decision: ${decision}</div>
                             <div class="timestamp">Made on: ${formattedTime}</div>
@@ -639,9 +651,10 @@ export default async function handler(req, res) {
         }
         
         // --- Update Sheet Data using exact schema column names ---
+        const nzTimestamp = getNZTimestamp();
         const updateData = {
             'Decison': 'Accepted',
-            'DecisonTimeStamp': new Date().toISOString(),
+            'DecisonTimeStamp': nzTimestamp,
             'CustomerStatus': 'Quote Decision',
             'TradePersonStatus': 'Quote Decision',
             'AdminPersonStatus': 'Accepted',
@@ -666,7 +679,33 @@ export default async function handler(req, res) {
         // --- Send Emails ---
         await sendNotificationEmails(quoteDataForEmail, leadData);
         
-        return res.redirect(`/quote-status?status=success&message=Your acceptance has been recorded!`);
+        // Return confirmation HTML page
+        const confirmationPage = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Quote Accepted</title>
+                <style>
+                    body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f7fa; }
+                    .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
+                    .success-icon { font-size: 48px; margin-bottom: 20px; }
+                    .success-title { color: #28a745; font-size: 24px; margin-bottom: 15px; }
+                    .success-message { color: #6c757d; font-size: 16px; margin-bottom: 20px; }
+                    .timestamp { color: #6c757d; font-size: 14px; margin-top: 20px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="success-icon">✅</div>
+                    <h1>✅ Quote Accepted</h1>
+                    <p>Thanks, your choice has been recorded.</p>
+                    <div class="timestamp">Accepted on: ${nzTimestamp}</div>
+                </div>
+            </body>
+            </html>
+        `;
+        
+        return res.status(200).send(confirmationPage);
 
     } catch (error) {
         console.error("Quote acceptance error:", error);

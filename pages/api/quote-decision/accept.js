@@ -43,17 +43,13 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
     console.log('📋 Quote data keys:', Object.keys(quoteData));
     console.log('📋 Lead data keys:', Object.keys(leadData));
     
-    // Get customer email - try quote data first, then lead data
-    const customerEmail = quoteData['CustomerEmail'] || quoteData['Customer Email'] || quoteData['customerEmail'] || 
-                         leadData['CustomerEmail'] || leadData['Customer Email'] || leadData['customerEmail'];
-    const customerName = quoteData['CustomerName'] || quoteData['Customer Name'] || quoteData['customerName'] || 
-                        leadData['CustomerName'] || leadData['Customer Name'] || leadData['customerName'];
+    // Get customer email - using correct schema column names
+    const customerEmail = quoteData['CustomerEmail'] || leadData['CustomerEmail'];
+    const customerName = quoteData['CustomerName'] || leadData['CustomerName'];
     
-    // Get tradesperson email - try different possible column names  
-    const tradespersonEmail = quoteData['TradespersonEmail'] || quoteData['Tradesperson Email'] || quoteData['tradespersonEmail'] || 
-                             quoteData['TradePerson Email'] || quoteData['TradesPerson Email'];
-    const tradespersonName = quoteData['TradespersonName'] || quoteData['Tradesperson Name'] || quoteData['tradespersonName'] || 
-                            quoteData['TradePerson Name'] || quoteData['TradesPerson Name'];
+    // Get tradesperson email - using correct schema column names
+    const tradespersonEmail = quoteData['TradesmanEmail'];
+    const tradespersonName = quoteData['TradesmanName'];
     
     console.log('📧 Email recipients:');
     console.log('  - Customer:', customerEmail);
@@ -74,40 +70,47 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
 
     // Build finalQuoteData for PDF generation (same structure as quote-submit.js)
     const finalQuoteData = {
-        quoteId: quoteData['QuoteID'] || quoteData['Quote Id'] || quoteData['quoteId'],
-        quoteDate: new Date().toISOString(),
-        validUntil: quoteData['ValidUnitl'] || quoteData['Valid Until'] || quoteData['validUntil'] || 'N/A',
+        quoteId: quoteData['QuoteID'],
+        quoteDate: new Date().toLocaleString('en-NZ', {
+            timeZone: 'Pacific/Auckland',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        }),
+        validUntil: quoteData['ValidUntil'] || 'N/A',
         customerName: customerName,
         customerEmail: customerEmail,
-        customerPhone: quoteData['CustomerPhone'] || quoteData['Customer Phone'] || quoteData['customerPhone'] || '',
+        customerPhone: quoteData['CustomerPhone'] || '',
         customerAddress: `${leadData['Area'] || ''} ${leadData['Suburb'] || ''}`.trim(),
-        serviceType: quoteData['ServiceType'] || quoteData['Service Type'] || quoteData['serviceType'] || '',
+        serviceType: leadData['ServiceType'] || '',
         tradespersonName: tradespersonName || 'Professional Tradesperson',
         tradespersonEmail: tradespersonEmail || 'contact@kiwitrade.co.nz',
-        tradespersonPhone: quoteData['TradePersonPhone'] || quoteData['Tradesperson Phone'] || quoteData['tradespersonPhone'] || 'Contact via Kiwi Trade',
+        tradespersonPhone: quoteData['TradesmanPhone'] || 'Contact via Kiwi Trade',
         tradespersonLicense: 'Licensed Tradesperson',
         rooms: [],
         breakdown: {
-            labourRate: parseFloat(quoteData['LabourRate'] || quoteData['Labour Rate'] || 0),
-            labourHours: parseFloat(quoteData['LabourHours'] || quoteData['Labour Hours'] || 0),
-            labourTotal: parseFloat(quoteData['LabourTotal'] || quoteData['Labour Total'] || 0),
-            materialsCost: parseFloat(quoteData['MaterialsCost'] || quoteData['Materials Cost'] || 0),
-            materialsQuantity: parseFloat(quoteData['MaterialsQuantity'] || quoteData['Materials Quantity'] || 0),
-            materialsTotal: parseFloat(quoteData['MaterialsTotal'] || quoteData['Materials Total'] || 0),
-            travelCost: parseFloat(quoteData['TravelCost'] || quoteData['Travel Cost'] || 0),
-            travelDistance: parseFloat(quoteData['TravelDistance'] || quoteData['Travel Distance'] || 0),
-            travelTotal: parseFloat(quoteData['TravelTotal'] || quoteData['Travel Total'] || 0),
-            installationCost: parseFloat(quoteData['InstallationCost'] || quoteData['Installation Cost'] || 0),
+            labourRate: parseFloat(quoteData['LabourRate'] || 0),
+            labourHours: parseFloat(quoteData['LabourHours'] || 0),
+            labourTotal: parseFloat(quoteData['LabourTotal'] || 0),
+            materialsCost: parseFloat(quoteData['MaterialsCost'] || 0),
+            materialsQuantity: parseFloat(quoteData['MaterialsQuantity'] || 0),
+            materialsTotal: parseFloat(quoteData['MaterialsTotal'] || 0),
+            travelCost: parseFloat(quoteData['TravelCost'] || 0),
+            travelDistance: parseFloat(quoteData['TravelDistance'] || 0),
+            travelTotal: parseFloat(quoteData['TravelTotal'] || 0),
+            installationCost: parseFloat(quoteData['InstallationCost'] || 0),
             totalSqm: 0
         },
         totals: {
-            labour: parseFloat(quoteData['LabourTotal'] || quoteData['Labour Total'] || 0),
-            materials: parseFloat(quoteData['MaterialsTotal'] || quoteData['Materials Total'] || 0),
-            travel: parseFloat(quoteData['TravelTotal'] || quoteData['Travel Total'] || 0),
-            installation: parseFloat(quoteData['InstallationCost'] || quoteData['Installation Cost'] || 0),
-            subtotal: parseFloat(quoteData['Subtotal'] || quoteData['subtotal'] || 0),
-            gst: parseFloat(quoteData['GST'] || quoteData['gst'] || 0),
-            final: parseFloat(quoteData['TotalQuote'] || quoteData['Total Quote'] || quoteData['totalQuote'] || 0)
+            labour: parseFloat(quoteData['LabourTotal'] || 0),
+            materials: parseFloat(quoteData['MaterialsTotal'] || 0),
+            travel: parseFloat(quoteData['TravelTotal'] || 0),
+            installation: parseFloat(quoteData['InstallationCost'] || 0),
+            subtotal: parseFloat(quoteData['Subtotal'] || 0),
+            gst: parseFloat(quoteData['GST'] || 0),
+            final: parseFloat(quoteData['FinalTotal'] || 0)
         }
     };
 
@@ -600,7 +603,7 @@ export default async function handler(req, res) {
     try {
         const sheets = await getGoogleSheetsClient();
         const spreadsheetId = getSpreadsheetId();
-        const range = 'Quotes!A:Z';
+        const range = 'Quotes!A:X';
 
         const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
         const rows = response.data.values;
@@ -609,7 +612,7 @@ export default async function handler(req, res) {
         }
         
         const header = rows[0];
-        const rowIndex = rows.findIndex(row => row[0] === quoteId);
+        const rowIndex = rows.findIndex(row => row[1] === quoteId); // QuoteID is in column B (index 1)
 
         if (rowIndex === -1) {
             return res.redirect(`/quote-status?status=error&message=Quote ID not found.`);
@@ -617,9 +620,8 @@ export default async function handler(req, res) {
         
         const targetRow = rows[rowIndex];
         
-        // Get lead ID to fetch customer information
-        const leadIdIndex = header.findIndex(col => col && (col.toLowerCase().includes('lead') || col.toLowerCase().includes('leadi')));
-        const leadId = leadIdIndex !== -1 ? targetRow[leadIdIndex] : null;
+        // Get lead ID to fetch customer information (LeadID is in column C, index 2)
+        const leadId = targetRow[2] || null;
         
         // Fetch lead data to get customer information
         let leadData = {};
@@ -664,9 +666,9 @@ export default async function handler(req, res) {
             }
         }
         
-        // Check for existing decision using exact schema column names
-        const decisionIndex = header.indexOf('Decison');
-        const decisionTimestampIndex = header.indexOf('DecisonTimeStamp');
+        // Check for existing decision using correct schema column names
+        const decisionIndex = header.indexOf('Decision');
+        const decisionTimestampIndex = header.indexOf('DecisionTimestamp');
 
         // ONE-TIME DECISION ENFORCEMENT
         if (decisionIndex !== -1 && targetRow[decisionIndex] && targetRow[decisionIndex].trim() !== '') {
@@ -713,14 +715,11 @@ export default async function handler(req, res) {
             return res.status(400).send(statusPage);
         }
         
-        // --- Update Sheet Data using exact schema column names ---
+        // --- Update Sheet Data using correct schema column names ---
         const nzTimestamp = getNZTimestamp();
         const updateData = {
-            'Decison': 'Accepted',
-            'DecisonTimeStamp': nzTimestamp,
-            'CustomerStatus': 'Quote Decision',
-            'TradePersonStatus': 'Quote Decision',
-            'AdminPersonStatus': 'Accepted',
+            'Decision': 'Accepted',
+            'DecisionTimestamp': nzTimestamp,
         };
 
         const quoteDataForEmail = {};

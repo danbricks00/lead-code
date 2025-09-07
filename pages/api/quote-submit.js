@@ -367,21 +367,23 @@ export default async function handler(req, res) {
             };
         });
         
-        // Append new row to "Quotes" tab with ALL 37 columns according to exact schema
-        // Schema: TimeStamp, QuoteID, LeadID, TradePersonName, TradePersonEmail, TradePersonPhone, CustomerStatus, TradePersonStatus, AdminPersonStatus, LabourRate, LabourHours, LaboutTotal, MaterialsCost, MaterialsQuantity, MaterialsTotal, TravelCost, TravelDistance, TravelTotal, InstallationCost, Subtotal, GST, TotalQuote, Notes, ValidUnitl, ResubmissionAllowed, Decison, DecisonTimeStamp, CustomerName, CustomerEmail, CustomerPhone, ServiceType, Location, Timeline, Budget, Rooms, BreakDown
+        // Append new row to "Quotes" tab with EXACT schema order as specified by user
+        // Schema: QuoteID, LeadID, TradesmanName, QuoteAmount, Notes, CustomerEmail, TradesmanEmail, Decision, DecisionTimestamp, ValidUntil, QuoteDate, LabourRate, LabourHours, LabourTotal, MaterialsCost, MaterialsQuantity, MaterialsTotal, TravelCost, TravelDistance, TravelTotal, InstallationCost, Subtotal, GST, FinalTotal
         const newQuoteRow = [
-            nzTimestamp,                        // TimeStamp (NZ local time DD/MM/YYYY HH:mm)
             quoteId,                            // QuoteID
             leadDetails.Lead || leadDetails.LeadId, // LeadID
-            tradespersonName || '',             // TradePersonName
-            tradespersonEmail || '',            // TradePersonEmail
-            tradespersonPhone || '',            // TradePersonPhone
-            'Quote Pending',                    // CustomerStatus
-            'Not Submitted',                    // TradePersonStatus
-            'Not Required',                     // AdminPersonStatus
+            tradespersonName || '',             // TradesmanName
+            parseFloat(quoteDetails.totalQuote) || 0, // QuoteAmount
+            quoteDetails.notes || '',           // Notes
+            customerEmail || '',                // CustomerEmail
+            tradespersonEmail || '',            // TradesmanEmail
+            '',                                 // Decision (empty at creation)
+            '',                                 // DecisionTimestamp (empty at creation)
+            quoteDetails.validUntil || '',      // ValidUntil
+            nzTimestamp,                        // QuoteDate (NZ local time DD/MM/YYYY HH:mm)
             parseFloat(quoteDetails.labourRate) || 0,            // LabourRate
             parseFloat(quoteDetails.labourHours) || 0,           // LabourHours
-            (parseFloat(quoteDetails.labourRate) || 0) * (parseFloat(quoteDetails.labourHours) || 0), // LaboutTotal (typo in schema)
+            (parseFloat(quoteDetails.labourRate) || 0) * (parseFloat(quoteDetails.labourHours) || 0), // LabourTotal
             parseFloat(quoteDetails.materialsCost) || 0,         // MaterialsCost
             parseFloat(quoteDetails.materialsQuantity) || 0,     // MaterialsQuantity
             (parseFloat(quoteDetails.materialsCost) || 0) * (parseFloat(quoteDetails.materialsQuantity) || 0), // MaterialsTotal
@@ -391,21 +393,7 @@ export default async function handler(req, res) {
             parseFloat(quoteDetails.installationCost) || 0,      // InstallationCost
             parseFloat(quoteDetails.subtotal) || 0,              // Subtotal
             parseFloat(quoteDetails.gst) || 0,                   // GST
-            parseFloat(quoteDetails.totalQuote) || 0,            // TotalQuote
-            quoteDetails.notes || '',           // Notes
-            quoteDetails.validUntil || '',      // ValidUnitl (typo in schema)
-            '',                                 // ResubmissionAllowed (empty at creation)
-            '',                                 // Decison (typo in schema, empty at creation)
-            '',                                 // DecisonTimeStamp (typo in schema, empty at creation)
-            customerName || '',                 // CustomerName
-            customerEmail || '',                // CustomerEmail
-            customerPhone || '',                // CustomerPhone
-            serviceType || '',                  // ServiceType
-            customerAddress || '',              // Location
-            leadDetails.Timelline || leadDetails.Timeline || leadDetails.timeline || '', // Timeline
-            leadDetails.Budget || leadDetails.budget || '',      // Budget
-            leadDetails.Rooms || '',            // Rooms (JSON string)
-            JSON.stringify(roomsWithDetails) || '', // BreakDown (JSON string)
+            parseFloat(quoteDetails.totalQuote) || 0,            // FinalTotal
         ];
         
         console.log('📊 Google Sheets Append - Tradesperson Data:', {
@@ -429,15 +417,15 @@ export default async function handler(req, res) {
         
         console.log('📊 Google Sheets Append - Full Row Data:', newQuoteRow);
         
-        // Append the new row to "Quotes" tab (37 columns: A to AK)
+        // Append the new row to "Quotes" tab (24 columns: A to X)
         await sheets.spreadsheets.values.append({
             spreadsheetId,
-            range: 'Quotes!A:AK',
+            range: 'Quotes!A:X',
             valueInputOption: 'USER_ENTERED',
             requestBody: { values: [newQuoteRow] }
         });
 
-        console.log(`[SHEETS] Quote ${quoteId} written to Quotes tab (Lead ${leadDetails.Lead || leadDetails.LeadId}) with totals and breakdown.`);
+        console.log(`[SHEETS] Quote ${quoteId} written to Quotes tab (Lead ${leadDetails.Lead || leadDetails.LeadId})`);
     } catch (sheetsError) {
         console.error("Google Sheets Error:", sheetsError);
         // Don't fail the whole process, just log the error

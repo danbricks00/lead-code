@@ -4,7 +4,7 @@
 
 **IMPORTANT**: These column names must be EXACTLY as specified below, with no extra spaces, typos, or variations.
 
-### Column Structure (A through AE):
+### Column Structure (A through AJ):
 
 | Column | Header Name | Description | Example |
 |--------|-------------|-------------|---------|
@@ -19,26 +19,31 @@
 | I | `AdminStatus` | Admin approval status | Not Required |
 | J | `LabourRate` | Hourly labour rate | 50 |
 | K | `LabourHours` | Total labour hours | 10 |
-| L | `MaterialsCost` | Cost per unit of materials | 20 |
-| M | `MaterialsQuantity` | Quantity of materials | 124 |
-| N | `TravelCost` | Cost per km for travel | 1 |
-| O | `TravelDistance` | Distance in km | 10 |
-| P | `InstallationCost` | Installation cost | 10 |
-| Q | `TotalQuote` | Final quote amount | 3450 |
-| R | `Notes` | Additional notes | Test quote |
-| S | `ValidUntil` | Quote expiry date | 2025-09-20 |
-| T | `ResubmissionAllowed` | Can be resubmitted | No |
-| U | `Decision` | Customer decision | (empty) |
-| V | `DecisionTimestamp` | When decision was made | (empty) |
-| W | `CustomerName` | Customer full name | Dan Bui |
-| X | `CustomerEmail` | Customer email | dan@example.com |
-| Y | `CustomerPhone` | Customer phone | 275059901 |
-| Z | `ServiceType` | Type of service | Underfloor Heating |
-| AA | `Location` | Project location | West Auckland, Titirangi |
-| AB | `Timeline` | Project timeline | October 18 |
-| AC | `Budget` | Customer budget | (empty) |
-| AD | `Rooms` | Room data as JSON | [{"name":"Kitchen","dimensions":"4m x 4m"}] |
-| AE | `Breakdown` | Detailed breakdown | (empty) |
+| L | `LabourTotal` | Total labour cost (rate × hours) | 500 |
+| M | `MaterialsCost` | Cost per unit of materials | 20 |
+| N | `MaterialsQuantity` | Quantity of materials | 124 |
+| O | `MaterialsTotal` | Total materials cost (cost × quantity) | 2480 |
+| P | `TravelCost` | Cost per km for travel | 1 |
+| Q | `TravelDistance` | Distance in km | 10 |
+| R | `TravelTotal` | Total travel cost (cost × distance) | 10 |
+| S | `InstallationCost` | Installation cost | 10 |
+| T | `Subtotal` | Subtotal before GST | 3000 |
+| U | `GST` | GST amount (15%) | 450 |
+| V | `TotalQuote` | Final quote amount | 3450 |
+| W | `Notes` | Additional notes | Test quote |
+| X | `ValidUntil` | Quote expiry date | 2025-09-20 |
+| Y | `ResubmissionAllowed` | Can be resubmitted | No |
+| Z | `Decision` | Customer decision | (empty) |
+| AA | `DecisionTimestamp` | When decision was made | (empty) |
+| AB | `CustomerName` | Customer full name | Dan Bui |
+| AC | `CustomerEmail` | Customer email | dan@example.com |
+| AD | `CustomerPhone` | Customer phone | 275059901 |
+| AE | `ServiceType` | Type of service | Underfloor Heating |
+| AF | `Location` | Project location | West Auckland, Titirangi |
+| AG | `Timeline` | Project timeline | October 18 |
+| AH | `Budget` | Customer budget | (empty) |
+| AI | `Rooms` | Room data as JSON | [{"name":"Kitchen","dimensions":"4m x 4m"}] |
+| AJ | `Breakdown` | Detailed breakdown | (empty) |
 
 ## Setup Instructions
 

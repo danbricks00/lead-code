@@ -114,11 +114,11 @@ export default async function handler(req, res) {
             sheets, spreadsheetId, tab: 'Quotes',
             searchColumn: 'QuoteID', searchValue: quoteId,
             columnsToFetch: [
-                // Standardized column names (primary) - NO XERO
+                // Standardized column names (primary) - WITH CALCULATED TOTALS
                 'AdminStatus', 'LeadID', 'TradespersonName', 'TradespersonEmail', 'TradespersonPhone',
-                'LabourRate', 'LabourHours', 'MaterialsCost', 'MaterialsQuantity', 'TravelCost', 
-                'TravelDistance', 'InstallationCost', 'TotalQuote', 'ValidUntil', 'Notes', 'Rooms',
-                'CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Location', 'Timeline',
+                'LabourRate', 'LabourHours', 'LabourTotal', 'MaterialsCost', 'MaterialsQuantity', 'MaterialsTotal',
+                'TravelCost', 'TravelDistance', 'TravelTotal', 'InstallationCost', 'Subtotal', 'GST', 'TotalQuote',
+                'ValidUntil', 'Notes', 'Rooms', 'CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Location', 'Timeline',
                 // Legacy column names (fallback)
                 'Admin Status', 'LeadiD', 'Labour Cost', 'Labour Hour', 'Materials Cost', 'Materials Quanitity', 
                 'Travel Cost', 'Travel Distance', 'Installation Cost', 'Total Quote', 'TradePerson Name', 
@@ -177,25 +177,27 @@ export default async function handler(req, res) {
         // 3. BUILD COMPLETE DATA PAYLOAD FOR PDF GENERATION
         console.log('🔧 Building complete data payload...');
         
-        // Parse quote values - prioritize standardized column names
+        // Parse quote values - prioritize standardized column names with calculated totals
         const labourRate = parseFloat(quoteData.LabourRate || quoteData['Labour Cost'] || 0);
         const labourHours = parseFloat(quoteData.LabourHours || quoteData['Labour Hour'] || 0);
+        const labourTotal = parseFloat(quoteData.LabourTotal || (labourRate * labourHours) || 0);
         const materialsCost = parseFloat(quoteData.MaterialsCost || quoteData['Materials Cost'] || 0);
         const materialsQuantity = parseFloat(quoteData.MaterialsQuantity || quoteData['Materials Quanitity'] || 0);
+        const materialsTotal = parseFloat(quoteData.MaterialsTotal || (materialsCost * materialsQuantity) || 0);
         const travelCost = parseFloat(quoteData.TravelCost || quoteData['Travel Cost'] || 0);
         const travelDistance = parseFloat(quoteData.TravelDistance || quoteData['Travel Distance'] || 0);
+        const travelTotal = parseFloat(quoteData.TravelTotal || (travelCost * travelDistance) || 0);
         const installationCost = parseFloat(quoteData.InstallationCost || quoteData['Installation Cost'] || 0);
+        const subtotal = parseFloat(quoteData.Subtotal || (labourTotal + materialsTotal + travelTotal + installationCost) || 0);
+        const gst = parseFloat(quoteData.GST || (subtotal * 0.15) || 0);
         const totalQuote = parseFloat(quoteData.TotalQuote || quoteData['Total Quote'] || 0);
         
         console.log('🔍 DEBUG - Parsed quote values:');
-        console.log('  - Labour Rate:', labourRate, 'from:', quoteData['Labour Cost']);
-        console.log('  - Labour Hours:', labourHours, 'from:', quoteData['Labour Hour']);
-        console.log('  - Materials Cost:', materialsCost, 'from:', quoteData['Materials Cost']);
-        console.log('  - Materials Quantity:', materialsQuantity, 'from:', quoteData['Materials Quanitity']);
-        console.log('  - Travel Cost:', travelCost, 'from:', quoteData['Travel Cost']);
-        console.log('  - Travel Distance:', travelDistance, 'from:', quoteData['Travel Distance']);
-        console.log('  - Installation Cost:', installationCost, 'from:', quoteData['Installation Cost']);
-        console.log('  - Total Quote:', totalQuote, 'from:', quoteData['Total Quote']);
+        console.log('  - Labour Rate:', labourRate, 'Hours:', labourHours, 'Total:', labourTotal);
+        console.log('  - Materials Cost:', materialsCost, 'Quantity:', materialsQuantity, 'Total:', materialsTotal);
+        console.log('  - Travel Cost:', travelCost, 'Distance:', travelDistance, 'Total:', travelTotal);
+        console.log('  - Installation Cost:', installationCost);
+        console.log('  - Subtotal:', subtotal, 'GST:', gst, 'Final Total:', totalQuote);
         
         // Get tradesperson info with fallbacks (prioritize standardized column names)
         const tradespersonName = quoteData.TradespersonName || quoteData['TradesPerson Name'] || quoteData['TradePerson Name'] || 'Professional Tradesperson';

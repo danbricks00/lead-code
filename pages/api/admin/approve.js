@@ -138,20 +138,30 @@ export default async function handler(req, res) {
         // 3. BUILD COMPLETE DATA PAYLOAD FOR PDF GENERATION
         console.log('🔧 Building complete data payload...');
         
-        // Parse quote values - handle multiple column name formats
-        const labourRate = parseFloat(quoteData.LabourRate || quoteData['Labour Cost'] || 0);
-        const labourHours = parseFloat(quoteData.LabourHours || quoteData['Labour Hour'] || 0);
-        const materialsCost = parseFloat(quoteData.MaterialsCost || quoteData['Materials Cost'] || 0);
-        const materialsQuantity = parseFloat(quoteData.MaterialsQuantity || quoteData['Materials Quanitity'] || 0);
-        const travelCost = parseFloat(quoteData.TravelCost || quoteData['Travel Cost'] || 0);
-        const travelDistance = parseFloat(quoteData.TravelDistance || quoteData['Travel Distance'] || 0);
-        const installationCost = parseFloat(quoteData.InstallationCost || quoteData['Installation Cost'] || 0);
-        const totalQuote = parseFloat(quoteData.TotalQuote || quoteData['Total Quote'] || 0);
+        // Parse quote values - prioritize actual column names from logs
+        const labourRate = parseFloat(quoteData['Labour Cost'] || quoteData.LabourRate || 0);
+        const labourHours = parseFloat(quoteData['Labour Hour'] || quoteData.LabourHours || 0);
+        const materialsCost = parseFloat(quoteData['Materials Cost'] || quoteData.MaterialsCost || 0);
+        const materialsQuantity = parseFloat(quoteData['Materials Quanitity'] || quoteData.MaterialsQuantity || 0);
+        const travelCost = parseFloat(quoteData['Travel Cost'] || quoteData.TravelCost || 0);
+        const travelDistance = parseFloat(quoteData['Travel Distance'] || quoteData.TravelDistance || 0);
+        const installationCost = parseFloat(quoteData['Installation Cost'] || quoteData.InstallationCost || 0);
+        const totalQuote = parseFloat(quoteData['Total Quote'] || quoteData.TotalQuote || 0);
         
-        // Get tradesperson info with fallbacks
-        const tradespersonName = quoteData.TradespersonName || quoteData['TradePerson Name'] || 'Professional Tradesperson';
-        const tradespersonEmail = quoteData.TradespersonEmail || quoteData['TradePerson Email'] || '';
-        const tradespersonPhone = quoteData.TradespersonPhone || quoteData['TradePerson Phone'] || '';
+        console.log('🔍 DEBUG - Parsed quote values:');
+        console.log('  - Labour Rate:', labourRate, 'from:', quoteData['Labour Cost']);
+        console.log('  - Labour Hours:', labourHours, 'from:', quoteData['Labour Hour']);
+        console.log('  - Materials Cost:', materialsCost, 'from:', quoteData['Materials Cost']);
+        console.log('  - Materials Quantity:', materialsQuantity, 'from:', quoteData['Materials Quanitity']);
+        console.log('  - Travel Cost:', travelCost, 'from:', quoteData['Travel Cost']);
+        console.log('  - Travel Distance:', travelDistance, 'from:', quoteData['Travel Distance']);
+        console.log('  - Installation Cost:', installationCost, 'from:', quoteData['Installation Cost']);
+        console.log('  - Total Quote:', totalQuote, 'from:', quoteData['Total Quote']);
+        
+        // Get tradesperson info with fallbacks (prioritize actual column names from logs)
+        const tradespersonName = quoteData['TradesPerson Name'] || quoteData['TradePerson Name'] || quoteData.TradespersonName || 'Professional Tradesperson';
+        const tradespersonEmail = quoteData['TradePerson Email'] || quoteData.TradespersonEmail || '';
+        const tradespersonPhone = quoteData['TradePerson Phone'] || quoteData.TradespersonPhone || '';
         
         // Get customer info with fallbacks (in case it's stored in quote data)
         const customerName = leadData.CustomerName || quoteData.CustomerName || 'Valued Customer';

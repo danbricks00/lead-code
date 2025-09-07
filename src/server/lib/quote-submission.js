@@ -556,37 +556,38 @@ export default async function handler(req, res) {
             [
               new Date().toISOString(),
               quoteData.quoteId,
-              quoteData.quoteNumber,
-              quoteData.tradesmanName,
-              quoteData.tradesmanEmail,
-              quoteData.tradesmanPhone,
-              quoteData.totalAmount,
-              quoteData.itemBreakdown,
-              quoteData.validUntil,
-              quoteData.additionalNotes,
-              'submitted',
-              quoteData.customerName,
-              quoteData.customerEmail,
-              quoteData.customerPhone,
-              quoteData.serviceType,
-              quoteData.location,
-              quoteData.projectDetails,
-              quoteData.projectSize,
-              quoteData.budget,
-              quoteData.timeline,
-              // Add detailed breakdown data for admin approval
-              quoteData.labourRate,
-              quoteData.labourHours,
-              quoteData.materialsCost,
-              quoteData.materialsQuantity,
-              quoteData.travelCost,
-              quoteData.travelDistance,
-              quoteData.installationCost,
-              quoteData.subtotal,
-              quoteData.gst,
-              quoteData.totalQuote,
-              JSON.stringify(quoteData.rooms || []), // Store rooms data as JSON
-              quoteData.leadId // Store lead ID for reference
+              quoteData.leadId, // LeadiD column
+              quoteData.tradesmanName, // TradesPerson Name
+              quoteData.tradesmanEmail, // TradePerson Email
+              quoteData.tradesmanName, // TradePerson Name (duplicate column)
+              'submitted', // Customer Status
+              'submitted', // TradePerson Status
+              'Not Required', // Admin Status
+              '', // Xero Quote iD
+              quoteData.labourRate, // Labour Cost
+              quoteData.labourHours, // Labour Hour
+              quoteData.materialsCost, // Materials Cost
+              quoteData.materialsCost, // Materials Cost (duplicate)
+              quoteData.materialsQuantity, // Materials Quanitity
+              quoteData.travelCost, // Travel Cost
+              quoteData.travelDistance, // Travel Distance
+              quoteData.installationCost, // Installation Cost
+              quoteData.totalQuote, // Total Quote
+              quoteData.additionalNotes || '', // Notes
+              quoteData.validUntil, // Quote Valid Unitl
+              'No', // Reesubmission Allowed
+              '', // Empty columns
+              '', // Empty columns
+              '', // Empty columns
+              '', // Empty columns
+              '', // Empty columns
+              JSON.stringify(quoteData.rooms || []), // Breakdown
+              quoteData.additionalNotes || '', // Notes (duplicate)
+              quoteData.validUntil, // Valid Unitl
+              'submitted', // Quote Status
+              '', // Online Quote Url
+              '', // Accept URL
+              '' // Decline URL
             ]
           ];
 

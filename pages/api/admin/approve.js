@@ -64,6 +64,15 @@ export default async function handler(req, res) {
 
         // 1. FETCH FULL QUOTE DATA FROM GOOGLE SHEETS
         console.log('📊 Fetching quote data from Google Sheets...');
+        
+        // First, get the header row to see what columns are available
+        const quoteHeaderResponse = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: 'Quotes!1:1'
+        });
+        const quoteHeaders = quoteHeaderResponse.data.values?.[0] || [];
+        console.log('🔍 Available quote columns:', quoteHeaders);
+        
         const quoteData = await findRowAndGetData({
             sheets, spreadsheetId, tab: 'Quotes',
             searchColumn: 'QuoteID', searchValue: quoteId,
@@ -72,7 +81,9 @@ export default async function handler(req, res) {
                 'LabourRate', 'LabourHours', 'MaterialsCost', 'MaterialsQuantity', 'TravelCost', 
                 'TravelDistance', 'InstallationCost', 'Subtotal', 'GST', 'TotalQuote', 'ValidUntil', 'Notes',
                 'Labour Cost', 'Labour Hour', 'Materials Cost', 'Materials Quanitity', 'Travel Cost',
-                'Travel Distance', 'Installation Cost', 'Total Quote', 'Rooms', 'LeadId'
+                'Travel Distance', 'Installation Cost', 'Total Quote', 'Rooms', 'LeadId',
+                // Add more possible column names
+                'TradePerson Name', 'TradePerson Email', 'TradePerson Phone', 'CustomerName', 'CustomerEmail', 'CustomerPhone'
             ]
         });
 
@@ -94,6 +105,14 @@ export default async function handler(req, res) {
             return res.redirect(`/quote-status?status=error&message=Lead ID not found.`);
         }
 
+        // First, get the header row to see what columns are available
+        const leadHeaderResponse = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: 'Leads!1:1'
+        });
+        const leadHeaders = leadHeaderResponse.data.values?.[0] || [];
+        console.log('🔍 Available lead columns:', leadHeaders);
+
         const leadData = await findRowAndGetData({
             sheets, spreadsheetId, tab: 'Leads',
             searchColumn: 'Lead', searchValue: leadId,
@@ -111,11 +130,15 @@ export default async function handler(req, res) {
         console.log('  - Customer:', leadData.CustomerName, leadData.CustomerEmail);
         console.log('  - Tradesperson:', quoteData.TradespersonName, quoteData.TradespersonEmail);
         console.log('  - Total Quote:', quoteData.TotalQuote || quoteData['Total Quote']);
+        
+        // DEBUG: Log all fetched data to identify missing values
+        console.log('🔍 DEBUG - Lead Data:', JSON.stringify(leadData, null, 2));
+        console.log('🔍 DEBUG - Quote Data:', JSON.stringify(quoteData, null, 2));
 
         // 3. BUILD COMPLETE DATA PAYLOAD FOR PDF GENERATION
         console.log('🔧 Building complete data payload...');
         
-        // Parse quote values - handle both column name formats
+        // Parse quote values - handle multiple column name formats
         const labourRate = parseFloat(quoteData.LabourRate || quoteData['Labour Cost'] || 0);
         const labourHours = parseFloat(quoteData.LabourHours || quoteData['Labour Hour'] || 0);
         const materialsCost = parseFloat(quoteData.MaterialsCost || quoteData['Materials Cost'] || 0);
@@ -124,6 +147,16 @@ export default async function handler(req, res) {
         const travelDistance = parseFloat(quoteData.TravelDistance || quoteData['Travel Distance'] || 0);
         const installationCost = parseFloat(quoteData.InstallationCost || quoteData['Installation Cost'] || 0);
         const totalQuote = parseFloat(quoteData.TotalQuote || quoteData['Total Quote'] || 0);
+        
+        // Get tradesperson info with fallbacks
+        const tradespersonName = quoteData.TradespersonName || quoteData['TradePerson Name'] || 'Professional Tradesperson';
+        const tradespersonEmail = quoteData.TradespersonEmail || quoteData['TradePerson Email'] || '';
+        const tradespersonPhone = quoteData.TradespersonPhone || quoteData['TradePerson Phone'] || '';
+        
+        // Get customer info with fallbacks (in case it's stored in quote data)
+        const customerName = leadData.CustomerName || quoteData.CustomerName || 'Valued Customer';
+        const customerEmail = leadData.CustomerEmail || quoteData.CustomerEmail || '';
+        const customerPhone = leadData.CustomerPhone || quoteData.CustomerPhone || '';
 
         // Parse rooms data
         let rooms = [];
@@ -252,12 +285,28 @@ export default async function handler(req, res) {
         // 6. SEND CUSTOMER EMAIL WITH PDF ATTACHMENT
         console.log('📧 Sending customer email with PDF attachment...');
         
+        // Validate email data before sending
+        if (!customerEmail || !customerName) {
+            throw new Error('Customer email or name is missing from data');
+        }
+        if (!tradespersonName || !tradespersonEmail) {
+            throw new Error('Tradesperson name or email is missing from data');
+        }
+        if (!totalQuote || totalQuote === 0) {
+            throw new Error('Total quote amount is missing or zero');
+        }
+        
+        console.log('✅ Email data validation passed:');
+        console.log('  - Customer:', customerName, customerEmail);
+        console.log('  - Tradesperson:', tradespersonName, tradespersonEmail);
+        console.log('  - Total:', totalQuote);
+        
         const acceptLink = generateCustomerDecisionLink('accept', quoteId);
         const declineLink = generateCustomerDecisionLink('decline', quoteId);
         const viewLink = generateQuoteViewLink(quoteId);
 
-        const customerEmail = {
-            to: leadData.CustomerEmail,
+        const customerEmailObj = {
+            to: customerEmail,
             cc: process.env.ADMIN_EMAIL, // Always CC admin for recordkeeping
             subject: `🎯 Your Quote for ${leadData.ServiceType} - $${totalQuote.toFixed(2)} is Ready!`,
             html: `
@@ -280,16 +329,16 @@ export default async function handler(req, res) {
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                                     <div>
                                         <h4 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">👤 Customer Information</h4>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${leadData.CustomerName}</p>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${leadData.CustomerEmail}</p>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Phone:</strong> ${leadData.CustomerPhone}</p>
+                                        <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${customerName}</p>
+                                        <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${customerEmail}</p>
+                                        <p style="margin: 5px 0; color: #495057;"><strong>Phone:</strong> ${customerPhone}</p>
                                         <p style="margin: 5px 0; color: #495057;"><strong>Location:</strong> ${leadData.Area}, ${leadData.Suburb}</p>
                                     </div>
                                     <div>
                                         <h4 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">👷‍♂️ Tradesperson Information</h4>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${quoteData.TradespersonName}</p>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${quoteData.TradespersonEmail}</p>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Phone:</strong> ${quoteData.TradespersonPhone}</p>
+                                        <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${tradespersonName}</p>
+                                        <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${tradespersonEmail}</p>
+                                        <p style="margin: 5px 0; color: #495057;"><strong>Phone:</strong> ${tradespersonPhone}</p>
                                         <p style="margin: 5px 0; color: #495057;"><strong>License:</strong> Licensed Tradesperson</p>
                                     </div>
                                 </div>
@@ -354,14 +403,14 @@ export default async function handler(req, res) {
             ]
         };
 
-        await sendEmail(customerEmail);
+        await sendEmail(customerEmailObj);
         console.log('✅ Customer email sent successfully with PDF attachment');
 
         // 7. SEND ADMIN CONFIRMATION EMAIL
         console.log('📧 Sending admin confirmation email...');
         const adminEmail = {
             to: process.env.ADMIN_EMAIL,
-            subject: `✅ Quote Approved: ${leadData.ServiceType} for ${leadData.CustomerName} - $${totalQuote.toFixed(2)}`,
+            subject: `✅ Quote Approved: ${leadData.ServiceType} for ${customerName} - $${totalQuote.toFixed(2)}`,
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
                     <div style="background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
@@ -382,16 +431,16 @@ export default async function handler(req, res) {
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                                     <div>
                                         <h4 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">👤 Customer Details</h4>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${leadData.CustomerName}</p>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${leadData.CustomerEmail}</p>
+                                        <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${customerName}</p>
+                                        <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${customerEmail}</p>
                                         <p style="margin: 5px 0; color: #495057;"><strong>Service:</strong> ${leadData.ServiceType}</p>
                                         <p style="margin: 5px 0; color: #495057;"><strong>Location:</strong> ${leadData.Area}, ${leadData.Suburb}</p>
                                     </div>
                                     <div>
                                         <h4 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">👷‍♂️ Tradesperson Details</h4>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${quoteData.TradespersonName}</p>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${quoteData.TradespersonEmail}</p>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Phone:</strong> ${quoteData.TradespersonPhone}</p>
+                                        <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${tradespersonName}</p>
+                                        <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${tradespersonEmail}</p>
+                                        <p style="margin: 5px 0; color: #495057;"><strong>Phone:</strong> ${tradespersonPhone}</p>
                                         <p style="margin: 5px 0; color: #495057;"><strong>Quote Total:</strong> <span style="color: #28a745; font-weight: bold;">$${totalQuote.toFixed(2)}</span></p>
                                     </div>
                                 </div>
@@ -444,8 +493,8 @@ export default async function handler(req, res) {
 
         console.log('🎉 ADMIN APPROVAL COMPLETED SUCCESSFULLY!');
         console.log('  - Quote ID:', quoteId);
-        console.log('  - Customer:', leadData.CustomerName, leadData.CustomerEmail);
-        console.log('  - Tradesperson:', quoteData.TradespersonName, quoteData.TradespersonEmail);
+        console.log('  - Customer:', customerName, customerEmail);
+        console.log('  - Tradesperson:', tradespersonName, tradespersonEmail);
         console.log('  - Total:', totalQuote);
         console.log('  - PDF generated and attached');
         console.log('  - All emails sent');

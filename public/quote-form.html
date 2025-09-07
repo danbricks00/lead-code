@@ -1244,6 +1244,10 @@
                 
                 // Fetch lead data from API
                 loadLeadData(leadId);
+            } else if (quoteId) {
+                // If quoteId is provided instead of leadId, we need to look up the leadId first
+                console.log('🔍 QuoteId provided, looking up leadId...');
+                loadLeadDataFromQuoteId(quoteId);
             }
             
             // Fallback: Populate from URL parameters if available
@@ -1264,6 +1268,64 @@
              calculateTotals(); // Initial calculation
         });
         
+        // Function to show error messages to user
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = `
+                background: #f8d7da;
+                color: #721c24;
+                padding: 15px;
+                border-radius: 8px;
+                margin: 20px 0;
+                border: 1px solid #f5c6cb;
+                text-align: center;
+                font-weight: bold;
+            `;
+            errorDiv.innerHTML = `❌ ${message}`;
+            
+            // Insert at the top of the form
+            const form = document.getElementById('quoteForm');
+            if (form) {
+                form.insertBefore(errorDiv, form.firstChild);
+            }
+        }
+
+        // Function to load lead data from quoteId (looks up leadId first)
+        async function loadLeadDataFromQuoteId(quoteId) {
+            try {
+                console.log('🔍 Looking up leadId for quoteId:', quoteId);
+                
+                const response = await fetch(`/api/get-lead-details?quoteId=${encodeURIComponent(quoteId)}`);
+                const data = await response.json();
+                
+                console.log('📥 Lead details response:', data);
+                
+                if (data.success && data.data) {
+                    const leadData = data.data;
+                    
+                    // Extract leadId from the response
+                    const leadId = leadData.Lead || leadData.leadId;
+                    if (leadId) {
+                        console.log('✅ Found leadId:', leadId);
+                        document.getElementById('leadId').value = leadId;
+                        document.getElementById('leadIdDisplay').textContent = leadId;
+                        
+                        // Now load the full lead data using the leadId
+                        await loadLeadData(leadId);
+                    } else {
+                        console.error('❌ No leadId found in response');
+                        showError('Could not find lead information for this quote.');
+                    }
+                } else {
+                    console.error('❌ Failed to get lead details:', data.error);
+                    showError(data.error || 'Could not load lead information.');
+                }
+            } catch (error) {
+                console.error('❌ Error loading lead data from quoteId:', error);
+                showError('Failed to load lead information.');
+            }
+        }
+
         // Function to load lead data from API
         async function loadLeadData(leadId) {
             try {

@@ -102,7 +102,14 @@ async function handleLeadCreate(req, res) {
       console.log("✅ Google Sheets client created, preparing data...");
 
       const leadRow = [
-        new Date().toISOString(), // Timestamp
+        new Date().toLocaleString('en-NZ', {
+          timeZone: 'Pacific/Auckland',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }), // Timestamp
         leadId, // Lead ID
         customerName, // Customer Name
         customerEmail, // Email
@@ -325,7 +332,14 @@ async function handleSubmitQuote(req, res) {
       );
 
       const updatedRow = [
-        new Date().toISOString(),
+        new Date().toLocaleString('en-NZ', {
+          timeZone: 'Pacific/Auckland',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
         leadId, customerName, serviceType, quoteAmount, projectDetails,
         'Pending', timeline, '', '', budget, '', tradesmanName,
         tradesmanEmail, tradesmanPhone, projectSize, breakdown, notes, companyName
@@ -359,7 +373,14 @@ async function handleSubmitQuote(req, res) {
     const sheetId = getSpreadsheetId();
     
     const quoteRow = [
-      new Date().toISOString(), // Timestamp
+      new Date().toLocaleString('en-NZ', {
+        timeZone: 'Pacific/Auckland',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }), // Timestamp
       leadId, // LeadId
       customerName, // CustomerName
       serviceType, // Service
@@ -551,7 +572,14 @@ async function handleDecision(req, res) {
     const sheets = getGoogleSheetsClient();
     const sheetId = getSpreadsheetId();
     const status = finalAction === 'accept' ? 'ACCEPTED' : 'DECLINED';
-    const values = [new Date().toISOString(), quoteId, leadId, status, 'customer'];
+    const values = [new Date().toLocaleString('en-NZ', {
+      timeZone: 'Pacific/Auckland',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }), quoteId, leadId, status, 'customer'];
     
     await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,

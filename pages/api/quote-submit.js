@@ -220,7 +220,14 @@ export default async function handler(req, res) {
 
         const quoteData = {
             quoteId,
-            quoteDate: new Date().toISOString(),
+            quoteDate: new Date().toLocaleString('en-NZ', {
+              timeZone: 'Pacific/Auckland',
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            }),
             validUntil: quoteDetails.validUntil,
             customerName: customerName,
             customerEmail: customerEmail,

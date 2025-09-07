@@ -71,14 +71,28 @@ export default async function handler(req, res) {
       budget || "",                              // Budget
       timeline || "",                            // Timelline
       specificDetails || projectDetails || "",   // Specfic Details
-      new Date().toISOString(),                  // Time
+      new Date().toLocaleString('en-NZ', {
+        timeZone: 'Pacific/Auckland',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }),                                        // Time
       "",                                        // (Column M - empty)
       "New Lead",                                // status
     ]);
 
     console.log("Appending data to 'Quotes' tab with exact format...");
     await appendRowToSheet(sheets, "Quotes", [
-        new Date().toISOString(),   // TimeStamp
+        new Date().toLocaleString('en-NZ', {
+          timeZone: 'Pacific/Auckland',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),                        // TimeStamp
         quoteId,                    // QuoteID
         leadId,                     // LeadID
         "",                         // TradePersonName

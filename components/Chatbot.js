@@ -304,7 +304,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
             nextStep('ask_room_dimensions', 1200, { roomName: input });
             // Show help message after a short delay
             setTimeout(() => {
-                addMessage(questions.ask_room_dimensions_help, 'bot');
+                addMessage(`Dimensions options:\n• Square meters: 25 (for 25m²)\n• Dimensions: 10 x 5 (for 50m²)\n• Metric dimensions: 7m x 7m (for 49m²)\n• Decimals welcome: 7.5 x 6.2, 25.01 x 1.02 (for precise measurements)\n• Maximum size: 50m x 50m (1000m²)\n• Only use: numbers, decimal points, 'x', 'm', and spaces`);
             }, 1500);
             break;
         case 'ask_room_dimensions':

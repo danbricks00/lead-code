@@ -1,5 +1,6 @@
 import { getGoogleSheetsClient, getSpreadsheetId } from "../../../lib/googleSheets.js";
 import { sendEmail } from '../../../lib/emailHelper';
+import { generateQuotePDF } from '../../../lib/pdfGenerator.js';
 import crypto from "crypto";
 
 function verifyToken(id, ts) {
@@ -71,9 +72,99 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
         throw new Error('Tradesperson email not found');
     }
 
+    // Build finalQuoteData for PDF generation (same structure as quote-submit.js)
+    const finalQuoteData = {
+        quoteId: quoteData['QuoteID'] || quoteData['Quote Id'] || quoteData['quoteId'],
+        quoteDate: new Date().toISOString(),
+        validUntil: quoteData['ValidUnitl'] || quoteData['Valid Until'] || quoteData['validUntil'] || 'N/A',
+        customerName: customerName,
+        customerEmail: customerEmail,
+        customerPhone: quoteData['CustomerPhone'] || quoteData['Customer Phone'] || quoteData['customerPhone'] || '',
+        customerAddress: `${leadData['Area'] || ''} ${leadData['Suburb'] || ''}`.trim(),
+        serviceType: quoteData['ServiceType'] || quoteData['Service Type'] || quoteData['serviceType'] || '',
+        tradespersonName: tradespersonName || 'Professional Tradesperson',
+        tradespersonEmail: tradespersonEmail || 'contact@kiwitrade.co.nz',
+        tradespersonPhone: quoteData['TradePersonPhone'] || quoteData['Tradesperson Phone'] || quoteData['tradespersonPhone'] || 'Contact via Kiwi Trade',
+        tradespersonLicense: 'Licensed Tradesperson',
+        rooms: [],
+        breakdown: {
+            labourRate: parseFloat(quoteData['LabourRate'] || quoteData['Labour Rate'] || 0),
+            labourHours: parseFloat(quoteData['LabourHours'] || quoteData['Labour Hours'] || 0),
+            labourTotal: parseFloat(quoteData['LabourTotal'] || quoteData['Labour Total'] || 0),
+            materialsCost: parseFloat(quoteData['MaterialsCost'] || quoteData['Materials Cost'] || 0),
+            materialsQuantity: parseFloat(quoteData['MaterialsQuantity'] || quoteData['Materials Quantity'] || 0),
+            materialsTotal: parseFloat(quoteData['MaterialsTotal'] || quoteData['Materials Total'] || 0),
+            travelCost: parseFloat(quoteData['TravelCost'] || quoteData['Travel Cost'] || 0),
+            travelDistance: parseFloat(quoteData['TravelDistance'] || quoteData['Travel Distance'] || 0),
+            travelTotal: parseFloat(quoteData['TravelTotal'] || quoteData['Travel Total'] || 0),
+            installationCost: parseFloat(quoteData['InstallationCost'] || quoteData['Installation Cost'] || 0),
+            totalSqm: 0
+        },
+        totals: {
+            labour: parseFloat(quoteData['LabourTotal'] || quoteData['Labour Total'] || 0),
+            materials: parseFloat(quoteData['MaterialsTotal'] || quoteData['Materials Total'] || 0),
+            travel: parseFloat(quoteData['TravelTotal'] || quoteData['Travel Total'] || 0),
+            installation: parseFloat(quoteData['InstallationCost'] || quoteData['Installation Cost'] || 0),
+            subtotal: parseFloat(quoteData['Subtotal'] || quoteData['subtotal'] || 0),
+            gst: parseFloat(quoteData['GST'] || quoteData['gst'] || 0),
+            final: parseFloat(quoteData['TotalQuote'] || quoteData['Total Quote'] || quoteData['totalQuote'] || 0)
+        }
+    };
+
+    // Parse rooms data if available
+    try {
+        const roomsData = quoteData['Rooms'] || leadData['Rooms'];
+        if (roomsData) {
+            const parsedRooms = JSON.parse(roomsData);
+            if (Array.isArray(parsedRooms)) {
+                finalQuoteData.rooms = parsedRooms;
+                finalQuoteData.breakdown.totalSqm = parsedRooms.reduce((total, room) => total + (parseFloat(room.sqm) || 0), 0);
+            }
+        }
+    } catch (error) {
+        console.log('⚠️ Could not parse rooms data:', error.message);
+    }
+
+    console.log('📊 Final quote data for PDF generation:', JSON.stringify(finalQuoteData, null, 2));
+
+    // Generate PDF using the same function as admin/tradesman
+    let pdfBuffer;
+    try {
+        console.log('🔄 Generating PDF for customer...');
+        pdfBuffer = await generateQuotePDF(finalQuoteData);
+        console.log('✅ PDF generated successfully for customer');
+    } catch (error) {
+        console.error('❌ PDF generation failed:', error);
+        throw new Error('Failed to generate PDF');
+    }
+
+    // Format currency for display
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-NZ', {
+            style: 'currency',
+            currency: 'NZD'
+        }).format(amount || 0);
+    };
+
+    // Format date for display
+    const formatDate = (dateString) => {
+        if (!dateString || dateString === 'N/A') return 'N/A';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-NZ', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+        } catch (error) {
+            return dateString;
+        }
+    };
+
     const customerMail = {
         to: customerEmail,
-        subject: `🎉 Quote Accepted! Your Project Journey Begins`,
+        cc: process.env.ADMIN_EMAIL,
+        subject: `🎉 Quote Accepted! Your ${finalQuoteData.serviceType} Project Journey Begins`,
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
               <div style="background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
@@ -84,7 +175,29 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
                     <div style="font-size: 48px; color: white;">🏆</div>
                   </div>
                   <h1 style="color: #28a745; margin: 0; font-size: 32px; font-weight: bold;">Project Approved!</h1>
-                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">Congratulations ${customerName}, your quote has been accepted!</p>
+                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">Congratulations ${finalQuoteData.customerName}, your ${finalQuoteData.serviceType} quote has been accepted!</p>
+                </div>
+
+                <!-- Quote Summary Card -->
+                <div style="background: #e8f4f8; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #b8daff;">
+                  <h3 style="color: #0066cc; margin: 0 0 20px 0; font-size: 20px;">📋 Your Approved Quote Summary</h3>
+                  <div style="background: white; padding: 20px; border-radius: 8px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                      <div>
+                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Service:</strong> ${finalQuoteData.serviceType}</p>
+                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Budget:</strong> ${leadData['Budget'] || 'Not specified'}</p>
+                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Timeline:</strong> ${leadData['Timelline'] || leadData['Timeline'] || 'Not specified'}</p>
+                      </div>
+                      <div>
+                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Tradesperson:</strong> ${finalQuoteData.tradespersonName}</p>
+                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Valid Until:</strong> ${formatDate(finalQuoteData.validUntil)}</p>
+                        <p style="margin: 8px 0; color: #28a745; font-size: 18px; font-weight: bold;"><strong>Total Quote:</strong> ${formatCurrency(finalQuoteData.totals.final)}</p>
+                      </div>
+                    </div>
+                    <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                      <p style="color: #6c757d; font-size: 14px; margin: 0;">📎 Your detailed quote PDF is attached to this email</p>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Progress Bar -->
@@ -98,56 +211,6 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
                   </div>
                 </div>
 
-                <!-- Gamified Journey Checklist -->
-                <div style="margin: 30px 0;">
-                  <h3 style="color: #495057; margin: 0 0 20px 0; font-size: 20px;">🎯 Your Project Journey</h3>
-                  
-                  <!-- Step 1: Lead Submitted -->
-                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
-                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);">✓</div>
-                    <div>
-                      <strong style="color: #155724; font-size: 16px;">Lead Submitted</strong>
-                      <p style="margin: 5px 0 0 0; color: #155724;">Your project requirements were successfully received and processed.</p>
-                    </div>
-                  </div>
-                  
-                  <!-- Step 2: Quote Prepared -->
-                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
-                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);">✓</div>
-                    <div>
-                      <strong style="color: #155724; font-size: 16px;">Professional Quote Prepared</strong>
-                      <p style="margin: 5px 0 0 0; color: #155724;">Our expert tradesperson created a detailed quote just for you.</p>
-                    </div>
-                  </div>
-                  
-                  <!-- Step 3: Decision Made -->
-                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745; position: relative; overflow: hidden;">
-                    <div style="position: absolute; top: 0; right: 0; background: #ffc107; color: #856404; padding: 5px 10px; font-size: 12px; font-weight: bold; border-bottom-left-radius: 8px;">JUST COMPLETED!</div>
-                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3); animation: pulse 2s infinite;">✓</div>
-                    <div>
-                      <strong style="color: #155724; font-size: 16px;">Quote Accepted! 🎉</strong>
-                      <p style="margin: 5px 0 0 0; color: #155724;">You've made your decision - the project is approved and ready to begin!</p>
-                    </div>
-                  </div>
-                  
-                  <!-- Step 4: Project Execution -->
-                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
-                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #ffc107; color: #856404; box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);">🔄</div>
-                    <div>
-                      <strong style="color: #856404; font-size: 16px;">Project Execution - Starting Soon!</strong>
-                      <p style="margin: 5px 0 0 0; color: #856404;">Your tradesperson will contact you within 24 hours to schedule the work.</p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Achievement Unlocked -->
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 10px; margin: 30px 0; text-align: center; position: relative; overflow: hidden;">
-                  <div style="position: absolute; top: -10px; right: -10px; background: rgba(255,255,255,0.2); width: 60px; height: 60px; border-radius: 50%;"></div>
-                  <div style="position: absolute; bottom: -15px; left: -15px; background: rgba(255,255,255,0.1); width: 80px; height: 80px; border-radius: 50%;"></div>
-                  <h3 style="margin: 0 0 10px 0; font-size: 22px;">🏅 Achievement Unlocked!</h3>
-                  <p style="margin: 0; font-size: 16px; opacity: 0.9;">"Decisive Customer" - Made a quick and confident project decision!</p>
-                </div>
-
                 <!-- What Happens Next -->
                 <div style="background: #e8f4f8; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #b8daff;">
                   <h3 style="color: #0066cc; margin: 0 0 15px 0; font-size: 20px;">📞 What Happens Next?</h3>
@@ -155,14 +218,14 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
                     <div style="background: #0066cc; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">1</div>
                     <div>
                       <strong style="color: #0066cc;">Tradesperson Contact (Within 24 hours)</strong>
-                      <p style="margin: 5px 0 0 0; color: #495057;">${tradespersonName} will call you to discuss project details and scheduling.</p>
+                      <p style="margin: 5px 0 0 0; color: #495057;">${finalQuoteData.tradespersonName} will call you to discuss project details and scheduling.</p>
                     </div>
                   </div>
                   <div style="display: flex; align-items: flex-start; margin: 15px 0;">
                     <div style="background: #0066cc; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">2</div>
                     <div>
                       <strong style="color: #0066cc;">Project Planning Session</strong>
-                      <p style="margin: 5px 0 0 0; color: #495057;">Review final details, materials, and timeline for your underfloor heating installation.</p>
+                      <p style="margin: 5px 0 0 0; color: #495057;">Review final details, materials, and timeline for your ${finalQuoteData.serviceType} installation.</p>
                     </div>
                   </div>
                   <div style="display: flex; align-items: flex-start; margin: 15px 0;">
@@ -177,10 +240,11 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
                 <!-- Quick Contact Card -->
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #dee2e6; margin: 30px 0;">
                   <h4 style="color: #495057; margin: 0 0 15px 0;">👷‍♂️ Your Assigned Tradesperson</h4>
-                  <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${tradespersonName}</p>
-                  <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${tradespersonEmail}</p>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${finalQuoteData.tradespersonName}</p>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${finalQuoteData.tradespersonEmail}</p>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Phone:</strong> ${finalQuoteData.tradespersonPhone}</p>
                   <p style="margin: 15px 0 0 0;">
-                    <a href="mailto:${tradespersonEmail}" style="display: inline-block; background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">📧 Send Message</a>
+                    <a href="mailto:${finalQuoteData.tradespersonEmail}" style="display: inline-block; background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">📧 Send Message</a>
                   </p>
                 </div>
 
@@ -196,15 +260,14 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
 
               </div>
             </div>
-
-            <style>
-              @keyframes pulse {
-                0% { transform: scale(1); }
-                50% { transform: scale(1.1); }
-                100% { transform: scale(1); }
-              }
-            </style>
         `,
+        attachments: [
+            {
+                filename: `Quote-${finalQuoteData.quoteId}.pdf`,
+                content: pdfBuffer,
+                contentType: 'application/pdf'
+            }
+        ]
     };
 
     const tradespersonMail = {
@@ -677,7 +740,13 @@ export default async function handler(req, res) {
         });
 
         // --- Send Emails ---
-        await sendNotificationEmails(quoteDataForEmail, leadData);
+        try {
+            await sendNotificationEmails(quoteDataForEmail, leadData);
+            console.log('✅ All notification emails sent successfully');
+        } catch (emailError) {
+            console.error('❌ Error sending notification emails:', emailError);
+            // Still return success page even if emails fail
+        }
         
         // Return confirmation HTML page
         const confirmationPage = `

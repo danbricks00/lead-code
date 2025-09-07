@@ -366,12 +366,36 @@ export default async function handler(req, res) {
         });
       }
       
-      if (quoteData.tradesmanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(quoteData.tradesmanEmail)) {
-        console.log('❌ Email pattern validation failed:', quoteData.tradesmanEmail);
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid email format. Please enter a valid email address.'
-        });
+      if (quoteData.tradesmanEmail) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(quoteData.tradesmanEmail)) {
+          console.log('❌ Email pattern validation failed:', quoteData.tradesmanEmail);
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid email format. Please enter a valid email address.'
+          });
+        }
+        
+        // Check for invalid domain patterns (like .x.x for Outlook)
+        const domain = quoteData.tradesmanEmail.split('@')[1];
+        const invalidDomainPatterns = [
+            /\.x\.x$/i,           // .x.x pattern
+            /\.x\.\w+$/i,         // .x.anything pattern
+            /\.\w+\.x$/i,         // .anything.x pattern
+            /\.x$/i,              // .x pattern
+            /\.\d+\.\d+$/i,       // .number.number pattern
+            /\.\d+$/i,            // .number pattern
+        ];
+        
+        for (const pattern of invalidDomainPatterns) {
+            if (pattern.test(domain)) {
+                console.log(`❌ Invalid domain pattern detected: ${domain}`);
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid email domain format'
+                });
+            }
+        }
       }
       
       if (!quoteData.tradesmanName || !quoteData.tradesmanEmail || !quoteData.totalAmount) {

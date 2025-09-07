@@ -23,7 +23,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // Validate email format
+    // Enhanced email validation with domain checking
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       console.log("❌ Contact form validation failed - invalid email format");
@@ -31,6 +31,27 @@ export default async function handler(req, res) {
         success: false,
         error: "Invalid email format"
       });
+    }
+    
+    // Check for invalid domain patterns (like .x.x for Outlook)
+    const domain = email.split('@')[1];
+    const invalidDomainPatterns = [
+        /\.x\.x$/i,           // .x.x pattern
+        /\.x\.\w+$/i,         // .x.anything pattern
+        /\.\w+\.x$/i,         // .anything.x pattern
+        /\.x$/i,              // .x pattern
+        /\.\d+\.\d+$/i,       // .number.number pattern
+        /\.\d+$/i,            // .number pattern
+    ];
+    
+    for (const pattern of invalidDomainPatterns) {
+        if (pattern.test(domain)) {
+            console.log(`❌ Invalid domain pattern detected: ${domain}`);
+            return res.status(400).json({
+                success: false,
+                error: "Invalid email domain format"
+            });
+        }
     }
 
     console.log("📧 Contact form submission received:", { name, email });

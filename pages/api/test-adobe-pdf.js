@@ -81,7 +81,8 @@ export default async function handler(req, res) {
                 environment: {
                     hasClientId: !!process.env.ADOBE_PDF_CLIENT_ID,
                     hasClientSecret: !!process.env.ADOBE_PDF_CLIENT_SECRET,
-                    hasOrgId: !!process.env.ADOBE_PDF_ORGANIZATION_ID
+                    hasOrgId: !!process.env.ADOBE_PDF_ORGANIZATION_ID,
+                    clientIdPrefix: process.env.ADOBE_PDF_CLIENT_ID ? process.env.ADOBE_PDF_CLIENT_ID.substring(0, 10) + '...' : 'Not set'
                 }
             }
         });

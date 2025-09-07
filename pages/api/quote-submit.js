@@ -182,26 +182,6 @@ export default async function handler(req, res) {
     const timeline = leadDetails.Timelline || leadDetails.Timeline || leadDetails.timeline || '';
     const budget = leadDetails.Budget || leadDetails.budget || '';
     
-    // Create breakdown and totals objects for schema
-    const breakdown = {
-        labourRate: labourRate,
-        labourHours: labourHours,
-        labourTotal: labourRate * labourHours,
-        materialsCost: materialsCost,
-        materialsQuantity: materialsQuantity,
-        materialsTotal: materialsCost * materialsQuantity,
-        travelCost: travelCost,
-        travelDistance: travelDistance,
-        travelTotal: travelCost * travelDistance,
-        installationCost: installationCost
-    };
-    
-    const totals = {
-        subtotal: subtotal,
-        gst: gst,
-        final: totalQuote
-    };
-    
     console.log('📊 Quote submission data:', {
       quoteId,
       customerName,
@@ -225,6 +205,26 @@ export default async function handler(req, res) {
     const subtotal = parseFloat(quoteDetails.subtotal) || 0;
     const gst = parseFloat(quoteDetails.gst) || 0;
     const totalQuote = parseFloat(quoteDetails.totalQuote) || 0;
+
+    // Create breakdown and totals objects for schema (after variables are defined)
+    const breakdown = {
+        labourRate: labourRate,
+        labourHours: labourHours,
+        labourTotal: labourRate * labourHours,
+        materialsCost: materialsCost,
+        materialsQuantity: materialsQuantity,
+        materialsTotal: materialsCost * materialsQuantity,
+        travelCost: travelCost,
+        travelDistance: travelDistance,
+        travelTotal: travelCost * travelDistance,
+        installationCost: installationCost
+    };
+    
+    const totals = {
+        subtotal: subtotal,
+        gst: gst,
+        final: totalQuote
+    };
 
     // Generate PDF using our mobile-optimized system with HTML backup
     let pdfBuffer = null;

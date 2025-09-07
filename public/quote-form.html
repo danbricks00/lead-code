@@ -1140,6 +1140,9 @@
                 loadLeadData(leadId);
             }
             
+            // Fallback: Populate from URL parameters if available
+            populateFromUrlParams(urlParams);
+            
             // Populate token from URL
             const token = urlParams.get('token') || '';
             const tokenEl = document.getElementById('token');
@@ -1227,6 +1230,61 @@
                 console.error('❌ Error loading lead data:', error);
                 alert('Error loading lead data. Please try again.');
             }
+        }
+        
+        // Fallback function to populate form from URL parameters
+        function populateFromUrlParams(urlParams) {
+            console.log('🔄 Populating form from URL parameters as fallback...');
+            
+            // Get all URL parameters
+            const customerName = urlParams.get('customerName');
+            const customerEmail = urlParams.get('customerEmail');
+            const customerPhone = urlParams.get('customerPhone');
+            const serviceType = urlParams.get('serviceType');
+            const projectDetails = urlParams.get('projectDetails');
+            const projectSize = urlParams.get('projectSize');
+            const budget = urlParams.get('budget');
+            const timeline = urlParams.get('timeline');
+            const location = urlParams.get('location');
+            
+            // Populate form fields if they exist in URL and are not already filled
+            if (customerName && !document.getElementById('customerName').value) {
+                document.getElementById('customerName').value = customerName;
+            }
+            if (customerEmail && !document.getElementById('customerEmail').value) {
+                document.getElementById('customerEmail').value = customerEmail;
+            }
+            if (customerPhone && !document.getElementById('customerPhone').value) {
+                document.getElementById('customerPhone').value = customerPhone;
+            }
+            if (serviceType && !document.getElementById('serviceType').value) {
+                document.getElementById('serviceType').value = serviceType;
+            }
+            if (projectDetails && !document.getElementById('projectDetails').value) {
+                document.getElementById('projectDetails').value = projectDetails;
+            }
+            if (projectSize && !document.getElementById('projectSize').value) {
+                document.getElementById('projectSize').value = projectSize;
+            }
+            if (budget && !document.getElementById('budget').value) {
+                document.getElementById('budget').value = budget;
+            }
+            if (timeline && !document.getElementById('timeline').value) {
+                document.getElementById('timeline').value = timeline;
+            }
+            if (location && !document.getElementById('location').value) {
+                document.getElementById('location').value = location;
+            }
+            
+            // Update display fields if we have data
+            if (customerName || serviceType || location) {
+                document.getElementById('customerInfo').style.display = 'block';
+                if (customerName) document.getElementById('customerNameDisplay').textContent = customerName;
+                if (serviceType) document.getElementById('serviceTypeDisplay').textContent = serviceType;
+                if (location) document.getElementById('locationDisplay').textContent = location;
+            }
+            
+            console.log('✅ URL parameter fallback completed');
         }
         
         // IMMEDIATE CHECK: Block entire form if tradesman already submitted quote for this lead

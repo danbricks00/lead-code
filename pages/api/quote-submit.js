@@ -320,44 +320,66 @@ export default async function handler(req, res) {
         });
         
         // Update the existing quote row with your EXACT format
+        // Ensure all values are properly formatted for Google Sheets
         const updatedRow = [
-            new Date().toISOString(),           // TimeStamp
-            quoteId,                            // QuoteID
-            leadDetails.Lead || leadDetails.LeadId, // LeadID
-            tradespersonName,                   // TradePersonName
-            tradespersonEmail,                  // TradePersonEmail
-            tradespersonPhone,                  // TradePersonPhone
-            "Quote Submitted",                  // CustomerStatus
-            "Quote Submitted",                  // TradePersonStatus
-            "Pending Review",                   // AdminPersonStatus
-            quoteDetails.labourRate,            // LabourRate
-            quoteDetails.labourHours,           // LabourHours
-            quoteDetails.labourRate * quoteDetails.labourHours, // LabourTotal
-            quoteDetails.materialsCost,         // MaterialsCost
-            quoteDetails.materialsQuantity,     // MaterialsQuantity
-            quoteDetails.materialsCost * quoteDetails.materialsQuantity, // MaterialsTotal
-            quoteDetails.travelCost,            // TravelCost
-            quoteDetails.travelDistance,        // TravelDistance
-            quoteDetails.travelCost * quoteDetails.travelDistance, // TravelTotal
-            quoteDetails.installationCost,      // InstallationCost
-            quoteDetails.subtotal,              // Subtotal
-            quoteDetails.gst,                   // GST
-            quoteDetails.totalQuote,            // TotalQuote
-            quoteDetails.notes || '',           // Notes
-            quoteDetails.validUntil,            // ValidUntil
-            'false',                            // ResubmissionAllowed
-            '',                                 // Decison
-            '',                                 // DecisonTimeStamp
-            customerName,                       // CustomerName
-            customerEmail,                      // CustomerEmail
-            customerPhone,                      // CustomerPhone
-            serviceType,                        // ServiceType
-            customerAddress,                    // Location
-            leadDetails.Timelline || leadDetails.Timeline || '', // Timeline
-            leadDetails.Budget || '',           // Budget
-            JSON.stringify(roomsWithDetails),   // Rooms
-            JSON.stringify(quoteDataForPdf.breakdown), // BreakDown
+            new Date().toISOString(),           // TimeStamp (A)
+            quoteId,                            // QuoteID (B)
+            leadDetails.Lead || leadDetails.LeadId, // LeadID (C)
+            tradespersonName || '',             // TradePersonName (D)
+            tradespersonEmail || '',            // TradePersonEmail (E)
+            tradespersonPhone || '',            // TradePersonPhone (F)
+            "Quote Submitted",                  // CustomerStatus (G)
+            "Quote Submitted",                  // TradePersonStatus (H)
+            "Pending Review",                   // AdminPersonStatus (I)
+            parseFloat(quoteDetails.labourRate) || 0,            // LabourRate (J)
+            parseFloat(quoteDetails.labourHours) || 0,           // LabourHours (K)
+            (parseFloat(quoteDetails.labourRate) || 0) * (parseFloat(quoteDetails.labourHours) || 0), // LabourTotal (L)
+            parseFloat(quoteDetails.materialsCost) || 0,         // MaterialsCost (M)
+            parseFloat(quoteDetails.materialsQuantity) || 0,     // MaterialsQuantity (N)
+            (parseFloat(quoteDetails.materialsCost) || 0) * (parseFloat(quoteDetails.materialsQuantity) || 0), // MaterialsTotal (O)
+            parseFloat(quoteDetails.travelCost) || 0,            // TravelCost (P)
+            parseFloat(quoteDetails.travelDistance) || 0,        // TravelDistance (Q)
+            (parseFloat(quoteDetails.travelCost) || 0) * (parseFloat(quoteDetails.travelDistance) || 0), // TravelTotal (R)
+            parseFloat(quoteDetails.installationCost) || 0,      // InstallationCost (S)
+            parseFloat(quoteDetails.subtotal) || 0,              // Subtotal (T)
+            parseFloat(quoteDetails.gst) || 0,                   // GST (U)
+            parseFloat(quoteDetails.totalQuote) || 0,            // TotalQuote (V)
+            quoteDetails.notes || '',           // Notes (W)
+            quoteDetails.validUntil || '',      // ValidUntil (X)
+            'false',                            // ResubmissionAllowed (Y)
+            '',                                 // Decison (Z)
+            '',                                 // DecisonTimeStamp (AA)
+            customerName || '',                 // CustomerName (AB)
+            customerEmail || '',                // CustomerEmail (AC)
+            customerPhone || '',                // CustomerPhone (AD)
+            serviceType || '',                  // ServiceType (AE)
+            customerAddress || '',              // Location (AF)
+            leadDetails.Timelline || leadDetails.Timeline || '', // Timeline (AG)
+            leadDetails.Budget || '',           // Budget (AH)
+            JSON.stringify(roomsWithDetails),   // Rooms (AI)
+            JSON.stringify(quoteDataForPdf.breakdown), // BreakDown (AJ)
         ];
+        
+        console.log('📊 Google Sheets Update - Tradesperson Data:', {
+            tradespersonName: tradespersonName,
+            tradespersonEmail: tradespersonEmail,
+            tradespersonPhone: tradespersonPhone
+        });
+        
+        console.log('📊 Google Sheets Update - Financial Data:', {
+            labourRate: quoteDetails.labourRate,
+            labourHours: quoteDetails.labourHours,
+            materialsCost: quoteDetails.materialsCost,
+            materialsQuantity: quoteDetails.materialsQuantity,
+            travelCost: quoteDetails.travelCost,
+            travelDistance: quoteDetails.travelDistance,
+            installationCost: quoteDetails.installationCost,
+            subtotal: quoteDetails.subtotal,
+            gst: quoteDetails.gst,
+            totalQuote: quoteDetails.totalQuote
+        });
+        
+        console.log('📊 Google Sheets Update - Full Row Data:', updatedRow);
         
         // Update the specific row
         await sheets.spreadsheets.values.update({

@@ -343,7 +343,7 @@
                     </div>
                     <div class="breakdown-col">
                         <label for="materialSQM">Total SQM:</label>
-                        <input type="number" id="materialSQM" name="materialSQM" step="0.1" min="0" placeholder="e.g., 25.5">
+                        <input type="number" id="materialSQM" name="materialSQM" step="0.1" min="0" placeholder="e.g., 25.5" readonly style="background-color: #f8f9fa; border-color: #6c757d; color: #495057; font-weight: 600;">
                         <small style="color: #666;">Auto-calculated from room areas</small>
                     </div>
                     <div class="breakdown-col">
@@ -470,8 +470,8 @@
                 });
             }
             
-            // Numeric field validation
-            const numericFields = ['labourRate', 'labourHours', 'materialRate', 'materialSQM', 'installationAmount', 'travelAmount'];
+            // Numeric field validation (excluding materialSQM as it's auto-calculated)
+            const numericFields = ['labourRate', 'labourHours', 'materialRate', 'installationAmount', 'travelAmount'];
             numericFields.forEach(fieldId => {
                 const field = document.getElementById(fieldId);
                 if (field) {
@@ -1111,7 +1111,6 @@
                 'labourRate',
                 'labourHours',
                 'materialRate',
-                'materialSQM',
                 'installationAmount',
                 'travelAmount'
             ];
@@ -1471,6 +1470,13 @@
             // Refresh the rooms display
             populateRoomDetails(rooms);
             
+            // Update the material SQM field with the new total
+            const totalSqm = rooms.reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0);
+            document.getElementById('materialSQM').value = totalSqm.toFixed(1);
+            
+            // Recalculate totals
+            calculateTotals();
+            
             console.log('✅ Room added:', newRoom);
         }
         
@@ -1479,6 +1485,14 @@
             if (confirm('Are you sure you want to remove this room?')) {
                 rooms.splice(index, 1);
                 populateRoomDetails(rooms);
+                
+                // Update the material SQM field with the new total
+                const totalSqm = rooms.reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0);
+                document.getElementById('materialSQM').value = totalSqm.toFixed(1);
+                
+                // Recalculate totals
+                calculateTotals();
+                
                 console.log('🗑️ Room removed at index:', index);
             }
         }

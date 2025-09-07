@@ -145,6 +145,7 @@ export default async function handler(req, res) {
         <li><b>Phone:</b> ${customerPhone || "Not provided"}</li>
         <li><b>Service:</b> ${serviceType || "Underfloor Heating"}</li>
         <li><b>Location:</b> ${suburb || ""}${suburb && area ? ", " : ""}${area || ""}</li>
+        <li><b>Budget:</b> ${budget || "Not specified"}</li>
         <li><b>Timeline:</b> ${timeline || "Not specified"}</li>
         ${roomsHtml}
       </ul>

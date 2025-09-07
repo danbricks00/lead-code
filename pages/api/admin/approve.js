@@ -314,6 +314,8 @@ export default async function handler(req, res) {
                   <p><strong>Service:</strong> ${leadData['ServiceType']}</p>
                   <p><strong>Tradesperson:</strong> ${quoteDataForPdf.tradespersonName}</p>
                   <p><strong>Total Amount:</strong> $${totalQuote.toFixed(2)}</p>
+                  <p><strong>Your Budget:</strong> ${leadData['Budget'] || 'Not specified'}</p>
+                  <p><strong>Timeline:</strong> ${leadData['Timelline'] || leadData['Timeline'] || 'Not specified'}</p>
                   <p><strong>Location:</strong> ${leadData['Area']}, ${leadData['Suburb']}</p>
                   <p><strong>Valid Until:</strong> ${new Date(quoteDataForPdf.validUntil).toLocaleDateString('en-NZ')}</p>
                 </div>

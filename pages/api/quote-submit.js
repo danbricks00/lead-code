@@ -380,6 +380,8 @@ export default async function handler(req, res) {
                     <p><strong>Phone:</strong> ${customerPhone || 'Not provided'}</p>
                     <p><strong>Address:</strong> ${customerAddress || 'Not provided'}</p>
                     <p><strong>Service:</strong> ${serviceType}</p>
+                    <p><strong>Budget:</strong> ${leadDetails.Budget || leadDetails.budget || 'Not specified'}</p>
+                    <p><strong>Timeline:</strong> ${leadDetails.Timelline || leadDetails.Timeline || leadDetails.timeline || 'Not specified'}</p>
                 </div>
 
                 <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin: 15px 0;">

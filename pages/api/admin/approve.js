@@ -26,7 +26,7 @@ function generateQuoteViewLink(quoteId) {
 
 async function findRowAndGetData(options) {
     const { sheets, spreadsheetId, tab, searchColumn, searchValue, columnsToFetch } = options;
-    const range = `${tab}!A:AK`; // Use full 37-column range
+    const range = `${tab}!A:AJ`; // Use 36-column range to match quote-submit.js
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
     const rows = response.data.values;
     if (!rows || rows.length < 2) return null;
@@ -68,9 +68,9 @@ export default async function handler(req, res) {
             searchColumn: 'QuoteID', searchValue: quoteId,
             columnsToFetch: [
                 'AdminPersonStatus', 'LeadID', 'TradePersonName', 'TradePersonEmail', 'TradePersonPhone',
-                'LabourRate', 'LabourHours', 'LaboutTotal', 'MaterialsCost', 'MaterialsQuantity', 'MaterialsTotal',
+                'LabourRate', 'LabourHours', 'LabourTotal', 'MaterialsCost', 'MaterialsQuantity', 'MaterialsTotal',
                 'TravelCost', 'TravelDistance', 'TravelTotal', 'InstallationCost', 'Subtotal', 'GST', 'TotalQuote', 
-                'Notes', 'ValidUnitl', 'ResubmissionAllowed', 'Decison', 'DecisonTimeStamp',
+                'Notes', 'ValidUntil', 'ResubmissionAllowed', 'Decision', 'DecisionTimeStamp',
                 'CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Location', 'Timeline', 'Budget', 'Rooms', 'BreakDown'
             ]
         });
@@ -180,7 +180,7 @@ export default async function handler(req, res) {
                 hour: '2-digit',
                 minute: '2-digit'
             }),
-            validUntil: quoteData.ValidUnitl || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('en-NZ'),
+            validUntil: quoteData.ValidUntil || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('en-NZ'),
             customerName: quoteData.CustomerName || leadData.CustomerName,
             customerEmail: quoteData.CustomerEmail || leadData.CustomerEmail,
             customerPhone: quoteData.CustomerPhone || leadData.CustomerPhone,
@@ -431,10 +431,10 @@ export default async function handler(req, res) {
         console.log(`✅ Customer quote email sent to ${leadData['CustomerEmail']} with PDF attachment`);
 
         // 5. Update Sheet Status to final using correct schema column names
-        const headerResponse = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Quotes!A1:AK1' });
+        const headerResponse = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Quotes!A1:AJ1' });
         const header = headerResponse.data.values[0];
         const updates = { 'AdminPersonStatus': 'Approved', 'CustomerStatus': 'Quote Sent' };
-        let targetRow = (await sheets.spreadsheets.values.get({ spreadsheetId, range: `Quotes!A${quoteData.rowIndex}:AK${quoteData.rowIndex}` })).data.values[0];
+        let targetRow = (await sheets.spreadsheets.values.get({ spreadsheetId, range: `Quotes!A${quoteData.rowIndex}:AJ${quoteData.rowIndex}` })).data.values[0];
         
         header.forEach((colName, index) => {
             if(updates[colName]) targetRow[index] = updates[colName];

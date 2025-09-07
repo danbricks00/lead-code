@@ -286,44 +286,68 @@ export default async function handler(req, res) {
     const spreadsheetId = getSpreadsheetId();
     
     try {
-        // Add quote to Quotes sheet
+        // Update existing quote row with your EXACT Google Sheets format
         const quotesRange = 'Quotes!A:Z';
-        const quoteRow = [
-            quoteId,
-            new Date().toISOString(),
-            customerName,
-            customerEmail,
-            customerPhone,
-            customerAddress,
-            serviceType,
-            tradespersonName,
-            tradespersonEmail,
-            tradespersonPhone,
-            quoteDetails.labourRate,
-            quoteDetails.labourHours,
-            quoteDetails.materialsCost,
-            quoteDetails.materialsQuantity,
-            quoteDetails.travelCost,
-            quoteDetails.travelDistance,
-            quoteDetails.installationCost,
-            quoteDetails.notes || '',
-            quoteDetails.validUntil,
-            quoteDetails.subtotal,
-            quoteDetails.gst,
-            quoteDetails.totalQuote,
-            'pending', // status
-            leadDetails.LeadId || '', // link to lead
-            JSON.stringify(leadDetails.Rooms || []), // room data
-            new Date().toISOString() // created timestamp
+        const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: quotesRange });
+        const rows = response.data.values;
+        
+        if (!rows || rows.length < 2) {
+            throw new Error('No quotes found in sheet');
+        }
+        
+        const header = rows[0];
+        const quoteIndex = rows.findIndex(row => row[1] === quoteId); // QuoteID is column B
+        
+        if (quoteIndex === -1) {
+            throw new Error('Quote not found in sheet');
+        }
+        
+        // Update the existing quote row with your EXACT format
+        const updatedRow = [
+            new Date().toISOString(),           // TimeStamp
+            quoteId,                            // QuoteID
+            leadDetails.Lead || leadDetails.LeadId, // LeadID
+            tradespersonName,                   // TradePersonName
+            tradespersonEmail,                  // TradePersonEmail
+            tradespersonPhone,                  // TradePersonPhone
+            "Quote Submitted",                  // CustomerStatus
+            "Quote Submitted",                  // TradePersonStatus
+            "Pending Review",                   // AdminPersonStatus
+            quoteDetails.labourRate,            // LabourRate
+            quoteDetails.labourHours,           // LabourHours
+            quoteDetails.labourRate * quoteDetails.labourHours, // LaboutTotal
+            quoteDetails.materialsCost,         // MaterialsCost
+            quoteDetails.materialsQuantity,     // MaterialsQuantity
+            quoteDetails.materialsCost * quoteDetails.materialsQuantity, // MaterialsTotal
+            quoteDetails.travelCost,            // TravelCost
+            quoteDetails.travelDistance,        // TravelDistance
+            quoteDetails.travelCost * quoteDetails.travelDistance, // TravelTotal
+            quoteDetails.installationCost,      // InstallationCost
+            quoteDetails.subtotal,              // Subtotal
+            quoteDetails.gst,                   // GST
+            quoteDetails.totalQuote,            // TotalQuote
+            quoteDetails.notes || '',           // Notes
+            quoteDetails.validUntil,            // ValidUnitl
+            'false',                            // ResubmissionAllowed
+            '',                                 // Decison
+            '',                                 // DecisonTimeStamp
+            customerName,                       // CustomerName
+            customerEmail,                      // CustomerEmail
+            customerPhone,                      // CustomerPhone
+            serviceType,                        // ServiceType
+            customerAddress,                    // Location
+            leadDetails.Timelline || leadDetails.Timeline || '', // Timeline
+            leadDetails.Budget || '',           // Budget
+            JSON.stringify(roomsWithDetails),   // Rooms
+            JSON.stringify(quoteDataForPdf.breakdown), // BreakDown
         ];
-
-        await sheets.spreadsheets.values.append({
+        
+        // Update the specific row
+        await sheets.spreadsheets.values.update({
             spreadsheetId,
-            range: quotesRange,
-            valueInputOption: 'RAW',
-            resource: {
-                values: [quoteRow]
-            }
+            range: `Quotes!A${quoteIndex + 1}`,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [updatedRow] }
         });
 
         console.log(`✅ Quote data saved to Google Sheets: ${quoteId}`);

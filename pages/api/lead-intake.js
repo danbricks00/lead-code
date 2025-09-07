@@ -57,33 +57,63 @@ export default async function handler(req, res) {
 
     const sheets = getGoogleSheetsClient();
     
-    // Using the exact headers from the user's sheet
-    console.log("Appending data to 'Leads' tab...");
+    // Using the EXACT headers from your Google Sheets "Leads" tab
+    console.log("Appending data to 'Leads' tab with exact format...");
     await appendRowToSheet(sheets, "Leads", [
-      leadId,             // Lead
-      customerName,       // CustomerName
-      customerEmail,      // CustomerEmail
-      customerPhone || "",// CustomerPhone
-      serviceType || "Underfloor Heating", // ServiceType
-      JSON.stringify(rooms) || "[]", // Rooms
-      area || "",         // Area
-      suburb || "",       // Suburb
-      "",                 // Budget
-      timeline || "",     // Timelline
-      "",                 // Specfic Details
-      new Date().toISOString(), // Time
+      leadId,                                    // Lead
+      customerName,                              // CustomerName
+      customerEmail,                             // CustomerEmail
+      customerPhone || "",                       // CustomerPhone
+      serviceType || "Underfloor Heating",       // ServiceType
+      JSON.stringify(rooms || []),               // Rooms
+      area || "",                                // Area
+      suburb || "",                              // Suburb
+      budget || "",                              // Budget
+      timeline || "",                            // Timelline
+      specificDetails || projectDetails || "",   // Specfic Details
+      new Date().toISOString(),                  // Time
+      "",                                        // (Column M - empty)
+      "New Lead",                                // status
     ]);
 
-    console.log("Appending data to 'Quotes' tab...");
+    console.log("Appending data to 'Quotes' tab with exact format...");
     await appendRowToSheet(sheets, "Quotes", [
-        quoteId,        // QuoteID
-        leadId,         // LeadiD
-        "",             // TradesPerson Name
-        "",             // TradePerson Email
-        "",             // (Duplicate) TradePerson Name
-        "Quote Pending",// Customer Status
-        "Not Submitted",// TradePerson Status
-        "Not Required", // Admin Status
+        new Date().toISOString(),   // TimeStamp
+        quoteId,                    // QuoteID
+        leadId,                     // LeadID
+        "",                         // TradePersonName
+        "",                         // TradePersonEmail
+        "",                         // TradePersonPhone
+        "Quote Pending",            // CustomerStatus
+        "Not Submitted",            // TradePersonStatus
+        "Not Required",             // AdminPersonStatus
+        "",                         // LabourRate
+        "",                         // LabourHours
+        "",                         // LaboutTotal
+        "",                         // MaterialsCost
+        "",                         // MaterialsQuantity
+        "",                         // MaterialsTotal
+        "",                         // TravelCost
+        "",                         // TravelDistance
+        "",                         // TravelTotal
+        "",                         // InstallationCost
+        "",                         // Subtotal
+        "",                         // GST
+        "",                         // TotalQuote
+        "",                         // Notes
+        "",                         // ValidUnitl
+        "",                         // ResubmissionAllowed
+        "",                         // Decison
+        "",                         // DecisonTimeStamp
+        customerName,               // CustomerName
+        customerEmail,              // CustomerEmail
+        customerPhone || "",        // CustomerPhone
+        serviceType || "Underfloor Heating", // ServiceType
+        `${suburb || ""}${suburb && area ? ", " : ""}${area || ""}`, // Location
+        timeline || "",             // Timeline
+        budget || "",               // Budget
+        JSON.stringify(rooms || []), // Rooms
+        "",                         // BreakDown
     ]);
 
 

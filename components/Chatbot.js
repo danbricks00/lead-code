@@ -125,7 +125,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
       };
     }
     
-    // Pattern 3: Dimensions with units (e.g., "4m x 12m", "4.0m x 12.0m", "4.5m x 3.2m")
+    // Pattern 3: Dimensions with units (e.g., "4m x 12m", "4.0m x 12.0m", "4.5m x 3.2m", "25.1m x 1.2m")
     const dimensionWithUnitsMatch = cleanInput.match(/^(\d+\.?\d*)\s*m\s*x\s*(\d+\.?\d*)\s*m\s*$/);
     if (dimensionWithUnitsMatch) {
       const width = parseFloat(dimensionWithUnitsMatch[1]);
@@ -142,7 +142,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
       };
     }
     
-    // Pattern 4: Dimensions without units (e.g., "4 x 12", "4.0 x 12.0", "4.5 x 3.2")
+    // Pattern 4: Dimensions without units (e.g., "4 x 12", "4.0 x 12.0", "4.5 x 3.2", "25.01 x 1.02")
     const dimensionMatch = cleanInput.match(/^(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*$/);
     if (dimensionMatch) {
       const width = parseFloat(dimensionMatch[1]);
@@ -176,7 +176,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
             ask_room_count: "How many areas are you planning to install underfloor heating in?",
             ask_room_name: `What is the name of room ${leadData.rooms.length + 1}? (e.g., Kitchen, Lounge)`,
             ask_room_dimensions: `What are the dimensions of the ${context.roomName || leadData.rooms[leadData.rooms.length - 1]?.name}?`,
-            ask_room_dimensions_help: `Dimensions options:\n• Square meters: 25 (for 25m²)\n• Dimensions: 10 x 5 (for 50m²)\n• Metric dimensions: 7m x 7m (for 49m²)\n• Decimals welcome: 7.5 x 6.2 (for 46.5m²)\n• Maximum size: 25m x 25m (500m²)\n• Only use: numbers, decimal points, 'x', 'm', and spaces`,
+            ask_room_dimensions_help: `Dimensions options:\n• Square meters: 25 (for 25m²)\n• Dimensions: 10 x 5 (for 50m²)\n• Metric dimensions: 7m x 7m (for 49m²)\n• Decimals welcome: 7.5 x 6.2, 25.01 x 1.02 (for precise measurements)\n• Maximum size: 25m x 25m (500m²)\n• Only use: numbers, decimal points, 'x', 'm', and spaces`,
             ask_timeline: "What is your desired timeline for this project?",
             ask_timeline_details: "Could you please be more specific about your timeline?",
             ask_budget: "What is your budget range for this underfloor heating project?",
@@ -234,6 +234,16 @@ const Chatbot = ({ handleClose, handleReset }) => {
             const count = parseInt(value, 10);
             return !isNaN(count) && count > 0 && count < 20 ? null : "Please enter a valid number between 1 and 20.";
         case 'ask_room_name':
+            // Prevent dimension-like inputs (digits, "x", "m", etc.)
+            const roomNameRegex = /^[a-zA-Z\s'-\.]{2,}$/;
+            if (!roomNameRegex.test(value.trim())) {
+                return "Please enter a valid room name (letters only, e.g., Kitchen, Lounge, Master Bedroom).";
+            }
+            // Prevent dimension-like patterns
+            const dimensionPattern = /^\d+\.?\d*\s*(x|m|m²|m2|sqm|square\s*meters?)?\s*$/i;
+            if (dimensionPattern.test(value.trim())) {
+                return "Please enter a room name, not dimensions (e.g., Kitchen, Lounge, Master Bedroom).";
+            }
             return value.trim().length > 1 ? null : "Please enter a valid name for the room.";
         case 'ask_room_dimensions':
             const parsed = parseDimensions(value);
@@ -304,8 +314,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
             if (!parsed) {
                 addMessage(`Sorry, I couldn't understand that format. Please enter room dimensions using only numbers and 'x' for multiplication:
 • Direct square meters: "25", "25.5", "12m2", "12m²"
-• Length x Width: "10 x 5", "7.07 x 7.07", "4.0 x 12.0"
-• With units: "4m x 12m", "4.0m x 12.0m"
+• Length x Width: "10 x 5", "7.07 x 7.07", "4.0 x 12.0", "25.01 x 1.02"
+• With units: "4m x 12m", "4.0m x 12.0m", "25.1m x 1.2m"
 • Maximum room size: 25m x 25m (500 sqm)
 • Only use: numbers (0-9), decimal points, 'x', 'm', and spaces`);
                 return;

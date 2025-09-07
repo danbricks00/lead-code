@@ -96,6 +96,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
             ask_room_dimensions: `What are the dimensions of the ${context.roomName || leadData.rooms[leadData.rooms.length - 1]?.name}? You can enter:\n• Square meters: 25 (for 25m²)\n• Dimensions: 10 x 5 (for 50m²)\n• Metric dimensions: 7m x 7m (for 49m²)\n• Decimals welcome: 7.5 x 6.2 (for 46.5m²)`,
             ask_timeline: "What is your desired timeline for this project?",
             ask_timeline_details: "Could you please be more specific about your timeline?",
+            ask_budget: "What is your budget range for this underfloor heating project?",
             pre_contact_details: "Great, that's all the project information we need. Now, let's get some contact details so we can send you the quote.",
             ask_first_name: "Perfect. What is your first name?",
             ask_last_name: firstName ? `Thanks ${firstName}! What is your last name?` : "What is your last name?",
@@ -206,12 +207,15 @@ const Chatbot = ({ handleClose, handleReset }) => {
             if (input === 'In a couple of months' || input === 'Other') {
                 nextStep('ask_timeline_details');
             } else {
-                setProgressStep(1);
-                nextStep('pre_contact_details');
+                nextStep('ask_budget');
             }
             break;
         case 'ask_timeline_details':
             setLeadData(prev => ({ ...prev, timeline: input })); // Overwrite with specific details
+            nextStep('ask_budget');
+            break;
+        case 'ask_budget':
+            setLeadData(prev => ({ ...prev, budget: input }));
             setProgressStep(1);
             nextStep('pre_contact_details');
             break;
@@ -281,7 +285,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
         setSuburbSearch(selectedValue.suburb);
         setSuburbSuggestions([]);
         processUserInput(selectedValue.suburb); // Pass just the suburb string
-    } else { // Handle timeline options
+    } else { // Handle timeline and budget options
         addMessage(selectedValue, true);
         processUserInput(selectedValue);
     }
@@ -302,10 +306,33 @@ const Chatbot = ({ handleClose, handleReset }) => {
   };
 
   const isChatEnded = isCompleted || step === 'completed';
-  // Simplified: remove 'ask_area'
-  const showTextInput = !isChatEnded && !['ask_suburb', 'ask_timeline'].includes(step);
+  // Show text input for all steps except suburb search, timeline options, and budget options
+  const showTextInput = !isChatEnded && !['ask_suburb', 'ask_timeline', 'ask_budget'].includes(step);
 
   const timelineOptions = ["Immediately", "In a week", "In a couple of months", "Other"];
+  
+  // Calculate reasonable budget options based on room data
+  const calculateBudgetOptions = () => {
+    const totalSqm = leadData.rooms.reduce((sum, room) => {
+      const sqm = parseFloat(room.sqm) || 0;
+      return sum + sqm;
+    }, 0);
+    
+    // Base pricing: approximately $150-200 per sqm for underfloor heating
+    const basePrice = totalSqm * 175; // Average of $175 per sqm
+    
+    return [
+      `Under $5,000`,
+      `$5,000 - $10,000`,
+      `$10,000 - $20,000`,
+      `$20,000 - $30,000`,
+      `$30,000 - $50,000`,
+      `Over $50,000`,
+      `I'd like a quote first`
+    ];
+  };
+  
+  const budgetOptions = calculateBudgetOptions();
 
   return (
     <div style={styles.chatbotContainer}>
@@ -331,6 +358,16 @@ const Chatbot = ({ handleClose, handleReset }) => {
       {step === 'ask_timeline' && !isLoading && (
         <div style={styles.optionsContainer}>
             {timelineOptions.map(option => (
+                <button key={option} onClick={() => handleOptionSelect(option)} style={styles.optionButton}>
+                    {option}
+                </button>
+            ))}
+        </div>
+      )}
+
+      {step === 'ask_budget' && !isLoading && (
+        <div style={styles.optionsContainer}>
+            {budgetOptions.map(option => (
                 <button key={option} onClick={() => handleOptionSelect(option)} style={styles.optionButton}>
                     {option}
                 </button>

@@ -302,6 +302,23 @@ export default async function handler(req, res) {
             throw new Error('Quote not found in sheet');
         }
         
+        // Recreate roomsWithDetails for Google Sheets update (same logic as above)
+        const rooms = leadDetails.Rooms ? JSON.parse(leadDetails.Rooms) : [];
+        const totalSqm = rooms.reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0);
+        const roomsWithDetails = rooms.map(room => {
+            const roomSqm = parseFloat(room.sqm) || 0;
+            const roomRatio = totalSqm > 0 ? roomSqm / totalSqm : 0;
+            
+            return {
+                name: room.name,
+                dimensions: room.dimensions || room.originalInput,
+                sqm: roomSqm,
+                labourHours: roomRatio * labourHours,
+                labourCost: roomRatio * (labourRate * labourHours),
+                materialsCost: roomRatio * (materialsCost * materialsQuantity)
+            };
+        });
+        
         // Update the existing quote row with your EXACT format
         const updatedRow = [
             new Date().toISOString(),           // TimeStamp

@@ -648,24 +648,7 @@ export default async function handler(req, res) {
             }
         }
         
-        // Check if quote has expired (Valid Until date)
-        const validUntilIndex = header.findIndex(col => 
-            col && (col.toLowerCase().includes('valid until') || 
-                   col.toLowerCase().includes('expiry') || 
-                   col.toLowerCase().includes('expires'))
-        );
-        
-        if (validUntilIndex !== -1 && targetRow[validUntilIndex]) {
-            const validUntilDate = new Date(targetRow[validUntilIndex]);
-            const now = new Date();
-            
-            if (validUntilDate < now) {
-                const expiredMessage = encodeURIComponent(
-                    "This quote has expired and is no longer valid. Please contact us to request a new quote."
-                );
-                return res.redirect(`/quote-status?status=error&message=${expiredMessage}`);
-            }
-        }
+        // Remove old expiry check - now handled in the enhanced logic below
         
         // Check for existing decision and expiry using correct schema column names
         const decisionIndex = header.indexOf('Decision');

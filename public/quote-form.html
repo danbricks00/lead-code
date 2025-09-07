@@ -376,7 +376,7 @@
             <textarea id="additionalNotes" name="additionalNotes" rows="4"></textarea>
         </div>
 
-                        <button type="submit" id="submitButton">Submit Quote</button>
+                        <button type="submit" id="submitButton">Submit Quote to Customer</button>
     </form>
 
     <script>
@@ -1167,7 +1167,7 @@
             try {
                 console.log('🔍 Looking up quote and lead data for quoteId:', quoteId);
                 
-                const response = await fetch(`/api/get-quote-details?quoteId=${encodeURIComponent(quoteId)}`);
+                const response = await fetch(`/api/get-lead-details?quoteId=${encodeURIComponent(quoteId)}`);
                 const data = await response.json();
                 
                 if (data.success && data.quote && data.lead) {

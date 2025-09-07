@@ -69,13 +69,21 @@ export default async function handler(req, res) {
       }
     }
 
-    // Parse rooms data if available
+    // Parse rooms data if available (check both Quotes and Leads tabs)
     let rooms = [];
-    if (leadData.Rooms) {
+    if (quoteData.Rooms) {
+      try {
+        rooms = JSON.parse(quoteData.Rooms);
+        console.log('✅ Found room data in Quotes tab:', rooms);
+      } catch (e) {
+        console.log('Could not parse rooms data from Quotes tab:', e);
+      }
+    } else if (leadData.Rooms) {
       try {
         rooms = JSON.parse(leadData.Rooms);
+        console.log('✅ Found room data in Leads tab:', rooms);
       } catch (e) {
-        console.log('Could not parse rooms data:', e);
+        console.log('Could not parse rooms data from Leads tab:', e);
       }
     }
 

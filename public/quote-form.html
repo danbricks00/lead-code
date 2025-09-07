@@ -1165,22 +1165,23 @@
         // Function to load lead data from quoteId (looks up leadId first)
         async function loadLeadDataFromQuoteId(quoteId) {
             try {
-                console.log('🔍 Looking up leadId for quoteId:', quoteId);
+                console.log('🔍 Looking up quote and lead data for quoteId:', quoteId);
                 
-                const response = await fetch(`/api/get-lead-details?quoteId=${encodeURIComponent(quoteId)}`);
+                const response = await fetch(`/api/get-quote-details?quoteId=${encodeURIComponent(quoteId)}`);
                 const data = await response.json();
                 
-                if (data.success && data.data) {
-                    const leadData = data.data;
-                    const leadId = leadData.Lead || leadData.leadId;
+                if (data.success && data.quote && data.lead) {
+                    const quoteData = data.quote;
+                    const leadData = data.lead;
+                    const leadId = quoteData.LeadID || leadData.Lead;
                     
                     if (leadId) {
                         console.log('✅ Found leadId:', leadId, 'for quoteId:', quoteId);
                         document.getElementById('leadId').value = leadId;
                         document.getElementById('leadIdDisplay').textContent = leadId;
                         
-                        // Now load the full lead data
-                        await loadLeadData(leadId);
+                        // Populate form with both quote and lead data
+                        await populateFormWithData(leadData, quoteData);
                     } else {
                         console.error('❌ No leadId found in quote data');
                         showError('Quote found but no associated lead ID');
@@ -1192,6 +1193,85 @@
             } catch (error) {
                 console.error('❌ Error looking up quote:', error);
                 showError('Error looking up quote: ' + error.message);
+            }
+        }
+        
+        // Function to populate form with lead and quote data
+        async function populateFormWithData(leadData, quoteData) {
+            try {
+                console.log('📝 Populating form with lead data:', leadData);
+                console.log('📝 Populating form with quote data:', quoteData);
+                
+                // Populate customer information
+                if (leadData.CustomerName) {
+                    document.getElementById('customerName').value = leadData.CustomerName;
+                }
+                if (leadData.CustomerEmail) {
+                    document.getElementById('customerEmail').value = leadData.CustomerEmail;
+                }
+                if (leadData.CustomerPhone) {
+                    document.getElementById('customerPhone').value = leadData.CustomerPhone;
+                }
+                if (leadData.ServiceType) {
+                    document.getElementById('serviceType').value = leadData.ServiceType;
+                }
+                if (leadData.Area && leadData.Suburb) {
+                    document.getElementById('customerAddress').value = `${leadData.Area}, ${leadData.Suburb}`;
+                } else if (leadData.Area) {
+                    document.getElementById('customerAddress').value = leadData.Area;
+                } else if (leadData.Suburb) {
+                    document.getElementById('customerAddress').value = leadData.Suburb;
+                }
+                if (leadData.Budget) {
+                    document.getElementById('budget').value = leadData.Budget;
+                }
+                if (leadData.Timelline) {
+                    document.getElementById('timeline').value = leadData.Timelline;
+                }
+                if (leadData['Specfic Details']) {
+                    document.getElementById('projectDetails').value = leadData['Specfic Details'];
+                }
+                
+                // Process room data if available
+                if (leadData.Rooms) {
+                    try {
+                        const rooms = typeof leadData.Rooms === 'string' ? JSON.parse(leadData.Rooms) : leadData.Rooms;
+                        console.log('🏠 Processing room data from Leads tab:', rooms);
+                        populateRoomDetails(rooms);
+                        
+                        // Calculate and display total SQM
+                        const totalSqm = rooms.reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0);
+                        const totalSqmElement = document.getElementById('totalSqm');
+                        if (totalSqmElement) {
+                            totalSqmElement.textContent = `${totalSqm.toFixed(1)} sqm`;
+                        }
+                        
+                        // Update project size field
+                        const projectSizeElement = document.getElementById('projectSize');
+                        if (projectSizeElement) {
+                            projectSizeElement.value = `${totalSqm.toFixed(1)} sqm`;
+                        }
+                        
+                    } catch (error) {
+                        console.error('❌ Error parsing room data from Leads tab:', error);
+                        // Try to parse as simple text if JSON parsing fails
+                        const roomsListEl = document.getElementById('roomsList');
+                        if (roomsListEl) {
+                            roomsListEl.innerHTML = `<p style="color: #666; font-style: italic;">Room data: ${leadData.Rooms}</p>`;
+                        }
+                    }
+                } else {
+                    console.log('ℹ️ No room data available in lead');
+                    const roomsListEl = document.getElementById('roomsList');
+                    if (roomsListEl) {
+                        roomsListEl.innerHTML = '<p style="color: #666; font-style: italic;">No room details available from lead data.</p>';
+                    }
+                }
+                
+                console.log('✅ Form populated successfully with lead data');
+                
+            } catch (error) {
+                console.error('❌ Error populating form with data:', error);
             }
         }
         

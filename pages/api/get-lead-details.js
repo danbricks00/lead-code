@@ -61,17 +61,17 @@ export default async function handler(req, res) {
             tab: 'Quotes', 
             searchColumn: 'QuoteID',
             searchValue: quoteId, 
-            columnsToFetch: ['LeadiD']
+            columnsToFetch: ['LeadID']
         });
         console.log(`[2] Result from "Quotes" tab:`, quoteData ? JSON.stringify(quoteData) : 'null');
 
-        if (!quoteData || !quoteData['LeadiD']) {
-            console.error(`[ERROR] Quote ID ${quoteId} not found in Quotes sheet or it has no LeadiD.`);
+        if (!quoteData || !quoteData['LeadID']) {
+            console.error(`[ERROR] Quote ID ${quoteId} not found in Quotes sheet or it has no LeadID.`);
             return res.status(404).json({ success: false, error: 'Quote not found.' });
         }
         
-        const leadId = quoteData['LeadiD'];
-        console.log(`[3] Extracted LeadiD: ${leadId}`);
+        const leadId = quoteData['LeadID'];
+        console.log(`[3] Extracted LeadID: ${leadId}`);
 
         // 2. Get all data from the "Leads" tab to handle any column structure
         console.log('[4] Getting all lead data to handle flexible column structure...');
@@ -102,20 +102,15 @@ export default async function handler(req, res) {
             
             console.log(`[5] Lead data retrieved:`, JSON.stringify(leadData, null, 2));
             
-            // Look for room data in any column that might contain it
+            // Look for room data in the Rooms column (according to your schema)
             if (!leadData.Rooms) {
-                console.log('[6] Looking for room data in all columns...');
-                for (let i = 0; i < dataRow.length; i++) {
-                    const cellValue = dataRow[i];
-                    if (cellValue && typeof cellValue === 'string') {
-                        // Check if this looks like room data (JSON array with sqm)
-                        if ((cellValue.startsWith('[') && cellValue.includes('sqm')) || 
-                            (cellValue.includes('"sqm"') && cellValue.includes('"name"'))) {
-                            leadData.Rooms = cellValue;
-                            console.log(`[7] Found room data in column "${header[i]}" (index ${i}):`, cellValue);
-                            break;
-                        }
-                    }
+                console.log('[6] Looking for room data in Rooms column...');
+                const roomsIndex = header.indexOf('Rooms');
+                if (roomsIndex !== -1 && dataRow[roomsIndex]) {
+                    leadData.Rooms = dataRow[roomsIndex];
+                    console.log(`[7] Found room data in Rooms column:`, leadData.Rooms);
+                } else {
+                    console.log('[7] No room data found in Rooms column');
                 }
             }
             

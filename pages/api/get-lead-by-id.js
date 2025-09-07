@@ -77,6 +77,7 @@ export default async function handler(req, res) {
                         break;
                     case 'Rooms':
                         lead.rooms = dataRow[index];
+                        lead.Rooms = dataRow[index]; // Also store with capital R for consistency
                         break;
                     case 'TotalSqm':
                         lead.totalSqm = dataRow[index];

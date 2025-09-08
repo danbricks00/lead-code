@@ -135,11 +135,6 @@ export async function updateQuoteRow(rowIndex, data) {
  */
 // Add these new functions to utils/sheets.js
 
-// Temporarily disable appendQuoteRow to catch rogue writes
-export async function appendQuoteRow() { 
-  throw new Error('appendQuoteRow disabled — use upsertQuoteRow'); 
-}
-
 // Get lead by ID
 export async function getLeadById(leadId) {
   try {

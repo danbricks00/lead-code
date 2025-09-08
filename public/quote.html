@@ -69,13 +69,6 @@
     .btn-decline:hover {
       background: #dc2626;
     }
-    .btn-download {
-      background: #3b82f6;
-      color: white;
-    }
-    .btn-download:hover {
-      background: #2563eb;
-    }
     .warning {
       display: none;
       background: #fef3c7;
@@ -133,7 +126,6 @@
     <iframe id="pdf" class="pdf-container" style="display: none;"></iframe>
     
     <div class="actions">
-      <a id="download" class="btn btn-download" href="#" target="_blank">Download PDF</a>
       <a id="accept" class="btn btn-accept" href="#" onclick="handleDecision('accept')">Accept Quote</a>
       <a id="decline" class="btn btn-decline" href="#" onclick="handleDecision('decline')">Decline Quote</a>
     </div>
@@ -152,7 +144,6 @@
   const pdfFrame = document.getElementById('pdf');
   const accept = document.getElementById('accept');
   const decline = document.getElementById('decline');
-  const download = document.getElementById('download');
 
   if (!leadId) {
     warn.textContent = 'Missing leadId. Please open this link from your email again.';
@@ -237,10 +228,7 @@
 
   // Embed the exact same PDF built by the server (ensures 1:1 match with email attachment)
   const pdfUrlInline = `/api/quote-pdf?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&download=0`;
-  const pdfUrlDownload = `/api/quote-pdf?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}&download=1`;
   pdfFrame.src = pdfUrlInline;
-  download.href = pdfUrlDownload;
-  download.setAttribute('download', `quote-${encodeURIComponent(quoteId || leadId)}.pdf`);
 
   // Check quote status when page loads
   checkQuoteStatus();

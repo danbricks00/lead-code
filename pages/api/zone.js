@@ -25,8 +25,8 @@ export default async function handler(req, res) {
         
         // Return zones where the suburb OR altName starts with the search term (case-insensitive)
         return zones.filter(zone => {
-            const suburb = (zone.suburb || '').toLowerCase();
-            const altName = (zone.altName || '').toLowerCase();
+            const suburb = (zone.suburb && typeof zone.suburb === 'string') ? zone.suburb.toLowerCase() : '';
+            const altName = (zone.altName && typeof zone.altName === 'string') ? zone.altName.toLowerCase() : '';
             
             return suburb.startsWith(searchLower) || altName.startsWith(searchLower);
         });
@@ -48,15 +48,24 @@ export default async function handler(req, res) {
         const rows = response.data.values || [];
         console.log(`📊 Found ${rows.length - 1} total zones in Google Sheets`);
 
-        const allZones = rows.slice(1).map(row => ({
-            suburb: row[0] || '',           // A: suburb
-            altName: row[1] || '',          // B: AltName (Māori spelling alternative)
-            postCode: row[2] || '',         // C: PostCode
-            area: row[3] || '',             // D: Area
-            zone: row[4] || '',             // E: Zone
-            zoneCost: row[5] || '',         // F: Zone Cost
-            zoneKm: row[6] || ''            // G: ZoneKm
-        }));
+        const allZones = rows.slice(1).map((row, index) => {
+            const zone = {
+                suburb: row[0] || '',           // A: suburb
+                altName: row[1] || '',          // B: AltName (Māori spelling alternative)
+                postCode: row[2] || '',         // C: PostCode
+                area: row[3] || '',             // D: Area
+                zone: row[4] || '',             // E: Zone
+                zoneCost: row[5] || '',         // F: Zone Cost
+                zoneKm: row[6] || ''            // G: ZoneKm
+            };
+            
+            // Debug logging for problematic rows
+            if (index < 5) {
+                console.log(`🔍 Zone ${index + 1}:`, JSON.stringify(zone));
+            }
+            
+            return zone;
+        });
         
         const filteredZones = filterLogic(allZones);
 
@@ -65,7 +74,7 @@ export default async function handler(req, res) {
           
           // Log if any alternative names were matched
           const altNameMatches = filteredZones.filter(zone => 
-            zone.altName && zone.altName.toLowerCase().startsWith(search.toLowerCase())
+            zone.altName && typeof zone.altName === 'string' && zone.altName.toLowerCase().startsWith(search.toLowerCase())
           );
           if (altNameMatches.length > 0) {
             console.log(`🔤 Found ${altNameMatches.length} matches using alternative names (Māori spelling)`);

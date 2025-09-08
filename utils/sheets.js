@@ -389,6 +389,48 @@ export async function getQuoteById(quoteId) {
   }
 }
 
+/**
+ * Get all quotes for a specific lead ID
+ * @param {string} leadId - The LeadID to search for
+ * @returns {Array} Array of quote objects for the lead
+ */
+export async function getQuotesByLeadId(leadId) {
+  try {
+    const sheets = getGoogleSheetsClient();
+    const spreadsheetId = getSpreadsheetId();
+    
+    const range = 'Quotes!A:Z';
+    const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
+    const rows = response.data.values || [];
+    
+    if (rows.length === 0) return [];
+    
+    const headers = rows[0];
+    const quotes = [];
+    
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      const quote = {};
+      
+      headers.forEach((header, index) => {
+        quote[header] = row[index] || '';
+      });
+      
+      // Only include quotes that match the leadId
+      if (quote.LeadID === leadId) {
+        quotes.push(quote);
+      }
+    }
+    
+    console.log(`[SHEETS] Found ${quotes.length} quotes for lead ${leadId}`);
+    return quotes;
+    
+  } catch (error) {
+    console.error(`[SHEETS] Error getting quotes for lead ${leadId}:`, error);
+    return [];
+  }
+}
+
 // Disable legacy append function to catch rogue calls
 export async function appendQuoteRow() {
   throw new Error('appendQuoteRow disabled — use upsertQuoteRow instead');

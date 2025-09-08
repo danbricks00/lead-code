@@ -3,7 +3,7 @@
  * POST-only. Merges Lead + body financials; overwrites same QuoteID row; triggers PDF/email only for Submitted.
  */
 
-import { getLeadById, upsertQuoteRow, getQuoteById } from '../../utils/sheets.js';
+import { getLeadById, upsertQuoteRow, getQuoteById, getQuotesByLeadId } from '../../utils/sheets.js';
 import { buildQuoteRow } from '../../utils/quotes.js';
 import { generateQuotePDF } from '../../lib/pdfGenerator.js';
 import { sendEmail } from '../../lib/emailHelper.js';
@@ -21,6 +21,37 @@ export default async function handler(req, res) {
 
     const lead = await getLeadById(String(leadId).trim());
     if (!lead) return res.status(404).json({ error: 'Lead not found' });
+
+    // Check for existing quotes for this lead
+    const existingQuotes = await getQuotesByLeadId(String(leadId).trim());
+    console.log('[QUOTE-SUBMIT] Existing quotes for lead:', existingQuotes.length);
+    
+    // Filter out the current quote being submitted (if it's an update)
+    const otherQuotes = existingQuotes.filter(q => q.QuoteID !== quoteId);
+    
+    if (otherQuotes.length > 0) {
+      // Check if any existing quote is not rejected by admin
+      const nonRejectedQuotes = otherQuotes.filter(q => 
+        q.AdminPersonStatus !== 'Declined' && 
+        q.AdminPersonStatus !== 'Rejected' &&
+        q.Decison !== 'Rejected' &&
+        q.Decison !== 'Declined'
+      );
+      
+      if (nonRejectedQuotes.length > 0) {
+        console.log('[QUOTE-SUBMIT] Blocking submission - existing non-rejected quotes found:', nonRejectedQuotes.map(q => ({
+          quoteId: q.QuoteID,
+          adminStatus: q.AdminPersonStatus,
+          decision: q.Decison
+        })));
+        
+        return res.status(400).json({ 
+          error: 'Quote already exists for this lead. Only one quote per lead is allowed unless the previous quote was rejected by admin.',
+          existingQuoteId: nonRejectedQuotes[0].QuoteID,
+          existingStatus: nonRejectedQuotes[0].AdminPersonStatus
+        });
+      }
+    }
 
     // Compute totals if missing
     const Subtotal = num(body.subtotal) ?? sum([

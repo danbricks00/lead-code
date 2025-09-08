@@ -10,11 +10,11 @@ function verifyToken(id, ts) {
     return hmac.digest("hex");
 }
 
-function generateQuoteSubmissionLink(quoteId) {
+function generateQuoteSubmissionLink(leadId) {
     const ts = Date.now().toString();
-    const token = verifyToken(quoteId, ts);
+    const token = verifyToken(leadId, ts);
     const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
-    return `https://${baseUrl}/quote-submit/${quoteId}?ts=${ts}&token=${token}`;
+    return `https://${baseUrl}/quote-submit/${leadId}?ts=${ts}&token=${token}`;
 }
 
 async function getQuoteById(quoteId) {
@@ -111,7 +111,7 @@ export default async function handler(req, res) {
         console.log(`[ADMIN-DECLINE] Quote ${quoteId} declined, result:`, result);
 
         // 3. Generate resubmission link
-        const resubmissionLink = generateQuoteSubmissionLink(quoteId);
+        const resubmissionLink = generateQuoteSubmissionLink(quoteData.LeadID);
 
         // 4. Send notification email to tradesperson
         const tradespersonEmailOptions = {

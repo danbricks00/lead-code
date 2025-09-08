@@ -65,6 +65,7 @@ const QuoteSubmitPage = () => {
   const [isEditing, setIsEditing] = useState(false); // New state for edit mode
   const [isResubmission, setIsResubmission] = useState(false); // Track if this is a resubmission
   const [declineReason, setDeclineReason] = useState(''); // Store admin's decline reason
+  const [versionedQuoteId, setVersionedQuoteId] = useState(''); // Store the versioned quote ID from API
   
   // Set default expiry date to 2 weeks from now
   const defaultExpiryDate = new Date();
@@ -94,10 +95,7 @@ const QuoteSubmitPage = () => {
       const fetchLeadDetails = async () => {
         console.log(`[FORM] useEffect triggered. Fetching details for leadId: ${quoteId}`);
         try {
-          // Generate a new quoteId for this submission
-          const newQuoteId = Math.random().toString(36).substr(2, 9);
-          
-          const response = await fetch(`/api/quote/init?leadId=${quoteId}&quoteId=${newQuoteId}`);
+        const response = await fetch(`/api/quote/init?leadId=${quoteId}`);
           const result = await response.json();
           
           console.log('[FORM] API Response received:', result);
@@ -105,6 +103,48 @@ const QuoteSubmitPage = () => {
           if (result.lead) {
             console.log('[FORM] Success. Setting lead details:', result.lead);
             setLeadDetails(result.lead);
+            
+            // Store the versioned quote ID for submission
+            if (result.quoteId) {
+              console.log('[FORM] Using versioned quote ID:', result.quoteId);
+              setVersionedQuoteId(result.quoteId);
+              
+              // Check if this is a resubmission (has version suffix)
+              const isVersioned = /^(.+)-([A-Z]|\d+)$/.test(result.quoteId);
+              setIsResubmission(isVersioned);
+              
+              if (isVersioned) {
+                console.log('[FORM] This is a resubmission with versioned quote ID:', result.quoteId);
+              }
+            }
+
+            // Preload existing quote data if available (for resubmission)
+            if (result.existingQuote) {
+              console.log('[FORM] Preloading existing quote data:', result.existingQuote);
+              setCosts(prev => ({
+                ...prev,
+                labourRate: result.existingQuote.labourRate || '',
+                labourHours: result.existingQuote.labourHours || '',
+                materialsCost: result.existingQuote.materialsCost || '',
+                materialsQuantity: result.existingQuote.materialsQuantity || '',
+                travelCost: result.existingQuote.travelCost || '',
+                travelDistance: result.existingQuote.travelDistance || '',
+                installationCost: result.existingQuote.installationCost || ''
+              }));
+              
+              setNotes(result.existingQuote.notes || '');
+              setValidUntil(result.existingQuote.validUntil || '');
+              
+              // Set tradesperson details if available
+              if (result.existingQuote.tradePersonName) {
+                setTradespersonDetails(prev => ({
+                  ...prev,
+                  name: result.existingQuote.tradePersonName,
+                  email: result.existingQuote.tradePersonEmail,
+                  phone: result.existingQuote.tradePersonPhone
+                }));
+              }
+            }
 
             // Make room data lookup case-insensitive to handle inconsistencies
             const roomDataString = result.lead.rooms; 
@@ -258,9 +298,12 @@ const QuoteSubmitPage = () => {
 
     const { token, ts } = query;
     
-    // Generate a new quoteId for this quote submission
-    const newQuoteId = crypto.randomUUID ? crypto.randomUUID() : 
-      Math.random().toString(36).substring(2) + Date.now().toString(36);
+    // Use the versioned quote ID from the API response
+    if (!versionedQuoteId) {
+      setErrorMessage('Quote ID not available. Please refresh the page and try again.');
+      setSubmissionStatus('error');
+      return;
+    }
     
     const quoteDetails = {
       ...costs,
@@ -285,7 +328,7 @@ const QuoteSubmitPage = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          quoteId: newQuoteId, // Use the newly generated quoteId
+          quoteId: versionedQuoteId, // Use the versioned quote ID
           leadId: quoteId, // The URL parameter is actually the leadId now
           ...quoteDetails, // Spread the quote details directly
         }),
@@ -325,7 +368,10 @@ const QuoteSubmitPage = () => {
         <h1 style={styles.header}>
           {isResubmission ? '🔄 Quote Resubmission Form' : 'Quote Submission Form'}
         </h1>
-        <p><strong>Quote ID:</strong> {quoteId}</p>
+        <p><strong>Lead ID:</strong> {quoteId}</p>
+        {versionedQuoteId && (
+          <p><strong>Quote ID:</strong> {versionedQuoteId}</p>
+        )}
         
         {isResubmission && (
           <div style={styles.resubmissionBanner}>

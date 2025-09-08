@@ -3,7 +3,7 @@
  * This allows tracking of button interactions and user actions from the browser
  */
 
-import quoteLogger from '../../../lib/quoteLogger.js';
+import quoteLogger from '../../lib/quoteLogger.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {

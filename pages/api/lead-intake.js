@@ -84,52 +84,9 @@ export default async function handler(req, res) {
       "New Lead",                                // status
     ]);
 
-    console.log("Appending data to 'Quotes' tab with exact format...");
-    await appendRowToSheet(sheets, "Quotes", [
-        new Date().toLocaleString('en-NZ', {
-          timeZone: 'Pacific/Auckland',
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        }),                        // TimeStamp
-        quoteId,                    // QuoteID
-        leadId,                     // LeadID
-        "",                         // TradePersonName
-        "",                         // TradePersonEmail
-        "",                         // TradePersonPhone
-        "Quote Pending",            // CustomerStatus
-        "Not Submitted",            // TradePersonStatus
-        "Not Required",             // AdminPersonStatus
-        "",                         // LabourRate
-        "",                         // LabourHours
-        "",                         // LabourTotal
-        "",                         // MaterialsCost
-        "",                         // MaterialsQuantity
-        "",                         // MaterialsTotal
-        "",                         // TravelCost
-        "",                         // TravelDistance
-        "",                         // TravelTotal
-        "",                         // InstallationCost
-        "",                         // Subtotal
-        "",                         // GST
-        "",                         // TotalQuote
-        "",                         // Notes
-        "",                         // ValidUntil
-        "",                         // ResubmissionAllowed
-        "",                         // Decison
-        "",                         // DecisonTimeStamp
-        customerName,               // CustomerName
-        customerEmail,              // CustomerEmail
-        customerPhone || "",        // CustomerPhone
-        serviceType || "Underfloor Heating", // ServiceType
-        `${suburb || ""}${suburb && area ? ", " : ""}${area || ""}`, // Location
-        timeline || "",             // Timeline
-        budget || "",               // Budget
-        JSON.stringify(rooms || []), // Rooms
-        "",                         // BreakDown
-    ]);
+    // REMOVED: No longer writing incomplete data to Quotes tab
+    // Quotes tab will only be written to when tradesperson submits complete quote
+    console.log("✅ Lead data written to Leads tab only. Quotes tab will be populated when tradesperson submits quote.");
 
 
     // 2. Prepare Email Content
@@ -141,10 +98,11 @@ export default async function handler(req, res) {
     }
     const baseUrl = rawBaseUrl.replace(/^(https?:\/\/)/, '');
     
+    // Generate quote link using leadId instead of quoteId
     const ts = Date.now();
-    const token = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET).update(`${quoteId}|${ts}`).digest("hex");
-    const quoteLink = `https://${baseUrl}/quote-submit/${quoteId}?ts=${ts}&token=${token}`;
-    console.log("Constructed quote link:", quoteLink);
+    const token = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET).update(`${leadId}|${ts}`).digest("hex");
+    const quoteLink = `https://${baseUrl}/quote-submit/${leadId}?ts=${ts}&token=${token}`;
+    console.log("Constructed quote link using leadId:", quoteLink);
 
     // Format rooms for email display
     const roomsHtml = (rooms && rooms.length > 0)

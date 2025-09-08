@@ -269,6 +269,11 @@ const QuoteSubmitPage = () => {
     setErrorMessage('');
 
     const { token, ts } = query;
+    
+    // Generate a new quoteId for this quote submission
+    const newQuoteId = crypto.randomUUID ? crypto.randomUUID() : 
+      Math.random().toString(36).substring(2) + Date.now().toString(36);
+    
     const quoteDetails = {
       ...costs,
       notes,
@@ -292,7 +297,8 @@ const QuoteSubmitPage = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          quoteId,
+          quoteId: newQuoteId, // Use the newly generated quoteId
+          leadId: quoteId, // The URL parameter is actually the leadId now
           ts,
           token,
           quoteDetails,

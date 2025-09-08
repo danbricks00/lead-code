@@ -9,22 +9,23 @@ import { generateQuotePDF as originalGenerateQuotePDF } from '../lib/pdfGenerato
 export async function generateQuotePDF(quoteData, options = {}) {
   console.log(`[DEBUG] generateQuotePDF: Generating PDF for quoteId=${quoteData.quoteId}`);
   
-  // Default to PDFShift as requested
+  // Updated provider list with Adobe enabled and in correct priority order
   const providers = [
-    { name: 'PDFShift', enabled: true },
-    { name: 'API2PDF', enabled: true },
-    // Adobe temporarily disabled to avoid errors
-    { name: 'Adobe', enabled: false }
+    { name: 'Adobe', enabled: true },     // Adobe first (500/month)
+    { name: 'PDFShift', enabled: true },  // PDFShift second (50/month)
+    { name: 'API2PDF', enabled: true }     // API2PDF last (paid fallback)
   ];
   
   let lastError = null;
   const startTime = Date.now();
+  let attempts = [];
   
   for (const provider of providers) {
     if (!provider.enabled) continue;
     
     try {
       console.log(`[DEBUG] generateQuotePDF: Attempting to generate PDF with ${provider.name}`);
+      attempts.push({ provider: provider.name, status: 'attempting' });
       
       const result = await originalGenerateQuotePDF(quoteData, {
         ...options,
@@ -33,13 +34,23 @@ export async function generateQuotePDF(quoteData, options = {}) {
       
       const processingTime = Date.now() - startTime;
       console.log(`[PDF] Successfully generated PDF with ${provider.name} in ${processingTime}ms`);
+      attempts[attempts.length - 1].status = 'success';
+      attempts[attempts.length - 1].time = processingTime;
+      
+      // Log all attempts for debugging
+      console.log(`[PDF] Provider attempts: ${JSON.stringify(attempts)}`);
       
       return result;
     } catch (error) {
       console.error(`[DEBUG] generateQuotePDF: Failed with ${provider.name}:`, error.message);
+      attempts[attempts.length - 1].status = 'failed';
+      attempts[attempts.length - 1].error = error.message;
       lastError = error;
     }
   }
+  
+  // Log all attempts for debugging
+  console.log(`[PDF] All providers failed. Attempts: ${JSON.stringify(attempts)}`);
   
   // If all providers failed, throw the last error
   throw lastError || new Error('All PDF providers failed');

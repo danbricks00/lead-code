@@ -4,9 +4,9 @@ Copy
 // NEW, CLEAN IMPLEMENTATION
 
 // Utilities you should already have (adjust paths if needed)
-import { upsertQuoteRow, getLeadById, getQuoteById } from '../../../utils/sheets';
-import { generateQuotePDF } from '../../../lib/pdfGenerator';
-import { sendEmail } from '../../../lib/emailHelper';
+import { upsertQuoteRow, getLeadById, getQuoteById } from '../../utils/sheets';
+import { generateQuotePDF } from '../../lib/pdfGenerator';
+import { sendEmail } from '../../lib/emailHelper';
 
 // Simple in-memory lock to avoid concurrent double-writes per QuoteID
 const locks = new Map();

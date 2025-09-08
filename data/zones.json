@@ -1,1226 +1,2809 @@
-[
-  {
-    "area": "Central Auckland ",
-    "suburb": "Arch Hill"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Auckland CBD"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Avondale"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Balmoral"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Blackpool"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Blockhouse Bay"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Eden Terrace"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Eden Valley"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Ellerslie"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Epsom"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Freemans Bay"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Glen Innes"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Glendowie"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Grafton"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Greenlane"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Greenwoods Corner"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Grey Lynn"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Herne Bay"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Hillsborough"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Kingsland"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Kohimarama"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Lynfield"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Meadowbank"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Mission Bay"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Morningside"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Mount Albert"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Mount Eden"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Mount Roskill"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Mount Wellington"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "New Windsor"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Newmarket"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Newton"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "One Tree Hill"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Onehunga"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Oranga"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Owairaka"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Palm Beach"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Panmure"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Parnell"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Penrose"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Point Chevalier"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Point England"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Ponsonby"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Remuera"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Royal Oak"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Saint Heliers"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Saint Marys Bay"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Sandringham"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "St Johns"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Stonefields"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Surfdale"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Te Papapa"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Three Kings"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "T\u0101maki"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Wai o Taiki Bay"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Waikowhai"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Waterview"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Wesley"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Western Springs"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Westfield"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "Westmere "
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "\u014cr\u0101kei"
-  },
-  {
-    "area": "Central Auckland ",
-    "suburb": "\u014ct\u0101huhu"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Albany"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Bayswater"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Bayview"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Beach Haven"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Belmont"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Birkdale"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Birkenhead"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Browns Bay"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Campbells Bay"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Castor Bay"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Chatswood"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Cheltenham"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Crown Hill"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Devonport"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Fairview Heights"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Forrest Hill"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Glenfield"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Greenhithe"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Hauraki"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Highbury"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Hillcrest"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Long Bay"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Lucas Height"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Mairangi Bay"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Marlborough"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Milford"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Murrays Bay"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Narrow Neck"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "North Harbour"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Northcote"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Northcote Point"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Northcross"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Okura"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Oteha"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Paremoremo"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Pinehill"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Rosedale"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Rothesay Bay"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Schnapper Rock"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Shelly Beach"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Stanley Bay"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Stanley Point"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Sunnynook"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Takapuna"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Torbay"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Totara Vale"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Unsworth Heights"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Waiake"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Wairau Valley"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Westlake"
-  },
-  {
-    "area": "North Shore ",
-    "suburb": "Windsor Park"
-  },
-  {
-    "area": "Papakure",
-    "suburb": "Alfriston"
-  },
-  {
-    "area": "Papakure",
-    "suburb": "Ardmore"
-  },
-  {
-    "area": "Papakure",
-    "suburb": "Conifer Grove"
-  },
-  {
-    "area": "Papakure",
-    "suburb": "Drury"
-  },
-  {
-    "area": "Papakure",
-    "suburb": "Longford Park"
-  },
-  {
-    "area": "Papakure",
-    "suburb": "Pahurehure"
-  },
-  {
-    "area": "Papakure",
-    "suburb": "Papakura"
-  },
-  {
-    "area": "Papakure",
-    "suburb": "Red Hill"
-  },
-  {
-    "area": "Papakure",
-    "suburb": "Rosehill"
-  },
-  {
-    "area": "Papakure",
-    "suburb": "Runciman"
-  },
-  {
-    "area": "Papakure",
-    "suburb": "Wiri"
-  },
-  {
-    "area": "Papakure",
-    "suburb": "\u014cpaheke"
-  },
-  {
-    "area": "Pukekohe",
-    "suburb": "Ararimu"
-  },
-  {
-    "area": "Pukekohe",
-    "suburb": "Bombay"
-  },
-  {
-    "area": "Pukekohe",
-    "suburb": "Buckland"
-  },
-  {
-    "area": "Pukekohe",
-    "suburb": "Clarks Beach"
-  },
-  {
-    "area": "Pukekohe",
-    "suburb": "Hunua"
-  },
-  {
-    "area": "Pukekohe",
-    "suburb": "Karaka"
-  },
-  {
-    "area": "Pukekohe",
-    "suburb": "Karaka Harbourside"
-  },
-  {
-    "area": "Pukekohe",
-    "suburb": "Kingseat"
-  },
-  {
-    "area": "Pukekohe",
-    "suburb": "Manukau Heads"
-  },
-  {
-    "area": "Pukekohe",
-    "suburb": "Paerata"
-  },
-  {
-    "area": "Pukekohe",
-    "suburb": "Paparimu"
-  },
-  {
-    "area": "Pukekohe",
-    "suburb": "Patumahoe"
-  },
-  {
-    "area": "Pukekohe",
-    "suburb": "Pollok"
-  },
-  {
-    "area": "Pukekohe",
-    "suburb": "Pukekohe"
-  },
-  {
-    "area": "Pukekohe",
-    "suburb": "Takanini"
-  },
-  {
-    "area": "Pukekohe",
-    "suburb": "Waiau Pa"
-  },
-  {
-    "area": "Pukekohe",
-    "suburb": "Waiuku"
-  },
-  {
-    "area": "Pukekohe",
-    "suburb": "\u0100whitu"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Algies Bay"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Arkles Bay"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Army Bay"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Big Omaha"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Dairy Flat"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Dome Forest"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Dome Valley"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Glorit"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Gulf Harbour"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Hatfields Beach"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Helensville"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Huapai"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Kaipara Flats"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Kaukapakapa"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Kume\u016b"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Leigh"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Mahurangi East"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Mahurangi West"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Makarau"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Mangakura"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Manly"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Matakana"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Matakatia"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Millwater"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Muriwai"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Omaha"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Orewa"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Pakiri"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Parakai"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Point Wells"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Port Albert"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Puhoi"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Red Beach"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Redvale"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Riverhead"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Sandspit"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Shelly Beach"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Silverdale"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Snells Beach"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "South Head"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Stanmore Bay"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Tapora"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Tauhoa"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Taupaki"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Te Arai"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Te Hana"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Ti Point"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Tindalls Beach"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Tomarata"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "T\u0101wharanui Peninsula"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Wade Heads"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Waimauku"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Wainui"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Waitoki"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Waiwera"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Warkworth"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Wellsford"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Whangaparaoa"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Whangaripo"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Whangateau"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Wharehine"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Whenuapai"
-  },
-  {
-    "area": "Rodney",
-    "suburb": "Woodhill Forest"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Airport Oaks"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Beachlands"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Botany Downs"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Brookby"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Bucklands Beach"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Burswood"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Chapel Downs"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Clendon Park"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Clevedon"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Clover Park"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Cockle Bay"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Dannemora"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "East T\u0101maki"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "East T\u0101maki Heights"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Eastern Beach"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Farm Cove"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Favona"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Flat Bush"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Golflands"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Goodwood Heights"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Greenmeadows"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Half Moon Bay"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Highland Park"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Hillpark"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Howick"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Huntington Park"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Kawakawa Bay"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Mahia Park"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Manukau"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Manukau Heights"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Manurewa"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Manurewa East"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Maraetai"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Meadowlands"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Mellons Bay"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Middlemore"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Murphys Heights"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "M\u0101ngere"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "M\u0101ngere Bridge"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "M\u0101ngere East"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Northpark"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Orere Point"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Ormiston"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Pakuranga"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Pakuranga Heights"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Papatoetoe"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Randwick Park"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Settlers Cove"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Shamrock Park"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Shelly Park"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Silkwood Heights"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Somerville"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Sunnyhills"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "The Gardens"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Totara Heights"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Tuscany Estate"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Waimahia Landing"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Wattle Cove"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Wattle Downs"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Weymouth"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "Whitford"
-  },
-  {
-    "area": "South Auckland",
-    "suburb": "\u014ctara"
-  },
-  {
-    "area": "Waiheke Island",
-    "suburb": "Oneroa"
-  },
-  {
-    "area": "Waiheke Island",
-    "suburb": "Onetangi"
-  },
-  {
-    "area": "Waiheke Island",
-    "suburb": "Ostend"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Anawhata"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Bethells Beach"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Cornwallis"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Glen Eden"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Glendene"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Green Bay"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Henderson"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Henderson Valley"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Herald Island"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Hobsonville"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Huia"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Karekare"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Kaurilands"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Kelston"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Konini"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Laingholm"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Lincoln"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Massey"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "McLaren Park"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "New Lynn"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Oratia"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Parau"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Piha"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Royal Heights"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "R\u0101nui"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Sunnyvale"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Swanson"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Te Atat\u016b Peninsula"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Te Atat\u016b South"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Titirangi"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Waiatarua"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "West Harbour"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Western Heights"
-  },
-  {
-    "area": "West Auckland ",
-    "suburb": "Westgate"
-  }
-]
+{
+  "lastUpdated": "2025-09-07T23:39:32.473061Z",
+  "suburbs": [
+    {
+      "suburb": "Airport Oaks",
+      "altName": "",
+      "postCode": "2022",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Albany",
+      "altName": "",
+      "postCode": "632",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Alfriston",
+      "altName": "",
+      "postCode": "2571",
+      "area": "Papakure",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Algies Bay",
+      "altName": "",
+      "postCode": "920",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Anawhata",
+      "altName": "",
+      "postCode": "781",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Ararimu",
+      "altName": "",
+      "postCode": "2579",
+      "area": "Pukekohe",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Arch Hill",
+      "altName": "",
+      "postCode": "1021",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Ardmore",
+      "altName": "",
+      "postCode": "2582",
+      "area": "Papakure",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Arkles Bay",
+      "altName": "",
+      "postCode": "932",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Army Bay",
+      "altName": "",
+      "postCode": "930",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Auckland CBD",
+      "altName": "",
+      "postCode": "1010",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Avondale",
+      "altName": "",
+      "postCode": "1026",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Balmoral",
+      "altName": "",
+      "postCode": "1024",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Bayswater",
+      "altName": "",
+      "postCode": "622",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Bayview",
+      "altName": "",
+      "postCode": "629",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Beach Haven",
+      "altName": "",
+      "postCode": "626",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Beachlands",
+      "altName": "",
+      "postCode": "2018",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Belmont",
+      "altName": "",
+      "postCode": "622",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Bethells Beach",
+      "altName": "",
+      "postCode": "781",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Big Omaha",
+      "altName": "",
+      "postCode": "986",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Birkdale",
+      "altName": "",
+      "postCode": "626",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Birkenhead",
+      "altName": "",
+      "postCode": "626",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Blackpool",
+      "altName": "",
+      "postCode": "1081",
+      "area": "Waiheke Island",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Blockhouse Bay",
+      "altName": "",
+      "postCode": "1060",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Bombay",
+      "altName": "",
+      "postCode": "2675",
+      "area": "Pukekohe",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Botany Downs",
+      "altName": "",
+      "postCode": "2010",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Brookby",
+      "altName": "",
+      "postCode": "2576",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Browns Bay",
+      "altName": "",
+      "postCode": "630",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Buckland",
+      "altName": "",
+      "postCode": "2675",
+      "area": "Pukekohe",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Bucklands Beach",
+      "altName": "",
+      "postCode": "2012",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Burswood",
+      "altName": "",
+      "postCode": "2013",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Campbells Bay",
+      "altName": "",
+      "postCode": "620",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Castor Bay",
+      "altName": "",
+      "postCode": "620",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Chapel Downs",
+      "altName": "",
+      "postCode": "2023",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Chatswood",
+      "altName": "",
+      "postCode": "626",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Cheltenham",
+      "altName": "",
+      "postCode": "624",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Clarks Beach",
+      "altName": "",
+      "postCode": "2122",
+      "area": "Pukekohe",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Clendon Park",
+      "altName": "",
+      "postCode": "2103",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Clevedon",
+      "altName": "",
+      "postCode": "2582",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Clover Park",
+      "altName": "",
+      "postCode": "2023",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Cockle Bay",
+      "altName": "",
+      "postCode": "2014",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Conifer Grove",
+      "altName": "",
+      "postCode": "2104",
+      "area": "Papakure",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Cornwallis",
+      "altName": "",
+      "postCode": "604",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Crown Hill",
+      "altName": "",
+      "postCode": "629",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Dairy Flat",
+      "altName": "",
+      "postCode": "794",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Dannemora",
+      "altName": "",
+      "postCode": "2016",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Devonport",
+      "altName": "",
+      "postCode": "624",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Dome Forest",
+      "altName": "",
+      "postCode": "944",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Dome Valley",
+      "altName": "",
+      "postCode": "944",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Drury",
+      "altName": "",
+      "postCode": "2579",
+      "area": "Papakure",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "East Tāmaki",
+      "altNames": [
+        "East Tamaki"
+      ],
+      "postCode": "2013",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "East Tāmaki Heights",
+      "altNames": [
+        "East Tamaki Heights"
+      ],
+      "postCode": "2016",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Eastern Beach",
+      "altName": "",
+      "postCode": "2012",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Eden Terrace",
+      "altName": "",
+      "postCode": "1021",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Eden Valley",
+      "altName": "",
+      "postCode": "1024",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Ellerslie",
+      "altName": "",
+      "postCode": "1051",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Epsom",
+      "altName": "",
+      "postCode": "1023",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Fairview Heights",
+      "altName": "",
+      "postCode": "632",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Farm Cove",
+      "altName": "",
+      "postCode": "2012",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Favona",
+      "altName": "",
+      "postCode": "2024",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Flat Bush",
+      "altName": "",
+      "postCode": "2019",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Forrest Hill",
+      "altName": "",
+      "postCode": "620",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Freemans Bay",
+      "altName": "",
+      "postCode": "1011",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Glen Eden",
+      "altName": "",
+      "postCode": "602",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Glen Innes",
+      "altName": "",
+      "postCode": "1072",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Glendene",
+      "altName": "",
+      "postCode": "602",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Glendowie",
+      "altName": "",
+      "postCode": "1071",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Glenfield",
+      "altName": "",
+      "postCode": "629",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Glorit",
+      "altName": "",
+      "postCode": "875",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Golflands",
+      "altName": "",
+      "postCode": "2013",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Goodwood Heights",
+      "altName": "",
+      "postCode": "2105",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Grafton",
+      "altName": "",
+      "postCode": "1023",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Green Bay",
+      "altName": "",
+      "postCode": "604",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Greenhithe",
+      "altName": "",
+      "postCode": "632",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Greenlane",
+      "altName": "",
+      "postCode": "1051",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Greenmeadows",
+      "altName": "",
+      "postCode": "2016",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Greenwoods Corner",
+      "altName": "",
+      "postCode": "1024",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Grey Lynn",
+      "altName": "",
+      "postCode": "1021",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Gulf Harbour",
+      "altName": "",
+      "postCode": "930",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Half Moon Bay",
+      "altName": "",
+      "postCode": "2012",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Hatfields Beach",
+      "altName": "",
+      "postCode": "930",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Hauraki",
+      "altName": "",
+      "postCode": "622",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Helensville",
+      "altName": "",
+      "postCode": "800",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Henderson",
+      "altName": "",
+      "postCode": "612",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Henderson Valley",
+      "altName": "",
+      "postCode": "612",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Herald Island",
+      "altName": "",
+      "postCode": "618",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Herne Bay",
+      "altName": "",
+      "postCode": "1011",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Highbury",
+      "altName": "",
+      "postCode": "626",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Highland Park",
+      "altName": "",
+      "postCode": "2010",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Hillcrest",
+      "altName": "",
+      "postCode": "627",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Hillpark",
+      "altName": "",
+      "postCode": "2105",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Hillsborough",
+      "altName": "",
+      "postCode": "1042",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Hobsonville",
+      "altName": "",
+      "postCode": "618",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Howick",
+      "altName": "",
+      "postCode": "2014",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Huapai",
+      "altName": "",
+      "postCode": "810",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Huia",
+      "altName": "",
+      "postCode": "604",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Huntington Park",
+      "altName": "",
+      "postCode": "2013",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Hunua",
+      "altName": "",
+      "postCode": "2583",
+      "area": "Pukekohe",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Kaipara Flats",
+      "altName": "",
+      "postCode": "983",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Karaka",
+      "altName": "",
+      "postCode": "2113",
+      "area": "Pukekohe",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Karaka Harbourside",
+      "altName": "",
+      "postCode": "2113",
+      "area": "Pukekohe",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Karekare",
+      "altName": "",
+      "postCode": "781",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Kaukapakapa",
+      "altName": "",
+      "postCode": "873",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Kaurilands",
+      "altName": "",
+      "postCode": "604",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Kawakawa Bay",
+      "altName": "",
+      "postCode": "2583",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Kelston",
+      "altName": "",
+      "postCode": "602",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Kingseat",
+      "altName": "",
+      "postCode": "2123",
+      "area": "Pukekohe",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Kingsland",
+      "altName": "",
+      "postCode": "1021",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Kohimarama",
+      "altName": "",
+      "postCode": "1071",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Konini",
+      "altName": "",
+      "postCode": "604",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Kumeū",
+      "altNames": [
+        "Kumeu"
+      ],
+      "postCode": "810",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Laingholm",
+      "altName": "",
+      "postCode": "604",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Leigh",
+      "altName": "",
+      "postCode": "986",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Lincoln",
+      "altName": "",
+      "postCode": "610",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Long Bay",
+      "altName": "",
+      "postCode": "630",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Longford Park",
+      "altName": "",
+      "postCode": "2113",
+      "area": "Papakure",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Lucas Height",
+      "altName": "",
+      "postCode": "632",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Lynfield",
+      "altName": "",
+      "postCode": "1042",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Mahia Park",
+      "altName": "",
+      "postCode": "2103",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Mahurangi East",
+      "altName": "",
+      "postCode": "984",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Mahurangi West",
+      "altName": "",
+      "postCode": "983",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Mairangi Bay",
+      "altName": "",
+      "postCode": "630",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Makarau",
+      "altName": "",
+      "postCode": "875",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Mangakura",
+      "altName": "",
+      "postCode": "875",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Manly",
+      "altName": "",
+      "postCode": "930",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Manukau",
+      "altName": "",
+      "postCode": "2104",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Manukau Heads",
+      "altName": "",
+      "postCode": "2684",
+      "area": "Pukekohe",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Manukau Heights",
+      "altName": "",
+      "postCode": "2105",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Manurewa",
+      "altName": "",
+      "postCode": "2102",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Manurewa East",
+      "altName": "",
+      "postCode": "2102",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Maraetai",
+      "altName": "",
+      "postCode": "2018",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Marlborough",
+      "altName": "",
+      "postCode": "629",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Massey",
+      "altName": "",
+      "postCode": "614",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Matakana",
+      "altName": "",
+      "postCode": "986",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Matakatia",
+      "altName": "",
+      "postCode": "930",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "McLaren Park",
+      "altName": "",
+      "postCode": "612",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Meadowbank",
+      "altName": "",
+      "postCode": "1072",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Meadowlands",
+      "altName": "",
+      "postCode": "2013",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Mellons Bay",
+      "altName": "",
+      "postCode": "2014",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Meremere",
+      "altName": "",
+      "postCode": "2474",
+      "area": "Greater Auckland Fringe",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "Middlemore",
+      "altName": "",
+      "postCode": "2022",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Milford",
+      "altName": "",
+      "postCode": "620",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Millwater",
+      "altName": "",
+      "postCode": "932",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Mission Bay",
+      "altName": "",
+      "postCode": "1071",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Morningside",
+      "altName": "",
+      "postCode": "1025",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Mount Albert",
+      "altName": "",
+      "postCode": "1025",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Mount Eden",
+      "altName": "",
+      "postCode": "1024",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Mount Roskill",
+      "altName": "",
+      "postCode": "1062",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Mount Wellington",
+      "altName": "",
+      "postCode": "1060",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Muriwai",
+      "altName": "",
+      "postCode": "881",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Murphys Heights",
+      "altName": "",
+      "postCode": "2016",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Murrays Bay",
+      "altName": "",
+      "postCode": "630",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Māngere",
+      "altNames": [
+        "Mangere"
+      ],
+      "postCode": "2022",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Māngere Bridge",
+      "altNames": [
+        "Mangere Bridge"
+      ],
+      "postCode": "2022",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Māngere East",
+      "altNames": [
+        "Mangere East"
+      ],
+      "postCode": "2024",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Narrow Neck",
+      "altName": "",
+      "postCode": "622",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "New Lynn",
+      "altName": "",
+      "postCode": "600",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "New Windsor",
+      "altName": "",
+      "postCode": "1025",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Newmarket",
+      "altName": "",
+      "postCode": "1023",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Newton",
+      "altName": "",
+      "postCode": "1010",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "North Harbour",
+      "altName": "",
+      "postCode": "632",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Northcote",
+      "altName": "",
+      "postCode": "627",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Northcote Point",
+      "altName": "",
+      "postCode": "627",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Northcross",
+      "altName": "",
+      "postCode": "632",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Northpark",
+      "altName": "",
+      "postCode": "2013",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Okura",
+      "altName": "",
+      "postCode": "793",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Omaha",
+      "altName": "",
+      "postCode": "986",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "One Tree Hill",
+      "altName": "",
+      "postCode": "1061",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Onehunga",
+      "altName": "",
+      "postCode": "1061",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Oneroa",
+      "altName": "",
+      "postCode": "1081",
+      "area": "Waiheke Island",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Onetangi",
+      "altName": "",
+      "postCode": "1081",
+      "area": "Waiheke Island",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Oranga",
+      "altName": "",
+      "postCode": "1061",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Oratia",
+      "altName": "",
+      "postCode": "604",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Orere Point",
+      "altName": "",
+      "postCode": "2583",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Orewa",
+      "altName": "",
+      "postCode": "931",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Ormiston",
+      "altName": "",
+      "postCode": "2016",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Ostend",
+      "altName": "",
+      "postCode": "1081",
+      "area": "Waiheke Island",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Oteha",
+      "altName": "",
+      "postCode": "632",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Owairaka",
+      "altName": "",
+      "postCode": "1025",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Paerata",
+      "altName": "",
+      "postCode": "2123",
+      "area": "Pukekohe",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Pahurehure",
+      "altName": "",
+      "postCode": "2113",
+      "area": "Papakure",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Pakiri",
+      "altName": "",
+      "postCode": "986",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Pakuranga",
+      "altName": "",
+      "postCode": "2010",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Pakuranga Heights",
+      "altName": "",
+      "postCode": "2010",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Palm Beach",
+      "altName": "",
+      "postCode": "1081",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Panmure",
+      "altName": "",
+      "postCode": "1072",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Papakura",
+      "altName": "",
+      "postCode": "2110",
+      "area": "Papakure",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Paparimu",
+      "altName": "",
+      "postCode": "2583",
+      "area": "Pukekohe",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Papatoetoe",
+      "altName": "",
+      "postCode": "2025",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Parakai",
+      "altName": "",
+      "postCode": "832",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Parau",
+      "altName": "",
+      "postCode": "604",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Paremoremo",
+      "altName": "",
+      "postCode": "632",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Parnell",
+      "altName": "",
+      "postCode": "1052",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Patumahoe",
+      "altName": "",
+      "postCode": "2678",
+      "area": "Pukekohe",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Penrose",
+      "altName": "",
+      "postCode": "1061",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Piha",
+      "altName": "",
+      "postCode": "781",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Pinehill",
+      "altName": "",
+      "postCode": "632",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Point Chevalier",
+      "altName": "",
+      "postCode": "1022",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Point England",
+      "altName": "",
+      "postCode": "1072",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Point Wells",
+      "altName": "",
+      "postCode": "986",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Pokeno",
+      "altName": "",
+      "postCode": "2471",
+      "area": "Greater Auckland Fringe",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "Pollok",
+      "altName": "",
+      "postCode": "2684",
+      "area": "Pukekohe",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Ponsonby",
+      "altName": "",
+      "postCode": "1011",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Port Albert",
+      "altName": "",
+      "postCode": "982",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Puhoi",
+      "altName": "",
+      "postCode": "950",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Pukekohe",
+      "altName": "",
+      "postCode": "2120",
+      "area": "Pukekohe",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Randwick Park",
+      "altName": "",
+      "postCode": "2105",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Red Beach",
+      "altName": "",
+      "postCode": "932",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Red Hill",
+      "altName": "",
+      "postCode": "2110",
+      "area": "Papakure",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Redvale",
+      "altName": "",
+      "postCode": "794",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Remuera",
+      "altName": "",
+      "postCode": "1050",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Riverhead",
+      "altName": "",
+      "postCode": "820",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Rosedale",
+      "altName": "",
+      "postCode": "632",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Rosehill",
+      "altName": "",
+      "postCode": "2113",
+      "area": "Papakure",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Rothesay Bay",
+      "altName": "",
+      "postCode": "630",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Royal Heights",
+      "altName": "",
+      "postCode": "614",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Royal Oak",
+      "altName": "",
+      "postCode": "1023",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Runciman",
+      "altName": "",
+      "postCode": "2578",
+      "area": "Papakure",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Rānui",
+      "altNames": [
+        "Ranui"
+      ],
+      "postCode": "612",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Saint Heliers",
+      "altName": "",
+      "postCode": "1071",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Saint Marys Bay",
+      "altName": "",
+      "postCode": "1011",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Sandringham",
+      "altName": "",
+      "postCode": "1025",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Sandspit",
+      "altName": "",
+      "postCode": "920",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Schnapper Rock",
+      "altName": "",
+      "postCode": "632",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Settlers Cove",
+      "altName": "",
+      "postCode": "2018",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Shamrock Park",
+      "altName": "",
+      "postCode": "2013",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Shelly Beach",
+      "altName": "",
+      "postCode": "875",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Shelly Park",
+      "altName": "",
+      "postCode": "2014",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Silkwood Heights",
+      "altName": "",
+      "postCode": "2016",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Silverdale",
+      "altName": "",
+      "postCode": "932",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Snells Beach",
+      "altName": "",
+      "postCode": "920",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Somerville",
+      "altName": "",
+      "postCode": "2014",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "South Head",
+      "altName": "",
+      "postCode": "874",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "St Johns",
+      "altName": "",
+      "postCode": "1072",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Stanley Bay",
+      "altName": "",
+      "postCode": "622",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Stanley Point",
+      "altName": "",
+      "postCode": "622",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Stanmore Bay",
+      "altName": "",
+      "postCode": "932",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Stonefields",
+      "altName": "",
+      "postCode": "1072",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Sunnyhills",
+      "altName": "",
+      "postCode": "2010",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Sunnynook",
+      "altName": "",
+      "postCode": "620",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Sunnyvale",
+      "altName": "",
+      "postCode": "612",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Surfdale",
+      "altName": "",
+      "postCode": "1081",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Swanson",
+      "altName": "",
+      "postCode": "612",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Takanini",
+      "altName": "",
+      "postCode": "2112",
+      "area": "Pukekohe",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Takapuna",
+      "altName": "",
+      "postCode": "622",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Tapora",
+      "altName": "",
+      "postCode": "874",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Tauhoa",
+      "altName": "",
+      "postCode": "875",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Taupaki",
+      "altName": "",
+      "postCode": "782",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Te Arai",
+      "altName": "",
+      "postCode": "975",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Te Atatū Peninsula",
+      "altNames": [
+        "Te Atatu Peninsula"
+      ],
+      "postCode": "610",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Te Atatū South",
+      "altNames": [
+        "Te Atatu South"
+      ],
+      "postCode": "610",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Te Hana",
+      "altName": "",
+      "postCode": "977",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Te Papapa",
+      "altName": "",
+      "postCode": "1061",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "The Gardens",
+      "altName": "",
+      "postCode": "2105",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Three Kings",
+      "altName": "",
+      "postCode": "1024",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Ti Point",
+      "altName": "",
+      "postCode": "920",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Tindalls Beach",
+      "altName": "",
+      "postCode": "930",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Titirangi",
+      "altName": "",
+      "postCode": "604",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Tomarata",
+      "altName": "",
+      "postCode": "974",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Torbay",
+      "altName": "",
+      "postCode": "630",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Totara Heights",
+      "altName": "",
+      "postCode": "2105",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Totara Vale",
+      "altName": "",
+      "postCode": "629",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Tuakau",
+      "altName": "",
+      "postCode": "2121",
+      "area": "Greater Auckland Fringe",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "Tuscany Estate",
+      "altName": "",
+      "postCode": "2016",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Tāmaki",
+      "altNames": [
+        "Tamaki"
+      ],
+      "postCode": "1072",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Tāwharanui Peninsula",
+      "altNames": [
+        "Tawharanui Peninsula"
+      ],
+      "postCode": "986",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Unsworth Heights",
+      "altName": "",
+      "postCode": "632",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Wade Heads",
+      "altName": "",
+      "postCode": "932",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Wai o Taiki Bay",
+      "altName": "",
+      "postCode": "1072",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Waiake",
+      "altName": "",
+      "postCode": "630",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Waiatarua",
+      "altName": "",
+      "postCode": "604",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Waiau Pa",
+      "altName": "",
+      "postCode": "2123",
+      "area": "Pukekohe",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Waikowhai",
+      "altName": "",
+      "postCode": "1042",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Waimahia Landing",
+      "altName": "",
+      "postCode": "2103",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Waimauku",
+      "altName": "",
+      "postCode": "812",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Wainui",
+      "altName": "",
+      "postCode": "793",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Wairau Valley",
+      "altName": "",
+      "postCode": "627",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Waitoki",
+      "altName": "",
+      "postCode": "875",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Waiuku",
+      "altName": "",
+      "postCode": "2123",
+      "area": "Pukekohe",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Waiwera",
+      "altName": "",
+      "postCode": "993",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Warkworth",
+      "altName": "",
+      "postCode": "910",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Waterview",
+      "altName": "",
+      "postCode": "1026",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Wattle Cove",
+      "altName": "",
+      "postCode": "2103",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Wattle Downs",
+      "altName": "",
+      "postCode": "2103",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Wellsford",
+      "altName": "",
+      "postCode": "940",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Wesley",
+      "altName": "",
+      "postCode": "1025",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "West Harbour",
+      "altName": "",
+      "postCode": "618",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Western Heights",
+      "altName": "",
+      "postCode": "612",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Western Springs",
+      "altName": "",
+      "postCode": "1022",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Westfield",
+      "altName": "",
+      "postCode": "1061",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Westgate",
+      "altName": "",
+      "postCode": "614",
+      "area": "West Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Westlake",
+      "altName": "",
+      "postCode": "620",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Westmere",
+      "altName": "",
+      "postCode": "1022",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Weymouth",
+      "altName": "",
+      "postCode": "2103",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Whangaparaoa",
+      "altName": "",
+      "postCode": "932",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Whangaripo",
+      "altName": "",
+      "postCode": "974",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Whangateau",
+      "altName": "",
+      "postCode": "986",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Wharehine",
+      "altName": "",
+      "postCode": "874",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Whenuapai",
+      "altName": "",
+      "postCode": "618",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Whitford",
+      "altName": "",
+      "postCode": "2571",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Windsor Park",
+      "altName": "",
+      "postCode": "632",
+      "area": "North Shore",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Wiri",
+      "altName": "",
+      "postCode": "2104",
+      "area": "Papakure",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Woodhill Forest",
+      "altName": "",
+      "postCode": "810",
+      "area": "Rodney",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Āwhitu",
+      "altNames": [
+        "Awhitu"
+      ],
+      "postCode": "2684",
+      "area": "Pukekohe",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Ōpaheke",
+      "altNames": [
+        "Opaheke"
+      ],
+      "postCode": "2113",
+      "area": "Papakure",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Ōrākei",
+      "altNames": [
+        "Orakei"
+      ],
+      "postCode": "1071",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Ōtara",
+      "altNames": [
+        "Otara"
+      ],
+      "postCode": "2023",
+      "area": "South Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    },
+    {
+      "suburb": "Ōtāhuhu",
+      "altNames": [
+        "Otahuhu"
+      ],
+      "postCode": "1062",
+      "area": "Central Auckland",
+      "zone": "nan",
+      "zoneCost": "nan",
+      "zoneKm": "nan"
+    }
+  ]
+}

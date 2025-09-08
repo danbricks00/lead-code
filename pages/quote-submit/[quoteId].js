@@ -262,73 +262,6 @@ const QuoteSubmitPage = () => {
     setParsedRooms([...parsedRooms, newRoom]);
   };
 
-  const generatePDF = async () => {
-    try {
-      console.log('🔄 Generating PDF for quote:', quoteId);
-      
-      const quoteData = {
-        quoteId,
-        quoteDate: new Date().toISOString(),
-        validUntil: validUntil,
-        customerName: leadDetails?.CustomerName || 'N/A',
-        customerEmail: leadDetails?.CustomerEmail || 'N/A',
-        customerPhone: leadDetails?.CustomerPhone || 'N/A',
-        customerAddress: leadDetails?.Location || 'N/A',
-        serviceType: leadDetails?.ServiceType || 'Underfloor Heating',
-        tradespersonName: tradesperson.name,
-        tradespersonEmail: tradesperson.email,
-        tradespersonPhone: tradesperson.phone,
-        tradespersonLicense: 'Licensed Tradesperson',
-        rooms: parsedRooms.map(room => ({
-          name: room.name,
-          dimensions: room.dimensions || room.originalInput,
-          sqm: room.sqm,
-          labourHours: parseFloat(costs.labourHours) || 0,
-          labourCost: (parseFloat(costs.labourRate) || 0) * (parseFloat(costs.labourHours) || 0),
-          materialsCost: (parseFloat(costs.materialsCost) || 0) * (parseFloat(costs.materialsQuantity) || 0)
-        })),
-        totals: {
-          labour: totals.labour,
-          materials: totals.materials,
-          travel: totals.travel,
-          installation: totals.installation,
-          subtotal: totals.subtotal,
-          gst: totals.gst,
-          final: totals.final
-        }
-      };
-
-      const response = await fetch('/api/generate-quote-pdf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(quoteData),
-      });
-
-      if (response.ok) {
-        // Create blob and download
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `quote-${quoteId}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        
-        console.log('✅ PDF generated and downloaded successfully');
-      } else {
-        const error = await response.json();
-        console.error('❌ PDF generation failed:', error);
-        alert('Failed to generate PDF: ' + (error.error || 'Unknown error'));
-      }
-    } catch (error) {
-      console.error('❌ PDF generation error:', error);
-      alert('Failed to generate PDF: ' + error.message);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -661,17 +594,25 @@ const QuoteSubmitPage = () => {
             </div>
           </div>
 
-          <div style={styles.buttonGroup}>
-            <button 
-              type="button" 
-              style={styles.pdfButton} 
-              onClick={generatePDF}
-              disabled={submissionStatus === 'submitting'}
-            >
-              📄 Generate PDF Quote
-            </button>
-            <button type="submit" style={styles.button} disabled={submissionStatus === 'submitting'}>
-              {submissionStatus === 'submitting' ? 'Submitting...' : 'Submit Quote to Customer'}
+          <div style={{
+            position: 'sticky',
+            bottom: 0,
+            background: '#fff',
+            padding: '12px',
+            borderTop: '1px solid #eee'
+          }}>
+            <button type="submit" style={{
+              width: '100%',
+              background: '#0a7aff',
+              color: '#fff',
+              padding: '14px 18px',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: 600,
+              fontSize: '16px',
+              cursor: 'pointer'
+            }} disabled={submissionStatus === 'submitting'}>
+              {submissionStatus === 'submitting' ? 'Submitting...' : 'Submit Quote'}
             </button>
           </div>
           {submissionStatus === 'error' && <p style={styles.error}>{errorMessage}</p>}
@@ -710,24 +651,6 @@ const styles = {
   finalTotalRow: { fontSize: '1.2em', fontWeight: 'bold', color: '#2c5530' },
   textarea: { width: '100%', padding: '8px', boxSizing: 'border-box', border: '1px solid #ddd', borderRadius: '4px', minHeight: '80px' },
   button: { width: '100%', padding: '12px', background: '#4caf50', color: 'white', border: 'none', borderRadius: '4px', fontSize: '1em', cursor: 'pointer' },
-  buttonGroup: {
-    display: 'flex',
-    gap: '15px',
-    marginTop: '20px'
-  },
-  pdfButton: {
-    background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '15px 30px',
-    fontSize: '16px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    boxShadow: '0 4px 15px rgba(40, 167, 69, 0.3)',
-    flex: 1
-  },
   error: { color: 'red', marginTop: '10px', textAlign: 'center' },
   editButton: {
     background: 'none',

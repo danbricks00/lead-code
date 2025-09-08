@@ -38,6 +38,9 @@ export default async function handler(req, res) {
       isUnlistedSuburb, suburbAdditionalInfo
     } = req.body;
 
+    console.log('[LEAD-INTAKE] Received rooms data:', rooms);
+    console.log('[LEAD-INTAKE] Rooms type:', typeof rooms);
+
     if (!customerName || !customerEmail) {
       return res.status(400).json({ error: "Missing required fields" });
     }

@@ -242,6 +242,9 @@ const Chatbot = ({ handleClose, handleReset }) => {
         }
       }
 
+      console.log('[CHATBOT] Submitting lead data:', finalData);
+      console.log('[CHATBOT] Rooms data:', finalData.rooms);
+      
       const response = await fetch('/api/lead-intake', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

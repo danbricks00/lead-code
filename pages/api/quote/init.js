@@ -34,13 +34,17 @@ export default async function handler(req, res) {
     }
 
     // Prefill for UI
+    const parsedRooms = safeParseRooms(lead.Rooms);
+    console.log('[QUOTE-INIT] Raw Rooms data:', lead.Rooms);
+    console.log('[QUOTE-INIT] Parsed Rooms data:', parsedRooms);
+
     const mappedLead = {
       leadId: lead.Lead || '',
       customerName: lead.CustomerName || '',
       customerEmail: lead.CustomerEmail || '',
       customerPhone: lead.CustomerPhone || '',
       serviceType: lead.ServiceType || '',
-      rooms: safeParseRooms(lead.Rooms),
+      rooms: parsedRooms,
       sqm: lead.Sqm || '',
       area: lead.Area || '',
       suburb: lead.Suburb || '',

@@ -108,10 +108,27 @@ const QuoteSubmitPage = () => {
 
             // Make room data lookup case-insensitive to handle inconsistencies
             const roomDataString = result.lead.rooms; 
+            console.log('[FORM] Room data received:', roomDataString, 'Type:', typeof roomDataString);
 
             if (roomDataString) {
                 try {
-                    const roomsData = JSON.parse(roomDataString);
+                    // Handle different data formats
+                    let roomsData;
+                    if (Array.isArray(roomDataString)) {
+                        roomsData = roomDataString;
+                    } else if (typeof roomDataString === 'string') {
+                        // Check if it's a JSON string or just a string representation of an object
+                        if (roomDataString.startsWith('[') || roomDataString.startsWith('{')) {
+                            roomsData = JSON.parse(roomDataString);
+                        } else {
+                            console.log('[FORM] Room data is not valid JSON, skipping:', roomDataString);
+                            roomsData = [];
+                        }
+                    } else {
+                        console.log('[FORM] Room data is not array or string, skipping:', roomDataString);
+                        roomsData = [];
+                    }
+                    console.log('[FORM] Parsed rooms data:', roomsData);
                     
                     // Parse dimensions and calculate sqm for each room
                     const parsedRoomsWithSqm = Array.isArray(roomsData) ? roomsData.map(room => {
@@ -152,40 +169,8 @@ const QuoteSubmitPage = () => {
             setIsEditing(true);
           }
 
-          // Check for existing quote data (resubmission)
-          try {
-            const quoteResponse = await fetch(`/api/get-quote-details?quoteId=${quoteId}`);
-            const quoteResult = await quoteResponse.json();
-            
-            if (quoteResult.success && quoteResult.quote) {
-              const quote = quoteResult.quote;
-              
-              // Check if this is a declined quote that can be resubmitted
-              if (quote['Admin Status'] === 'Declined' && quote['Reesubmission Allowed'] === 'Yes') {
-                setIsResubmission(true);
-                setDeclineReason(quote['Decline Reason'] || 'Quote needs revision');
-                
-                // Pre-populate the form with existing quote data
-                if (quote['TradesPerson Name']) setTradesperson(prev => ({...prev, name: quote['TradesPerson Name']}));
-                if (quote['TradePerson Email']) setTradesperson(prev => ({...prev, email: quote['TradePerson Email']}));
-                
-                setCosts({
-                  labourRate: quote['Labour Cost'] || '',
-                  labourHours: quote['Labour Hour'] || '',
-                  materialsCost: quote['Materials Cost'] || '',
-                  materialsQuantity: quote['Materials Quanitity'] || '',
-                  travelCost: quote['Travel Cost'] || '',
-                  travelDistance: quote['Travel Distance'] || '',
-                  installationCost: quote['Installation Cost'] || '',
-                });
-                
-                setNotes(quote['Notes'] || '');
-                if (quote['Quote Valid Unitl']) setValidUntil(quote['Quote Valid Unitl']);
-              }
-            }
-          } catch (quoteError) {
-            console.log("[FORM] No existing quote data found (normal for new quotes)");
-          }
+          // Note: Resubmission logic removed - using new unified system
+          // The new system handles quote states through the Quotes tab directly
 
         } catch (error) {
           console.error("[FORM] Fatal fetch error, enabling edit mode.", error);

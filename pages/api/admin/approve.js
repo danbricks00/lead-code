@@ -241,10 +241,10 @@ export default async function handler(req, res) {
             customerPhone: quoteData.CustomerPhone || leadData.CustomerPhone,
             customerAddress: quoteData.Location || `${leadData.Area || ''}, ${leadData.Suburb || ''}`.trim(),
             serviceType: quoteData.ServiceType || leadData.ServiceType,
-            tradespersonName: quoteData.TradePersonName || 'Professional Tradesperson',
-            tradespersonEmail: quoteData.TradePersonEmail || 'contact@kiwitrade.co.nz',
-            tradespersonPhone: quoteData.TradePersonPhone || 'Contact via Kiwi Trade',
-            tradespersonLicense: 'Licensed Tradesperson',
+            tradespersonName: quoteData.TradePersonName || '',
+            tradespersonEmail: quoteData.TradePersonEmail || '',
+            tradespersonPhone: quoteData.TradePersonPhone || '',
+            tradespersonLicense: '',
             rooms: roomsWithDetails,
             // EXACT SAME breakdown structure as quote-submit.js
             breakdown: {

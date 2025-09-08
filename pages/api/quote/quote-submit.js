@@ -1,4 +1,4 @@
-import { upsertQuoteRow, createQuoteRowData, generateMutationId } from '../../../utils/sheets.js';
+import { upsertQuoteRow, generateMutationId } from '../../../utils/sheets.js';
 import { generateQuotePDF, generateHTMLQuote } from '../../../utils/pdf.js';
 import { normalizeQuoteDataAddresses, normalizeLeadDataAddresses } from '../../../utils/normalize.js';
 import { sendEmail } from '../../../lib/emailHelper';
@@ -259,11 +259,45 @@ export default async function handler(req, res) {
             console.log(`[QUOTE-SUBMIT] Generated HTML backup quote after error`);
         }
 
-        // Create quote row data for upsert
-        const quoteRowData = createQuoteRowData(quoteId, normalizedLeadDetails, normalizedQuoteDetails, {
-            LastMutationId: mutationId,
-            Status: 'Submitted'
-        });
+        // Create quote row data for upsert (matching QUOTES_HEADERS schema)
+        const quoteRowData = {
+            TimeStamp: getNZTimestamp(),
+            QuoteID: quoteId,
+            LeadID: normalizedLeadDetails.Lead || normalizedLeadDetails.LeadId || '',
+            TradePersonName: normalizedQuoteDetails.tradespersonName || '',
+            TradePersonEmail: normalizedQuoteDetails.tradespersonEmail || '',
+            TradePersonPhone: normalizedQuoteDetails.tradespersonPhone || '',
+            CustomerStatus: 'Submitted',
+            TradePersonStatus: 'Pending',
+            AdminPersonStatus: 'Pending',
+            LabourRate: normalizedQuoteDetails.labourRate || '',
+            LabourHours: normalizedQuoteDetails.labourHours || '',
+            LabourTotal: normalizedQuoteDetails.labourTotal || '',
+            MaterialsCost: normalizedQuoteDetails.materialsCost || '',
+            MaterialsQuantity: normalizedQuoteDetails.materialsQuantity || '',
+            MaterialsTotal: normalizedQuoteDetails.materialsTotal || '',
+            TravelCost: normalizedQuoteDetails.travelCost || '',
+            TravelDistance: normalizedQuoteDetails.travelDistance || '',
+            TravelTotal: normalizedQuoteDetails.travelTotal || '',
+            InstallationCost: normalizedQuoteDetails.installationCost || '',
+            Subtotal: normalizedQuoteDetails.subtotal || '',
+            GST: normalizedQuoteDetails.gst || '',
+            TotalQuote: normalizedQuoteDetails.totalQuote || '',
+            Notes: normalizedQuoteDetails.notes || '',
+            ValidUntil: normalizedQuoteDetails.validUntil || '',
+            ResubmissionAllowed: 'Yes',
+            Decision: '',
+            DecisionTimestamp: '',
+            CustomerName: normalizedLeadDetails.CustomerName || '',
+            CustomerEmail: normalizedLeadDetails.CustomerEmail || '',
+            CustomerPhone: normalizedLeadDetails.CustomerPhone || '',
+            ServiceType: normalizedLeadDetails.ServiceType || '',
+            Location: normalizedLeadDetails.Location || '',
+            Timeline: normalizedLeadDetails.Timeline || normalizedLeadDetails.Timelline || '',
+            Budget: normalizedLeadDetails.Budget || '',
+            Rooms: normalizedLeadDetails.Rooms || '',
+            BreakDown: JSON.stringify(normalizedQuoteDetails.breakdown || {})
+        };
 
         // Upsert to Google Sheets (NO MORE APPENDS)
         console.log(`[QUOTE-SUBMIT] Upserting quote data to Google Sheets`);

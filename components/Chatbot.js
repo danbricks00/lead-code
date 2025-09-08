@@ -274,17 +274,11 @@ const Chatbot = ({ handleClose, handleReset }) => {
             const count = parseInt(value, 10);
             return !isNaN(count) && count > 0 && count < 20 ? null : "Please enter a valid number between 1 and 20.";
         case 'ask_room_name':
-            // Prevent dimension-like inputs (digits, "x", "m", etc.)
-            const roomNameRegex = /^[a-zA-Z\s'-\.]{2,}$/;
-            if (!roomNameRegex.test(value.trim())) {
-                return "Please enter a valid room name (letters only, e.g., Kitchen, Lounge, Master Bedroom).";
+            // Only allow predefined room names
+            if (!ALLOWED_ROOMS.includes(value)) {
+              return "Please select one of the provided room names.";
             }
-            // Prevent dimension-like patterns
-            const dimensionPattern = /^\d+\.?\d*\s*(x|m|m²|m2|sqm|square\s*meters?)?\s*$/i;
-            if (dimensionPattern.test(value.trim())) {
-                return "Please enter a room name, not dimensions (e.g., Kitchen, Lounge, Master Bedroom).";
-            }
-            return value.trim().length > 1 ? null : "Please enter a valid name for the room.";
+            return null;
         case 'ask_room_dimensions':
             const parsed = parseDimensions(value);
             if (!parsed) {
@@ -650,12 +644,39 @@ const Chatbot = ({ handleClose, handleReset }) => {
   const isChatEnded = isCompleted || step === 'completed';
   // Show text input for all steps except suburb search, timeline options, budget options, and review data
   // BUT show it when editing a field in review mode
-  const showTextInput = !isChatEnded && !['ask_suburb', 'ask_timeline', 'ask_budget', 'review_data'].includes(step) || editingField;
+  const showTextInput = !isChatEnded && 
+    !['ask_suburb', 'ask_timeline', 'ask_budget', 'ask_room_name', 'review_data'].includes(step) || 
+    editingField;
 
   const timelineOptions = ["Immediately", "In a week", "In a couple of months", "Other"];
   
-  // Calculate reasonable budget options based on room data (memoized for performance)
-  const budgetOptions = useMemo(() => {
+  // Add predefined room name options
+  const ALLOWED_ROOMS = [ 
+  // 🏠 Residential Core 
+  "Kitchen", "Bathroom", "Bedroom", "Living Room", "Dining Room", "Lounge", "Hallway", "Toilet", "Ensuite", 
+  // 🧺 Residential Utility 
+  "Garage", "Laundry", "Pantry", "Storage Room", "Utility Room", "Basement", "Attic", "Loft", "Mudroom", 
+  // 🛏 Sleeping 
+  "Guest Room", "Spare Room", "Nursery", "Kids Room", "Master Bedroom", 
+  // 🎮 Entertainment 
+  "Games Room", "Playroom", "Media Room", "Home Theater", 
+  // 🏋️‍♂️ Special residential 
+  "Gym", "Workshop", "Studio", "Sunroom", "Greenhouse", "Conservatory", "Terrace", "Balcony", 
+
+  // 💼 Commercial General 
+  "Office", "Meeting Room", "Conference Room", "Boardroom", "Training Room", "Server Room", "Reception", 
+  "Waiting Room", "Break Room", "Canteen", "Restroom", "Storage", "Warehouse", "Loading Dock", 
+  "Open Plan Office", "Cafe", "Kiosk", "Cafeteria", 
+  // 🛍 Retail / Hospitality 
+  "Shop", "Storefront", "Showroom", "Restaurant", "Bar", "Pub", "Kitchenette", "Lobby", 
+  "Hotel Room", "Suite", "Banquet Hall", "Ballroom", 
+  // 🏭 Industrial 
+  "Factory Floor", "Assembly Area", "Manufacturing Floor", "Workshop", "Lab", "Laboratory", 
+  "Cold Room", "Freezer Room"
+];
+
+// Calculate reasonable budget options based on room data (memoized for performance)
+const budgetOptions = useMemo(() => {
     const totalSqm = leadData.rooms.reduce((sum, room) => {
       const sqm = parseFloat(room.sqm) || 0;
       return sum + sqm;
@@ -702,7 +723,25 @@ const Chatbot = ({ handleClose, handleReset }) => {
             ))}
         </div>
       )}
-
+      
+      {step === 'edit_room_name' && !isLoading && (
+        <div style={{...styles.optionsContainer, maxHeight: '200px', overflowY: 'auto'}}>
+          {ALLOWED_ROOMS.map(option => (
+            <button 
+              key={option} 
+              onClick={() => {
+                handleFieldEdit(editingField, option);
+                setEditingField(null);
+                setStep('review_data');
+              }} 
+              style={styles.optionButton}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      )}
+      
       {step === 'ask_budget' && !isLoading && (
         <div style={styles.optionsContainer}>
             {budgetOptions.map(option => (
@@ -712,7 +751,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
             ))}
         </div>
       )}
-
+      
       {step === 'ask_suburb' && !isLoading && (
         <div style={styles.suburbSearchContainer}>
             <div style={{marginBottom: '10px', fontSize: '14px', color: '#666'}}>

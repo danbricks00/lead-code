@@ -306,7 +306,7 @@ export default async function handler(req, res) {
             spreadsheetId: spreadsheetId.substring(0, 10) + '...', 
             range 
         }, requestId);
-        
+
         const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
         const rows = response.data.values;
         

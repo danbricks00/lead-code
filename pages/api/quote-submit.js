@@ -98,7 +98,7 @@ function renderQuoteHtml(q) {
       <tr><td><strong>Subtotal</strong></td><td class="r"><strong>$${money(q.Subtotal)}</strong></td></tr>
       <tr><td>GST</td><td class="r">$${money(q.GST)}</td></tr>
       <tr><td><strong>Total</strong></td><td class="r"><strong>$${money(q.TotalQuote)}</strong></td></tr>
-    </table>
+                    </table>
     </body></html>
   `;
 }
@@ -107,7 +107,7 @@ async function safeSend(fn, to, pdf, row, tag) {
   try { 
     if (to && typeof fn === 'function') { 
       await fn(to, pdf, row); 
-    } else { 
+    } else {
       console.log(JSON.stringify({ tag: `${tag}_SKIP` })); 
     } 
   } catch (e) { 

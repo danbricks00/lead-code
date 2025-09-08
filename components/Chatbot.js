@@ -209,6 +209,39 @@ const Chatbot = ({ handleClose, handleReset }) => {
     addMessage("Thank you! We are submitting your request now...");
 
     try {
+      // If this is an unlisted suburb, log it first
+      if (finalData.isUnlistedSuburb) {
+        try {
+          const unlistedResponse = await fetch('/api/unlisted-suburb', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              suburbName: finalData.suburb,
+              additionalInfo: `Customer provided suburb: ${finalData.suburb}`,
+              customerName: `${finalData.customerFirstName} ${finalData.customerLastName}`,
+              customerEmail: finalData.customerEmail,
+              customerPhone: finalData.customerPhone,
+              leadId: finalData.Lead,
+              serviceType: 'Underfloor Heating',
+              rooms: finalData.rooms,
+              area: finalData.area,
+              budget: finalData.budget,
+              timeline: finalData.timeline
+            }),
+          });
+
+          const unlistedResult = await unlistedResponse.json();
+          if (unlistedResult.success) {
+            console.log('✅ Unlisted suburb logged:', unlistedResult);
+          }
+        } catch (unlistedError) {
+          console.error('❌ Failed to log unlisted suburb:', unlistedError);
+          // Continue with normal lead submission even if unlisted suburb logging fails
+        }
+      }
+
       const response = await fetch('/api/lead-intake', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -217,7 +250,11 @@ const Chatbot = ({ handleClose, handleReset }) => {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        addMessage('✅ Your lead has been submitted successfully! We will be in touch shortly.');
+        if (finalData.isUnlistedSuburb) {
+          addMessage('✅ Thank you! Your quote request has been submitted. Since your suburb isn\'t in our current service list, we\'ll review your location and get back to you within 24 hours to confirm if we can service your area.');
+        } else {
+          addMessage('✅ Your lead has been submitted successfully! We will be in touch shortly.');
+        }
         setIsCompleted(true);
       } else {
         throw new Error(result.error || 'An unknown error occurred.');
@@ -276,10 +313,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
             const phoneRegex = /^\+?[0-9]{6,10}$/;
             return phoneRegex.test(cleanPhone) ? null : "Please enter a valid phone number (6-10 digits, + allowed for international).";
         case 'ask_suburb':
-            // Validation now checks if the selected suburb exists in our initial list
-            return zoneData.some(zone => zone.suburb.toLowerCase() === value.toLowerCase()) 
-                ? null 
-                : "Please select a valid suburb from the list.";
+            // Allow any suburb input - we'll handle unlisted suburbs separately
+            return value.trim().length > 0 ? null : "Please enter a suburb name.";
         case 'ask_email':
             return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? null : "Please enter a valid email address.";
         default:
@@ -386,14 +421,29 @@ const Chatbot = ({ handleClose, handleReset }) => {
             }
             break;
         case 'ask_suburb':
-            // Find the corresponding area for the selected suburb
+            // Check if suburb is in our list
             const selectedZone = zoneData.find(zone => zone.suburb.toLowerCase() === input.toLowerCase());
-            setLeadData(prev => ({ 
-                ...prev, 
-                suburb: selectedZone.suburb,
-                area: selectedZone.area 
-            }));
-            nextStep('ask_email');
+            
+            if (selectedZone) {
+                // Suburb is in our list - proceed normally
+                setLeadData(prev => ({ 
+                    ...prev, 
+                    suburb: selectedZone.suburb,
+                    area: selectedZone.area,
+                    isUnlistedSuburb: false
+                }));
+                nextStep('ask_email');
+            } else {
+                // Suburb not in our list - proceed as normal lead but mark as unlisted
+                setLeadData(prev => ({ 
+                    ...prev, 
+                    suburb: input,
+                    area: 'Unlisted Suburb',
+                    isUnlistedSuburb: true,
+                    suburbAdditionalInfo: '' // Will be filled during lead submission
+                }));
+                nextStep('ask_email');
+            }
             break;
         case 'ask_email':
             // Add email to leadData and move to review step
@@ -579,6 +629,17 @@ const Chatbot = ({ handleClose, handleReset }) => {
     }
   };
 
+  const handleSuburbSubmit = (e) => {
+    e.preventDefault();
+    const suburbInput = suburbSearch.trim();
+    if (!suburbInput || isLoading) return;
+
+    addMessage(suburbInput, true);
+    setSuburbSearch('');
+    setSuburbSuggestions([]);
+    processUserInput(suburbInput);
+  };
+
   const isChatEnded = isCompleted || step === 'completed';
   // Show text input for all steps except suburb search, timeline options, budget options, and review data
   const showTextInput = !isChatEnded && !['ask_suburb', 'ask_timeline', 'ask_budget', 'review_data'].includes(step) && !editingField;
@@ -646,14 +707,30 @@ const Chatbot = ({ handleClose, handleReset }) => {
 
       {step === 'ask_suburb' && !isLoading && (
         <div style={styles.suburbSearchContainer}>
-            <input
-                type="text"
-                value={suburbSearch}
-                onChange={handleSuburbSearchChange}
-                style={styles.inputField}
-                placeholder="Type your suburb..."
-                autoFocus
-            />
+            <div style={{marginBottom: '10px', fontSize: '14px', color: '#666'}}>
+                💡 Start typing to see suggestions, or type any suburb name if not listed
+            </div>
+            <form onSubmit={handleSuburbSubmit} style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
+                <input
+                    type="text"
+                    value={suburbSearch}
+                    onChange={handleSuburbSearchChange}
+                    style={styles.inputField}
+                    placeholder="Type your suburb..."
+                    autoFocus
+                />
+                <button 
+                    type="submit" 
+                    style={{
+                        ...styles.submitButton,
+                        padding: '10px 15px',
+                        fontSize: '14px'
+                    }}
+                    disabled={!suburbSearch.trim()}
+                >
+                    Submit
+                </button>
+            </form>
             {suburbSuggestions.length > 0 && (
                 <div style={styles.suggestionsContainer}>
                     {suburbSuggestions.map(zone => (

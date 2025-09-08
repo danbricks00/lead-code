@@ -43,7 +43,8 @@ export default async function handler(req, res) {
 
   const {
     customerName, customerEmail, customerPhone, serviceType, rooms, 
-    area, suburb, timeline, budget, specificDetails, projectDetails, projectSize
+    area, suburb, timeline, budget, specificDetails, projectDetails, projectSize,
+    isUnlistedSuburb, suburbAdditionalInfo
   } = req.body;
 
   if (!customerName || !customerEmail) {
@@ -150,8 +151,20 @@ export default async function handler(req, res) {
       ? `<li><b>Room Details:</b><ul>${rooms.map(room => `<li>${room.name || 'Unnamed'}: ${room.dimensions || 'N/A'}</li>`).join('')}</ul></li>`
       : '';
 
+    // Add unlisted suburb warning if applicable
+    const unlistedSuburbWarning = isUnlistedSuburb ? `
+      <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0;">
+        <h3 style="color: #856404; margin-top: 0;">🚨 UNLISTED SUBURB ALERT</h3>
+        <p><strong>Suburb:</strong> ${suburb}</p>
+        <p><strong>Status:</strong> This suburb is not in our current service list</p>
+        <p><strong>Action Required:</strong> Please review if we can service this area or reject the lead</p>
+        <p><strong>Admin Panel:</strong> <a href="https://${baseUrl}/admin-unlisted-suburbs.html">Manage Unlisted Suburbs</a></p>
+      </div>
+    ` : '';
+
     const leadDetailsHtml = `
       <p>A new lead has been received with the following details:</p>
+      ${unlistedSuburbWarning}
       <ul>
         <li><b>Lead ID:</b> ${leadId}</li>
         <li><b>Customer Name:</b> ${customerName}</li>
@@ -162,6 +175,7 @@ export default async function handler(req, res) {
         <li><b>Budget:</b> ${budget || "Not specified"}</li>
         <li><b>Timeline:</b> ${timeline || "Not specified"}</li>
         ${roomsHtml}
+        ${isUnlistedSuburb ? `<li><b>⚠️ Unlisted Suburb:</b> ${suburb} (not in service list)</li>` : ''}
       </ul>
     `;
 
@@ -190,17 +204,19 @@ export default async function handler(req, res) {
       html: `<p>Hi ${customerName},</p><p>Thanks for your request. We've received your project details and a tradesperson will be in touch with a quote shortly.</p><p>For your records, here are the details you provided:</p>${leadDetailsHtml}${gamifyStatus}`,
     };
 
+    const unlistedPrefix = isUnlistedSuburb ? "🚨 UNLISTED SUBURB - " : "";
+    
     const tradespersonMail = {
       from: `"Kiwi Trade Leads" <${process.env.GMAIL_USER}>`,
       to: "quangbui0600@gmail.com", // This should be a dynamic tradesperson email
-      subject: `🔔 New Underfloor Heating Lead: ${suburb || area}`,
+      subject: `${unlistedPrefix}🔔 New Underfloor Heating Lead: ${suburb || area}`,
       html: `<h1>New Lead Received</h1>${leadDetailsHtml}<p>Please prepare a quote for this customer by clicking the link below:</p><h2><a href="${quoteLink}">Submit Your Quote Now</a></h2>`,
     };
 
     const adminMail = {
       from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
       to: "danbricks18@gmail.com",
-      subject: `New Lead Logged: ${customerName} in ${suburb || area}`,
+      subject: `${unlistedPrefix}New Lead Logged: ${customerName} in ${suburb || area}`,
       html: `<h1>New Lead Logged (#${leadId})</h1>${leadDetailsHtml}<p>A quote link has been sent to the tradesperson.</p><p>Quote Link: ${quoteLink}</p>`,
     };
 

@@ -581,6 +581,13 @@ const Chatbot = ({ handleClose, handleReset }) => {
     addMessage(`Please enter the new value for ${getFieldDisplayName(fieldKey)}:`, true);
   };
 
+  // Cancel editing
+  const cancelEditing = () => {
+    setEditingField(null);
+    setInputValue('');
+    addMessage('Edit cancelled. You can click "Edit" on any field to make changes.', true);
+  };
+
   // Submit the final lead data
   const submitLeadData = () => {
     const finalData = {
@@ -642,7 +649,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
 
   const isChatEnded = isCompleted || step === 'completed';
   // Show text input for all steps except suburb search, timeline options, budget options, and review data
-  const showTextInput = !isChatEnded && !['ask_suburb', 'ask_timeline', 'ask_budget', 'review_data'].includes(step) && !editingField;
+  // BUT show it when editing a field in review mode
+  const showTextInput = !isChatEnded && !['ask_suburb', 'ask_timeline', 'ask_budget', 'review_data'].includes(step) || editingField;
 
   const timelineOptions = ["Immediately", "In a week", "In a couple of months", "Other"];
   
@@ -749,6 +757,11 @@ const Chatbot = ({ handleClose, handleReset }) => {
 
       {step === 'review_data' && !isLoading && (
         <div style={styles.reviewContainer}>
+          {editingField && (
+            <div style={{...styles.editingIndicator, backgroundColor: '#fff3cd', border: '1px solid #ffeaa7', color: '#856404'}}>
+              ✏️ Editing: {getFieldDisplayName(editingField)} - Type your new value below and press Enter, or click ✕ to cancel
+            </div>
+          )}
           <div style={styles.reviewSection}>
             <h3 style={styles.reviewSectionTitle}>📋 Project Details</h3>
             <div style={styles.reviewField}>
@@ -821,9 +834,20 @@ const Chatbot = ({ handleClose, handleReset }) => {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             style={styles.inputField}
-            placeholder="Type your message..."
+            placeholder={editingField ? `Enter new ${getFieldDisplayName(editingField).toLowerCase()}...` : "Type your message..."}
             disabled={isLoading}
+            autoFocus={editingField}
           />
+          {editingField && (
+            <button 
+              type="button" 
+              onClick={cancelEditing}
+              style={{...styles.sendButton, background: '#dc3545', marginRight: '5px'}}
+              title="Cancel editing"
+            >
+              ✕
+            </button>
+          )}
           <button type="submit" style={styles.sendButton} disabled={isLoading || !inputValue.trim()}>
             ➤
           </button>
@@ -855,12 +879,13 @@ const styles = {
   progressBar: { width: '100%', backgroundColor: '#555', borderRadius: '5px', height: '8px' },
   progress: { height: '100%', backgroundColor: '#4caf50', borderRadius: '5px', transition: 'width 0.4s ease-in-out' },
   reviewContainer: { padding: '15px', borderTop: '1px solid #eee', backgroundColor: '#f9f9f9', maxHeight: '400px', overflowY: 'auto' },
+  editingIndicator: { padding: '10px', borderRadius: '5px', marginBottom: '15px', fontSize: '14px', fontWeight: 'bold', textAlign: 'center' },
   reviewSection: { marginBottom: '20px', backgroundColor: 'white', borderRadius: '8px', padding: '15px', border: '1px solid #ddd' },
   reviewSectionTitle: { margin: '0 0 15px 0', fontSize: '16px', fontWeight: 'bold', color: '#333', borderBottom: '2px solid #4caf50', paddingBottom: '5px' },
   reviewField: { display: 'flex', alignItems: 'center', marginBottom: '10px', padding: '8px', backgroundColor: '#f8f9fa', borderRadius: '5px', border: '1px solid #e9ecef' },
   reviewLabel: { fontWeight: 'bold', minWidth: '120px', color: '#495057', fontSize: '14px' },
   reviewValue: { flex: 1, margin: '0 10px', color: '#212529', fontSize: '14px' },
-  editButton: { background: '#007bff', color: 'white', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', cursor: 'pointer', '&:hover': { background: '#0056b3' } },
+  editButton: { background: '#007bff', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s ease', '&:hover': { background: '#0056b3', transform: 'translateY(-1px)' } },
   roomReview: { marginBottom: '15px', padding: '10px', backgroundColor: '#f1f3f4', borderRadius: '5px', border: '1px solid #dee2e6' },
   reviewActions: { textAlign: 'center', marginTop: '20px', paddingTop: '15px', borderTop: '2px solid #4caf50' },
   submitButton: { background: '#28a745', color: 'white', border: 'none', borderRadius: '8px', padding: '12px 24px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', '&:hover': { background: '#218838' } }

@@ -524,10 +524,13 @@
                     
                     <div class="suburb-actions">
                         ${suburb.status === 'Pending Review' ? `
-                            <button class="btn btn-success" onclick="approveSuburb('${suburb.leadId}', '${suburb.suburbName}')">Approve & Add to Zones</button>
-                            <button class="btn btn-danger" onclick="openRejectModal('${suburb.leadId}', '${suburb.suburbName}', '${suburb.customerEmail}', '${suburb.customerName}')">Reject Lead</button>
+                            <button class="btn btn-success" onclick="approveSuburb('${suburb.leadId}', '${suburb.suburbName}')">✅ Approve & Add to Zones</button>
+                            <button class="btn btn-danger" onclick="openRejectModal('${suburb.leadId}', '${suburb.suburbName}', '${suburb.customerEmail}', '${suburb.customerName}')">❌ Reject Lead</button>
                         ` : ''}
-                        <button class="btn btn-primary" onclick="viewLeadDetails('${suburb.leadId}')">View Full Lead</button>
+                        ${suburb.status === 'Rejected' ? `
+                            <button class="btn btn-primary" onclick="viewRejectionDetails('${suburb.leadId}', '${suburb.suburbName}')">📋 View Rejection Details</button>
+                        ` : ''}
+                        <button class="btn btn-primary" onclick="viewLeadDetails('${suburb.leadId}')">👁️ View Full Lead</button>
                     </div>
                 </div>
             `).join('');
@@ -577,7 +580,8 @@
             const adminNotes = document.getElementById('admin-notes').value;
             
             try {
-                const response = await fetch('/api/admin/reject-unlisted-lead', {
+                // Use the new reject-lead API that handles both unlisted suburbs and regular leads
+                const response = await fetch('/api/admin/reject-lead', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -588,14 +592,15 @@
                         customerEmail,
                         customerName,
                         rejectionReason,
-                        adminNotes
+                        adminNotes,
+                        adminUser: 'admin@kiwitrade.co.nz'
                     }),
                 });
                 
                 const result = await response.json();
                 
                 if (result.success) {
-                    showSuccess('Lead rejected successfully. Customer has been notified.');
+                    showSuccess('Lead rejected successfully. Customer has been notified and quote acceptance is now disabled.');
                     closeModal('reject-modal');
                     loadUnlistedSuburbs(); // Refresh the list
                 } else {
@@ -623,6 +628,27 @@
         function viewLeadDetails(leadId) {
             // This would open a modal or navigate to the full lead details
             alert(`View lead details for ${leadId} (Feature to be implemented)`);
+        }
+
+        function viewRejectionDetails(leadId, suburbName) {
+            // Find the suburb data to show rejection details
+            const suburb = unlistedSuburbs.find(s => s.leadId === leadId);
+            if (suburb) {
+                const rejectionInfo = `
+Rejection Details for ${suburbName}:
+• Lead ID: ${suburb.leadId}
+• Customer: ${suburb.customerName}
+• Email: ${suburb.customerEmail}
+• Rejection Reason: ${suburb.adminNotes || 'Not specified'}
+• Rejected On: ${suburb.decisionTimestamp || 'Not specified'}
+• Status: ${suburb.status}
+
+Note: This lead has been rejected and the customer has been notified. Quote acceptance is disabled for this lead.
+                `;
+                alert(rejectionInfo);
+            } else {
+                alert('Rejection details not found for this lead.');
+            }
         }
 
         function exportData() {

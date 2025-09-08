@@ -1,6 +1,7 @@
 import { getGoogleSheetsClient, getSpreadsheetId } from "../../../lib/googleSheets.js";
 import { generateQuotePDF, generateQuoteHTML } from "../../../lib/pdfGenerator.js";
 import { sendEmail } from '../../../lib/emailHelper';
+import quoteLogger from '../../../lib/quoteLogger.js';
 import crypto from "crypto";
 
 // --- Helper Functions ---
@@ -48,21 +49,53 @@ async function findRowAndGetData(options) {
 
 // --- Main Handler ---
 export default async function handler(req, res) {
+    const requestId = quoteLogger.generateRequestId();
+    const startTime = Date.now();
+    
+    // Log incoming request details
+    quoteLogger.adminAccept('Request received', {
+        method: req.method,
+        url: req.url,
+        query: req.query,
+        headers: {
+            'user-agent': req.headers['user-agent'],
+            'referer': req.headers['referer'],
+            'x-forwarded-for': req.headers['x-forwarded-for']
+        },
+        bodySize: req.body ? JSON.stringify(req.body).length : 0
+    }, requestId);
+    
     if (req.method !== 'GET') {
+        quoteLogger.error('Invalid method', null, requestId);
+        quoteLogger.response('Sending 405 Method Not Allowed', { method: req.method }, requestId);
         return res.status(405).json({ success: false, error: 'Method Not Allowed' });
     }
 
     const { quoteId, ts, token } = req.query;
 
     if (!quoteId || !ts || !token || token !== verifyToken(quoteId, ts)) {
+        quoteLogger.error('Invalid approval link', { 
+            quoteId, 
+            hasToken: !!token,
+            tokenValid: token === verifyToken(quoteId, ts)
+        }, requestId);
+        quoteLogger.response('Redirecting to error page - invalid approval link', null, requestId);
         return res.redirect(`/quote-status?status=error&message=Invalid approval link.`);
     }
+    
+    quoteLogger.adminAccept('Token validated successfully', { quoteId }, requestId);
 
     try {
+        quoteLogger.sheets('Initializing Google Sheets client', null, requestId);
         const sheets = await getGoogleSheetsClient();
         const spreadsheetId = getSpreadsheetId();
 
         // 1. Get Quote and Lead data from Sheets using exact schema
+        quoteLogger.sheets('Fetching quote data from Google Sheets', { 
+            spreadsheetId: spreadsheetId.substring(0, 10) + '...', 
+            quoteId 
+        }, requestId);
+        
         const quoteData = await findRowAndGetData({
             sheets, spreadsheetId, tab: 'Quotes',
             searchColumn: 'QuoteID', searchValue: quoteId,
@@ -75,12 +108,32 @@ export default async function handler(req, res) {
             ]
         });
 
-        if (!quoteData) return res.redirect(`/quote-status?status=error&message=Quote not found.`);
+        if (!quoteData) {
+            quoteLogger.error('Quote not found in Google Sheets', { quoteId }, requestId);
+            quoteLogger.response('Redirecting to error page - quote not found', null, requestId);
+            return res.redirect(`/quote-status?status=error&message=Quote not found.`);
+        }
         
-        console.log('🔍 Admin/Approve - Quote data retrieved from Google Sheets:', quoteData);
+        quoteLogger.dataFlow('Quote data retrieved from Google Sheets', {
+            quoteId,
+            adminStatus: quoteData['AdminPersonStatus'],
+            leadId: quoteData['LeadID'],
+            customerName: quoteData['CustomerName'],
+            totalQuote: quoteData['TotalQuote']
+        }, requestId);
         
         // ONE-TIME ENFORCEMENT: Check if already approved
         if (quoteData['AdminPersonStatus'] === 'Approved') {
+            quoteLogger.adminAccept('Quote already approved - preventing duplicate', { 
+                quoteId,
+                adminStatus: quoteData['AdminPersonStatus']
+            }, requestId);
+            
+            quoteLogger.response('Sending already approved page', { 
+                quoteId,
+                processingTime: Date.now() - startTime
+            }, requestId);
+            
             const statusPage = `
                 <!DOCTYPE html>
                 <html>
@@ -427,10 +480,21 @@ export default async function handler(req, res) {
           attachments: [attachment]
         };
         
+        quoteLogger.email('Sending customer quote email', { 
+            to: customerEmailOptions.to,
+            subject: customerEmailOptions.subject,
+            hasAttachment: !!customerEmailOptions.attachments
+        }, requestId);
+        
         await sendEmail(customerEmailOptions);
-        console.log(`✅ Customer quote email sent to ${leadData['CustomerEmail']} with PDF attachment`);
+        quoteLogger.email('Customer quote email sent successfully', { 
+            customerEmail: leadData['CustomerEmail'],
+            hasAttachment: !!customerEmailOptions.attachments
+        }, requestId);
 
         // 5. Update Sheet Status to final using correct schema column names
+        quoteLogger.sheets('Updating Google Sheets with approval status', { quoteId }, requestId);
+        
         const headerResponse = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Quotes!A1:AJ1' });
         const header = headerResponse.data.values[0];
         const updates = { 
@@ -446,6 +510,12 @@ export default async function handler(req, res) {
                 minute: "2-digit"
             }).replace(",", "")
         };
+        
+        quoteLogger.dataFlow('Preparing Google Sheets update', { 
+            updates,
+            rowIndex: quoteData.rowIndex
+        }, requestId);
+        
         let targetRow = (await sheets.spreadsheets.values.get({ spreadsheetId, range: `Quotes!A${quoteData.rowIndex}:AJ${quoteData.rowIndex}` })).data.values[0];
         
         header.forEach((colName, index) => {
@@ -457,10 +527,21 @@ export default async function handler(req, res) {
             valueInputOption: 'USER_ENTERED', requestBody: { values: [targetRow] },
         });
         
+        quoteLogger.sheets('Google Sheets updated with approval status', null, requestId);
+        
+        quoteLogger.response('Redirecting to success page', { 
+            quoteId,
+            processingTime: Date.now() - startTime
+        }, requestId);
+        
         return res.redirect(`/quote-status?status=success&message=Quote approved and sent to the customer!`);
 
     } catch (error) {
-        console.error("Quote Approval Error:", error);
+        quoteLogger.error('Quote approval error', error, requestId);
+        quoteLogger.response('Redirecting to error page', { 
+            error: error.message,
+            processingTime: Date.now() - startTime
+        }, requestId);
         return res.redirect(`/quote-status?status=error&message=An internal server error occurred during quote approval.`);
     }
 }

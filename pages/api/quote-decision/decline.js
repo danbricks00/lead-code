@@ -1,5 +1,6 @@
 import { getGoogleSheetsClient, getSpreadsheetId } from "../../../lib/googleSheets.js";
 import { sendEmail } from '../../../lib/emailHelper';
+import quoteLogger from '../../../lib/quoteLogger.js';
 import crypto from "crypto";
 
 // NZ timestamp helper function
@@ -33,16 +34,15 @@ function formatTimestamp(isoString) {
             minute: '2-digit'
         });
     } catch (e) {
-        return isoString; // Fallback to original string if parsing fails
+        return isoString;
     }
 }
 
-// Remove old getNZTimestamp function - using the new helper function above
-
-async function sendNotificationEmails(quoteData, leadData = {}) {
-    console.log('📧 Preparing notification emails for quote decline');
-    console.log('📋 Quote data keys:', Object.keys(quoteData));
-    console.log('📋 Lead data keys:', Object.keys(leadData));
+async function sendNotificationEmails(quoteData, leadData = {}, requestId = null) {
+    quoteLogger.email('Preparing notification emails for quote decline', {
+        quoteDataKeys: Object.keys(quoteData),
+        leadDataKeys: Object.keys(leadData)
+    }, requestId);
     
     // Get customer email - try quote data first, then lead data
     const customerEmail = quoteData['CustomerEmail'] || quoteData['Customer Email'] || quoteData['customerEmail'] || 
@@ -56,20 +56,19 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
     const tradespersonName = quoteData['TradespersonName'] || quoteData['Tradesperson Name'] || quoteData['tradespersonName'] || 
                             quoteData['TradePerson Name'] || quoteData['TradesPerson Name'];
     
-    console.log('📧 Email recipients:');
-    console.log('  - Customer:', customerEmail);
-    console.log('  - Tradesperson:', tradespersonEmail);
-    console.log('  - Admin:', process.env.ADMIN_EMAIL);
+    quoteLogger.email('Email recipients identified', {
+        customerEmail,
+        tradespersonEmail,
+        adminEmail: process.env.ADMIN_EMAIL ? 'SET' : 'NOT_SET'
+    }, requestId);
 
-    // Validate email addresses - more robust validation
+    // Validate email addresses
     if (!customerEmail || customerEmail === 'undefined' || customerEmail === 'N/A (Column not found)') {
-        console.error('❌ Customer email not found in quote or lead data');
-        console.error('❌ Customer email value:', customerEmail);
+        quoteLogger.error('Customer email not found in quote or lead data', { customerEmail }, requestId);
         throw new Error('Customer email not found');
     }
     if (!tradespersonEmail || tradespersonEmail === 'undefined' || tradespersonEmail === 'N/A (Column not found)') {
-        console.error('❌ Tradesperson email not found in quote data');
-        console.error('❌ Tradesperson email value:', tradespersonEmail);
+        quoteLogger.error('Tradesperson email not found in quote data', { tradespersonEmail }, requestId);
         throw new Error('Tradesperson email not found');
     }
 
@@ -226,69 +225,138 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
     };
 
     try {
-        console.log('📧 Sending customer acknowledgment email...');
+        quoteLogger.email('Sending customer acknowledgment email', { 
+            to: customerMail.to,
+            subject: customerMail.subject
+        }, requestId);
         await sendEmail(customerMail);
-        console.log('✅ Customer email sent successfully');
+        quoteLogger.email('Customer email sent successfully', null, requestId);
         
-        console.log('📧 Sending tradesperson notification email...');
+        quoteLogger.email('Sending tradesperson notification email', { 
+            to: tradespersonMail.to,
+            subject: tradespersonMail.subject
+        }, requestId);
         await sendEmail(tradespersonMail);
-        console.log('✅ Tradesperson email sent successfully');
+        quoteLogger.email('Tradesperson email sent successfully', null, requestId);
         
-        console.log('📧 Sending admin analytics email...');
+        quoteLogger.email('Sending admin analytics email', { 
+            to: adminMail.to,
+            subject: adminMail.subject
+        }, requestId);
         await sendEmail(adminMail);
-        console.log('✅ Admin email sent successfully');
+        quoteLogger.email('Admin email sent successfully', null, requestId);
         
-        console.log('✅ All notification emails sent successfully');
+        quoteLogger.email('All notification emails sent successfully', null, requestId);
     } catch (error) {
-        console.error('❌ Error sending notification emails:', error);
+        quoteLogger.error('Error sending notification emails', error, requestId);
         throw error;
     }
 }
 
-
 export default async function handler(req, res) {
+    const requestId = quoteLogger.generateRequestId();
+    const startTime = Date.now();
+    
+    // Log incoming request details
+    quoteLogger.apiDecline('Request received', {
+        method: req.method,
+        url: req.url,
+        query: req.query,
+        headers: {
+            'user-agent': req.headers['user-agent'],
+            'referer': req.headers['referer'],
+            'x-forwarded-for': req.headers['x-forwarded-for']
+        },
+        bodySize: req.body ? JSON.stringify(req.body).length : 0
+    }, requestId);
+    
     if (req.method !== 'GET') {
+        quoteLogger.error('Invalid method', null, requestId);
+        quoteLogger.response('Sending 405 Method Not Allowed', { method: req.method }, requestId);
         return res.status(405).json({ success: false, error: 'Method Not Allowed' });
     }
 
     const { quoteId, ts, token } = req.query;
 
     if (!quoteId || !ts || !token) {
+        quoteLogger.error('Missing required parameters', { quoteId, ts, token }, requestId);
+        quoteLogger.response('Redirecting to error page - missing parameters', null, requestId);
         return res.redirect(`/quote-status?status=error&message=Missing required parameters.`);
     }
 
     const expectedToken = verifyToken(quoteId, ts);
     if (token !== expectedToken) {
+        quoteLogger.error('Invalid token', { 
+            providedToken: token.substring(0, 10) + '...', 
+            expectedToken: expectedToken.substring(0, 10) + '...' 
+        }, requestId);
+        quoteLogger.response('Redirecting to error page - invalid token', null, requestId);
         return res.redirect(`/quote-status?status=error&message=Invalid or expired link.`);
     }
+    
+    quoteLogger.customerDecline('Token validated successfully', { quoteId }, requestId);
 
     try {
+        quoteLogger.sheets('Initializing Google Sheets client', null, requestId);
         const sheets = await getGoogleSheetsClient();
         const spreadsheetId = getSpreadsheetId();
         const range = 'Quotes!A:AJ';
 
+        quoteLogger.sheets('Fetching quote data from Google Sheets', { 
+            spreadsheetId: spreadsheetId.substring(0, 10) + '...', 
+            range 
+        }, requestId);
+        
         const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
         const rows = response.data.values;
+        
         if (!rows) {
+            quoteLogger.error('Could not connect to Google Sheets', null, requestId);
+            quoteLogger.response('Redirecting to error page - database connection failed', null, requestId);
             return res.redirect(`/quote-status?status=error&message=Could not connect to the database.`);
         }
         
+        quoteLogger.sheets('Google Sheets data retrieved', { 
+            totalRows: rows.length,
+            hasHeader: rows.length > 0 
+        }, requestId);
+        
         const header = rows[0];
-        const rowIndex = rows.findIndex(row => row[1] === quoteId); // QuoteID is in column B (index 1) according to schema
+        const rowIndex = rows.findIndex(row => row[1] === quoteId); // QuoteID is in column B (index 1)
 
         if (rowIndex === -1) {
+            quoteLogger.error('Quote ID not found in Google Sheets', { 
+                quoteId, 
+                searchedRows: rows.length - 1,
+                availableQuoteIds: rows.slice(1).map(row => row[1]).filter(id => id)
+            }, requestId);
+            quoteLogger.response('Redirecting to error page - quote not found', null, requestId);
             return res.redirect(`/quote-status?status=error&message=Quote ID not found.`);
         }
         
+        quoteLogger.sheets('Quote found in Google Sheets', { 
+            quoteId, 
+            rowIndex: rowIndex + 1,
+            totalColumns: header.length
+        }, requestId);
+        
         const targetRow = rows[rowIndex];
         
-        // Get lead ID to fetch customer information (LeadID is in column C, index 2) according to schema
+        // Get lead ID to fetch customer information (LeadID is in column C, index 2)
         const leadId = targetRow[2] || null;
+        
+        quoteLogger.dataFlow('Quote row data extracted', {
+            quoteId,
+            leadId,
+            rowLength: targetRow.length,
+            hasLeadId: !!leadId
+        }, requestId);
         
         // Fetch lead data to get customer information
         let leadData = {};
         if (leadId) {
             try {
+                quoteLogger.sheets('Fetching lead data', { leadId }, requestId);
                 const leadResponse = await sheets.spreadsheets.values.get({ 
                     spreadsheetId, 
                     range: 'Leads!A:Z' 
@@ -302,11 +370,20 @@ export default async function handler(req, res) {
                         leadHeader.forEach((headerName, index) => {
                             leadData[headerName] = leadRow[index] || '';
                         });
+                        quoteLogger.sheets('Lead data retrieved successfully', { 
+                            leadId, 
+                            leadRowIndex: leadRowIndex + 1,
+                            leadDataKeys: Object.keys(leadData)
+                        }, requestId);
+                    } else {
+                        quoteLogger.error('Lead ID not found in Leads sheet', { leadId }, requestId);
                     }
                 }
             } catch (leadError) {
-                console.log('⚠️ Could not fetch lead data:', leadError.message);
+                quoteLogger.error('Could not fetch lead data', leadError, requestId);
             }
+        } else {
+            quoteLogger.info('No lead ID found in quote data', null, requestId);
         }
         
         // Check for existing decision and expiry using correct schema column names
@@ -318,6 +395,58 @@ export default async function handler(req, res) {
         const currentDecisionTimestamp = decisionTimestampIndex !== -1 ? targetRow[decisionTimestampIndex] : '';
         const validUntil = validUntilIndex !== -1 ? targetRow[validUntilIndex] : '';
         
+        quoteLogger.dataFlow('Decision and expiry data extracted', {
+            currentDecision,
+            currentDecisionTimestamp,
+            validUntil,
+            decisionIndex,
+            decisionTimestampIndex,
+            validUntilIndex
+        }, requestId);
+        
+        // Check if quote has been rejected
+        const statusIndex = header.indexOf('Status');
+        const quoteStatus = statusIndex !== -1 ? targetRow[statusIndex] : '';
+        
+        if (quoteStatus === 'Rejected') {
+            quoteLogger.customerDecline('Quote rejected - preventing decline', { 
+                quoteId, 
+                status: quoteStatus 
+            }, requestId);
+            
+            const rejectionPage = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Quote Not Available - Kiwi Trade</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+                        .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                        .info { background: #d1ecf1; color: #0c5460; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Quote Not Available</h1>
+                    <div class="error">
+                        <h2>Sorry, this quote is no longer available.</h2>
+                        <p>This quote has been rejected and is no longer valid.</p>
+                        <p>If you have any questions, please contact us directly.</p>
+                    </div>
+                    <div class="info">
+                        <p>Contact us for assistance:</p>
+                        <p>Email: info@kiwitrade.co.nz<br>Phone: 0800 KIWI TRADE</p>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            quoteLogger.response('Sending rejection page', { 
+                quoteId, 
+                processingTime: Date.now() - startTime 
+            }, requestId);
+            return res.status(400).send(rejectionPage);
+        }
+
         // Check if quote has expired
         let isExpired = false;
         if (validUntil) {
@@ -325,18 +454,29 @@ export default async function handler(req, res) {
                 const validUntilDate = new Date(validUntil);
                 const now = new Date();
                 isExpired = validUntilDate < now;
+                quoteLogger.dataFlow('Expiry check completed', {
+                    validUntil,
+                    validUntilDate: validUntilDate.toISOString(),
+                    now: now.toISOString(),
+                    isExpired
+                }, requestId);
             } catch (error) {
-                console.log('⚠️ Could not parse ValidUntil date:', validUntil);
+                quoteLogger.error('Could not parse ValidUntil date', error, requestId);
             }
+        } else {
+            quoteLogger.info('No ValidUntil date found', null, requestId);
         }
         
         // EXPIRY LOCK LOGIC
         if (isExpired) {
-            console.log(`⏰ QUOTE EXPIRED: ValidUntil ${validUntil} is in the past`);
+            quoteLogger.customerDecline('Quote expired - processing expiry logic', { 
+                validUntil, 
+                currentDecision 
+            }, requestId);
             
             // If quote expired and no decision made yet, lock it as "Expired"
             if (!currentDecision || currentDecision.trim() === '') {
-                console.log('🔒 Locking expired quote as "Expired"');
+                quoteLogger.sheets('Locking expired quote as "Expired"', { quoteId }, requestId);
                 
                 // Update the sheet to mark as expired
                 const updateData = {
@@ -353,15 +493,28 @@ export default async function handler(req, res) {
                     }
                 });
                 
+                quoteLogger.sheets('Updating Google Sheets with expired status', { 
+                    updateData,
+                    rowIndex: rowIndex + 1
+                }, requestId);
+                
                 await sheets.spreadsheets.values.update({
                     spreadsheetId,
                     range: `Quotes!A${rowIndex + 1}`,
                     valueInputOption: 'USER_ENTERED',
                     requestBody: { values: [targetRow] },
                 });
+                
+                quoteLogger.sheets('Google Sheets updated with expired status', null, requestId);
             }
             
             // Always return expired page (whether just locked or already expired)
+            quoteLogger.response('Sending expired quote page', { 
+                validUntil, 
+                currentDecision,
+                processingTime: Date.now() - startTime
+            }, requestId);
+            
             const expiredPage = `
                 <!DOCTYPE html>
                 <html>
@@ -402,9 +555,19 @@ export default async function handler(req, res) {
         // Allow customer to decline even if admin pre-approved, but prevent if already accepted/declined by customer
         if (currentDecision && currentDecision.trim() !== '' && currentDecision !== 'Admin Approved') {
             const formattedTime = formatTimestamp(currentDecisionTimestamp);
-            console.log(`🚫 DECISION ALREADY MADE: ${currentDecision} on ${formattedTime}`);
+            quoteLogger.customerDecline('Decision already made - preventing duplicate', { 
+                currentDecision, 
+                formattedTime,
+                quoteId
+            }, requestId);
             
             // Return user-friendly HTML page for already-made decision
+            quoteLogger.response('Sending already-made decision page', { 
+                currentDecision,
+                formattedTime,
+                processingTime: Date.now() - startTime
+            }, requestId);
+            
             const statusPage = `
                 <!DOCTYPE html>
                 <html>
@@ -442,11 +605,18 @@ export default async function handler(req, res) {
         }
         
         // --- Update Sheet Data using correct schema column names ---
+        quoteLogger.customerDecline('Processing quote decline', { quoteId }, requestId);
+        
         const nzTimestamp = getNZTimestamp();
         const updateData = {
             'Decision': 'Declined',
             'DecisionTimestamp': nzTimestamp,
         };
+
+        quoteLogger.dataFlow('Preparing Google Sheets update', { 
+            updateData,
+            rowIndex: rowIndex + 1
+        }, requestId);
 
         const quoteDataForEmail = {};
         header.forEach((headerName, index) => {
@@ -457,6 +627,12 @@ export default async function handler(req, res) {
             }
         });
 
+        quoteLogger.sheets('Updating Google Sheets with decline', { 
+            updateData,
+            rowIndex: rowIndex + 1,
+            quoteDataKeys: Object.keys(quoteDataForEmail)
+        }, requestId);
+
         await sheets.spreadsheets.values.update({
             spreadsheetId,
             range: `Quotes!A${rowIndex + 1}`,
@@ -464,10 +640,28 @@ export default async function handler(req, res) {
             requestBody: { values: [targetRow] },
         });
 
+        quoteLogger.sheets('Google Sheets updated successfully', null, requestId);
+
         // --- Send Emails ---
-        await sendNotificationEmails(quoteDataForEmail, leadData);
+        try {
+            quoteLogger.email('Starting notification email process', { 
+                customerEmail: quoteDataForEmail['CustomerEmail'],
+                tradespersonEmail: quoteDataForEmail['TradePersonEmail']
+            }, requestId);
+            
+            await sendNotificationEmails(quoteDataForEmail, leadData, requestId);
+            quoteLogger.email('All notification emails sent successfully', null, requestId);
+        } catch (emailError) {
+            quoteLogger.error('Error sending notification emails', emailError, requestId);
+            // Still return success page even if emails fail
+        }
         
         // Return confirmation HTML page
+        quoteLogger.response('Sending success confirmation page', { 
+            quoteId,
+            processingTime: Date.now() - startTime
+        }, requestId);
+        
         const confirmationPage = `
             <!DOCTYPE html>
             <html>
@@ -496,7 +690,11 @@ export default async function handler(req, res) {
         return res.status(200).send(confirmationPage);
 
     } catch (error) {
-        console.error("Quote decline error:", error);
+        quoteLogger.error('Quote decline error', error, requestId);
+        quoteLogger.response('Redirecting to error page', { 
+            error: error.message,
+            processingTime: Date.now() - startTime
+        }, requestId);
         return res.redirect(`/quote-status?status=error&message=An internal server error occurred.`);
     }
 }

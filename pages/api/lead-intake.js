@@ -158,7 +158,22 @@ export default async function handler(req, res) {
         <p><strong>Suburb:</strong> ${suburb}</p>
         <p><strong>Status:</strong> This suburb is not in our current service list</p>
         <p><strong>Action Required:</strong> Please review if we can service this area or reject the lead</p>
-        <p><strong>Admin Panel:</strong> <a href="https://${baseUrl}/admin-unlisted-suburbs.html">Manage Unlisted Suburbs</a></p>
+        
+        <div style="margin-top: 15px; text-align: center;">
+          <a href="https://${baseUrl}/admin-unlisted-suburbs.html" 
+             style="display: inline-block; background-color: #1976d2; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 5px;">
+            📋 Manage Unlisted Suburbs
+          </a>
+        </div>
+        
+        <div style="margin-top: 10px; font-size: 12px; color: #666;">
+          <p><strong>Quick Actions:</strong></p>
+          <ul style="margin: 5px 0; padding-left: 20px;">
+            <li>Review the suburb and decide if we can service it</li>
+            <li>Reject the lead if outside our service area</li>
+            <li>Contact customer for clarification if needed</li>
+          </ul>
+        </div>
       </div>
     ` : '';
 

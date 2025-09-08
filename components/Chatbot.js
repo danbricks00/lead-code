@@ -276,7 +276,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
         case 'ask_room_name':
             // Only allow predefined room names
             if (!ALLOWED_ROOMS.includes(value)) {
-              return "Please select one of the provided room names.";
+                return "Please select one of the provided room names.";
             }
             return null;
         case 'ask_room_dimensions':
@@ -572,7 +572,15 @@ const Chatbot = ({ handleClose, handleReset }) => {
   const startEditing = (fieldKey) => {
     setEditingField(fieldKey);
     setInputValue('');
-    addMessage(`Please enter the new value for ${getFieldDisplayName(fieldKey)}:`, true);
+    
+    // For room name fields, show options instead of text input
+    if (fieldKey.startsWith('room_') && fieldKey.endsWith('_name')) {
+      addMessage("Please select one of the room names from the options below:", true);
+      // Display room name options by temporarily changing the step
+      setStep('edit_room_name');
+    } else {
+      addMessage(`Please enter the new value for ${getFieldDisplayName(fieldKey)}:`, true);
+    }
   };
 
   // Cancel editing

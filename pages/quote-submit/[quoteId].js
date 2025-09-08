@@ -92,19 +92,22 @@ const QuoteSubmitPage = () => {
   useEffect(() => {
     if (isReady && quoteId) {
       const fetchLeadDetails = async () => {
-        console.log(`[FORM] useEffect triggered. Fetching details for quoteId: ${quoteId}`);
+        console.log(`[FORM] useEffect triggered. Fetching details for leadId: ${quoteId}`);
         try {
-          const response = await fetch(`/api/get-lead-details?quoteId=${quoteId}`);
+          // Generate a new quoteId for this submission
+          const newQuoteId = Math.random().toString(36).substr(2, 9);
+          
+          const response = await fetch(`/api/quote/init?leadId=${quoteId}&quoteId=${newQuoteId}`);
           const result = await response.json();
           
           console.log('[FORM] API Response received:', result);
 
-          if (result.success && result.data) {
-            console.log('[FORM] Success. Setting lead details:', result.data);
-            setLeadDetails(result.data);
+          if (result.lead) {
+            console.log('[FORM] Success. Setting lead details:', result.lead);
+            setLeadDetails(result.lead);
 
             // Make room data lookup case-insensitive to handle inconsistencies
-            const roomDataString = result.data.Rooms || result.data.rooms; 
+            const roomDataString = result.lead.rooms; 
 
             if (roomDataString) {
                 try {
@@ -299,10 +302,7 @@ const QuoteSubmitPage = () => {
         body: JSON.stringify({
           quoteId: newQuoteId, // Use the newly generated quoteId
           leadId: quoteId, // The URL parameter is actually the leadId now
-          ts,
-          token,
-          quoteDetails,
-          leadDetails: updatedLeadDetails, // Pass the updated lead details including edited rooms
+          ...quoteDetails, // Spread the quote details directly
         }),
       });
 
@@ -365,24 +365,24 @@ const QuoteSubmitPage = () => {
           {!isEditing ? (
             <div style={styles.detailsGrid}>
               {/* Display static details, now with consistent bracket notation and null checks */}
-              <div><strong>Name:</strong> {leadDetails['CustomerName'] || 'N/A'}</div>
-              <div><strong>Email:</strong> {leadDetails['CustomerEmail'] || 'N/A'}</div>
-              <div><strong>Phone:</strong> {leadDetails['CustomerPhone'] || 'N/A'}</div>
-              <div><strong>Service:</strong> {leadDetails['ServiceType'] || 'Underfloor Heating'}</div>
-              <div><strong>Area:</strong> {leadDetails['Area'] || 'N/A'}</div>
-              <div><strong>Suburb:</strong> {leadDetails['Suburb'] || 'N/A'}</div>
-              <div><strong>Timeline:</strong> {leadDetails['Timelline'] || 'N/A'}</div>
+              <div><strong>Name:</strong> {leadDetails['customerName'] || leadDetails['CustomerName'] || 'N/A'}</div>
+              <div><strong>Email:</strong> {leadDetails['customerEmail'] || leadDetails['CustomerEmail'] || 'N/A'}</div>
+              <div><strong>Phone:</strong> {leadDetails['customerPhone'] || leadDetails['CustomerPhone'] || 'N/A'}</div>
+              <div><strong>Service:</strong> {leadDetails['serviceType'] || leadDetails['ServiceType'] || 'Underfloor Heating'}</div>
+              <div><strong>Area:</strong> {leadDetails['area'] || leadDetails['Area'] || 'N/A'}</div>
+              <div><strong>Suburb:</strong> {leadDetails['suburb'] || leadDetails['Suburb'] || 'N/A'}</div>
+              <div><strong>Timeline:</strong> {leadDetails['timeline'] || leadDetails['Timelline'] || 'N/A'}</div>
             </div>
           ) : (
             <div style={styles.detailsGrid}>
               {/* Display input fields, now with consistent bracket notation and null checks */}
-              <div style={styles.inputGroup}><label>Name</label><input type="text" name="CustomerName" value={leadDetails['CustomerName'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
-              <div style={styles.inputGroup}><label>Email</label><input type="email" name="CustomerEmail" value={leadDetails['CustomerEmail'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
-              <div style={styles.inputGroup}><label>Phone</label><input type="tel" name="CustomerPhone" value={leadDetails['CustomerPhone'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
-              <div style={styles.inputGroup}><label>Service</label><input type="text" name="ServiceType" value={leadDetails['ServiceType'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
-              <div style={styles.inputGroup}><label>Area</label><input type="text" name="Area" value={leadDetails['Area'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
-              <div style={styles.inputGroup}><label>Suburb</label><input type="text" name="Suburb" value={leadDetails['Suburb'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
-              <div style={styles.inputGroup}><label>Timeline</label><input type="text" name="Timelline" value={leadDetails['Timelline'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Name</label><input type="text" name="customerName" value={leadDetails['customerName'] || leadDetails['CustomerName'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Email</label><input type="email" name="customerEmail" value={leadDetails['customerEmail'] || leadDetails['CustomerEmail'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Phone</label><input type="tel" name="customerPhone" value={leadDetails['customerPhone'] || leadDetails['CustomerPhone'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Service</label><input type="text" name="serviceType" value={leadDetails['serviceType'] || leadDetails['ServiceType'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Area</label><input type="text" name="area" value={leadDetails['area'] || leadDetails['Area'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Suburb</label><input type="text" name="suburb" value={leadDetails['suburb'] || leadDetails['Suburb'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Timeline</label><input type="text" name="timeline" value={leadDetails['timeline'] || leadDetails['Timelline'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
             </div>
           )}
         </div>

@@ -167,6 +167,55 @@ export default async function handler(req, res) {
         return res.status(403).json({ success: false, error: 'Invalid or expired link.' });
     }
     
+    // Check if the lead has been rejected before allowing quote submission
+    const leadId = leadDetails.Lead || leadDetails.LeadId;
+    if (leadId) {
+        try {
+            const sheets = getGoogleSheetsClient();
+            const spreadsheetId = getSpreadsheetId();
+            
+            if (spreadsheetId) {
+                console.log(`🔍 Checking lead status for ${leadId}...`);
+                
+                // Check the Leads sheet for rejection status
+                const leadsResponse = await sheets.spreadsheets.values.get({
+                    spreadsheetId,
+                    range: 'Leads!A:Z',
+                });
+
+                const leadRows = leadsResponse.data.values || [];
+                const leadHeaderRow = leadRows[0] || [];
+                const leadIdIndex = leadHeaderRow.findIndex(h => h.toLowerCase().includes('leadid'));
+                const statusIndex = leadHeaderRow.findIndex(h => h.toLowerCase().includes('status'));
+                
+                if (leadIdIndex !== -1 && statusIndex !== -1) {
+                    // Find the row with matching leadId
+                    for (let i = 1; i < leadRows.length; i++) {
+                        if (leadRows[i][leadIdIndex] === leadId) {
+                            const leadStatus = leadRows[i][statusIndex];
+                            console.log(`📊 Lead ${leadId} status: ${leadStatus}`);
+                            
+                            if (leadStatus === 'Rejected') {
+                                console.log(`❌ Lead ${leadId} has been rejected - blocking quote submission`);
+                                return res.status(400).json({ 
+                                    success: false, 
+                                    error: 'This lead has been rejected and quote submission is not allowed.',
+                                    leadStatus: 'Rejected'
+                                });
+                            }
+                            break;
+                        }
+                    }
+                }
+                
+                console.log(`✅ Lead ${leadId} status check passed - allowing quote submission`);
+            }
+        } catch (statusCheckError) {
+            console.error('❌ Error checking lead status:', statusCheckError.message);
+            // Continue with quote submission if status check fails (don't block on error)
+        }
+    }
+    
     // Extract customer details with fallbacks and proper field names
     const customerName = leadDetails.CustomerName || leadDetails.customerName || 'Unknown Customer';
     const customerEmail = leadDetails.CustomerEmail || leadDetails.customerEmail || '';

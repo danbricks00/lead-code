@@ -2804,6 +2804,842 @@
       "zone": "nan",
       "zoneCost": "nan",
       "zoneKm": "nan"
+    },
+    {
+      "suburb": "aka aka",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "aroaro bay",
+      "altNames": [
+        "whaingaroa harbour"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "cox bay",
+      "altNames": [
+        "whaingaroa harbour"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "eureka",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "glen afton",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "glen massey",
+      "altNames": [
+        "te akatea"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "glen murray",
+      "altNames": [
+        "kaawa, woodleigh"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "gordonton",
+      "altNames": [
+        "north huntington"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "haroto bay",
+      "altNames": [
+        "whaingaroa harbour"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "horsham downs",
+      "altNames": [
+        "north huntington"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "huntly",
+      "altNames": [
+        "huntly west, kimihia, mahuta, te kauri, weavers crossing, westmere"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "island block",
+      "altNames": [
+        "meremere south"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "karetoto island",
+      "altNames": [
+        "aotea harbour"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "kopuku",
+      "altNames": [
+        "kopuhu"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "korua bay",
+      "altNames": [
+        "aotea harbour"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "lake areare",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "lake kopuera",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "lake rotongaro",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "lake rotongaroiti",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "lake waahi",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "lake waikare",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "lake whangape",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "lorenzen bay",
+      "altNames": [
+        "whaingaroa harbour"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "makomako",
+      "altNames": [
+        "te papatapu"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "mangatangi",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "maramarua",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "maramarua forest",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "matangi",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "matira",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "mercer",
+      "altNames": [
+        "kellyville"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "meremere",
+      "altNames": [
+        "meremere south"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "motukauere island",
+      "altNames": [
+        "lake whangape"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "motunuia island",
+      "altNames": [
+        "lake waikare"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "motutara island",
+      "altNames": [
+        "whaingaroa harbour"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "motutere island",
+      "altNames": [
+        "aotea harbour"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "naike",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "newstead",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "ngaruawahia",
+      "altNames": [
+        "hopuhopu",
+        "ngāruawāhia"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "ohinewai",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "okete bay",
+      "altNames": [
+        "whaingaroa harbour"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "onewhero",
+      "altNames": [
+        "wairamarama"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "orini",
+      "altNames": [
+        "mangawara"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "otaua",
+      "altNames": [
+        "maioro, whiriwhiri"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "patikirau bay",
+      "altNames": [
+        "whaingaroa harbour"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "pepepe",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "pokeno",
+      "altNames": [
+        "pōkeno"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "port waikato",
+      "altNames": [
+        "limestone downs, tauranganui"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "potoorangi bay",
+      "altNames": [
+        "aotea harbour"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "pukekawa",
+      "altNames": [
+        "meremere south, opuatia, orton"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "pukemiro",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "puketaha",
+      "altNames": [
+        "north huntington"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "punikanae rock",
+      "altNames": [
+        "lake waikare"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "raglan",
+      "altNames": [
+        "kauroa, makaka, motakotako, okete, rahanui, rangipu, ranui, raoraokauere, ruapuke, te hutewai, te mata, te uku, te uku landing, three streams"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "rangiriri",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "rotokauri",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "rotongaro",
+      "altNames": [
+        "pukekapia"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "rotowaro",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "ruawaro",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "tamahere",
+      "altNames": [
+        "bruntwood, hautapu"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "taupiri",
+      "altNames": [
+        "kainui, komakorau, netherby"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "tauwhare",
+      "altNames": [
+        "scotsman valley"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "te akau",
+      "altNames": [
+        "kauri flat, ruakiwi, rukuruku, te akau south, waikorea",
+        "te ākau"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "te hoe",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "te kauwhata",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "te kohanga",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "te kowhai",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "te ohaki",
+      "altNames": [
+        "rakaumanga"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "te teko island",
+      "altNames": [
+        "whaingaroa harbour"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "tuakau",
+      "altNames": [
+        "harrisville, whangarata"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "waerenga",
+      "altNames": [
+        "okaeria, taniwha"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "waikaretu",
+      "altNames": [
+        "waikarete"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "waikokowai",
+      "altNames": [
+        "renown"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "waingaro",
+      "altNames": [
+        "dunmore, ohautira"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "waiterimu",
+      "altNames": [
+        "mangapiko valley, matahuru, waitarimu"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "waiwhara bay",
+      "altNames": [
+        "whaingaroa harbour"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "whaingaroa harbour",
+      "altNames": [
+        "raglan harbour, whaingaroa",
+        "whāingaroa harbour"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "whangamarino",
+      "altNames": [
+        "meremere south"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "whatawhata",
+      "altNames": [
+        "karakariki"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "whatitirinui island",
+      "altNames": [
+        "whaingaroa harbour"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "whitikahu",
+      "altName": "",
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
+    },
+    {
+      "suburb": "whiwhiroa bay",
+      "altNames": [
+        "whaingaroa harbour"
+      ],
+      "postCode": "",
+      "area": "Greater Auckland",
+      "zone": "",
+      "zoneCost": "",
+      "zoneKm": ""
     }
   ]
 }

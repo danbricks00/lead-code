@@ -82,7 +82,7 @@ async function handleLeadCreate(req, res) {
   const totalRooms = rooms.length;
   const areaValue = area || "";
   const suburbValue = suburb || "";
-  const quoteFormUrl = `${process.env.SITE_URL || "https://lead-code.vercel.app"}/quote-form.html?leadId=${leadId}`;
+  const quoteFormUrl = `${process.env.SITE_URL || "https://lead-code.vercel.app"}/quote-submit/${leadId}`;
   const roomsEmailList = rooms.map(room => 
     `<li><strong>${room.roomName}:</strong> ${room.dimensions}</li>`
   ).join("");

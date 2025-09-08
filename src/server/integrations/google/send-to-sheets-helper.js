@@ -73,7 +73,7 @@ export async function sendToSheets(leadData) {
     console.log('📧 Current URL for quote link:', currentUrl);
     
     // Use leadId for the quote link
-    const quoteLink = `${currentUrl}/quote-form.html?leadId=${leadId}`;
+    const quoteLink = `${currentUrl}/quote-submit/${leadId}`;
     console.log('📧 Quote link generated:', quoteLink);
 
     console.log('📧 Creating tradesman email options...');

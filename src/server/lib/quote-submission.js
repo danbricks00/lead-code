@@ -338,7 +338,7 @@ export default async function handler(req, res) {
     if (location) queryParams.append('location', location);
     
     const queryString = queryParams.toString();
-    const redirectUrl = `/quote-form.html${queryString ? '?' + queryString : ''}`;
+    const redirectUrl = `/quote-submit/${leadId}${queryString ? '?' + queryString : ''}`;
     
     return res.redirect(redirectUrl);
   }

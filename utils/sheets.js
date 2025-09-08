@@ -133,136 +133,230 @@ export async function updateQuoteRow(rowIndex, data) {
  * @param {Object} data - The data to append
  * @returns {Promise<Object>} - The result of the append operation
  */
-export async function appendQuoteRow(data) {
-  console.log(`[DEBUG] appendQuoteRow: Appending new row with data keys: ${Object.keys(data).join(', ')}`);
-  
+// Add these new functions to utils/sheets.js
+
+// Temporarily disable appendQuoteRow to catch rogue writes
+export async function appendQuoteRow() { 
+  throw new Error('appendQuoteRow disabled — use upsertQuoteRow'); 
+}
+
+// Get lead by ID
+export async function getLeadById(leadId) {
   try {
+    console.log(`[SHEETS] getLeadById: Fetching lead with ID=${leadId}`);
+    
     const sheets = await getGoogleSheetsClient();
+    const spreadsheetId = getSpreadsheetId();
     
-    // Get headers first
-    const headerResponse = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: 'Quotes!A1:Z1',
-    });
+    // Get all data from the "Leads" tab
+    const range = 'Leads!A:Z';
+    const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
+    const rows = response.data.values;
     
-    const headers = headerResponse.data.values[0];
+    if (!rows || rows.length < 2) {
+      console.log(`[SHEETS] getLeadById: No leads found`);
+      return null;
+    }
     
-    // Create a row array with values in the correct positions
-    const rowData = Array(headers.length).fill(''); // Initialize with empty strings
+    const header = rows[0];
+    const leadIndex = header.indexOf('Lead');
     
-    // Fill in the values based on the headers
-    Object.entries(data).forEach(([key, value]) => {
-      const index = headers.findIndex(header => header === key);
-      if (index !== -1) {
-        rowData[index] = value;
+    if (leadIndex === -1) {
+      console.error(`[SHEETS] getLeadById: Lead column not found in sheet`);
+      return null;
+    }
+    
+    // Find the row with the matching lead ID
+    const dataRow = rows.find(row => row[leadIndex] === leadId);
+    
+    if (!dataRow) {
+      console.log(`[SHEETS] getLeadById: Lead with ID=${leadId} not found`);
+      return null;
+    }
+    
+    // Build lead object by mapping headers to values
+    const lead = {};
+    header.forEach((headerName, index) => {
+      if (headerName && dataRow[index] !== undefined) {
+        lead[headerName] = dataRow[index];
       }
     });
     
-    // Append the row
-    const appendResponse = await sheets.spreadsheets.values.append({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: 'Quotes!A1',
-      valueInputOption: 'USER_ENTERED',
-      insertDataOption: 'INSERT_ROWS',
-      resource: {
-        values: [rowData],
-      },
-    });
-    
-    // Get the index of the newly appended row
-    const updatedRange = appendResponse.data.updates.updatedRange;
-    const rowIndex = parseInt(updatedRange.split(':')[0].match(/\d+/)[0]);
-    
-    console.log(`[DEBUG] appendQuoteRow: Successfully appended new row at index ${rowIndex}`);
-    return { rowIndex, data, action: 'APPEND' };
+    console.log(`[SHEETS] getLeadById: Successfully retrieved lead with ID=${leadId}`);
+    return lead;
   } catch (error) {
-    console.error(`[DEBUG] appendQuoteRow: Error appending quote row:`, error);
+    console.error(`[SHEETS] getLeadById: Error fetching lead with ID=${leadId}:`, error);
     throw error;
   }
 }
 
-/**
- * Upsert a quote row in Google Sheets (update if exists, append if not)
- * @param {string} quoteId - The quote ID to upsert
- * @param {Object} data - The data to upsert
- * @returns {Promise<Object>} - The upserted row data and action taken
- */
-export async function upsertQuoteRow(quoteId, data) {
-  console.log(`[DEBUG] upsertQuoteRow: Upserting data for quoteId=${quoteId}, source=payload`);
-  
+// Get quote by ID
+export async function getQuoteById(quoteId) {
   try {
-    // Check for idempotency if LastMutationId is provided
+    console.log(`[SHEETS] getQuoteById: Fetching quote with ID=${quoteId}`);
+    
+    const sheets = await getGoogleSheetsClient();
+    const spreadsheetId = getSpreadsheetId();
+    
+    // Get all data from the "Quotes" tab
+    const range = 'Quotes!A:Z';
+    const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
+    const rows = response.data.values;
+    
+    if (!rows || rows.length < 2) {
+      console.log(`[SHEETS] getQuoteById: No quotes found`);
+      return null;
+    }
+    
+    const header = rows[0];
+    const quoteIdIndex = header.indexOf('QuoteID');
+    
+    if (quoteIdIndex === -1) {
+      console.error(`[SHEETS] getQuoteById: QuoteID column not found in sheet`);
+      return null;
+    }
+    
+    // Find the first row with the matching quote ID
+    const dataRow = rows.find(row => row[quoteIdIndex] === quoteId);
+    
+    if (!dataRow) {
+      console.log(`[SHEETS] getQuoteById: Quote with ID=${quoteId} not found`);
+      return null;
+    }
+    
+    // Build quote object by mapping headers to values
+    const quote = {};
+    header.forEach((headerName, index) => {
+      if (headerName && dataRow[index] !== undefined) {
+        quote[headerName] = dataRow[index];
+      }
+    });
+    
+    console.log(`[SHEETS] getQuoteById: Successfully retrieved quote with ID=${quoteId}`);
+    return quote;
+  } catch (error) {
+    console.error(`[SHEETS] getQuoteById: Error fetching quote with ID=${quoteId}:`, error);
+    throw error;
+  }
+}
+
+// Update the existing upsertQuoteRow function to ensure it follows the requirements
+export async function upsertQuoteRow(quoteId, data) {
+  try {
+    if (!quoteId) {
+      throw new Error('QuoteID is required for upsert operation');
+    }
+    
+    console.log(`[SHEETS] upsert quoteId=${quoteId} starting`);
+    
+    // Check for idempotency using LastMutationId if provided
     if (data.LastMutationId) {
-      const existingRow = await getQuoteRowByQuoteId(quoteId);
-      if (existingRow && existingRow.rowData.LastMutationId === data.LastMutationId) {
-        console.log(`[DEBUG] upsertQuoteRow: Idempotent operation detected with mutationId=${data.LastMutationId}`);
-        return { rowIndex: existingRow.rowIndex, data: existingRow.rowData, action: 'IDEMPOTENT' };
+      const existingQuote = await getQuoteRowByQuoteId(quoteId);
+      if (existingQuote && existingQuote.data.LastMutationId === data.LastMutationId) {
+        console.log(`[SHEETS] upsert quoteId=${quoteId} skipped - idempotent mutation`);
+        return { 
+          action: 'SKIP', 
+          rowIndex: existingQuote.rowIndex,
+          message: 'Idempotent mutation - no changes made'
+        };
       }
     }
-
-    // Check if row exists
-    const existingRow = await getQuoteRowByQuoteId(quoteId);
     
-    if (existingRow) {
-      // Update existing row
-      console.log(`[DEBUG] upsertQuoteRow: Found existing row at index ${existingRow.rowIndex}, performing UPDATE`);
-      
-      // Merge existing data with new data to preserve fields not included in the update
-      const mergedData = { ...existingRow.rowData, ...data };
-      
-      return await updateQuoteRow(existingRow.rowIndex, mergedData);
-    } else {
-      // Append new row
-      console.log(`[DEBUG] upsertQuoteRow: No existing row found, performing APPEND`);
-      
-      const sheets = await getGoogleSheetsClient();
-      
-      // Get headers first
-      const headerResponse = await sheets.spreadsheets.values.get({
-        spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-        range: 'Quotes!A1:Z1',
+    // Get all quotes to find matches
+    const sheets = await getGoogleSheetsClient();
+    const spreadsheetId = getSpreadsheetId();
+    
+    const range = 'Quotes!A:Z';
+    const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
+    const rows = response.data.values || [];
+    
+    if (rows.length === 0) {
+      console.log(`[SHEETS] upsert quoteId=${quoteId} matches=0 action=APPEND row=new`);
+      // No data in sheet yet, append with headers
+      const rowData = createQuoteRowData(quoteId, data, data);
+      await sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range: 'Quotes!A1',
+        valueInputOption: 'USER_ENTERED',
+        resource: {
+          values: [Object.keys(rowData), Object.values(rowData)]
+        }
       });
+      return { action: 'APPEND', rowIndex: 2 }; // Row 2 (after header)
+    }
+    
+    const headers = rows[0];
+    const quoteIdIndex = headers.indexOf('QuoteID');
+    
+    if (quoteIdIndex === -1) {
+      throw new Error('QuoteID column not found in Quotes sheet');
+    }
+    
+    // Find all rows with matching QuoteID
+    const matchingRows = [];
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (row[quoteIdIndex] && row[quoteIdIndex].trim() === quoteId.trim()) {
+        matchingRows.push({ rowIndex: i + 1, row }); // 1-indexed for Google Sheets
+      }
+    }
+    
+    console.log(`[SHEETS] upsert quoteId=${quoteId} matches=${matchingRows.length}`);
+    
+    if (matchingRows.length >= 1) {
+      // UPDATE: Use the first (earliest) match
+      const existingRow = matchingRows[0];
+      console.log(`[SHEETS] upsert quoteId=${quoteId} matches=${matchingRows.length} action=UPDATE row=${existingRow.rowIndex}`);
       
-      const headers = headerResponse.data.values[0];
-      
-      // Create a row array with values in the correct positions
-      const rowData = Array(headers.length).fill(''); // Initialize with empty strings
-      
-      // Ensure quoteId is included in the data
-      const dataWithQuoteId = { ...data, QuoteId: quoteId };
-      
-      // Fill in the values based on the headers
-      Object.entries(dataWithQuoteId).forEach(([key, value]) => {
-        const index = headers.findIndex(header => header === key);
-        if (index !== -1) {
-          rowData[index] = value;
+      // Create row data object with merged data
+      const rowData = {};
+      headers.forEach((header, index) => {
+        // Keep existing data if not provided in update
+        if (existingRow.row[index] !== undefined && !data[header]) {
+          rowData[header] = existingRow.row[index];
+        } else {
+          rowData[header] = data[header] || '';
         }
       });
       
-      // Append the row
-      const appendResponse = await sheets.spreadsheets.values.append({
-        spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-        range: 'Quotes!A1',
+      // Update the row
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `Quotes!A${existingRow.rowIndex}:${String.fromCharCode(65 + headers.length - 1)}${existingRow.rowIndex}`,
         valueInputOption: 'USER_ENTERED',
-        insertDataOption: 'INSERT_ROWS',
         resource: {
-          values: [rowData],
-        },
+          values: [Object.values(rowData)]
+        }
       });
       
-      // Get the index of the newly appended row
-      const updatedRange = appendResponse.data.updates.updatedRange;
-      const rowIndex = parseInt(updatedRange.split(':')[0].match(/\d+/)[0]);
+      // Mark any other rows with the same QuoteID as duplicates
+      await checkAndMarkDuplicates(quoteId, existingRow.rowIndex);
       
-      console.log(`[DEBUG] upsertQuoteRow: Successfully appended new row at index ${rowIndex}`);
+      return { action: 'UPDATE', rowIndex: existingRow.rowIndex };
+    } else {
+      // APPEND: No matching rows found
+      console.log(`[SHEETS] upsert quoteId=${quoteId} matches=0 action=APPEND row=${rows.length + 1}`);
       
-      // Check for duplicates after append and mark them as VOID
-      await checkAndMarkDuplicates(quoteId, rowIndex);
+      // Create row data aligned with headers
+      const rowData = {};
+      headers.forEach(header => {
+        rowData[header] = data[header] || '';
+      });
       
-      return { rowIndex, data: dataWithQuoteId, action: 'APPEND' };
+      // Append the new row
+      await sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range: 'Quotes!A1',
+        valueInputOption: 'USER_ENTERED',
+        resource: {
+          values: [Object.values(rowData)]
+        }
+      });
+      
+      return { action: 'APPEND', rowIndex: rows.length + 1 };
     }
   } catch (error) {
-    console.error(`[DEBUG] upsertQuoteRow: Error upserting quote row:`, error);
+    console.error(`[SHEETS] upsert quoteId=${quoteId} error:`, error);
     throw error;
   }
 }
@@ -388,4 +482,259 @@ export function createQuoteRowData(quoteId, leadDetails, quoteDetails, additiona
     Status: additionalData.Status || 'Submitted',
     LastMutationId: additionalData.LastMutationId || ''
   };
+}
+
+// Quotes tab headers (exact order from your schema)
+const QUOTES_HEADERS = [
+  'TimeStamp', 'QuoteID', 'LeadID', 'TradePersonName', 'TradePersonEmail', 'TradePersonPhone',
+  'CustomerStatus', 'TradePersonStatus', 'AdminPersonStatus',
+  'LabourRate', 'LabourHours', 'LabourTotal', 'MaterialsCost', 'MaterialsQuantity', 'MaterialsTotal',
+  'TravelCost', 'TravelDistance', 'TravelTotal', 'InstallationCost',
+  'Subtotal', 'GST', 'TotalQuote', 'Notes', 'ValidUntil', 'ResubmissionAllowed',
+  'Decision', 'DecisionTimestamp',
+  'CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Location', 'Timeline', 'Budget', 'Rooms', 'BreakDown'
+];
+
+/**
+ * Upsert a quote row: update first match by QuoteID, or append if none found
+ * @param {string} quoteId - The QuoteID to match
+ * @param {object} data - Row data object with keys matching QUOTES_HEADERS
+ * @param {object} context - { req, caller } for write guard
+ * @returns {object} { action: 'UPDATE'|'APPEND', rowIndex: number }
+ */
+export async function upsertQuoteRow(quoteId, data, context = {}) {
+  try {
+    const { req, caller } = context;
+    const trimmedQuoteId = String(quoteId).trim();
+    const sheets = getGoogleSheetsClient();
+    const spreadsheetId = getSpreadsheetId();
+
+    // Read current Quotes sheet
+    const { headers, rows } = await readSheetAsObjects('Quotes', sheets, spreadsheetId);
+    
+    // Find all rows that match this QuoteID
+    const matches = [];
+    for (let i = 0; i < rows.length; i++) {
+      const rowQuoteId = String(rows[i].QuoteID || '').trim();
+      if (rowQuoteId === trimmedQuoteId) {
+        matches.push(i);
+      }
+    }
+
+    let action, rowIndex;
+
+    if (matches.length > 0) {
+      // UPDATE: Use the first match only
+      const targetIndex = matches[0];
+      rowIndex = targetIndex + 2; // +2 because sheets are 1-indexed and row 1 is headers
+      
+      await updateRowByIndex('Quotes', targetIndex, QUOTES_HEADERS, data, sheets, spreadsheetId);
+      action = 'UPDATE';
+      
+      console.log(JSON.stringify({
+        tag: 'SHEETS_UPSERT',
+        quoteId: trimmedQuoteId,
+        matches: matches.length,
+        action,
+        rowIndex,
+        caller: caller || 'unknown'
+      }));
+
+    } else {
+      // APPEND: No matches found, add new row
+      rowIndex = rows.length + 2; // +2 because sheets are 1-indexed and row 1 is headers
+      
+      await appendRowToSheet('Quotes', QUOTES_HEADERS, data, sheets, spreadsheetId);
+      action = 'APPEND';
+      
+      console.log(JSON.stringify({
+        tag: 'SHEETS_UPSERT',
+        quoteId: trimmedQuoteId,
+        matches: 0,
+        action,
+        rowIndex,
+        caller: caller || 'unknown'
+      }));
+    }
+
+    return { action, rowIndex };
+
+  } catch (error) {
+    console.error(JSON.stringify({
+      tag: 'SHEETS_UPSERT_ERROR',
+      quoteId: String(quoteId).trim(),
+      error: String(error?.message || error),
+      caller: context?.caller || 'unknown'
+    }));
+    throw error;
+  }
+}
+
+/**
+ * Helper: Update a specific row by index
+ * @param {string} sheetName - Name of the sheet
+ * @param {number} rowIndex - 0-based row index (excluding headers)
+ * @param {array} headers - Array of column headers
+ * @param {object} data - Data object to write
+ * @param {object} sheets - Google Sheets client
+ * @param {string} spreadsheetId - Spreadsheet ID
+ */
+async function updateRowByIndex(sheetName, rowIndex, headers, data, sheets, spreadsheetId) {
+  // Convert data object to array matching header order
+  const values = headers.map(header => {
+    const value = data[header];
+    return value != null ? String(value) : '';
+  });
+
+  // Update the specific row (rowIndex + 2 because sheets are 1-indexed and row 1 is headers)
+  const range = `${sheetName}!A${rowIndex + 2}:${getColumnLetter(headers.length)}${rowIndex + 2}`;
+  
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range,
+    valueInputOption: 'RAW',
+    resource: {
+      values: [values]
+    }
+  });
+}
+
+/**
+ * Helper: Append a new row to the sheet
+ * @param {string} sheetName - Name of the sheet
+ * @param {array} headers - Array of column headers
+ * @param {object} data - Data object to write
+ * @param {object} sheets - Google Sheets client
+ * @param {string} spreadsheetId - Spreadsheet ID
+ */
+async function appendRowToSheet(sheetName, headers, data, sheets, spreadsheetId) {
+  // Convert data object to array matching header order
+  const values = headers.map(header => {
+    const value = data[header];
+    return value != null ? String(value) : '';
+  });
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: `${sheetName}!A:A`,
+    valueInputOption: 'RAW',
+    resource: {
+      values: [values]
+    }
+  });
+}
+
+/**
+ * Helper: Convert column number to letter (A, B, C, ..., Z, AA, AB, etc.)
+ * @param {number} columnNumber - 1-based column number
+ * @returns {string} Column letter
+ */
+function getColumnLetter(columnNumber) {
+  let result = '';
+  while (columnNumber > 0) {
+    columnNumber--;
+    result = String.fromCharCode(65 + (columnNumber % 26)) + result;
+    columnNumber = Math.floor(columnNumber / 26);
+  }
+  return result;
+}
+
+/**
+ * Helper: Read sheet as objects
+ * @param {string} sheetName - Name of the sheet to read
+ * @param {object} sheets - Google Sheets client
+ * @param {string} spreadsheetId - Spreadsheet ID
+ * @returns {object} { headers, rows } where rows are objects keyed by headers
+ */
+export async function readSheetAsObjects(sheetName, sheets, spreadsheetId) {
+  try {
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${sheetName}!A:ZZ`, // Adjust range as needed
+    });
+
+    const values = response.data.values || [];
+    if (values.length === 0) {
+      return { headers: [], rows: [] };
+    }
+
+    const headers = values[0];
+    const rows = values.slice(1).map(row => {
+      const obj = {};
+      headers.forEach((header, index) => {
+        obj[header] = row[index] || '';
+      });
+      return obj;
+    });
+
+    return { headers, rows };
+  } catch (error) {
+    console.error(`[SHEETS] Error reading ${sheetName}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Get lead by ID from the Leads sheet
+ * @param {string} leadId - The LeadID to find
+ * @returns {object|null} Lead data object or null if not found
+ */
+export async function getLeadById(leadId) {
+  try {
+    const sheets = getGoogleSheetsClient();
+    const spreadsheetId = getSpreadsheetId();
+    const { headers, rows } = await readSheetAsObjects('Leads', sheets, spreadsheetId);
+    
+    const leadIdColIndex = headers.findIndex(h => h === 'LeadID' || h === 'Lead');
+    if (leadIdColIndex === -1) {
+      console.error('LeadID column not found in Leads sheet');
+      return null;
+    }
+    
+    for (const row of rows) {
+      if (String(row[headers[leadIdColIndex]] || '').trim() === String(leadId).trim()) {
+        return row;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`[SHEETS] Error getting lead ${leadId}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Get quote by ID from the Quotes sheet
+ * @param {string} quoteId - The QuoteID to find
+ * @returns {object|null} Quote data object or null if not found
+ */
+export async function getQuoteById(quoteId) {
+  try {
+    const sheets = getGoogleSheetsClient();
+    const spreadsheetId = getSpreadsheetId();
+    const { headers, rows } = await readSheetAsObjects('Quotes', sheets, spreadsheetId);
+    
+    const quoteIdColIndex = headers.findIndex(h => h === 'QuoteID');
+    if (quoteIdColIndex === -1) {
+      console.error('QuoteID column not found in Quotes sheet');
+      return null;
+    }
+    
+    for (const row of rows) {
+      if (String(row[headers[quoteIdColIndex]] || '').trim() === String(quoteId).trim()) {
+        return row;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`[SHEETS] Error getting quote ${quoteId}:`, error);
+    return null;
+  }
+}
+
+// Disable legacy append function to catch rogue calls
+export async function appendQuoteRow() {
+  throw new Error('appendQuoteRow disabled — use upsertQuoteRow instead');
 }

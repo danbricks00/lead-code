@@ -642,7 +642,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
   };
 
   const isChatEnded = isCompleted || step === 'completed';
-  // Show text input for all steps except suburb search, timeline options, budget options, and review data
+  // Show text input for all steps except suburb search, timeline options, budget options, room name, and review data
   // BUT show it when editing a field in review mode
   const showTextInput = !isChatEnded && 
     !['ask_suburb', 'ask_timeline', 'ask_budget', 'ask_room_name', 'review_data'].includes(step) || 
@@ -721,6 +721,16 @@ const budgetOptions = useMemo(() => {
                     {option}
                 </button>
             ))}
+        </div>
+      )}
+      
+      {step === 'ask_room_name' && !isLoading && (
+        <div style={{...styles.optionsContainer, maxHeight: '200px', overflowY: 'auto'}}>
+          {ALLOWED_ROOMS.map(option => (
+            <button key={option} onClick={() => handleOptionSelect(option)} style={styles.optionButton}>
+              {option}
+            </button>
+          ))}
         </div>
       )}
       

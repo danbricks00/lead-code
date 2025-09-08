@@ -1,6 +1,8 @@
 import { getGoogleSheetsClient, getSpreadsheetId } from "../../../lib/googleSheets.js";
 import { generateQuotePDF, generateQuoteHTML } from "../../../lib/pdfGenerator.js";
 import { sendEmail } from '../../../lib/emailHelper';
+import { getLeadById, upsertQuoteRow } from '../../../utils/sheets.js';
+import { buildQuoteRow } from '../../../utils/quotes.js';
 import quoteLogger from '../../../lib/quoteLogger.js';
 import crypto from "crypto";
 
@@ -497,35 +499,49 @@ export default async function handler(req, res) {
         
         const headerResponse = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Quotes!A1:AJ1' });
         const header = headerResponse.data.values[0];
-        const updates = { 
-            'AdminPersonStatus': 'Approved', 
-            'CustomerStatus': 'Quote Sent',
-            'Decision': 'Admin Approved',
-            'DecisionTimestamp': new Date().toLocaleString("en-NZ", {
-                timeZone: "Pacific/Auckland",
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit"
-            }).replace(",", "")
-        };
-        
-        quoteLogger.dataFlow('Preparing Google Sheets update', { 
-            updates,
-            rowIndex: quoteData.rowIndex
-        }, requestId);
-        
-        let targetRow = (await sheets.spreadsheets.values.get({ spreadsheetId, range: `Quotes!A${quoteData.rowIndex}:AJ${quoteData.rowIndex}` })).data.values[0];
-        
-        header.forEach((colName, index) => {
-            if(updates[colName]) targetRow[index] = updates[colName];
+        // Use new unified system for approval
+        const lead = await getLeadById(quoteData.LeadID);
+        if (!lead) {
+            throw new Error('Lead not found for approval');
+        }
+
+        const approvedRow = buildQuoteRow({
+            lead,
+            quoteId: quoteData.QuoteID,
+            tradePersonName: quoteData.TradePersonName || '',
+            tradePersonEmail: quoteData.TradePersonEmail || '',
+            tradePersonPhone: quoteData.TradePersonPhone || '',
+            body: {
+                labourRate: quoteData.LabourRate || '',
+                labourHours: quoteData.LabourHours || '',
+                labourTotal: quoteData.LabourTotal || '',
+                materialsCost: quoteData.MaterialsCost || '',
+                materialsQuantity: quoteData.MaterialsQuantity || '',
+                materialsTotal: quoteData.MaterialsTotal || '',
+                travelCost: quoteData.TravelCost || '',
+                travelDistance: quoteData.TravelDistance || '',
+                travelTotal: quoteData.TravelTotal || '',
+                installationCost: quoteData.InstallationCost || '',
+                subtotal: quoteData.Subtotal || '',
+                gst: quoteData.GST || '',
+                totalQuote: quoteData.TotalQuote || '',
+                notes: quoteData.Notes || '',
+                validUntil: quoteData.ValidUnitl || ''
+            },
+            mode: 'accepted'
         });
 
-        await sheets.spreadsheets.values.update({
-            spreadsheetId, range: `Quotes!A${quoteData.rowIndex}`,
-            valueInputOption: 'USER_ENTERED', requestBody: { values: [targetRow] },
-        });
+        // Override with admin approval status
+        approvedRow.AdminPersonStatus = 'Approved';
+        approvedRow.CustomerStatus = 'Quote Sent';
+        approvedRow.Decison = 'Admin Approved';
+
+        quoteLogger.dataFlow('Preparing Google Sheets update with unified system', { 
+            quoteId: quoteData.QuoteID,
+            leadId: quoteData.LeadID
+        }, requestId);
+
+        const result = await upsertQuoteRow(quoteData.QuoteID, approvedRow, { req, caller: 'admin-approve' });
         
         quoteLogger.sheets('Google Sheets updated with approval status', null, requestId);
         

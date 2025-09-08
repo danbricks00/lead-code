@@ -12,8 +12,11 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
+    console.log('[QUOTE-SUBMIT] Request received:', req.body);
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
     const { quoteId, leadId } = body || {};
+    console.log('[QUOTE-SUBMIT] Parsed body:', { quoteId, leadId, bodyKeys: Object.keys(body) });
+    
     if (!quoteId || !leadId) return res.status(400).json({ error: 'quoteId and leadId are required' });
 
     const lead = await getLeadById(String(leadId).trim());
@@ -44,15 +47,26 @@ export default async function handler(req, res) {
       mode: 'submitted',
     });
 
+    console.log('[QUOTE-SUBMIT] About to write to Google Sheets:', { quoteId, fullRowKeys: Object.keys(fullRow) });
     const result = await upsertQuoteRow(quoteId, fullRow, { req, caller: 'quote-submit' });
+    console.log('[QUOTE-SUBMIT] Google Sheets write result:', result);
     console.log(JSON.stringify({ tag: 'QUOTE_SUBMIT_WRITE', quoteId, action: result?.action, rowIndex: result?.rowIndex }));
 
     // PDF/email only for Submitted and not Declined
+    console.log('[QUOTE-SUBMIT] PDF/Email check:', {
+      customerStatus: fullRow.CustomerStatus,
+      tradePersonStatus: fullRow.TradePersonStatus,
+      enablePdfEmails: process.env.ENABLE_PDF_EMAILS,
+      shouldSend: fullRow.CustomerStatus === 'Submitted' && fullRow.TradePersonStatus !== 'Declined' && (process.env.ENABLE_PDF_EMAILS !== 'false')
+    });
+    
     try {
-      if (fullRow.CustomerStatus === 'Submitted' && fullRow.TradePersonStatus !== 'Declined' && process.env.ENABLE_PDF_EMAILS === 'true') {
+      if (fullRow.CustomerStatus === 'Submitted' && fullRow.TradePersonStatus !== 'Declined' && (process.env.ENABLE_PDF_EMAILS !== 'false')) {
         const html = renderQuoteHtml(fullRow);
         const pdfBuffer = await generateQuotePDF(html, { quoteId: fullRow.QuoteID });
-        await safeSend(sendCustomerQuoteEmail, fullRow.CustomerEmail, pdfBuffer, fullRow, 'EMAIL_CUSTOMER');
+        
+        // Only send admin and tradesperson emails on submission
+        // Customer email will be sent after admin approval
         await safeSend(sendAdminQuoteEmail, process.env.ADMIN_EMAIL, pdfBuffer, fullRow, 'EMAIL_ADMIN');
         await safeSend(sendTradesQuoteEmail, fullRow.TradePersonEmail, pdfBuffer, fullRow, 'EMAIL_TRADES');
         console.log(JSON.stringify({ tag: 'QUOTE_PDF_EMAIL_OK', quoteId }));
@@ -115,15 +129,91 @@ async function safeSend(fn, to, pdf, row, tag) {
   }
 }
 
-// Email functions (implement these based on your existing email system)
+// Email functions using existing email system
 async function sendCustomerQuoteEmail(to, pdf, row) {
-  // Implement customer email sending
+  const subject = `Your Underfloor Heating Quote #${row.QuoteID}`;
+  const html = `
+    <h1>Your Quote is Ready!</h1>
+    <p>Hi ${row.CustomerName},</p>
+    <p>Your underfloor heating quote has been prepared and is attached to this email.</p>
+    <p><strong>Quote Details:</strong></p>
+    <ul>
+      <li>Quote ID: ${row.QuoteID}</li>
+      <li>Service: ${row.ServiceType}</li>
+      <li>Location: ${row.Suburb || row.Area}</li>
+      <li>Total: $${row.TotalQuote}</li>
+    </ul>
+    <p>Please review the attached quote and let us know if you have any questions.</p>
+  `;
+  
+  await sendEmail({
+    to,
+    subject,
+    html,
+    attachments: [{
+      filename: `quote-${row.QuoteID}.pdf`,
+      content: pdf,
+                contentType: 'application/pdf'
+    }]
+  });
 }
 
 async function sendAdminQuoteEmail(to, pdf, row) {
-  // Implement admin email sending
+  const subject = `New Quote Submitted - ${row.CustomerName} - Quote #${row.QuoteID}`;
+  const html = `
+    <h1>New Quote Submitted for Review</h1>
+    <p>A new quote has been submitted and requires your review.</p>
+    <p><strong>Quote Details:</strong></p>
+    <ul>
+      <li>Quote ID: ${row.QuoteID}</li>
+      <li>Customer: ${row.CustomerName}</li>
+      <li>Email: ${row.CustomerEmail}</li>
+      <li>Phone: ${row.CustomerPhone}</li>
+      <li>Service: ${row.ServiceType}</li>
+      <li>Location: ${row.Suburb || row.Area}</li>
+      <li>Total: $${row.TotalQuote}</li>
+      <li>Tradesperson: ${row.TradePersonName}</li>
+    </ul>
+    <p>Please review the attached quote and approve or decline as appropriate.</p>
+  `;
+  
+  await sendEmail({
+    to,
+    subject,
+    html,
+    attachments: [{
+      filename: `quote-${row.QuoteID}.pdf`,
+      content: pdf,
+                contentType: 'application/pdf'
+    }]
+  });
 }
 
 async function sendTradesQuoteEmail(to, pdf, row) {
-  // Implement tradesperson email sending
+  const subject = `Quote Submitted Successfully - Quote #${row.QuoteID}`;
+  const html = `
+    <h1>Quote Submitted Successfully</h1>
+    <p>Hi ${row.TradePersonName},</p>
+    <p>Your quote has been submitted successfully and is now under review.</p>
+    <p><strong>Quote Details:</strong></p>
+    <ul>
+      <li>Quote ID: ${row.QuoteID}</li>
+      <li>Customer: ${row.CustomerName}</li>
+      <li>Service: ${row.ServiceType}</li>
+      <li>Location: ${row.Suburb || row.Area}</li>
+      <li>Total: $${row.TotalQuote}</li>
+    </ul>
+    <p>The customer will be notified once the quote is approved.</p>
+  `;
+  
+  await sendEmail({
+    to,
+    subject,
+    html,
+    attachments: [{
+      filename: `quote-${row.QuoteID}.pdf`,
+      content: pdf,
+      contentType: 'application/pdf'
+    }]
+  });
 }

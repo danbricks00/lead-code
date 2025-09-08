@@ -12,8 +12,19 @@ export function buildQuoteRow({
   body = {},          // financials + notes on submit
   mode = 'draft'      // 'draft' | 'submitted' | 'accepted' | 'rejected'
 }) {
+  // Generate NZT timestamp in DD/MM/YYYY HH:MM AM/PM format
+  const nzTimestamp = new Date().toLocaleString('en-NZ', {
+    timeZone: 'Pacific/Auckland',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
+
   const row = {
-    TimeStamp: new Date().toISOString(),
+    TimeStamp: nzTimestamp,
     QuoteID: quoteId,
     LeadID: lead.Lead || '',
 
@@ -73,7 +84,7 @@ export function buildQuoteRow({
     row.CustomerStatus = 'Approved';
     row.AdminPersonStatus = 'Closed';
     row.Decison = 'Accepted';
-    row.DecisonTimeStamp = new Date().toISOString();
+    row.DecisonTimeStamp = nzTimestamp;
   }
 
   if (mode === 'rejected') {
@@ -81,7 +92,7 @@ export function buildQuoteRow({
     row.CustomerStatus = 'Not Sent';
     row.AdminPersonStatus = 'Closed';
     row.Decison = 'Rejected';
-    row.DecisonTimeStamp = new Date().toISOString();
+    row.DecisonTimeStamp = nzTimestamp;
   }
 
   return row;

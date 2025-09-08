@@ -191,6 +191,15 @@ export async function upsertQuoteRow(quoteId, data) {
   console.log(`[DEBUG] upsertQuoteRow: Upserting data for quoteId=${quoteId}, source=payload`);
   
   try {
+    // Check for idempotency if LastMutationId is provided
+    if (data.LastMutationId) {
+      const existingRow = await getQuoteRowByQuoteId(quoteId);
+      if (existingRow && existingRow.rowData.LastMutationId === data.LastMutationId) {
+        console.log(`[DEBUG] upsertQuoteRow: Idempotent operation detected with mutationId=${data.LastMutationId}`);
+        return { rowIndex: existingRow.rowIndex, data: existingRow.rowData, action: 'IDEMPOTENT' };
+      }
+    }
+
     // Check if row exists
     const existingRow = await getQuoteRowByQuoteId(quoteId);
     

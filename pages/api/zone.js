@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     const { search } = req.query; 
 
     const filterLogic = (zones) => {
-        if (!search) {
+        if (!search || typeof search !== 'string') {
           // If no search term, return all zones, which is useful for initializing the chatbot
           return zones;
         }
@@ -74,7 +74,7 @@ export default async function handler(req, res) {
           
           // Log if any alternative names were matched
           const altNameMatches = filteredZones.filter(zone => 
-            zone.altName && typeof zone.altName === 'string' && zone.altName.toLowerCase().startsWith(search.toLowerCase())
+            zone.altName && typeof zone.altName === 'string' && search && typeof search === 'string' && zone.altName.toLowerCase().startsWith(search.toLowerCase())
           );
           if (altNameMatches.length > 0) {
             console.log(`🔤 Found ${altNameMatches.length} matches using alternative names (Māori spelling)`);

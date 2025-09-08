@@ -1,4 +1,5 @@
 import { getGoogleSheetsClient, getSpreadsheetId } from '../lib/googleSheets.js';
+import { assertQuoteWriteOnly, assertLeadWriteOnly } from './writeGuard.js';
 import crypto from 'crypto';
 
 // NZ timestamp helper function
@@ -148,6 +149,9 @@ const QUOTES_HEADERS = [
  */
 export async function upsertQuoteRow(quoteId, data, context = {}) {
   try {
+    // Enforce write guard for Quotes tab
+    assertQuoteWriteOnly(context);
+    
     const { req, caller } = context;
     const trimmedQuoteId = String(quoteId).trim();
     const sheets = getGoogleSheetsClient();
@@ -188,7 +192,7 @@ export async function upsertQuoteRow(quoteId, data, context = {}) {
       // APPEND: No matches found, add new row
       rowIndex = rows.length + 2; // +2 because sheets are 1-indexed and row 1 is headers
       
-      await appendRowToSheet('Quotes', QUOTES_HEADERS, data, sheets, spreadsheetId);
+      await appendRowToSheet('Quotes', QUOTES_HEADERS, data, sheets, spreadsheetId, context);
       action = 'APPEND';
       
       console.log(JSON.stringify({
@@ -251,7 +255,14 @@ async function updateRowByIndex(sheetName, rowIndex, headers, data, sheets, spre
  * @param {object} sheets - Google Sheets client
  * @param {string} spreadsheetId - Spreadsheet ID
  */
-async function appendRowToSheet(sheetName, headers, data, sheets, spreadsheetId) {
+async function appendRowToSheet(sheetName, headers, data, sheets, spreadsheetId, context = {}) {
+  // Enforce write guards based on sheet name
+  if (sheetName === 'Leads') {
+    assertLeadWriteOnly(context);
+  } else if (sheetName === 'Quotes') {
+    assertQuoteWriteOnly(context);
+  }
+  
   // Convert data object to array matching header order
   const values = headers.map(header => {
     const value = data[header];

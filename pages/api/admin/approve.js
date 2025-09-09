@@ -167,6 +167,17 @@ export default async function handler(req, res) {
             quoteLogger.response('Redirecting to error page - quote not found', null, requestId);
             return res.redirect(`/quote-status?status=error&message=Quote not found.`);
         }
+
+        // Check if quote is already processed
+        if (quoteData.AdminPersonStatus === 'Approved') {
+            quoteLogger.adminAccept('Quote already approved', { quoteId }, requestId);
+            return res.redirect(`/quote-status?status=info&message=Quote ${quoteId} has already been approved.`);
+        }
+        
+        if (quoteData.AdminPersonStatus === 'Declined') {
+            quoteLogger.adminAccept('Quote already declined', { quoteId }, requestId);
+            return res.redirect(`/quote-status?status=info&message=Quote ${quoteId} has already been declined.`);
+        }
         
         quoteLogger.dataFlow('Quote data retrieved from Google Sheets', {
             quoteId,

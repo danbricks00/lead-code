@@ -79,10 +79,15 @@ export default async function handler(req, res) {
         
         // Check if already declined or approved
         if (quoteData.AdminPersonStatus === 'Declined') {
-            return res.redirect(`/quote-status?status=error&message=This quote has already been declined.`);
+            return res.redirect(`/quote-status?status=info&message=Quote ${quoteId} has already been declined.`);
         }
         if (quoteData.AdminPersonStatus === 'Approved') {
-            return res.redirect(`/quote-status?status=error&message=This quote has already been approved and cannot be declined.`);
+            return res.redirect(`/quote-status?status=info&message=Quote ${quoteId} has already been approved and cannot be declined.`);
+        }
+
+        // If no reason provided, redirect to decline form
+        if (!req.query.reason) {
+            return res.redirect(`/admin/decline-form?quoteId=${quoteId}&ts=${ts}&token=${token}`);
         }
 
         // 2. Get Lead data using new unified system
@@ -157,7 +162,8 @@ export default async function handler(req, res) {
                 };
                 await sendEmail(customerDeclineEmail);
 
-                // Send tradesperson decline notification email
+                // Send tradesperson decline notification email with reason
+                const declineReason = req.query.reason || 'No specific reason provided';
                 const tradespersonDeclineEmail = {
                     to: quoteData.TradePersonEmail,
                     subject: `⚠️ Quote Declined - ${lead.ServiceType} for ${lead.CustomerName}`,
@@ -177,8 +183,12 @@ export default async function handler(req, res) {
                                     <p style="margin: 5px 0; color: #495057;"><strong>Quote Total:</strong> $${quoteData.TotalQuote}</p>
                                 </div>
                                 <div style="background-color: #fff3cd; border-radius: 8px; padding: 20px; margin: 20px 0;">
-                                    <h4 style="color: #856404; margin: 0 0 10px 0;">🔄 Next Steps</h4>
-                                    <p style="margin: 5px 0; color: #495057;">You can resubmit a revised quote. Consider reviewing your pricing, timeline, or scope of work.</p>
+                                    <h4 style="color: #856404; margin: 0 0 10px 0;">📝 Admin Feedback</h4>
+                                    <p style="margin: 5px 0; color: #495057; font-style: italic;">"${declineReason}"</p>
+                                </div>
+                                <div style="background-color: #e8f5e8; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                                    <h4 style="color: #27ae60; margin: 0 0 10px 0;">🔄 Next Steps</h4>
+                                    <p style="margin: 5px 0; color: #495057;">Please review the feedback above and resubmit a revised quote addressing the concerns mentioned.</p>
                                     <p style="margin: 10px 0 0 0;">
                                         <a href="${generateQuoteSubmissionLink(quoteData.LeadID)}" style="display: inline-block; background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">📝 Resubmit Quote</a>
                                     </p>

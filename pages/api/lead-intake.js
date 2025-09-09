@@ -24,6 +24,16 @@ async function appendRowToSheet(sheets, tab, values) {
 }
 
 export default async function handler(req, res) {
+  const requestId = `lead-intake-${Date.now()}`;
+  
+  console.log(JSON.stringify({ 
+    tag: 'ROUTE_REQ_START', 
+    route: 'lead-intake', 
+    method: req.method,
+    requestId,
+    timestamp: new Date().toISOString()
+  }));
+  
   try {
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method not allowed' });
@@ -163,6 +173,14 @@ export default async function handler(req, res) {
       html: `<h1>New Lead Logged (#${leadId})</h1>${leadDetailsHtml}<p>A quote link has been sent to the tradesperson.</p><p>Quote Link: ${quoteLink}</p>`,
     });
 
+    console.log(JSON.stringify({ 
+      tag: 'ROUTE_REQ_OK', 
+      route: 'lead-intake', 
+      leadId,
+      requestId,
+      timestamp: new Date().toISOString()
+    }));
+    
     return res.status(200).json({ 
       success: true, 
       leadId: leadId,
@@ -170,7 +188,13 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error("Lead intake error:", error);
+    console.error(JSON.stringify({ 
+      tag: 'ROUTE_REQ_FAIL', 
+      route: 'lead-intake', 
+      error: error.message,
+      requestId,
+      timestamp: new Date().toISOString()
+    }));
     return res.status(500).json({ error: "Internal server error" });
   }
 }

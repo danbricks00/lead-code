@@ -9,6 +9,16 @@ import { generateQuotePDF } from '../../lib/pdfGenerator.js';
 import { sendEmail } from '../../lib/emailHelper.js';
 
 export default async function handler(req, res) {
+  const requestId = `quote-submit-${Date.now()}`;
+  
+  console.log(JSON.stringify({ 
+    tag: 'ROUTE_REQ_START', 
+    route: 'quote-submit', 
+    method: req.method,
+    requestId,
+    timestamp: new Date().toISOString()
+  }));
+  
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
@@ -149,10 +159,25 @@ export default async function handler(req, res) {
       console.error(JSON.stringify({ tag: 'QUOTE_PDF_EMAIL_FAIL', quoteId, msg: String(e?.message || e) }));
     }
 
+    console.log(JSON.stringify({ 
+      tag: 'ROUTE_REQ_OK', 
+      route: 'quote-submit', 
+      quoteId,
+      leadId,
+      requestId,
+      timestamp: new Date().toISOString()
+    }));
+    
     return res.status(200).json({ ok: true, quote: (await getQuoteById(quoteId)) || fullRow });
 
   } catch (error) {
-    console.error('Quote submit error:', error);
+    console.error(JSON.stringify({ 
+      tag: 'ROUTE_REQ_FAIL', 
+      route: 'quote-submit', 
+      error: error.message,
+      requestId,
+      timestamp: new Date().toISOString()
+    }));
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

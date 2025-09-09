@@ -9,6 +9,16 @@ import { buildQuoteRow } from '../../../utils/quotes.js';
 import { generateVersionedQuoteId } from '../../../utils/quoteVersioning.js';
 
 export default async function handler(req, res) {
+  const requestId = `quote-init-${Date.now()}`;
+  
+  console.log(JSON.stringify({ 
+    tag: 'ROUTE_REQ_START', 
+    route: 'quote-init', 
+    method: req.method,
+    requestId,
+    timestamp: new Date().toISOString()
+  }));
+  
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const { leadId, tradePersonName = '', tradePersonEmail = '', tradePersonPhone = '' } = req.query || {};
@@ -119,6 +129,15 @@ export default async function handler(req, res) {
       }
     }
 
+    console.log(JSON.stringify({ 
+      tag: 'ROUTE_REQ_OK', 
+      route: 'quote-init', 
+      leadId,
+      quoteId: versionedQuoteId,
+      requestId,
+      timestamp: new Date().toISOString()
+    }));
+    
     return res.status(200).json({ 
       lead: mappedLead, 
       draft: draftRow,
@@ -127,7 +146,13 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('Quote init error:', error);
+    console.error(JSON.stringify({ 
+      tag: 'ROUTE_REQ_FAIL', 
+      route: 'quote-init', 
+      error: error.message,
+      requestId,
+      timestamp: new Date().toISOString()
+    }));
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

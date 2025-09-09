@@ -623,38 +623,73 @@ export default async function handler(req, res) {
         // Send approval notification emails (if enabled)
         if (process.env.ENABLE_APPROVE_DECLINE_EMAILS === 'true') {
             try {
-                // Send customer approval email
-                const customerApprovalEmail = {
+                // Send customer the approved quote with PDF attachment
+                const customerQuoteEmail = {
                     to: leadData['CustomerEmail'],
-                    subject: `✅ Quote Approved - ${leadData['ServiceType']} for ${leadData['CustomerName']}`,
+                    subject: `✅ Your Quote is Ready - ${leadData['ServiceType']} for ${leadData['CustomerName']}`,
                     html: `
                         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
                             <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                                
+                                <!-- Header -->
                                 <div style="text-align: center; margin-bottom: 30px;">
-                                    <h1 style="color: #28a745; margin: 0; font-size: 28px;">✅ Quote Approved!</h1>
-                                    <p style="color: #7f8c8d; margin: 10px 0 0 0; font-size: 16px;">Your quote has been approved by our admin team</p>
+                                    <h1 style="color: #28a745; margin: 0; font-size: 28px;">✅ Your Quote is Ready!</h1>
+                                    <p style="color: #7f8c8d; margin: 10px 0 0 0; font-size: 16px;">Professional quote approved and ready for your project</p>
                                 </div>
+
+                                <!-- Quote Summary -->
                                 <div style="background-color: #e8f5e8; border-radius: 8px; padding: 20px; margin: 20px 0;">
-                                    <h3 style="color: #27ae60; margin: 0 0 10px 0;">Quote Details</h3>
+                                    <h3 style="color: #27ae60; margin: 0 0 15px 0;">📋 Quote Summary</h3>
                                     <p style="margin: 5px 0; color: #495057;"><strong>Quote ID:</strong> ${quoteData.QuoteID}</p>
                                     <p style="margin: 5px 0; color: #495057;"><strong>Service:</strong> ${leadData['ServiceType']}</p>
-                                    <p style="margin: 5px 0; color: #495057;"><strong>Total:</strong> $${quoteData.TotalQuote}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Location:</strong> ${leadData['Area']}, ${leadData['Suburb']}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Total Quote:</strong> $${quoteData.TotalQuote}</p>
                                     <p style="margin: 5px 0; color: #495057;"><strong>Valid Until:</strong> ${quoteData.ValidUntil}</p>
                                 </div>
+
+                                <!-- Decision Buttons -->
+                                <div style="text-align: center; margin: 30px 0;">
+                                    <h3 style="color: #495057; margin: 0 0 20px 0;">Make Your Decision</h3>
+                                    <div style="margin: 20px 0;">
+                                        <a href="${generateCustomerDecisionLink('accept', quoteData.QuoteID)}" style="display: inline-block; background-color: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; margin: 0 10px;">✅ ACCEPT QUOTE</a>
+                                        <a href="${generateCustomerDecisionLink('decline', quoteData.QuoteID)}" style="display: inline-block; background-color: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; margin: 0 10px;">❌ DECLINE QUOTE</a>
+                                    </div>
+                                    <p style="color: #6c757d; font-size: 14px; margin: 15px 0 0 0; font-style: italic;">Secure one-click decision buttons</p>
+                                </div>
+
+                                <!-- PDF Attachment Notice -->
+                                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 10px; margin: 30px 0; text-align: center;">
+                                    <h3 style="margin: 0 0 10px 0; font-size: 22px;">📎 Professional PDF Attached</h3>
+                                    <p style="margin: 0; font-size: 16px; opacity: 0.9;">Detailed quote document with all pricing breakdowns</p>
+                                </div>
+
+                                <!-- Tradesperson Contact -->
                                 <div style="background-color: #e8f5e8; border-radius: 8px; padding: 20px; margin: 20px 0;">
                                     <h4 style="color: #27ae60; margin: 0 0 10px 0;">👷‍♂️ Your Tradesperson</h4>
                                     <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${quoteData.TradePersonName}</p>
                                     <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${quoteData.TradePersonEmail}</p>
                                     <p style="margin: 5px 0; color: #495057;"><strong>Phone:</strong> ${quoteData.TradePersonPhone}</p>
+                                    <p style="margin: 15px 0 0 0;">
+                                        <a href="mailto:${quoteData.TradePersonEmail}" style="display: inline-block; background: #27ae60; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">📧 Contact Tradesperson</a>
+                                    </p>
                                 </div>
-                                <div style="text-align: center; margin-top: 30px;">
-                                    <p style="color: #28a745; font-size: 16px; font-weight: bold;">🎉 Your project is ready to begin!</p>
+
+                                <!-- Footer -->
+                                <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+                                    <p style="color: #28a745; font-size: 16px; font-weight: bold; margin: 0 0 10px 0;">
+                                        🎉 Your quote is ready - decision time!
+                                    </p>
+                                    <p style="color: #6c757d; font-size: 14px; margin: 0;">
+                                        <strong>Kiwi Trade Team</strong> - Professional service, every time
+                                    </p>
                                 </div>
+
                             </div>
                         </div>
-                    `
+                    `,
+                    attachments: [attachment]
                 };
-                await sendEmail(customerApprovalEmail);
+                await sendEmail(customerQuoteEmail);
 
                 // Send tradesperson notification email
                 const tradespersonApprovalEmail = {

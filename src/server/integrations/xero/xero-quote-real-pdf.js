@@ -299,11 +299,11 @@ export default async function handler(req, res) {
                  style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
                View Quote Online
               </a>
-              <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+              <a href="${currentUrl}/api/customer-accept?quoteId=${quoteData.quoteId}&leadId=${quoteData.leadId}" 
                  style="background: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
                Accept Quote
               </a>
-              <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+              <a href="${currentUrl}/api/customer-decline?quoteId=${quoteData.quoteId}&leadId=${quoteData.leadId}" 
                  style="background: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
                Decline Quote
               </a>

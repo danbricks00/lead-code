@@ -191,10 +191,10 @@ async function handleQuoteGeneration(req, res) {
    
    const actionsSection = includeActions ? `
      <div class="actions">
-       <a href="${currentUrl}/api/quote-responses?action=accept&quoteId=${quote.quoteId}" class="action-btn accept-btn">
+       <a href="${currentUrl}/api/customer-accept?quoteId=${quote.quoteId}&leadId=${quote.leadId}" class="action-btn accept-btn">
          ✅ Accept Quote
        </a>
-       <a href="${currentUrl}/api/quote-responses?action=decline&quoteId=${quote.quoteId}" class="action-btn decline-btn">
+       <a href="${currentUrl}/api/customer-decline?quoteId=${quote.quoteId}&leadId=${quote.leadId}" class="action-btn decline-btn">
          ❌ Decline Quote
        </a>
      </div>

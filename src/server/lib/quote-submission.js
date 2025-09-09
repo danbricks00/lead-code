@@ -883,11 +883,11 @@ export default async function handler(req, res) {
               <h3 style="color: #856404; margin-top: 0; font-size: 20px;">⚡ Quote Actions</h3>
               <p style="margin: 15px 0; color: #666; font-style: italic;">Choose your action below:</p>
               <div style="margin: 25px 0; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
-                <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+                <a href="${currentUrl}/api/customer-accept?quoteId=${quoteData.quoteId}&leadId=${quoteData.leadId}" 
                    style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-size: 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s ease;">
                    ✅ Accept Quote
                 </a>
-                <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+                <a href="${currentUrl}/api/customer-decline?quoteId=${quoteData.quoteId}&leadId=${quoteData.leadId}" 
                    style="background: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-size: 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s ease;">
                    ❌ Decline Quote
                 </a>

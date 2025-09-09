@@ -1,6 +1,7 @@
 import { getLeadById, upsertQuoteRow } from '../../utils/sheets';
 import { buildQuoteRow } from '../../utils/quotes';
 import { sendEmail } from '../../lib/emailHelper';
+import { getNZTTimestamp } from '../../utils/nztTimestamp.js';
 import quoteLogger from '../../lib/quoteLogger.js';
 import crypto from "crypto";
 
@@ -55,13 +56,14 @@ export default async function handler(req, res) {
     const startTime = Date.now();
     
     // Debug log for immediate visibility
-    console.log('QUOTE_DECLINE_REQ_START', { 
+    console.log(JSON.stringify({ 
+        tag: 'ADMIN_DECLINE_REQ_START', 
         flowId, 
         requestId, 
         method: req.method, 
         url: req.url,
         timestamp: new Date().toISOString()
-    });
+    }));
     
     // Simple test to see if the endpoint is reachable at all
     console.log('🔍 [QUOTE-DECLINE] ENDPOINT HIT!', {
@@ -205,6 +207,7 @@ export default async function handler(req, res) {
 
         // Override with decline-specific status
         rejectedRow.AdminPersonStatus = 'Declined';
+        rejectedRow.AdminDecisionTimeStamp = getNZTTimestamp();
         rejectedRow.TradePersonStatus = 'Needs Revision';
         rejectedRow.ResubmissionAllowed = 'Yes';
 
@@ -406,6 +409,17 @@ export default async function handler(req, res) {
         };
 
         await sendEmail(adminEmailOptions);
+        
+        console.log(JSON.stringify({ 
+            tag: 'ADMIN_DECLINE_OK', 
+            quoteId, 
+            leadId,
+            status: 'Declined',
+            timestamp: rejectedRow.AdminDecisionTimeStamp,
+            flowId,
+            requestId,
+            processingTime: Date.now() - startTime
+        }));
         
         return res.status(200).json({ ok: true, quoteId, leadId });
 

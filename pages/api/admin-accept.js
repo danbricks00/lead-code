@@ -3,6 +3,7 @@ import { generateQuotePDF, generateQuoteHTML } from "../../lib/pdfGenerator.js";
 import { sendEmail } from '../../lib/emailHelper';
 import { getLeadById, upsertQuoteRow } from '../../utils/sheets.js';
 import { buildQuoteRow } from '../../utils/quotes.js';
+import { getNZTTimestamp } from '../../utils/nztTimestamp.js';
 import quoteLogger from '../../lib/quoteLogger.js';
 import crypto from "crypto";
 
@@ -16,7 +17,7 @@ function verifyToken(id, ts) {
 
 function generateCustomerDecisionLink(action, quoteId, leadId) {
     const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
-    return `https://${baseUrl}/api/quote-decision/${action}?quoteId=${quoteId}&leadId=${leadId}`;
+    return `https://${baseUrl}/api/customer-${action}?quoteId=${quoteId}&leadId=${leadId}`;
 }
 
 function generateQuoteViewLink(quoteId) {
@@ -91,13 +92,14 @@ export default async function handler(req, res) {
     const startTime = Date.now();
     
     // Debug log for immediate visibility
-    console.log('QUOTE_APPROVE_REQ_START', { 
+    console.log(JSON.stringify({ 
+        tag: 'ADMIN_ACCEPT_REQ_START', 
         flowId, 
         requestId, 
         method: req.method, 
         url: req.url,
         timestamp: new Date().toISOString()
-    });
+    }));
     
     // Simple test to see if the endpoint is reachable at all
     console.log('🔍 [QUOTE-APPROVE] ENDPOINT HIT!', {
@@ -682,6 +684,7 @@ export default async function handler(req, res) {
 
         // Override with admin approval status
         approvedRow.AdminPersonStatus = 'Approved';
+        approvedRow.AdminDecisionTimeStamp = getNZTTimestamp();
         approvedRow.CustomerStatus = 'Quote Sent';
         approvedRow.Decison = 'Admin Approved';
 
@@ -836,6 +839,17 @@ export default async function handler(req, res) {
             quoteId,
             processingTime: Date.now() - startTime
         }, requestId);
+        
+        console.log(JSON.stringify({ 
+            tag: 'ADMIN_ACCEPT_OK', 
+            quoteId, 
+            leadId,
+            status: 'Approved',
+            timestamp: approvedRow.AdminDecisionTimeStamp,
+            flowId,
+            requestId,
+            processingTime: Date.now() - startTime
+        }));
         
         return res.status(200).json({ ok: true, quoteId, leadId });
 

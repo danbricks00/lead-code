@@ -27,7 +27,7 @@ export default function AdminDeclineForm() {
     setError('');
 
     try {
-      const response = await fetch(`/api/quote-decline?quoteId=${quoteId}&ts=${ts}&token=${token}&reason=${encodeURIComponent(reason)}`, {
+      const response = await fetch(`/api/admin-decline?quoteId=${quoteId}&ts=${ts}&token=${token}&reason=${encodeURIComponent(reason)}`, {
         method: 'GET',
       });
 

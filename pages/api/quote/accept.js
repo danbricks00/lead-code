@@ -268,11 +268,11 @@ export default async function handler(req, res) {
                             <h3 style="color: #0066cc; margin-top: 0;">Next Steps</h3>
                             <p>Please review your quote and let us know your decision:</p>
                             <div style="text-align: center; margin: 20px 0;">
-                                <a href="${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://lead-code.vercel.app'}/quote-decision/accept?quoteId=${quoteId}&ts=${Date.now()}&token=accept_token" 
+                                <a href="${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://lead-code.vercel.app'}/api/customer-accept?quoteId=${quoteId}&ts=${Date.now()}&token=accept_token" 
                                    style="display: inline-block; background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 5px;">
                                     ✅ Accept Quote
                                 </a>
-                                <a href="${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://lead-code.vercel.app'}/quote-decision/decline?quoteId=${quoteId}&ts=${Date.now()}&token=decline_token" 
+                                <a href="${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://lead-code.vercel.app'}/api/customer-decline?quoteId=${quoteId}&ts=${Date.now()}&token=decline_token" 
                                    style="display: inline-block; background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 5px;">
                                     ❌ Decline Quote
                                 </a>

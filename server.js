@@ -671,10 +671,10 @@ app.get('/api/generate-quote', async (req, res) => {
         <body>
             <div class="quote-container">
                 <div class="actions">
-                    <a href="/api/quote-responses?action=accept&quoteId=${quoteId}" class="action-btn accept-btn">
+                    <a href="/api/customer-accept?quoteId=${quoteId}&leadId=${leadId}" class="action-btn accept-btn">
                         ✅ Accept Quote
                     </a>
-                    <a href="/api/quote-responses?action=decline&quoteId=${quoteId}" class="action-btn decline-btn">
+                    <a href="/api/customer-decline?quoteId=${quoteId}&leadId=${leadId}" class="action-btn decline-btn">
                         ❌ Decline Quote
                     </a>
                 </div>

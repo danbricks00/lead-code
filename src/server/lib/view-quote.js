@@ -429,9 +429,9 @@ export default async function handler(req, res) {
           <div class="actions">
             <h2>Quote ${quoteData.quoteNumber}</h2>
             <p>Please review the quote below and choose your action:</p>
-            <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+            <a href="${currentUrl}/api/customer-accept?quoteId=${quoteData.quoteId}&leadId=${quoteData.leadId}" 
                class="accept-btn">✅ Accept Quote</a>
-            <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+            <a href="${currentUrl}/api/customer-decline?quoteId=${quoteData.quoteId}&leadId=${quoteData.leadId}" 
                class="decline-btn">❌ Decline Quote</a>
           </div>
 
@@ -502,9 +502,9 @@ export default async function handler(req, res) {
 
           <div class="actions">
             <p><strong>Ready to proceed?</strong></p>
-            <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+            <a href="${currentUrl}/api/customer-accept?quoteId=${quoteData.quoteId}&leadId=${quoteData.leadId}" 
                class="accept-btn">✅ Accept Quote</a>
-            <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+            <a href="${currentUrl}/api/customer-decline?quoteId=${quoteData.quoteId}&leadId=${quoteData.leadId}" 
                class="decline-btn">❌ Decline Quote</a>
           </div>
 

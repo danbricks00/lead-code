@@ -23,7 +23,8 @@ export function assertQuoteWriteOnly({ req, caller }) {
   const allowed =
     (req?.method === 'GET' && req?.url?.includes('/api/quote/init')) || // draft write permitted via init route
     (req?.method === 'POST' && req?.url?.includes('/api/quote-submit')) ||
-    (req?.method === 'POST' && (req?.url?.includes('/api/accept') || req?.url?.includes('/api/decline')));
+    (req?.method === 'GET' && (req?.url?.includes('/api/admin-accept') || req?.url?.includes('/api/admin-decline'))) ||
+    (req?.method === 'GET' && (req?.url?.includes('/api/customer-accept') || req?.url?.includes('/api/customer-decline')));
   if (!allowed) throw new Error(`QUOTES_WRITE_BLOCKED ${caller||'unknown'}`);
   return true;
 }

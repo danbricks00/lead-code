@@ -1,7 +1,9 @@
-import { getGoogleSheetsClient, getSpreadsheetId } from "../../../lib/googleSheets.js";
-import { sendEmail } from '../../../lib/emailHelper';
-import quoteLogger from '../../../lib/quoteLogger.js';
-import { normalizeQueryParams, createIdMismatchError } from '../../../utils/normalize.js';
+import { getGoogleSheetsClient, getSpreadsheetId } from "../../lib/googleSheets.js";
+import { sendEmail } from '../../lib/emailHelper';
+import { generateQuotePDF } from '../../lib/pdfGenerator.js';
+import quoteLogger from '../../lib/quoteLogger.js';
+import { normalizeQueryParams, createIdMismatchError } from '../../utils/normalize.js';
+import { getNZTTimestamp } from '../../utils/nztTimestamp.js';
 import crypto from "crypto";
 
 // NZ timestamp helper function
@@ -40,22 +42,24 @@ function formatTimestamp(isoString) {
 }
 
 async function sendNotificationEmails(quoteData, leadData = {}, requestId = null) {
-    quoteLogger.email('Preparing notification emails for quote decline', {
+    quoteLogger.email('Preparing notification emails for quote acceptance', {
         quoteDataKeys: Object.keys(quoteData),
         leadDataKeys: Object.keys(leadData)
     }, requestId);
     
-    // Get customer email - try quote data first, then lead data
-    const customerEmail = quoteData['CustomerEmail'] || quoteData['Customer Email'] || quoteData['customerEmail'] || 
-                         leadData['CustomerEmail'] || leadData['Customer Email'] || leadData['customerEmail'];
-    const customerName = quoteData['CustomerName'] || quoteData['Customer Name'] || quoteData['customerName'] || 
-                        leadData['CustomerName'] || leadData['Customer Name'] || leadData['customerName'];
+    // Get customer email - using exact schema column names
+    const customerEmail = quoteData['CustomerEmail'] || leadData['CustomerEmail'];
+    const customerName = quoteData['CustomerName'] || leadData['CustomerName'];
     
-    // Get tradesperson email - try different possible column names  
-    const tradespersonEmail = quoteData['TradespersonEmail'] || quoteData['Tradesperson Email'] || quoteData['tradespersonEmail'] || 
-                             quoteData['TradePerson Email'] || quoteData['TradesPerson Email'];
-    const tradespersonName = quoteData['TradespersonName'] || quoteData['Tradesperson Name'] || quoteData['tradespersonName'] || 
-                            quoteData['TradePerson Name'] || quoteData['TradesPerson Name'];
+    // Get tradesperson email - using exact schema column names
+    const tradespersonEmail = quoteData['TradePersonEmail'];
+    const tradespersonName = quoteData['TradePersonName'];
+    
+    // Get other fields from exact schema
+    const serviceType = quoteData['ServiceType'] || leadData['ServiceType'] || '';
+    const budget = quoteData['Budget'] || leadData['Budget'] || '';
+    const timeline = quoteData['Timeline'] || leadData['Timelline'] || leadData['Timeline'] || '';
+    const validUntil = quoteData['ValidUntil'] || 'N/A';
     
     quoteLogger.email('Email recipients identified', {
         customerEmail,
@@ -73,100 +77,292 @@ async function sendNotificationEmails(quoteData, leadData = {}, requestId = null
         throw new Error('Tradesperson email not found');
     }
 
+    // Build finalQuoteData for PDF generation using ACTUAL quote data from Google Sheets
+    const finalQuoteData = {
+        quoteId: quoteData['QuoteID'],
+        quoteDate: quoteData['TimeStamp'] || getNZTimestamp(),
+        validUntil: validUntil,
+        customerName: customerName,
+        customerEmail: customerEmail,
+        customerPhone: quoteData['CustomerPhone'] || '',
+        customerAddress: quoteData['Location'] || `${leadData['Area'] || ''} ${leadData['Suburb'] || ''}`.trim(),
+        serviceType: serviceType,
+        tradespersonName: tradespersonName || '',
+        tradespersonEmail: tradespersonEmail || '',
+        tradespersonPhone: quoteData['TradePersonPhone'] || '',
+        tradespersonLicense: '',
+        rooms: [],
+        breakdown: {
+            labourRate: parseFloat(quoteData['LabourRate'] || 0),
+            labourHours: parseFloat(quoteData['LabourHours'] || 0),
+            labourTotal: parseFloat(quoteData['LabourTotal'] || 0),
+            materialsCost: parseFloat(quoteData['MaterialsCost'] || 0),
+            materialsQuantity: parseFloat(quoteData['MaterialsQuantity'] || 0),
+            materialsTotal: parseFloat(quoteData['MaterialsTotal'] || 0),
+            travelCost: parseFloat(quoteData['TravelCost'] || 0),
+            travelDistance: parseFloat(quoteData['TravelDistance'] || 0),
+            travelTotal: parseFloat(quoteData['TravelTotal'] || 0),
+            installationCost: parseFloat(quoteData['InstallationCost'] || 0),
+            totalSqm: 0
+        },
+        totals: {
+            labour: parseFloat(quoteData['LabourTotal'] || 0),
+            materials: parseFloat(quoteData['MaterialsTotal'] || 0),
+            travel: parseFloat(quoteData['TravelTotal'] || 0),
+            installation: parseFloat(quoteData['InstallationCost'] || 0),
+            subtotal: parseFloat(quoteData['Subtotal'] || 0),
+            gst: parseFloat(quoteData['GST'] || 0),
+            final: parseFloat(quoteData['TotalQuote'] || 0)
+        }
+    };
+
+    // Parse rooms data if available
+    try {
+        const roomsData = quoteData['Rooms'] || leadData['Rooms'];
+        if (roomsData) {
+            const parsedRooms = JSON.parse(roomsData);
+            if (Array.isArray(parsedRooms)) {
+                finalQuoteData.rooms = parsedRooms;
+                finalQuoteData.breakdown.totalSqm = parsedRooms.reduce((total, room) => total + (parseFloat(room.sqm) || 0), 0);
+            }
+        }
+    } catch (error) {
+        console.log('⚠️ Could not parse rooms data:', error.message);
+    }
+
+    quoteLogger.dataFlow('Final quote data prepared for PDF generation', {
+        quoteId: finalQuoteData.quoteId,
+        customerName: finalQuoteData.customerName,
+        totalAmount: finalQuoteData.totals.final,
+        hasRooms: finalQuoteData.rooms.length > 0
+    }, requestId);
+
+    // Generate PDF using the same function as admin/tradesman
+    let pdfBuffer;
+    try {
+        quoteLogger.pdf('Generating PDF for customer', { quoteId: finalQuoteData.quoteId }, requestId);
+        pdfBuffer = await generateQuotePDF(finalQuoteData);
+        quoteLogger.pdf('PDF generated successfully for customer', { 
+            quoteId: finalQuoteData.quoteId,
+            pdfSize: pdfBuffer ? pdfBuffer.length : 0
+        }, requestId);
+    } catch (error) {
+        quoteLogger.error('PDF generation failed', error, requestId);
+        throw new Error('Failed to generate PDF');
+    }
+
+    // Format currency for display
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-NZ', {
+            style: 'currency',
+            currency: 'NZD'
+        }).format(amount || 0);
+    };
+
+    // Format date for display
+    const formatDate = (dateString) => {
+        if (!dateString || dateString === 'N/A') return 'N/A';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-NZ', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+        } catch (error) {
+            return dateString;
+        }
+    };
+
     const customerMail = {
         to: customerEmail,
-        subject: `Thank You for Your Consideration - Future Opportunities Await`,
+        cc: process.env.ADMIN_EMAIL,
+        subject: `🎉 Quote Accepted! Your ${finalQuoteData.serviceType} Project Journey Begins`,
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
               <div style="background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
                 
-                <!-- Header with Respectful Design -->
+                <!-- Header with Achievement Badge -->
                 <div style="text-align: center; margin-bottom: 40px;">
-                  <div style="display: inline-block; background: linear-gradient(135deg, #6c757d 0%, #495057 100%); padding: 20px; border-radius: 50%; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);">
-                    <div style="font-size: 48px; color: white;">🤝</div>
+                  <div style="display: inline-block; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 20px; border-radius: 50%; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);">
+                    <div style="font-size: 48px; color: white;">🏆</div>
                   </div>
-                  <h1 style="color: #6c757d; margin: 0; font-size: 32px; font-weight: bold;">Thank You</h1>
-                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">We appreciate you considering our services, ${customerName}</p>
+                  <h1 style="color: #28a745; margin: 0; font-size: 32px; font-weight: bold;">Project Approved!</h1>
+                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">Congratulations ${finalQuoteData.customerName}, your ${finalQuoteData.serviceType} quote has been accepted!</p>
                 </div>
 
-                <!-- Journey Completion -->
+                <!-- Quote Summary Card -->
+                <div style="background: #e8f4f8; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #b8daff;">
+                  <h3 style="color: #0066cc; margin: 0 0 20px 0; font-size: 20px;">📋 Your Approved Quote Summary</h3>
+                  <div style="background: white; padding: 20px; border-radius: 8px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                      <div>
+                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Service:</strong> ${finalQuoteData.serviceType}</p>
+                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Budget:</strong> ${budget || 'Not specified'}</p>
+                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
+                      </div>
+                      <div>
+                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Tradesperson:</strong> ${finalQuoteData.tradespersonName}</p>
+                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Valid Until:</strong> ${formatDate(finalQuoteData.validUntil)}</p>
+                        <p style="margin: 8px 0; color: #28a745; font-size: 18px; font-weight: bold;"><strong>Total Quote:</strong> ${formatCurrency(finalQuoteData.totals.final)}</p>
+                      </div>
+                    </div>
+                    <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                      <p style="color: #6c757d; font-size: 14px; margin: 0;">📎 Your detailed quote PDF is attached to this email</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Progress Bar -->
                 <div style="margin: 30px 0;">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <span style="font-weight: bold; color: #495057;">Your Journey With Us</span>
-                    <span style="font-weight: bold; color: #6c757d; font-size: 18px;">Decision Complete</span>
+                    <span style="font-weight: bold; color: #495057;">Project Progress</span>
+                    <span style="font-weight: bold; color: #28a745; font-size: 18px;">100% Complete!</span>
                   </div>
                   <div style="background: #e9ecef; height: 12px; border-radius: 6px; overflow: hidden; margin-bottom: 20px;">
-                    <div style="background: linear-gradient(90deg, #6c757d 0%, #495057 100%); height: 100%; width: 100%; border-radius: 6px;"></div>
+                    <div style="background: linear-gradient(90deg, #28a745 0%, #20c997 100%); height: 100%; width: 100%; border-radius: 6px; box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);"></div>
                   </div>
                 </div>
 
-                <!-- Understanding Message -->
-                <div style="background: #e2e3e5; color: #495057; padding: 25px; border-radius: 10px; margin: 30px 0; text-align: center;">
-                  <h3 style="margin: 0 0 15px 0; font-size: 22px;">We Completely Understand</h3>
-                  <p style="margin: 0; font-size: 16px;">Choosing the right tradesperson is an important decision. We respect your choice and thank you for the opportunity to quote on your project.</p>
+                <!-- What Happens Next -->
+                <div style="background: #e8f4f8; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #b8daff;">
+                  <h3 style="color: #0066cc; margin: 0 0 15px 0; font-size: 20px;">📞 What Happens Next?</h3>
+                  <div style="display: flex; align-items: flex-start; margin: 15px 0;">
+                    <div style="background: #0066cc; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">1</div>
+                    <div>
+                      <strong style="color: #0066cc;">Tradesperson Contact (Within 24 hours)</strong>
+                      <p style="margin: 5px 0 0 0; color: #495057;">${finalQuoteData.tradespersonName} will call you to discuss project details and scheduling.</p>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: flex-start; margin: 15px 0;">
+                    <div style="background: #0066cc; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">2</div>
+                    <div>
+                      <strong style="color: #0066cc;">Project Planning Session</strong>
+                      <p style="margin: 5px 0 0 0; color: #495057;">Review final details, materials, and timeline for your ${finalQuoteData.serviceType} installation.</p>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: flex-start; margin: 15px 0;">
+                    <div style="background: #0066cc; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">3</div>
+                    <div>
+                      <strong style="color: #0066cc;">Project Execution</strong>
+                      <p style="margin: 5px 0 0 0; color: #495057;">Professional installation begins according to your agreed schedule.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Quick Contact Card -->
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #dee2e6; margin: 30px 0;">
+                  <h4 style="color: #495057; margin: 0 0 15px 0;">👷‍♂️ Your Assigned Tradesperson</h4>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${finalQuoteData.tradespersonName}</p>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${finalQuoteData.tradespersonEmail}</p>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Phone:</strong> ${finalQuoteData.tradespersonPhone}</p>
+                  <p style="margin: 15px 0 0 0;">
+                    <a href="mailto:${finalQuoteData.tradespersonEmail}" style="display: inline-block; background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">📧 Send Message</a>
+                  </p>
                 </div>
 
                 <!-- Footer -->
                 <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e9ecef;">
-                  <p style="color: #6c757d; font-size: 16px; font-weight: bold; margin: 0 0 10px 0;">
-                    🙏 Thank you for considering Kiwi Trade
+                  <p style="color: #6c757d; font-size: 14px; margin: 0 0 10px 0;">
+                    Questions about your project? We're here to help!
                   </p>
-                  <p style="color: #6c757d; font-size: 14px; margin: 0;">
-                    <strong>Kiwi Trade Team</strong> - Here when you need us
+                  <p style="color: #495057; font-weight: bold; margin: 0;">
+                    🏠 Kiwi Trade Team
                   </p>
                 </div>
 
               </div>
             </div>
         `,
+        attachments: [
+            {
+                filename: `Quote-${finalQuoteData.quoteId}.pdf`,
+                content: pdfBuffer,
+                contentType: 'application/pdf'
+            }
+        ]
     };
 
     const tradespersonMail = {
         to: tradespersonEmail,
-        subject: `Quote Decision: ${customerName} Declined Your Quote`,
+        subject: `🏆 Victory! ${customerName} Accepted Your Quote - Level Up!`,
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
               <div style="background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
                 
-                <!-- Header -->
+                <!-- Header with Victory Animation -->
                 <div style="text-align: center; margin-bottom: 40px;">
-                  <div style="display: inline-block; background: linear-gradient(135deg, #6c757d 0%, #495057 100%); padding: 20px; border-radius: 50%; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);">
-                    <div style="font-size: 48px; color: white;">💼</div>
+                  <div style="display: inline-block; background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); padding: 20px; border-radius: 50%; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);">
+                    <div style="font-size: 48px; color: white;">🏆</div>
                   </div>
-                  <h1 style="color: #6c757d; margin: 0; font-size: 32px; font-weight: bold;">Quote Update</h1>
-                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">Customer has made their decision</p>
+                  <h1 style="color: #ff6b35; margin: 0; font-size: 32px; font-weight: bold;">Victory!</h1>
+                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">Quote accepted by ${customerName} - You're a champion!</p>
                 </div>
 
-                <!-- Decision Summary -->
-                <div style="background: #f8d7da; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #f5c6cb; text-align: center;">
-                  <h3 style="color: #721c24; margin: 0 0 15px 0; font-size: 20px;">📝 Decision</h3>
-                  <p style="color: #721c24; margin: 0; font-size: 24px; font-weight: bold;">Quote Declined</p>
-                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 14px;">The customer has chosen not to proceed at this time</p>
+                <!-- Progress Achievement -->
+                <div style="margin: 30px 0;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span style="font-weight: bold; color: #495057;">Lead Journey Progress</span>
+                    <span style="font-weight: bold; color: #28a745; font-size: 18px;">🎯 MISSION COMPLETE!</span>
+                  </div>
+                  <div style="background: #e9ecef; height: 12px; border-radius: 6px; overflow: hidden; margin-bottom: 20px;">
+                    <div style="background: linear-gradient(90deg, #28a745 0%, #20c997 100%); height: 100%; width: 100%; border-radius: 6px; box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);"></div>
+                  </div>
                 </div>
 
-                <!-- Customer Details -->
-                <div style="background: #e8f4fd; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #b8daff;">
-                  <h3 style="color: #0066cc; margin: 0 0 20px 0; font-size: 20px;">👤 Customer Details</h3>
+                <!-- Customer Details Card -->
+                <div style="background: #fff3cd; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #ffeaa7;">
+                  <h3 style="color: #856404; margin: 0 0 20px 0; font-size: 20px;">👤 Your New Customer</h3>
                   <div style="background: white; padding: 20px; border-radius: 8px;">
-                    <p style="margin: 5px 0; color: #495057;"><strong>Customer:</strong> ${customerName}</p>
-                    <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${customerEmail}</p>
-                    <p style="margin: 5px 0; color: #495057;"><strong>Decision Date:</strong> ${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })} NZT</p>
+                    <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Customer:</strong> ${customerName}</p>
+                    <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Email:</strong> ${customerEmail}</p>
+                    <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Status:</strong> <span style="color: #28a745; font-weight: bold;">✅ ACCEPTED & READY TO PROCEED</span></p>
+                    <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Decision Date:</strong> ${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })} NZT</p>
                   </div>
                 </div>
 
-                <!-- Encouragement -->
-                <div style="background: #fff3cd; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #ffeaa7; text-align: center;">
-                  <h3 style="color: #856404; margin: 0 0 15px 0; font-size: 20px;">💪 Keep Going!</h3>
-                  <p style="color: #856404; margin: 0; font-size: 16px;">Every "no" brings you closer to a "yes". Stay positive and keep providing excellent quotes!</p>
+                <!-- Action Plan -->
+                <div style="background: #e8f4f8; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #b8daff;">
+                  <h3 style="color: #0066cc; margin: 0 0 15px 0; font-size: 20px;">🚀 Your Action Plan (Next 24 Hours)</h3>
+                  <div style="display: flex; align-items: flex-start; margin: 15px 0;">
+                    <div style="background: #0066cc; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">1</div>
+                    <div>
+                      <strong style="color: #0066cc;">Contact Customer (URGENT - Within 2 hours)</strong>
+                      <p style="margin: 5px 0 0 0; color: #495057;">Strike while the iron is hot! Call ${customerName} to express gratitude and discuss next steps.</p>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: flex-start; margin: 15px 0;">
+                    <div style="background: #0066cc; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">2</div>
+                    <div>
+                      <strong style="color: #0066cc;">Schedule Site Planning Meeting</strong>
+                      <p style="margin: 5px 0 0 0; color: #495057;">Arrange a convenient time to review project details, timeline, and materials.</p>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: flex-start; margin: 15px 0;">
+                    <div style="background: #0066cc; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">3</div>
+                    <div>
+                      <strong style="color: #0066cc;">Begin Project Preparation</strong>
+                      <p style="margin: 5px 0 0 0; color: #495057;">Order materials, schedule team, and prepare for a successful installation.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Quick Contact Buttons -->
+                <div style="text-align: center; margin: 30px 0;">
+                  <h4 style="color: #495057; margin: 0 0 20px 0;">📞 Quick Contact Options</h4>
+                  <div style="margin: 15px 0;">
+                    <a href="mailto:${customerEmail}" style="display: inline-block; background: #28a745; color: white; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin: 0 10px;">📧 Send Email</a>
+                    <a href="mailto:${customerEmail}?subject=Congratulations on your quote acceptance!&body=Hi ${customerName},%0D%0A%0D%0AThank you for accepting my quote! I'm excited to work with you on this project.%0D%0A%0D%0ANext steps:%0D%0A- Schedule planning meeting%0D%0A- Review final details%0D%0A- Begin project preparation%0D%0A%0D%0ABest regards" style="display: inline-block; background: #007bff; color: white; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin: 0 10px;">📝 Quick Thank You</a>
+                  </div>
                 </div>
 
                 <!-- Footer -->
                 <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e9ecef;">
-                  <p style="color: #6c757d; font-size: 16px; font-weight: bold; margin: 0 0 10px 0;">
-                    🔄 Ready for the next opportunity!
+                  <p style="color: #28a745; font-size: 16px; font-weight: bold; margin: 0 0 10px 0;">
+                    🎉 Congratulations on winning this lead!
                   </p>
                   <p style="color: #6c757d; font-size: 14px; margin: 0;">
-                    <strong>Kiwi Trade Team</strong> - Supporting your success
+                    <strong>Kiwi Trade Team</strong> - Your success is our success
                   </p>
                 </div>
 
@@ -174,49 +370,55 @@ async function sendNotificationEmails(quoteData, leadData = {}, requestId = null
             </div>
         `
     };
-
+    
     const adminMail = {
         to: process.env.ADMIN_EMAIL,
-        subject: `📉 Quote Analytics: ${customerName} Declined`,
+        subject: `🎯 Success Metrics: Quote Accepted by ${customerName}`,
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
               <div style="background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
                 
-                <!-- Header -->
+                <!-- Header with Success Metrics -->
                 <div style="text-align: center; margin-bottom: 40px;">
-                  <div style="display: inline-block; background: linear-gradient(135deg, #6c757d 0%, #495057 100%); padding: 20px; border-radius: 50%; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);">
-                    <div style="font-size: 48px; color: white;">📉</div>
+                  <div style="display: inline-block; background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); padding: 20px; border-radius: 50%; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);">
+                    <div style="font-size: 48px; color: white;">📊</div>
                   </div>
-                  <h1 style="color: #6c757d; margin: 0; font-size: 32px; font-weight: bold;">Quote Analytics</h1>
-                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">Customer decision analysis and insights</p>
-                </div>
-
-                <!-- Decision Summary -->
-                <div style="background: #f8d7da; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #f5c6cb; text-align: center;">
-                  <h3 style="color: #721c24; margin: 0 0 15px 0; font-size: 20px;">📊 Decision Result</h3>
-                  <p style="color: #721c24; margin: 0; font-size: 24px; font-weight: bold;">Quote Declined</p>
-                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 14px;">Lead conversion was not successful</p>
+                  <h1 style="color: #3498db; margin: 0; font-size: 32px; font-weight: bold;">Success Metrics</h1>
+                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">Quote acceptance recorded - Business growing!</p>
                 </div>
 
                 <!-- Transaction Details -->
                 <div style="background: #e8f4fd; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #b8daff;">
                   <h3 style="color: #0066cc; margin: 0 0 20px 0; font-size: 20px;">📋 Transaction Details</h3>
                   <div style="background: white; padding: 20px; border-radius: 8px;">
-                    <p style="margin: 5px 0; color: #495057;"><strong>Customer:</strong> ${customerName}</p>
-                    <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${customerEmail}</p>
-                    <p style="margin: 5px 0; color: #495057;"><strong>Tradesperson:</strong> ${tradespersonName}</p>
-                    <p style="margin: 5px 0; color: #495057;"><strong>Status:</strong> <span style="color: #dc3545; font-weight: bold;">❌ NOT CONVERTED</span></p>
-                    <p style="margin: 5px 0; color: #495057;"><strong>Timestamp:</strong> ${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })} NZT</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                      <div>
+                        <h4 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">👤 Customer Information</h4>
+                        <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${customerName}</p>
+                        <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${customerEmail}</p>
+                        <p style="margin: 5px 0; color: #495057;"><strong>Status:</strong> <span style="color: #28a745; font-weight: bold;">✅ CONVERTED</span></p>
+                      </div>
+                      <div>
+                        <h4 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">👷‍♂️ Tradesperson Information</h4>
+                        <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${tradespersonName}</p>
+                        <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${tradespersonEmail}</p>
+                        <p style="margin: 5px 0; color: #495057;"><strong>Performance:</strong> <span style="color: #28a745; font-weight: bold;">🏆 WIN</span></p>
+                      </div>
+                    </div>
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                      <p style="margin: 5px 0; color: #495057;"><strong>Decision Timestamp:</strong> ${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })} NZT</p>
+                      <p style="margin: 5px 0; color: #495057;"><strong>Project Status:</strong> <span style="color: #ffc107; font-weight: bold;">🔄 Moving to Execution Phase</span></p>
+                    </div>
                   </div>
                 </div>
 
                 <!-- Footer -->
                 <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e9ecef;">
-                  <p style="color: #6c757d; font-size: 16px; font-weight: bold; margin: 0 0 10px 0;">
-                    📊 Analytics Complete - Learning Opportunity Identified
+                  <p style="color: #3498db; font-size: 16px; font-weight: bold; margin: 0 0 10px 0;">
+                    📊 Business Growing - Lead Conversion Successful!
                   </p>
                   <p style="color: #6c757d; font-size: 14px; margin: 0;">
-                    <strong>Kiwi Trade Admin System</strong> - Continuous Improvement
+                    <strong>Kiwi Trade Admin System</strong> - Automated Excellence
                   </p>
                 </div>
 
@@ -226,7 +428,7 @@ async function sendNotificationEmails(quoteData, leadData = {}, requestId = null
     };
 
     try {
-        quoteLogger.email('Sending customer acknowledgment email', { 
+        quoteLogger.email('Sending customer confirmation email', { 
             to: customerMail.to,
             subject: customerMail.subject
         }, requestId);
@@ -240,7 +442,7 @@ async function sendNotificationEmails(quoteData, leadData = {}, requestId = null
         await sendEmail(tradespersonMail);
         quoteLogger.email('Tradesperson email sent successfully', null, requestId);
         
-        quoteLogger.email('Sending admin analytics email', { 
+        quoteLogger.email('Sending admin notification email', { 
             to: adminMail.to,
             subject: adminMail.subject
         }, requestId);
@@ -258,8 +460,17 @@ export default async function handler(req, res) {
     const requestId = quoteLogger.generateRequestId();
     const startTime = Date.now();
     
+    // Clear prefixed logging for customer accept
+    console.log(JSON.stringify({
+        tag: 'CUSTOMER_ACCEPT_REQ_START',
+        requestId,
+        method: req.method,
+        url: req.url,
+        timestamp: new Date().toISOString()
+    }));
+    
     // Log incoming request details
-    quoteLogger.apiDecline('Request received', {
+    quoteLogger.apiAccept('Request received', {
         method: req.method,
         url: req.url,
         query: req.query,
@@ -281,7 +492,7 @@ export default async function handler(req, res) {
 
     // Validate required parameters
     if (!quoteId || !leadId) {
-        console.error(JSON.stringify({ tag: 'DECLINE_PARAM_FAIL', quoteId, leadId }));
+        console.error(JSON.stringify({ tag: 'ACCEPT_PARAM_FAIL', quoteId, leadId }));
         return res.status(400).json({ error: 'Missing or invalid quoteId/leadId' });
     }
 
@@ -289,7 +500,7 @@ export default async function handler(req, res) {
     const params = normalizeQueryParams({ quoteId, leadId, ts, token });
     const { QuoteID, LeadID } = params;
     
-    console.log('🔍 [CUSTOMER-DECLINE] Parameter mapping:', {
+    console.log('🔍 [CUSTOMER-ACCEPT] Parameter mapping:', {
         quoteId, leadId, QuoteID, LeadID
     });
 
@@ -300,13 +511,13 @@ export default async function handler(req, res) {
         tokenValid = token === expectedToken;
         
         if (!tokenValid) {
-            console.error(JSON.stringify({ tag: 'DECLINE_TOKEN_FAIL', quoteId, leadId }));
+            console.error(JSON.stringify({ tag: 'ACCEPT_TOKEN_FAIL', quoteId, leadId }));
             return res.status(400).json({ error: 'Invalid token' });
         }
     }
     
-    quoteLogger.customerDecline('Token validated successfully', { quoteId }, requestId);
-
+    quoteLogger.customerAccept('Token validated successfully', { quoteId }, requestId);
+    
     try {
         quoteLogger.sheets('Initializing Google Sheets client', null, requestId);
         const sheets = await getGoogleSheetsClient();
@@ -337,7 +548,7 @@ export default async function handler(req, res) {
 
         if (rowIndex === -1) {
             console.error(JSON.stringify({
-                tag: 'DECLINE_LOOKUP_FAIL',
+                tag: 'ACCEPT_LOOKUP_FAIL',
                 quoteId,
                 leadId,
                 QuoteID,
@@ -390,7 +601,7 @@ export default async function handler(req, res) {
                         }, requestId);
                     } else {
                         console.error(JSON.stringify({
-                            tag: 'DECLINE_LOOKUP_FAIL',
+                            tag: 'ACCEPT_LOOKUP_FAIL',
                             quoteId,
                             leadId,
                             LeadID,
@@ -401,7 +612,7 @@ export default async function handler(req, res) {
                 }
             } catch (leadError) {
                 console.error(JSON.stringify({
-                    tag: 'DECLINE_LOOKUP_FAIL',
+                    tag: 'ACCEPT_LOOKUP_FAIL',
                     quoteId,
                     leadId,
                     error: 'Could not fetch lead data',
@@ -411,7 +622,7 @@ export default async function handler(req, res) {
             }
         } else {
             console.error(JSON.stringify({
-                tag: 'DECLINE_LOOKUP_FAIL',
+                tag: 'ACCEPT_LOOKUP_FAIL',
                 quoteId,
                 leadId,
                 error: 'No lead ID found in quote data'
@@ -422,7 +633,7 @@ export default async function handler(req, res) {
         // Validate that the lead and quote match
         if (leadData.LeadID !== LeadID || leadData.QuoteID !== QuoteID) {
             console.error(JSON.stringify({
-                tag: 'DECLINE_LOOKUP_FAIL',
+                tag: 'ACCEPT_LOOKUP_FAIL',
                 quoteId,
                 leadId,
                 leadDataLeadID: leadData.LeadID,
@@ -433,8 +644,8 @@ export default async function handler(req, res) {
             return res.status(404).json({ error: 'Lead or Quote not found' });
         }
         
-        console.log('✅ [CUSTOMER-DECLINE] Lookup successful:', {
-            tag: 'DECLINE_LOOKUP_OK',
+        console.log('✅ [CUSTOMER-ACCEPT] Lookup successful:', {
+            tag: 'ACCEPT_LOOKUP_OK',
             quoteId,
             leadId,
             foundQuote: !!targetRow,
@@ -442,20 +653,21 @@ export default async function handler(req, res) {
         });
         
         // Check for existing decision and expiry using correct schema column names
-        const decisionIndex = header.indexOf('Decision');
-        const decisionTimestampIndex = header.indexOf('DecisionTimestamp');
+        // Z = CustomerDecision, AA = CustomerDecisionTimeStamp
+        const customerDecisionIndex = header.indexOf('CustomerDecision');
+        const customerDecisionTimestampIndex = header.indexOf('CustomerDecisionTimeStamp');
         const validUntilIndex = header.indexOf('ValidUntil');
         
-        const currentDecision = decisionIndex !== -1 ? targetRow[decisionIndex] : '';
-        const currentDecisionTimestamp = decisionTimestampIndex !== -1 ? targetRow[decisionTimestampIndex] : '';
+        const currentDecision = customerDecisionIndex !== -1 ? targetRow[customerDecisionIndex] : '';
+        const currentDecisionTimestamp = customerDecisionTimestampIndex !== -1 ? targetRow[customerDecisionTimestampIndex] : '';
         const validUntil = validUntilIndex !== -1 ? targetRow[validUntilIndex] : '';
         
         quoteLogger.dataFlow('Decision and expiry data extracted', {
             currentDecision,
             currentDecisionTimestamp,
             validUntil,
-            decisionIndex,
-            decisionTimestampIndex,
+            customerDecisionIndex,
+            customerDecisionTimestampIndex,
             validUntilIndex
         }, requestId);
         
@@ -464,7 +676,7 @@ export default async function handler(req, res) {
         const quoteStatus = statusIndex !== -1 ? targetRow[statusIndex] : '';
         
         if (quoteStatus === 'Rejected') {
-            quoteLogger.customerDecline('Quote rejected - preventing decline', { 
+            quoteLogger.customerAccept('Quote rejected - preventing acceptance', { 
                 quoteId, 
                 status: quoteStatus 
             }, requestId);
@@ -524,7 +736,7 @@ export default async function handler(req, res) {
         
         // EXPIRY LOCK LOGIC
         if (isExpired) {
-            quoteLogger.customerDecline('Quote expired - processing expiry logic', { 
+            quoteLogger.customerAccept('Quote expired - processing expiry logic', { 
                 validUntil, 
                 currentDecision 
             }, requestId);
@@ -535,8 +747,8 @@ export default async function handler(req, res) {
                 
                 // Update the sheet to mark as expired
                 const updateData = {
-                    'Decision': 'Expired',
-                    'DecisionTimestamp': getNZTimestamp(new Date()),
+                    'CustomerDecision': 'Expired',
+                    'CustomerDecisionTimeStamp': getNZTTimestamp(),
                 };
                 
                 const quoteDataForUpdate = {};
@@ -607,10 +819,10 @@ export default async function handler(req, res) {
         }
         
         // DECISION LOCK LOGIC (for valid quotes)
-        // Allow customer to decline even if admin pre-approved, but prevent if already accepted/declined by customer
+        // Allow customer to accept even if admin pre-approved, but prevent if already accepted/declined by customer
         if (currentDecision && currentDecision.trim() !== '' && currentDecision !== 'Admin Approved') {
             const formattedTime = formatTimestamp(currentDecisionTimestamp);
-            quoteLogger.customerDecline('Decision already made - preventing duplicate', { 
+            quoteLogger.customerAccept('Decision already made - preventing duplicate', { 
                 currentDecision, 
                 formattedTime,
                 quoteId
@@ -660,12 +872,12 @@ export default async function handler(req, res) {
         }
         
         // --- Update Sheet Data using correct schema column names ---
-        quoteLogger.customerDecline('Processing quote decline', { quoteId }, requestId);
+        quoteLogger.customerAccept('Processing quote acceptance', { quoteId }, requestId);
         
-        const nzTimestamp = getNZTimestamp();
+        const nzTimestamp = getNZTTimestamp();
         const updateData = {
-            'Decision': 'Declined',
-            'DecisionTimestamp': nzTimestamp,
+            'CustomerDecision': 'Accepted',
+            'CustomerDecisionTimeStamp': nzTimestamp,
         };
 
         quoteLogger.dataFlow('Preparing Google Sheets update', { 
@@ -678,7 +890,7 @@ export default async function handler(req, res) {
             quoteDataForEmail[headerName] = targetRow[index] || '';
         });
 
-        quoteLogger.sheets('Updating Google Sheets with decline', { 
+        quoteLogger.sheets('Updating Google Sheets with acceptance', { 
             updateData,
             rowIndex: rowIndex + 1,
             quoteDataKeys: Object.keys(quoteDataForEmail)
@@ -717,37 +929,39 @@ export default async function handler(req, res) {
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Quote Declined</title>
+                <title>Quote Accepted</title>
                 <style>
                     body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f7fa; }
                     .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
                     .success-icon { font-size: 48px; margin-bottom: 20px; }
-                    .success-title { color: #dc3545; font-size: 24px; margin-bottom: 15px; }
+                    .success-title { color: #28a745; font-size: 24px; margin-bottom: 15px; }
                     .success-message { color: #6c757d; font-size: 16px; margin-bottom: 20px; }
                     .timestamp { color: #6c757d; font-size: 14px; margin-top: 20px; }
                 </style>
             </head>
             <body>
                 <div class="container">
-                    <div class="success-icon">❌</div>
-                    <h1>❌ Quote Declined</h1>
-                    <p>Your decline has been recorded.</p>
-                    <div class="timestamp">Declined on: ${nzTimestamp}</div>
+                    <div class="success-icon">✅</div>
+                    <h1>✅ Quote Accepted</h1>
+                    <p>Thanks, your choice has been recorded.</p>
+                    <div class="timestamp">Accepted on: ${nzTimestamp}</div>
                 </div>
             </body>
             </html>
         `;
         
-        console.log('✅ [CUSTOMER-DECLINE] Quote declined successfully:', {
-            tag: 'QUOTE_DECLINED_OK',
+        console.log(JSON.stringify({
+            tag: 'CUSTOMER_ACCEPT_OK',
             quoteId,
-            leadId
-        });
+            leadId,
+            decision: 'Accepted',
+            timestamp: nzTimestamp
+        }));
         
         return res.status(200).send(confirmationPage);
 
     } catch (error) {
-        quoteLogger.error('Quote decline error', error, requestId);
+        quoteLogger.error('Quote acceptance error', error, requestId);
         quoteLogger.response('Redirecting to error page', { 
             error: error.message,
             processingTime: Date.now() - startTime

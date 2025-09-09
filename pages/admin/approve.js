@@ -36,7 +36,7 @@ export default function AdminApprove() {
 
       // Test the actual approve endpoint directly
       console.log('🔍 [ADMIN-PAGE] Testing approve endpoint directly...');
-      fetch('/api/quote-approve?quoteId=test123&ts=1234567890&token=test', { method: 'GET' })
+      fetch('/api/admin-accept?quoteId=test123&ts=1234567890&token=test', { method: 'GET' })
         .then(testResponse => {
           console.log('🔍 [ADMIN-PAGE] Approve endpoint test response:', {
             status: testResponse.status,
@@ -53,7 +53,7 @@ export default function AdminApprove() {
       const ts = Date.now().toString();
       const token = generateToken(quoteId, ts);
       
-      const apiUrl = `/api/quote-approve?quoteId=${quoteId}&ts=${ts}&token=${token}`;
+      const apiUrl = `/api/admin-accept?quoteId=${quoteId}&ts=${ts}&token=${token}`;
       console.log('🔍 [ADMIN-PAGE] Making request to:', apiUrl);
       console.log('🔍 [ADMIN-PAGE] Current window location:', window.location.href);
       console.log('🔍 [ADMIN-PAGE] Base URL should be:', window.location.origin);

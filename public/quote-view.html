@@ -271,8 +271,8 @@
             statusBadge.className = `status-badge status-${(quote.status || 'pending').toLowerCase()}`;
 
             // Set up action buttons
-            const acceptUrl = `/api/quote-decision?leadId=${quote.leadId}&action=accept`;
-            const declineUrl = `/api/quote-decision?leadId=${quote.leadId}&action=decline`;
+            const acceptUrl = `/api/customer-accept?leadId=${quote.leadId}&action=accept`;
+            const declineUrl = `/api/customer-decline?leadId=${quote.leadId}&action=decline`;
             const pdfUrl = `/api/quote-pdf?leadId=${quote.leadId}`;
 
             document.getElementById('accept-quote').href = acceptUrl;

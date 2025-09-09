@@ -9,6 +9,10 @@ export default function AdminApprove() {
   const [message, setMessage] = useState('Processing Quote Approval...');
 
   useEffect(() => {
+    console.log('🔍 [ADMIN-PAGE] Component mounted, quoteId:', quoteId);
+    console.log('🔍 [ADMIN-PAGE] Current URL:', window.location.href);
+    console.log('🔍 [ADMIN-PAGE] Router query:', router.query);
+    
     if (quoteId) {
       console.log('🔍 [ADMIN-PAGE] Starting approval process for quoteId:', quoteId);
       
@@ -18,7 +22,8 @@ export default function AdminApprove() {
         .then(testResponse => {
           console.log('🔍 [ADMIN-PAGE] Test API response:', {
             status: testResponse.status,
-            ok: testResponse.ok
+            ok: testResponse.ok,
+            statusText: testResponse.statusText
           });
           return testResponse.json();
         })

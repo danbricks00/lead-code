@@ -36,7 +36,7 @@ export default function AdminDecline() {
 
       // Test the actual decline endpoint directly
       console.log('🔍 [ADMIN-PAGE] Testing decline endpoint directly...');
-      fetch('/api/admin/decline?quoteId=test123&ts=1234567890&token=test', { method: 'GET' })
+      fetch('/api/quote-decline?quoteId=test123&ts=1234567890&token=test', { method: 'GET' })
         .then(testResponse => {
           console.log('🔍 [ADMIN-PAGE] Decline endpoint test response:', {
             status: testResponse.status,
@@ -53,7 +53,7 @@ export default function AdminDecline() {
       const ts = Date.now().toString();
       const token = generateToken(quoteId, ts);
       
-      const apiUrl = `/api/admin/decline?quoteId=${quoteId}&ts=${ts}&token=${token}`;
+      const apiUrl = `/api/quote-decline?quoteId=${quoteId}&ts=${ts}&token=${token}`;
       console.log('🔍 [ADMIN-PAGE] Making request to:', apiUrl);
       console.log('🔍 [ADMIN-PAGE] Current window location:', window.location.href);
       console.log('🔍 [ADMIN-PAGE] Base URL should be:', window.location.origin);

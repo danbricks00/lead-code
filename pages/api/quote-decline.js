@@ -1,6 +1,7 @@
 import { getLeadById, upsertQuoteRow } from '../../../utils/sheets';
 import { buildQuoteRow } from '../../../utils/quotes';
 import { sendEmail } from '../../../lib/emailHelper';
+import quoteLogger from '../../../lib/quoteLogger.js';
 import crypto from "crypto";
 
 // --- Helper Functions ---
@@ -49,8 +50,21 @@ async function getQuoteById(quoteId) {
 
 // --- Main Handler ---
 export default async function handler(req, res) {
+    const requestId = quoteLogger.generateRequestId();
+    const flowId = `decline_${Date.now()}`;
+    const startTime = Date.now();
+    
+    // Debug log for immediate visibility
+    console.log('QUOTE_DECLINE_REQ_START', { 
+        flowId, 
+        requestId, 
+        method: req.method, 
+        url: req.url,
+        timestamp: new Date().toISOString()
+    });
+    
     // Simple test to see if the endpoint is reachable at all
-    console.log('🔍 [ADMIN-DECLINE] ENDPOINT HIT!', {
+    console.log('🔍 [QUOTE-DECLINE] ENDPOINT HIT!', {
         method: req.method,
         url: req.url,
         timestamp: new Date().toISOString()

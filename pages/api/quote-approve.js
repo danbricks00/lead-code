@@ -88,15 +88,25 @@ async function findRowAndGetData(options) {
 
 // --- Main Handler ---
 export default async function handler(req, res) {
-    // Simple test to see if the endpoint is reachable at all
-    console.log('🔍 [ADMIN-APPROVE] ENDPOINT HIT!', {
-        method: req.method,
+    const requestId = quoteLogger.generateRequestId();
+    const flowId = `approve_${Date.now()}`;
+    const startTime = Date.now();
+    
+    // Debug log for immediate visibility
+    console.log('QUOTE_APPROVE_REQ_START', { 
+        flowId, 
+        requestId, 
+        method: req.method, 
         url: req.url,
         timestamp: new Date().toISOString()
     });
     
-    const requestId = quoteLogger.generateRequestId();
-    const startTime = Date.now();
+    // Simple test to see if the endpoint is reachable at all
+    console.log('🔍 [QUOTE-APPROVE] ENDPOINT HIT!', {
+        method: req.method,
+        url: req.url,
+        timestamp: new Date().toISOString()
+    });
     
     // Enhanced logging for debugging
     console.log('🔍 [ADMIN-APPROVE] Request received:', {

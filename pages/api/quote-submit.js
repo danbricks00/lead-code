@@ -66,9 +66,9 @@ export default async function handler(req, res) {
     const fullRow = buildQuoteRow({
       lead,
       quoteId,
-      tradePersonName: body.tradePersonName || '',
-      tradePersonEmail: body.tradePersonEmail || '',
-      tradePersonPhone: body.tradePersonPhone || '',
+      tradePersonName: body.tradespersonName || body.tradePersonName || '',
+      tradePersonEmail: body.tradespersonEmail || body.tradePersonEmail || '',
+      tradePersonPhone: body.tradespersonPhone || body.tradePersonPhone || '',
       body: {
         ...body,
         subtotal: Subtotal ?? '',
@@ -94,7 +94,7 @@ export default async function handler(req, res) {
     try {
       if (fullRow.CustomerStatus === 'Submitted' && fullRow.TradePersonStatus !== 'Declined' && (process.env.ENABLE_PDF_EMAILS !== 'false')) {
         const html = renderQuoteHtml(fullRow);
-        const pdfBuffer = await generateQuotePDF(html, { quoteId: fullRow.QuoteID });
+        const pdfBuffer = await generateQuotePDF(html, { quoteId: quoteId });
         
         // Only send admin and tradesperson emails on submission
         // Customer email will be sent after admin approval

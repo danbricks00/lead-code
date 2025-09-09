@@ -124,7 +124,108 @@ export default async function handler(req, res) {
         const result = await upsertQuoteRow(quoteData.QuoteID, rejectedRow, { req, caller: 'admin-decline' });
         console.log(`[ADMIN-DECLINE] Quote ${quoteId} declined, result:`, result);
 
-        // 3. Generate resubmission link
+        // 3. Send decline notification emails (if enabled)
+        if (process.env.ENABLE_APPROVE_DECLINE_EMAILS === 'true') {
+            try {
+                // Send customer decline email
+                const customerDeclineEmail = {
+                    to: lead.CustomerEmail,
+                    subject: `⚠️ Quote Declined - ${lead.ServiceType} for ${lead.CustomerName}`,
+                    html: `
+                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+                            <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                                <div style="text-align: center; margin-bottom: 30px;">
+                                    <h1 style="color: #e74c3c; margin: 0; font-size: 28px;">⚠️ Quote Declined</h1>
+                                    <p style="color: #7f8c8d; margin: 10px 0 0 0; font-size: 16px;">Your quote was declined by our admin team</p>
+                                </div>
+                                <div style="background-color: #fdf2f2; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                                    <h3 style="color: #e74c3c; margin: 0 0 10px 0;">Quote Details</h3>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Quote ID:</strong> ${quoteData.QuoteID}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Service:</strong> ${lead.ServiceType}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Total:</strong> $${quoteData.TotalQuote}</p>
+                                </div>
+                                <div style="background-color: #fff3cd; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                                    <h4 style="color: #856404; margin: 0 0 10px 0;">💡 What's Next?</h4>
+                                    <p style="margin: 5px 0; color: #495057;">The tradesperson will be notified and may resubmit a revised quote. You'll receive an email if a new quote is submitted.</p>
+                                </div>
+                                <div style="text-align: center; margin-top: 30px;">
+                                    <p style="color: #6c757d; font-size: 16px;">Thank you for considering our services</p>
+                                </div>
+                            </div>
+                        </div>
+                    `
+                };
+                await sendEmail(customerDeclineEmail);
+
+                // Send tradesperson decline notification email
+                const tradespersonDeclineEmail = {
+                    to: quoteData.TradePersonEmail,
+                    subject: `⚠️ Quote Declined - ${lead.ServiceType} for ${lead.CustomerName}`,
+                    html: `
+                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+                            <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                                <div style="text-align: center; margin-bottom: 30px;">
+                                    <h1 style="color: #e74c3c; margin: 0; font-size: 28px;">⚠️ Quote Declined</h1>
+                                    <p style="color: #7f8c8d; margin: 10px 0 0 0; font-size: 16px;">Admin has declined your quote</p>
+                                </div>
+                                <div style="background-color: #fdf2f2; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                                    <h3 style="color: #e74c3c; margin: 0 0 10px 0;">Customer Details</h3>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${lead.CustomerName}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${lead.CustomerEmail}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Phone:</strong> ${lead.CustomerPhone}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Service:</strong> ${lead.ServiceType}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Quote Total:</strong> $${quoteData.TotalQuote}</p>
+                                </div>
+                                <div style="background-color: #fff3cd; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                                    <h4 style="color: #856404; margin: 0 0 10px 0;">🔄 Next Steps</h4>
+                                    <p style="margin: 5px 0; color: #495057;">You can resubmit a revised quote. Consider reviewing your pricing, timeline, or scope of work.</p>
+                                    <p style="margin: 10px 0 0 0;">
+                                        <a href="${generateQuoteSubmissionLink(quoteData.LeadID)}" style="display: inline-block; background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">📝 Resubmit Quote</a>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    `
+                };
+                await sendEmail(tradespersonDeclineEmail);
+
+                // Send admin confirmation email
+                const adminConfirmationEmail = {
+                    to: process.env.ADMIN_EMAIL,
+                    subject: `⚠️ Quote ${quoteData.QuoteID} Declined - Confirmation`,
+                    html: `
+                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+                            <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                                <div style="text-align: center; margin-bottom: 30px;">
+                                    <h1 style="color: #e74c3c; margin: 0; font-size: 28px;">⚠️ Quote Declined</h1>
+                                    <p style="color: #7f8c8d; margin: 10px 0 0 0; font-size: 16px;">Admin decline confirmation</p>
+                                </div>
+                                <div style="background-color: #fdf2f2; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                                    <h3 style="color: #e74c3c; margin: 0 0 10px 0;">Quote Details</h3>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Quote ID:</strong> ${quoteData.QuoteID}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Customer:</strong> ${lead.CustomerName}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Service:</strong> ${lead.ServiceType}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Tradesperson:</strong> ${quoteData.TradePersonName}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Total:</strong> $${quoteData.TotalQuote}</p>
+                                </div>
+                                <div style="text-align: center; margin-top: 30px;">
+                                    <p style="color: #e74c3c; font-size: 16px; font-weight: bold;">⚠️ Decline emails sent to customer and tradesperson</p>
+                                </div>
+                            </div>
+                        </div>
+                    `
+                };
+                await sendEmail(adminConfirmationEmail);
+
+                console.log(JSON.stringify({ tag: 'QUOTE_REJECTED_EMAILS_SENT', quoteId: quoteData.QuoteID }));
+            } catch (emailError) {
+                console.error(JSON.stringify({ tag: 'QUOTE_REJECTED_EMAILS_FAIL', quoteId: quoteData.QuoteID, error: String(emailError?.message || emailError) }));
+            }
+        } else {
+            console.log(JSON.stringify({ tag: 'QUOTE_REJECTED_EMAILS_SKIPPED', quoteId: quoteData.QuoteID, reason: 'env flag off' }));
+        }
+
+        // 4. Generate resubmission link
         const resubmissionLink = generateQuoteSubmissionLink(quoteData.LeadID);
 
         // 4. Send notification email to tradesperson

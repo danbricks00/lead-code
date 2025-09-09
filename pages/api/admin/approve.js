@@ -619,6 +619,109 @@ export default async function handler(req, res) {
         const result = await upsertQuoteRow(quoteData.QuoteID, approvedRow, { req, caller: 'admin-approve' });
         
         quoteLogger.sheets('Google Sheets updated with approval status', null, requestId);
+
+        // Send approval notification emails (if enabled)
+        if (process.env.ENABLE_APPROVE_DECLINE_EMAILS === 'true') {
+            try {
+                // Send customer approval email
+                const customerApprovalEmail = {
+                    to: leadData['CustomerEmail'],
+                    subject: `✅ Quote Approved - ${leadData['ServiceType']} for ${leadData['CustomerName']}`,
+                    html: `
+                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+                            <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                                <div style="text-align: center; margin-bottom: 30px;">
+                                    <h1 style="color: #28a745; margin: 0; font-size: 28px;">✅ Quote Approved!</h1>
+                                    <p style="color: #7f8c8d; margin: 10px 0 0 0; font-size: 16px;">Your quote has been approved by our admin team</p>
+                                </div>
+                                <div style="background-color: #e8f5e8; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                                    <h3 style="color: #27ae60; margin: 0 0 10px 0;">Quote Details</h3>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Quote ID:</strong> ${quoteData.QuoteID}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Service:</strong> ${leadData['ServiceType']}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Total:</strong> $${quoteData.TotalQuote}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Valid Until:</strong> ${quoteData.ValidUntil}</p>
+                                </div>
+                                <div style="background-color: #e8f5e8; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                                    <h4 style="color: #27ae60; margin: 0 0 10px 0;">👷‍♂️ Your Tradesperson</h4>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${quoteData.TradePersonName}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${quoteData.TradePersonEmail}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Phone:</strong> ${quoteData.TradePersonPhone}</p>
+                                </div>
+                                <div style="text-align: center; margin-top: 30px;">
+                                    <p style="color: #28a745; font-size: 16px; font-weight: bold;">🎉 Your project is ready to begin!</p>
+                                </div>
+                            </div>
+                        </div>
+                    `
+                };
+                await sendEmail(customerApprovalEmail);
+
+                // Send tradesperson notification email
+                const tradespersonApprovalEmail = {
+                    to: quoteData.TradePersonEmail,
+                    subject: `✅ Quote Approved - ${leadData['ServiceType']} for ${leadData['CustomerName']}`,
+                    html: `
+                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+                            <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                                <div style="text-align: center; margin-bottom: 30px;">
+                                    <h1 style="color: #28a745; margin: 0; font-size: 28px;">✅ Quote Approved!</h1>
+                                    <p style="color: #7f8c8d; margin: 10px 0 0 0; font-size: 16px;">Admin has approved your quote</p>
+                                </div>
+                                <div style="background-color: #e8f5e8; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                                    <h3 style="color: #27ae60; margin: 0 0 10px 0;">Customer Details</h3>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${leadData['CustomerName']}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${leadData['CustomerEmail']}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Phone:</strong> ${leadData['CustomerPhone']}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Service:</strong> ${leadData['ServiceType']}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Total:</strong> $${quoteData.TotalQuote}</p>
+                                </div>
+                                <div style="text-align: center; margin-top: 30px;">
+                                    <p style="color: #28a745; font-size: 16px; font-weight: bold;">🎉 You can now proceed with the project!</p>
+                                </div>
+                            </div>
+                        </div>
+                    `
+                };
+                await sendEmail(tradespersonApprovalEmail);
+
+                // Send admin confirmation email
+                const adminConfirmationEmail = {
+                    to: process.env.ADMIN_EMAIL,
+                    subject: `✅ Quote ${quoteData.QuoteID} Approved - Confirmation`,
+                    html: `
+                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+                            <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                                <div style="text-align: center; margin-bottom: 30px;">
+                                    <h1 style="color: #28a745; margin: 0; font-size: 28px;">✅ Quote Approved</h1>
+                                    <p style="color: #7f8c8d; margin: 10px 0 0 0; font-size: 16px;">Admin approval confirmation</p>
+                                </div>
+                                <div style="background-color: #e8f5e8; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                                    <h3 style="color: #27ae60; margin: 0 0 10px 0;">Quote Details</h3>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Quote ID:</strong> ${quoteData.QuoteID}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Customer:</strong> ${leadData['CustomerName']}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Service:</strong> ${leadData['ServiceType']}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Tradesperson:</strong> ${quoteData.TradePersonName}</p>
+                                    <p style="margin: 5px 0; color: #495057;"><strong>Total:</strong> $${quoteData.TotalQuote}</p>
+                                </div>
+                                <div style="text-align: center; margin-top: 30px;">
+                                    <p style="color: #28a745; font-size: 16px; font-weight: bold;">✅ Approval emails sent to customer and tradesperson</p>
+                                </div>
+                            </div>
+                        </div>
+                    `
+                };
+                await sendEmail(adminConfirmationEmail);
+
+                console.log(JSON.stringify({ tag: 'QUOTE_APPROVED_EMAILS_SENT', quoteId: quoteData.QuoteID }));
+                quoteLogger.email('Approval notification emails sent successfully', { quoteId: quoteData.QuoteID }, requestId);
+            } catch (emailError) {
+                console.error(JSON.stringify({ tag: 'QUOTE_APPROVED_EMAILS_FAIL', quoteId: quoteData.QuoteID, error: String(emailError?.message || emailError) }));
+                quoteLogger.error('Failed to send approval notification emails', { quoteId: quoteData.QuoteID, error: emailError }, requestId);
+            }
+        } else {
+            console.log(JSON.stringify({ tag: 'QUOTE_APPROVED_EMAILS_SKIPPED', quoteId: quoteData.QuoteID, reason: 'env flag off' }));
+            quoteLogger.email('Approval notification emails skipped', { quoteId: quoteData.QuoteID, reason: 'ENABLE_APPROVE_DECLINE_EMAILS not set' }, requestId);
+        }
         
         quoteLogger.response('Redirecting to success page', { 
             quoteId,

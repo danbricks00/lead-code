@@ -165,7 +165,7 @@ export default async function handler(req, res) {
         const lead = {};
         
         // Map columns based on the exact order from send-to-sheets-helper.js
-        // Column order: timestamp, leadId, customerName, customerEmail, customerPhone, selectedService, projectDetails, projectSize, budget, timeline, location, specificDetails, customerEmailSent, tradesmanNotified, status
+        // Column order: timestamp, leadId, customerName, customerEmail, customerPhone, selectedService, projectDetails, projectSize, budget, timeline, location, specificDetails, customerEmailSent, tradesmanNotified, status, rooms, totalSqm, area, suburb
         lead.timestamp = row[0] || ''; // Timestamp
         lead.leadId = row[1] || ''; // Lead ID
         lead.customerName = row[2] || ''; // Customer Name
@@ -179,6 +179,10 @@ export default async function handler(req, res) {
         lead.location = row[10] || ''; // Location
         lead.specificDetails = row[11] || ''; // Specific details
         lead.status = row[14] || 'New'; // Status (column 15)
+        lead.rooms = row[15] || ''; // Rooms data as JSON string
+        lead.totalSqm = row[16] || ''; // Total square meters
+        lead.area = row[17] || ''; // Area
+        lead.suburb = row[18] || ''; // Suburb
         
         console.log(`📋 Lead data mapped:`, {
           customerName: lead.customerName,

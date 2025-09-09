@@ -438,8 +438,8 @@
                 });
             }
             
-            // Numeric field validation
-            const numericFields = ['labourRate', 'labourHours', 'materialRate', 'materialSQM', 'installationAmount', 'travelAmount'];
+            // Numeric field validation (excluding materialSQM as it's auto-calculated)
+            const numericFields = ['labourRate', 'labourHours', 'materialRate', 'installationAmount', 'travelAmount'];
             numericFields.forEach(fieldId => {
                 const field = document.getElementById(fieldId);
                 if (field) {
@@ -1024,7 +1024,6 @@
                 'labourRate',
                 'labourHours',
                 'materialRate',
-                'materialSQM',
                 'installationAmount',
                 'travelAmount'
             ];
@@ -1146,6 +1145,9 @@
                     loadLeadDataFromQuoteId(quoteId);
                 }
             }
+            
+            // Fallback: Populate from URL parameters if available
+            populateFromUrlParams(urlParams);
             
             // Populate token from URL
             const token = urlParams.get('token') || '';
@@ -1359,6 +1361,194 @@
                 console.error('❌ Error loading lead data:', error);
                 alert('Error loading lead data. Please try again.');
             }
+        }
+        
+        // Room management functions
+        let rooms = []; // Global array to store rooms
+        
+        // Smart room dimensions parser
+        function parseRoomDimensions(dimensionsString) {
+            if (!dimensionsString || typeof dimensionsString !== 'string') {
+                return { length: 0, width: 0, sqm: 0, originalInput: dimensionsString || '' };
+            }
+            
+            const input = dimensionsString.trim();
+            console.log('🔍 Parsing room dimensions:', input);
+            
+            // Pattern 1: Single number (assumed to be square meters)
+            // e.g., "25", "25.5", "25m²"
+            const singleNumberMatch = input.match(/^(\d+(?:\.\d+)?)\s*(?:m²|sqm|m2)?$/i);
+            if (singleNumberMatch) {
+                const sqm = parseFloat(singleNumberMatch[1]);
+                const side = Math.sqrt(sqm);
+                return {
+                    length: side,
+                    width: side,
+                    sqm: sqm,
+                    originalInput: input,
+                    format: 'square'
+                };
+            }
+            
+            // Pattern 2: Two numbers separated by x (with optional units)
+            // e.g., "7 x 7", "7.5 x 6.2", "7m x 7m", "7.00m x 7.00m"
+            const twoNumbersMatch = input.match(/^(\d+(?:\.\d+)?)\s*(?:m)?\s*x\s*(\d+(?:\.\d+)?)\s*(?:m)?$/i);
+            if (twoNumbersMatch) {
+                const length = parseFloat(twoNumbersMatch[1]);
+                const width = parseFloat(twoNumbersMatch[2]);
+                const sqm = length * width;
+                return {
+                    length: length,
+                    width: width,
+                    sqm: sqm,
+                    originalInput: input,
+                    format: 'dimensions'
+                };
+            }
+            
+            // Pattern 3: Try to extract any two numbers from the string
+            // e.g., "Kitchen 7 x 7", "Room 1: 7.5 x 6.2"
+            const anyNumbersMatch = input.match(/(\d+(?:\.\d+)?).*?(\d+(?:\.\d+)?)/);
+            if (anyNumbersMatch) {
+                const length = parseFloat(anyNumbersMatch[1]);
+                const width = parseFloat(anyNumbersMatch[2]);
+                const sqm = length * width;
+                return {
+                    length: length,
+                    width: width,
+                    sqm: sqm,
+                    originalInput: input,
+                    format: 'extracted'
+                };
+            }
+            
+            // If no pattern matches, return zeros
+            console.warn('⚠️ Could not parse dimensions:', input);
+            return {
+                length: 0,
+                width: 0,
+                sqm: 0,
+                originalInput: input,
+                format: 'unparseable'
+            };
+        }
+        
+        // Function to add a room from the input fields
+        function addRoomFromInput() {
+            const roomName = document.getElementById('roomNameInput').value.trim();
+            const roomLength = parseFloat(document.getElementById('roomLengthInput').value);
+            const roomWidth = parseFloat(document.getElementById('roomWidthInput').value);
+            
+            if (!roomName) {
+                alert('Please enter a room name');
+                return;
+            }
+            
+            if (!roomLength || !roomWidth || roomLength <= 0 || roomWidth <= 0) {
+                alert('Please enter valid length and width (greater than 0)');
+                return;
+            }
+            
+            const sqm = roomLength * roomWidth;
+            const dimensions = `${roomLength}m x ${roomWidth}m`;
+            
+            const newRoom = {
+                name: roomName,
+                dimensions: dimensions,
+                sqm: sqm,
+                originalInput: dimensions
+            };
+            
+            rooms.push(newRoom);
+            
+            // Clear input fields
+            document.getElementById('roomNameInput').value = '';
+            document.getElementById('roomLengthInput').value = '';
+            document.getElementById('roomWidthInput').value = '';
+            
+            // Refresh the rooms display
+            populateRoomDetails(rooms);
+            
+            // Update the material SQM field with the new total
+            const totalSqm = rooms.reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0);
+            document.getElementById('materialSQM').value = totalSqm.toFixed(1);
+            
+            // Recalculate totals
+            calculateTotals();
+            
+            console.log('✅ Room added:', newRoom);
+        }
+        
+        // Function to remove a room
+        function removeRoom(index) {
+            if (confirm('Are you sure you want to remove this room?')) {
+                rooms.splice(index, 1);
+                populateRoomDetails(rooms);
+                
+                // Update the material SQM field with the new total
+                const totalSqm = rooms.reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0);
+                document.getElementById('materialSQM').value = totalSqm.toFixed(1);
+                
+                // Recalculate totals
+                calculateTotals();
+                
+                console.log('🗑️ Room removed at index:', index);
+            }
+        }
+        
+        // Fallback function to populate form from URL parameters
+        function populateFromUrlParams(urlParams) {
+            console.log('🔄 Populating form from URL parameters as fallback...');
+            
+            // Get all URL parameters
+            const customerName = urlParams.get('customerName');
+            const customerEmail = urlParams.get('customerEmail');
+            const customerPhone = urlParams.get('customerPhone');
+            const serviceType = urlParams.get('serviceType');
+            const projectDetails = urlParams.get('projectDetails');
+            const projectSize = urlParams.get('projectSize');
+            const budget = urlParams.get('budget');
+            const timeline = urlParams.get('timeline');
+            const location = urlParams.get('location');
+            
+            // Populate form fields if they exist in URL and are not already filled
+            if (customerName && !document.getElementById('customerName').value) {
+                document.getElementById('customerName').value = customerName;
+            }
+            if (customerEmail && !document.getElementById('customerEmail').value) {
+                document.getElementById('customerEmail').value = customerEmail;
+            }
+            if (customerPhone && !document.getElementById('customerPhone').value) {
+                document.getElementById('customerPhone').value = customerPhone;
+            }
+            if (serviceType && !document.getElementById('serviceType').value) {
+                document.getElementById('serviceType').value = serviceType;
+            }
+            if (projectDetails && !document.getElementById('projectDetails').value) {
+                document.getElementById('projectDetails').value = projectDetails;
+            }
+            if (projectSize && !document.getElementById('projectSize').value) {
+                document.getElementById('projectSize').value = projectSize;
+            }
+            if (budget && !document.getElementById('budget').value) {
+                document.getElementById('budget').value = budget;
+            }
+            if (timeline && !document.getElementById('timeline').value) {
+                document.getElementById('timeline').value = timeline;
+            }
+            if (location && !document.getElementById('location').value) {
+                document.getElementById('location').value = location;
+            }
+            
+            // Update display fields if we have data
+            if (customerName || serviceType || location) {
+                document.getElementById('customerInfo').style.display = 'block';
+                if (customerName) document.getElementById('customerNameDisplay').textContent = customerName;
+                if (serviceType) document.getElementById('serviceTypeDisplay').textContent = serviceType;
+                if (location) document.getElementById('locationDisplay').textContent = location;
+            }
+            
+            console.log('✅ URL parameter fallback completed');
         }
         
         // IMMEDIATE CHECK: Block entire form if tradesman already submitted quote for this lead

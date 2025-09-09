@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Layout from '../components/Layout';
 
 const HomePage = ({ openChat }) => { // Receive openChat prop from Layout
+  const [isButtonHovered, setIsButtonHovered] = useState(false);
 
   return (
     <Layout>
@@ -11,7 +12,22 @@ const HomePage = ({ openChat }) => { // Receive openChat prop from Layout
           <div style={styles.heroContent}>
             <h1>Connect with Qualified Tradesmen Instantly</h1>
             <p>Our intelligent chatbot matches you with the perfect tradesman for your project. Get quotes, schedule work, and complete your projects with confidence.</p>
-            <button style={styles.ctaButton} onClick={openChat}>
+            <button 
+              style={{
+                ...styles.ctaButton,
+                ...(isButtonHovered ? styles.ctaButtonHover : {})
+              }}
+              onClick={() => {
+                console.log('Get Started button clicked');
+                if (openChat) {
+                  openChat();
+                } else {
+                  console.error('openChat function not available');
+                }
+              }}
+              onMouseEnter={() => setIsButtonHovered(true)}
+              onMouseLeave={() => setIsButtonHovered(false)}
+            >
               Get Started Now
             </button>
           </div>
@@ -53,7 +69,24 @@ const styles = {
   pageContainer: { fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif', color: '#333' },
   hero: { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '4rem 20px', textAlign: 'center' },
   heroContent: { maxWidth: '1200px', margin: '0 auto' },
-  ctaButton: { background: 'white', color: '#667eea', border: 'none', padding: '1rem 2rem', borderRadius: '50px', fontSize: '1.1rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.3s', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' },
+  ctaButton: { 
+    background: 'white', 
+    color: '#667eea', 
+    border: 'none', 
+    padding: '1rem 2rem', 
+    borderRadius: '50px', 
+    fontSize: '1.1rem', 
+    fontWeight: 600, 
+    cursor: 'pointer', 
+    transition: 'all 0.3s ease', 
+    boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+    transform: 'translateY(0)',
+  },
+  ctaButtonHover: {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 15px 40px rgba(0,0,0,0.3)',
+    background: '#f8f9fa'
+  },
   services: { padding: '4rem 20px', background: '#f8f9fa' },
   sectionHeader: { textAlign: 'center', marginBottom: '3rem' },
   servicesGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', maxWidth: '1200px', margin: '0 auto' },

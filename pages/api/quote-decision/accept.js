@@ -822,10 +822,6 @@ export default async function handler(req, res) {
         const quoteDataForEmail = {};
         header.forEach((headerName, index) => {
             quoteDataForEmail[headerName] = targetRow[index] || '';
-            if (updateData[headerName] !== undefined) {
-                targetRow[index] = updateData[headerName];
-                quoteDataForEmail[headerName] = updateData[headerName];
-            }
         });
 
         quoteLogger.sheets('Updating Google Sheets with acceptance', { 

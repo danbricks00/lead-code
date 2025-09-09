@@ -578,6 +578,43 @@ export default async function handler(req, res) {
           
           const values = [
             [
+              // Standardized column structure (A through AJ) - WITH CALCULATED TOTALS
+              new Date().toISOString(), // A: Timestamp
+              quoteData.quoteId, // B: QuoteID
+              quoteData.leadId, // C: LeadID
+              quoteData.tradesmanName, // D: TradespersonName
+              quoteData.tradesmanEmail, // E: TradespersonEmail
+              quoteData.tradesmanPhone, // F: TradespersonPhone
+              'submitted', // G: CustomerStatus
+              'submitted', // H: TradespersonStatus
+              'Not Required', // I: AdminStatus
+              quoteData.labourRate, // J: LabourRate
+              quoteData.labourHours, // K: LabourHours
+              quoteData.labourRate * quoteData.labourHours, // L: LabourTotal
+              quoteData.materialsCost, // M: MaterialsCost
+              quoteData.materialsQuantity, // N: MaterialsQuantity
+              quoteData.materialsCost * quoteData.materialsQuantity, // O: MaterialsTotal
+              quoteData.travelCost, // P: TravelCost
+              quoteData.travelDistance, // Q: TravelDistance
+              quoteData.travelCost * quoteData.travelDistance, // R: TravelTotal
+              quoteData.installationCost, // S: InstallationCost
+              quoteData.subtotal, // T: Subtotal
+              quoteData.gst, // U: GST
+              quoteData.totalQuote, // V: TotalQuote
+              quoteData.additionalNotes || '', // W: Notes
+              quoteData.validUntil, // X: ValidUntil
+              'No', // Y: ResubmissionAllowed
+              '', // Z: Decision
+              '', // AA: DecisionTimestamp
+              quoteData.customerName, // AB: CustomerName
+              quoteData.customerEmail, // AC: CustomerEmail
+              quoteData.customerPhone, // AD: CustomerPhone
+              quoteData.serviceType, // AE: ServiceType
+              quoteData.location, // AF: Location
+              quoteData.timeline, // AG: Timeline
+              quoteData.budget || '', // AH: Budget
+              JSON.stringify(quoteData.rooms || []), // AI: Rooms
+              '' // AJ: Breakdown
               new Date().toISOString(),
               quoteData.quoteId,
               quoteData.quoteNumber,
@@ -616,6 +653,7 @@ export default async function handler(req, res) {
 
           await sheets.spreadsheets.values.append({
             spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+            range: 'Quotes!A:AJ',
             range: 'Quotes!A:AF',
             valueInputOption: 'RAW',
             insertDataOption: 'INSERT_ROWS',

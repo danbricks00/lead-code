@@ -33,21 +33,57 @@ async function findRowAndGetData(options) {
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
     const rows = response.data.values;
     if (!rows || rows.length < 2) return null;
-    const header = rows[0];
+    
+    // Find the actual header row (skip empty rows at the top)
+    let headerRowIndex = 0;
+    let header = rows[0];
+    
+    // Look for a row that contains the search column
+    for (let i = 0; i < rows.length; i++) {
+        if (rows[i] && rows[i].includes(searchColumn)) {
+            headerRowIndex = i;
+            header = rows[i];
+            break;
+        }
+    }
+    
+    console.log(`🔍 Found header row at index ${headerRowIndex} for tab ${tab}`);
+    console.log(`🔍 Header row:`, header);
+    
     const searchColumnIndex = header.indexOf(searchColumn);
-    if (searchColumnIndex === -1) throw new Error(`Column "${searchColumn}" not found in tab "${tab}".`);
-    const dataRow = rows.find(row => row[searchColumnIndex] === searchValue);
-    if (!dataRow) return null;
+    if (searchColumnIndex === -1) {
+        console.error(`❌ Column "${searchColumn}" not found in tab "${tab}". Available columns:`, header);
+        throw new Error(`Column "${searchColumn}" not found in tab "${tab}".`);
+    }
+    
+    // Look for the data row starting from after the header
+    const dataRows = rows.slice(headerRowIndex + 1);
+    const dataRow = dataRows.find(row => row && row[searchColumnIndex] === searchValue);
+    if (!dataRow) {
+        console.error(`❌ No data row found for ${searchColumn} = ${searchValue}`);
+        return null;
+    }
+    
+    const actualRowIndex = rows.indexOf(dataRow) + 1; // 1-based index for Google Sheets
+    console.log(`🔍 Found data row at index ${actualRowIndex} for ${searchColumn} = ${searchValue}`);
+    
     const result = {
-        rowIndex: rows.indexOf(dataRow) + 1 // 1-based index
+        rowIndex: actualRowIndex
     };
+    
     columnsToFetch.forEach(columnName => {
         const index = header.indexOf(columnName);
-        result[columnName] = index !== -1 ? dataRow[index] || '' : 'N/A (Column not found)';
+        if (index !== -1) {
+            result[columnName] = dataRow[index] || '';
+            console.log(`🔍 ${columnName}: "${result[columnName]}" (from column ${index})`);
+        } else {
+            result[columnName] = 'N/A (Column not found)';
+            console.log(`❌ ${columnName}: Column not found in header`);
+        }
     });
+    
     return result;
 }
-
 
 // --- Main Handler ---
 export default async function handler(req, res) {
@@ -86,6 +122,8 @@ export default async function handler(req, res) {
     }
     
     quoteLogger.adminAccept('Token validated successfully', { quoteId }, requestId);
+
+    console.log('🔄 ADMIN APPROVAL: Starting approval process for quote:', quoteId);
 
     try {
         quoteLogger.sheets('Initializing Google Sheets client', null, requestId);
@@ -169,8 +207,6 @@ export default async function handler(req, res) {
             searchColumn: 'Lead', searchValue: quoteData['LeadID'],
             columnsToFetch: ['CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Area', 'Suburb', 'Rooms', 'Budget', 'Timelline', 'Specfic Details']
         });
-        
-        if (!leadData) return res.redirect(`/quote-status?status=error&message=Lead data not found.`);
 
         // 2. Generate PDF using EXACT SAME logic as quote-submit.js (working system)
         // Use stored rooms data from quote submission, fallback to lead data
@@ -279,8 +315,9 @@ export default async function handler(req, res) {
         console.log('📊 Quote data for PDF generation:', JSON.stringify(quoteDataForPdf, null, 2));
         
         try {
-            pdfBuffer = await generateQuotePDF(quoteDataForPdf);
-            console.log(`✅ PDF generated for approved quote: ${quoteId}`);
+            // Try Adobe PDF API first
+            pdfBuffer = await generateQuotePDF(completeQuoteData);
+            console.log('✅ PDF generated successfully using Adobe API');
         } catch (pdfError) {
             console.error("❌ Admin PDF Generation failed:", pdfError);
             console.error("❌ PDF Error details:", pdfError.message, pdfError.stack);
@@ -313,10 +350,28 @@ export default async function handler(req, res) {
             return res.redirect(`/quote-status?status=error&message=Failed to generate quote attachment.`);
         }
 
-        // 5. Generate customer decision links
+        // 6. SEND CUSTOMER EMAIL WITH PDF ATTACHMENT
+        console.log('📧 Sending customer email with PDF attachment...');
+        
+        // Validate email data before sending
+        if (!customerEmail || !customerName) {
+            throw new Error('Customer email or name is missing from data');
+        }
+        if (!tradespersonName || !tradespersonEmail) {
+            throw new Error('Tradesperson name or email is missing from data');
+        }
+        if (!totalQuote || totalQuote === 0) {
+            throw new Error('Total quote amount is missing or zero');
+        }
+        
+        console.log('✅ Email data validation passed:');
+        console.log('  - Customer:', customerName, customerEmail);
+        console.log('  - Tradesperson:', tradespersonName, tradespersonEmail);
+        console.log('  - Total:', totalQuote);
+        
         const acceptLink = generateCustomerDecisionLink('accept', quoteId);
         const declineLink = generateCustomerDecisionLink('decline', quoteId);
-        const viewQuoteLink = generateQuoteViewLink(quoteId);
+        const viewLink = generateQuoteViewLink(quoteId);
 
         // 6. Send CUSTOMER-SPECIFIC quote email (different tracking journey)
         // Always CC the super admin for recordkeeping

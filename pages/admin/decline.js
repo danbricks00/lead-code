@@ -12,12 +12,31 @@ export default function AdminDecline() {
     if (quoteId) {
       console.log('🔍 [ADMIN-PAGE] Starting decline process for quoteId:', quoteId);
       
+      // First, test if we can reach any admin API endpoint
+      console.log('🔍 [ADMIN-PAGE] Testing admin API connectivity...');
+      fetch('/api/admin/test', { method: 'GET' })
+        .then(testResponse => {
+          console.log('🔍 [ADMIN-PAGE] Test API response:', {
+            status: testResponse.status,
+            ok: testResponse.ok
+          });
+          return testResponse.json();
+        })
+        .then(testData => {
+          console.log('🔍 [ADMIN-PAGE] Test API data:', testData);
+        })
+        .catch(testError => {
+          console.error('🔍 [ADMIN-PAGE] Test API failed:', testError);
+        });
+      
       // Generate the proper decline link with token
       const ts = Date.now().toString();
       const token = generateToken(quoteId, ts);
       
       const apiUrl = `/api/admin/decline?quoteId=${quoteId}&ts=${ts}&token=${token}`;
       console.log('🔍 [ADMIN-PAGE] Making request to:', apiUrl);
+      console.log('🔍 [ADMIN-PAGE] Current window location:', window.location.href);
+      console.log('🔍 [ADMIN-PAGE] Base URL should be:', window.location.origin);
       
       // Call the API endpoint with GET method and proper parameters
       fetch(apiUrl, {

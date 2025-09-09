@@ -88,7 +88,7 @@ export default async function handler(req, res) {
                   <p>If you have any questions, please contact us directly.</p>
               </div>
               
-              <a href="https://lead-code.vercel.app/" class="button">Back to Home</a>
+              <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/" class="button">Back to Home</a>
           </body>
           </html>
         `;
@@ -116,7 +116,7 @@ export default async function handler(req, res) {
                   <p>This quote has already been declined. If you'd like to discuss alternative options, please contact us directly.</p>
               </div>
               
-              <a href="https://lead-code.vercel.app/" class="button">Back to Home</a>
+              <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/" class="button">Back to Home</a>
           </body>
           </html>
         `;
@@ -247,7 +247,7 @@ export default async function handler(req, res) {
                 <p>We're committed to finding the right solution for your underfloor heating needs. Feel free to reach out anytime.</p>
             </div>
             
-            <a href="https://lead-code.vercel.app/" class="button">Back to Home</a>
+            <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/" class="button">Back to Home</a>
         </body>
         </html>
       `;

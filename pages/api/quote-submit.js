@@ -257,7 +257,7 @@ async function sendCustomerQuoteEmail(to, pdf, row) {
 
 async function sendAdminQuoteEmail(to, pdf, row) {
   const subject = `New Quote Submitted - ${row.CustomerName} - Quote #${row.QuoteID}`;
-  const baseUrl = process.env.NEXTAUTH_URL || 'https://lead-code.vercel.app';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
   
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">

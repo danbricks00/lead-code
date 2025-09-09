@@ -16,15 +16,15 @@ function verifyToken(id, ts) {
 }
 
 function generateCustomerDecisionLink(action, quoteId, leadId) {
-    const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
-    return `https://${baseUrl}/api/customer-${action}?quoteId=${quoteId}&leadId=${leadId}`;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    return `${baseUrl}/api/customer-${action}?quoteId=${quoteId}&leadId=${leadId}`;
 }
 
 function generateQuoteViewLink(quoteId) {
     const ts = Date.now().toString();
     const token = verifyToken(quoteId, ts);
-    const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
-    return `https://${baseUrl}/quote-view?quoteId=${quoteId}&ts=${ts}&token=${token}`;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    return `${baseUrl}/quote-view?quoteId=${quoteId}&ts=${ts}&token=${token}`;
 }
 
 async function findRowAndGetData(options) {

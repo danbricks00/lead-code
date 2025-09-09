@@ -187,7 +187,7 @@ async function handleQuoteGeneration(req, res) {
 }
 
  function generateQuoteHTML(quote, includeActions = true) {
-   const currentUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+   const currentUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
    
    const actionsSection = includeActions ? `
      <div class="actions">
@@ -587,9 +587,7 @@ async function handleQuoteGeneration(req, res) {
       }
     });
 
-     const currentUrl = req.headers.host ? 
-       `https://${req.headers.host}` : 
-       'https://lead-code-kpkgaky5l-leadcode-b19d9acc.vercel.app';
+     const currentUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
      // Generate PDF
      const pdfBuffer = await generatePDF(quoteData, req);
@@ -661,9 +659,7 @@ async function sendAdminQuoteEmail(quoteData, req) {
       }
     });
 
-    const currentUrl = req.headers.host ? 
-      `https://${req.headers.host}` : 
-      'https://lead-code-kpkgaky5l-leadcode-b19d9acc.vercel.app';
+    const currentUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
     // Calculate potential commission (example: 10% of total)
     const commissionRate = 0.10; // 10% commission

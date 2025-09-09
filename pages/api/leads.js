@@ -82,7 +82,7 @@ async function handleLeadCreate(req, res) {
   const totalRooms = rooms.length;
   const areaValue = area || "";
   const suburbValue = suburb || "";
-  const quoteFormUrl = `${process.env.SITE_URL || "https://lead-code.vercel.app"}/quote-submit/${leadId}`;
+  const quoteFormUrl = `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/quote-submit/${leadId}`;
   const roomsEmailList = rooms.map(room => 
     `<li><strong>${room.roomName}:</strong> ${room.dimensions}</li>`
   ).join("");
@@ -433,7 +433,7 @@ async function handleSubmitQuote(req, res) {
   });
 
   try {
-    const SITE_URL = process.env.SITE_URL || 'https://lead-code.vercel.app';
+    const SITE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     const quoteViewUrl = `${SITE_URL}/quote-view?leadId=${leadId}`;
     const acceptUrl = `${SITE_URL}/api/leads?action=decision&leadId=${leadId}&action=accept`;
     const declineUrl = `${SITE_URL}/api/leads?action=decision&leadId=${leadId}&action=decline`;

@@ -56,9 +56,7 @@ async function exampleApiUsage(req, res) {
     
     // Generate quote link with lead ID
     const leadId = `LEAD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const currentUrl = process.env.VERCEL_URL ? 
-      `https://${process.env.VERCEL_URL}` : 
-      'https://lead-code.vercel.app';
+    const currentUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     
     const quoteLink = `${currentUrl}/api/quote-submission?leadId=${leadId}&customerName=${encodeURIComponent(leadData.customerName)}&customerEmail=${encodeURIComponent(leadData.customerEmail)}&customerPhone=${encodeURIComponent(leadData.customerPhone)}&serviceType=${encodeURIComponent(leadData.selectedService)}&projectDetails=${encodeURIComponent(leadData.projectDetails)}&projectSize=${encodeURIComponent(leadData.projectSize)}&budget=${encodeURIComponent(leadData.budget)}&timeline=${encodeURIComponent(leadData.timeline)}&location=${encodeURIComponent(leadData.location)}`;
     

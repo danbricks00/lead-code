@@ -16,7 +16,6 @@
     "next-auth": "^4.24.5",
     "nodemailer": "^6.9.7",
     "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "xero-node": "^13.0.0"
+    "react-dom": "^18.0.0"
   }
 }

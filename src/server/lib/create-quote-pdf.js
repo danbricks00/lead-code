@@ -145,9 +145,7 @@ export default async function handler(req, res) {
         }
       });
 
-      const currentUrl = process.env.VERCEL_URL ? 
-        `https://${process.env.VERCEL_URL}` : 
-        'https://lead-code-kh766ffsc-leadcode-b19d9acc.vercel.app';
+      const currentUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
       // Send to customer
       const customerMailOptions = {

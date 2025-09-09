@@ -835,9 +835,7 @@ export default async function handler(req, res) {
       // 4. Send email to customer with attachment
       console.log('📧 Step 3: Sending customer quote...');
       try {
-        const currentUrl = process.env.VERCEL_URL ? 
-          `https://${process.env.VERCEL_URL}` : 
-          'https://lead-code.vercel.app';
+        const currentUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
         const customerSubject = `Your Quote - ${quoteData.quoteNumber} - Kiwi Trade`;
         const customerHtml = `

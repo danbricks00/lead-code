@@ -25,7 +25,7 @@ async function getQuoteById(quoteId) {
         const spreadsheetId = getSpreadsheetId();
         
         const range = 'Quotes!A:Z';
-        const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
+    const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
         const rows = response.data.values || [];
         
         if (rows.length === 0) return null;

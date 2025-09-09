@@ -1,5 +1,6 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import crypto from 'crypto';
 
 export default function AdminApprove() {
   const router = useRouter();
@@ -9,12 +10,13 @@ export default function AdminApprove() {
 
   useEffect(() => {
     if (quoteId) {
-      // Call the API endpoint directly
-      fetch(`/api/admin/approve?quoteId=${quoteId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      // Generate the proper approval link with token
+      const ts = Date.now().toString();
+      const token = generateToken(quoteId, ts);
+      
+      // Call the API endpoint with GET method and proper parameters
+      fetch(`/api/admin/approve?quoteId=${quoteId}&ts=${ts}&token=${token}`, {
+        method: 'GET',
       })
       .then(response => {
         if (response.ok) {
@@ -32,6 +34,13 @@ export default function AdminApprove() {
       });
     }
   }, [quoteId]);
+
+  // Generate token for API call
+  function generateToken(id, ts) {
+    const hmac = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET || 'fallback-secret');
+    hmac.update(`${id}|${ts}`);
+    return hmac.digest("hex");
+  }
 
   return (
     <div style={{ 

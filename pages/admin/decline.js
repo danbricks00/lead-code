@@ -1,5 +1,6 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import crypto from 'crypto';
 
 export default function AdminDecline() {
   const router = useRouter();
@@ -9,17 +10,18 @@ export default function AdminDecline() {
 
   useEffect(() => {
     if (quoteId) {
-      // Call the API endpoint directly
-      fetch(`/api/admin/decline?quoteId=${quoteId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      // Generate the proper decline link with token
+      const ts = Date.now().toString();
+      const token = generateToken(quoteId, ts);
+      
+      // Call the API endpoint with GET method and proper parameters
+      fetch(`/api/admin/decline?quoteId=${quoteId}&ts=${ts}&token=${token}`, {
+        method: 'GET',
       })
       .then(response => {
         if (response.ok) {
           setStatus('success');
-          setMessage('Quote declined successfully! Customer has been notified.');
+          setMessage('Quote declined successfully! Tradesperson has been notified.');
         } else {
           setStatus('error');
           setMessage('Failed to decline quote. Please try again.');
@@ -32,6 +34,13 @@ export default function AdminDecline() {
       });
     }
   }, [quoteId]);
+
+  // Generate token for API call
+  function generateToken(id, ts) {
+    const hmac = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET || 'fallback-secret');
+    hmac.update(`${id}|${ts}`);
+    return hmac.digest("hex");
+  }
 
   return (
     <div style={{ 

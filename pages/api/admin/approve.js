@@ -8,7 +8,8 @@ import crypto from "crypto";
 
 // --- Helper Functions ---
 function verifyToken(id, ts) {
-    const hmac = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET);
+    const secret = process.env.QUOTE_LINK_SECRET || 'fallback-secret';
+    const hmac = crypto.createHmac("sha256", secret);
     hmac.update(`${id}|${ts}`);
     return hmac.digest("hex");
 }
@@ -125,11 +126,27 @@ export default async function handler(req, res) {
 
     const { quoteId, ts, token } = req.query;
 
-    if (!quoteId || !ts || !token || token !== verifyToken(quoteId, ts)) {
+    // Enhanced token validation debugging
+    const expectedToken = verifyToken(quoteId, ts);
+    const tokenValid = token === expectedToken;
+    
+    console.log('🔍 [ADMIN-APPROVE] Token validation:', {
+        quoteId,
+        ts,
+        receivedToken: token,
+        expectedToken,
+        tokenValid,
+        hasSecret: !!process.env.QUOTE_LINK_SECRET
+    });
+
+    if (!quoteId || !ts || !token || !tokenValid) {
         quoteLogger.error('Invalid approval link', { 
             quoteId, 
             hasToken: !!token,
-            tokenValid: token === verifyToken(quoteId, ts)
+            hasTs: !!ts,
+            tokenValid,
+            expectedToken,
+            receivedToken: token
         }, requestId);
         quoteLogger.response('Redirecting to error page - invalid approval link', null, requestId);
         return res.redirect(`/quote-status?status=error&message=Invalid approval link.`);

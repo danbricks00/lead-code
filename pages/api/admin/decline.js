@@ -5,7 +5,8 @@ import crypto from "crypto";
 
 // --- Helper Functions ---
 function verifyToken(id, ts) {
-    const hmac = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET);
+    const secret = process.env.QUOTE_LINK_SECRET || 'fallback-secret';
+    const hmac = crypto.createHmac("sha256", secret);
     hmac.update(`${id}|${ts}`);
     return hmac.digest("hex");
 }
@@ -68,7 +69,28 @@ export default async function handler(req, res) {
 
     const { quoteId, ts, token, reason } = req.query;
 
-    if (!quoteId || !ts || !token || token !== verifyToken(quoteId, ts)) {
+    // Enhanced token validation debugging
+    const expectedToken = verifyToken(quoteId, ts);
+    const tokenValid = token === expectedToken;
+    
+    console.log('🔍 [ADMIN-DECLINE] Token validation:', {
+        quoteId,
+        ts,
+        receivedToken: token,
+        expectedToken,
+        tokenValid,
+        hasSecret: !!process.env.QUOTE_LINK_SECRET
+    });
+
+    if (!quoteId || !ts || !token || !tokenValid) {
+        console.log('🔍 [ADMIN-DECLINE] Invalid decline link:', {
+            quoteId,
+            hasToken: !!token,
+            hasTs: !!ts,
+            tokenValid,
+            expectedToken,
+            receivedToken: token
+        });
         return res.redirect(`/quote-status?status=error&message=Invalid decline link.`);
     }
 

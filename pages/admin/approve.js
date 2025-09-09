@@ -33,6 +33,21 @@ export default function AdminApprove() {
         .catch(testError => {
           console.error('🔍 [ADMIN-PAGE] Test API failed:', testError);
         });
+
+      // Test the actual approve endpoint directly
+      console.log('🔍 [ADMIN-PAGE] Testing approve endpoint directly...');
+      fetch('/api/admin/approve?quoteId=test123&ts=1234567890&token=test', { method: 'GET' })
+        .then(testResponse => {
+          console.log('🔍 [ADMIN-PAGE] Approve endpoint test response:', {
+            status: testResponse.status,
+            ok: testResponse.ok,
+            statusText: testResponse.statusText,
+            url: testResponse.url
+          });
+        })
+        .catch(testError => {
+          console.error('🔍 [ADMIN-PAGE] Approve endpoint test failed:', testError);
+        });
       
       // Generate the proper approval link with token
       const ts = Date.now().toString();

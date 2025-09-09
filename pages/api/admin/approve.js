@@ -88,6 +88,13 @@ async function findRowAndGetData(options) {
 
 // --- Main Handler ---
 export default async function handler(req, res) {
+    // Simple test to see if the endpoint is reachable at all
+    console.log('🔍 [ADMIN-APPROVE] ENDPOINT HIT!', {
+        method: req.method,
+        url: req.url,
+        timestamp: new Date().toISOString()
+    });
+    
     const requestId = quoteLogger.generateRequestId();
     const startTime = Date.now();
     

@@ -94,7 +94,7 @@ export default async function handler(req, res) {
     try {
       if (fullRow.CustomerStatus === 'Submitted' && fullRow.TradePersonStatus !== 'Declined' && (process.env.ENABLE_PDF_EMAILS !== 'false')) {
         const html = renderQuoteHtml(fullRow);
-        const pdfBuffer = await generateQuotePDF(html, { quoteId: quoteId });
+        const pdfBuffer = await generateQuotePDF({ ...fullRow, html, quoteId });
         
         // Only send admin and tradesperson emails on submission
         // Customer email will be sent after admin approval

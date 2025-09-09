@@ -259,12 +259,12 @@ async function sendAdminQuoteEmail(to, pdf, row) {
           <p>Please review the attached quote and take action:</p>
           
           <div style="margin: 20px 0;">
-            <a href="${baseUrl}/admin/approve?quoteId=${row.QuoteID}" 
+            <a href="${baseUrl}/api/quote-approve?quoteId=${row.QuoteID}&leadId=${row.LeadID}" 
                style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; display: inline-block; margin: 10px; font-weight: bold; box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);">
               ✅ Approve Quote
             </a>
             
-            <a href="${baseUrl}/admin/decline?quoteId=${row.QuoteID}" 
+            <a href="${baseUrl}/api/quote-decline?quoteId=${row.QuoteID}&leadId=${row.LeadID}" 
                style="background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; display: inline-block; margin: 10px; font-weight: bold; box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);">
               ❌ Decline Quote
             </a>

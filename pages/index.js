@@ -4,6 +4,25 @@ import Layout from '../components/Layout';
 const HomePage = ({ openChat }) => { // Receive openChat prop from Layout
   const [isButtonHovered, setIsButtonHovered] = useState(false);
 
+  // Fallback function to open chat if prop is not available
+  const handleOpenChat = () => {
+    console.log('handleOpenChat called');
+    if (openChat && typeof openChat === 'function') {
+      console.log('Using openChat prop');
+      openChat();
+    } else {
+      console.log('openChat prop not available, trying alternative method');
+      // Try to find and click the chat bubble button
+      const chatBubble = document.querySelector('[data-chat-bubble]');
+      if (chatBubble) {
+        console.log('Found chat bubble, clicking it');
+        chatBubble.click();
+      } else {
+        console.error('Could not find chat bubble button');
+      }
+    }
+  };
+
   return (
     <Layout>
       <div style={styles.pageContainer}>
@@ -17,14 +36,7 @@ const HomePage = ({ openChat }) => { // Receive openChat prop from Layout
                 ...styles.ctaButton,
                 ...(isButtonHovered ? styles.ctaButtonHover : {})
               }}
-              onClick={() => {
-                console.log('Get Started button clicked');
-                if (openChat) {
-                  openChat();
-                } else {
-                  console.error('openChat function not available');
-                }
-              }}
+              onClick={handleOpenChat}
               onMouseEnter={() => setIsButtonHovered(true)}
               onMouseLeave={() => setIsButtonHovered(false)}
             >

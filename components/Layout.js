@@ -35,7 +35,11 @@ const Layout = ({ children }) => {
   // Pass a function to children to allow them to open the chat
   const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
-      return React.cloneElement(child, { openChat: () => setIsChatOpen(true) });
+      const openChatFunction = () => {
+        console.log('openChat function called from Layout');
+        setIsChatOpen(true);
+      };
+      return React.cloneElement(child, { openChat: openChatFunction });
     }
     return child;
   });
@@ -109,6 +113,7 @@ const Layout = ({ children }) => {
       
       {/* The bubble is always visible, but we can hide it when the chat is open if we want */}
       <button 
+        data-chat-bubble="true"
         style={{
           ...styles.chatBubble,
           transform: isChatOpen ? 'scale(0)' : 'scale(1)',

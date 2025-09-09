@@ -1,7 +1,7 @@
-import { getLeadById, upsertQuoteRow } from '../../../utils/sheets';
-import { buildQuoteRow } from '../../../utils/quotes';
-import { sendEmail } from '../../../lib/emailHelper';
-import quoteLogger from '../../../lib/quoteLogger.js';
+import { getLeadById, upsertQuoteRow } from '../../utils/sheets';
+import { buildQuoteRow } from '../../utils/quotes';
+import { sendEmail } from '../../lib/emailHelper';
+import quoteLogger from '../../lib/quoteLogger.js';
 import crypto from "crypto";
 
 // --- Helper Functions ---
@@ -21,7 +21,7 @@ function generateQuoteSubmissionLink(leadId) {
 
 async function getQuoteById(quoteId) {
     try {
-        const { getGoogleSheetsClient, getSpreadsheetId } = await import("../../../lib/googleSheets.js");
+        const { getGoogleSheetsClient, getSpreadsheetId } = await import("../../lib/googleSheets.js");
         const sheets = await getGoogleSheetsClient();
         const spreadsheetId = getSpreadsheetId();
         

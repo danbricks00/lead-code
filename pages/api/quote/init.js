@@ -89,9 +89,9 @@ export default async function handler(req, res) {
 
     // Check for existing quotes to preload data for resubmission
     let existingQuoteData = null;
-    if (otherQuotes.length > 0) {
+    if (existingQuotes.length > 0) {
       // Find the most recent rejected quote to preload its data
-      const rejectedQuotes = otherQuotes.filter(q => 
+      const rejectedQuotes = existingQuotes.filter(q => 
         q.AdminPersonStatus === 'Declined' || 
         q.AdminPersonStatus === 'Rejected' ||
         q.Decison === 'Rejected' ||

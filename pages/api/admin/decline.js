@@ -49,6 +49,13 @@ async function getQuoteById(quoteId) {
 
 // --- Main Handler ---
 export default async function handler(req, res) {
+    // Simple test to see if the endpoint is reachable at all
+    console.log('🔍 [ADMIN-DECLINE] ENDPOINT HIT!', {
+        method: req.method,
+        url: req.url,
+        timestamp: new Date().toISOString()
+    });
+    
     // Enhanced logging for debugging
     console.log('🔍 [ADMIN-DECLINE] Request received:', {
         method: req.method,

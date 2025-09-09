@@ -9,6 +9,10 @@ export default function AdminDecline() {
   const [message, setMessage] = useState('Processing Quote Decline...');
 
   useEffect(() => {
+    console.log('🔍 [ADMIN-PAGE] Component mounted, quoteId:', quoteId);
+    console.log('🔍 [ADMIN-PAGE] Current URL:', window.location.href);
+    console.log('🔍 [ADMIN-PAGE] Router query:', router.query);
+    
     if (quoteId) {
       console.log('🔍 [ADMIN-PAGE] Starting decline process for quoteId:', quoteId);
       
@@ -18,7 +22,8 @@ export default function AdminDecline() {
         .then(testResponse => {
           console.log('🔍 [ADMIN-PAGE] Test API response:', {
             status: testResponse.status,
-            ok: testResponse.ok
+            ok: testResponse.ok,
+            statusText: testResponse.statusText
           });
           return testResponse.json();
         })
@@ -27,6 +32,21 @@ export default function AdminDecline() {
         })
         .catch(testError => {
           console.error('🔍 [ADMIN-PAGE] Test API failed:', testError);
+        });
+
+      // Test the actual decline endpoint directly
+      console.log('🔍 [ADMIN-PAGE] Testing decline endpoint directly...');
+      fetch('/api/admin/decline?quoteId=test123&ts=1234567890&token=test', { method: 'GET' })
+        .then(testResponse => {
+          console.log('🔍 [ADMIN-PAGE] Decline endpoint test response:', {
+            status: testResponse.status,
+            ok: testResponse.ok,
+            statusText: testResponse.statusText,
+            url: testResponse.url
+          });
+        })
+        .catch(testError => {
+          console.error('🔍 [ADMIN-PAGE] Decline endpoint test failed:', testError);
         });
       
       // Generate the proper decline link with token

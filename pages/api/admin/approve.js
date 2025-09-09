@@ -358,7 +358,7 @@ export default async function handler(req, res) {
         const customerName = leadData['CustomerName'];
         const tradespersonName = quoteData['TradePersonName'];
         const tradespersonEmail = quoteData['TradePersonEmail'];
-        const totalQuote = parseFloat(quoteData['TotalQuote'] || 0);
+        const totalQuoteAmount = parseFloat(quoteData['TotalQuote'] || 0);
         
         if (!customerEmail || !customerName) {
             throw new Error('Customer email or name is missing from data');
@@ -366,14 +366,14 @@ export default async function handler(req, res) {
         if (!tradespersonName || !tradespersonEmail) {
             throw new Error('Tradesperson name or email is missing from data');
         }
-        if (!totalQuote || totalQuote === 0) {
+        if (!totalQuoteAmount || totalQuoteAmount === 0) {
             throw new Error('Total quote amount is missing or zero');
         }
         
         console.log('✅ Email data validation passed:');
         console.log('  - Customer:', customerName, customerEmail);
         console.log('  - Tradesperson:', tradespersonName, tradespersonEmail);
-        console.log('  - Total:', totalQuote);
+        console.log('  - Total:', totalQuoteAmount);
         
         const acceptLink = generateCustomerDecisionLink('accept', quoteId);
         const declineLink = generateCustomerDecisionLink('decline', quoteId);

@@ -110,7 +110,7 @@ export default async function handler(req, res) {
           travelDistance: mostRecentRejected.TravelDistance || '',
           installationCost: mostRecentRejected.InstallationCost || '',
           notes: mostRecentRejected.Notes || '',
-          validUntil: mostRecentRejected.ValidUnitl || '',
+          validUntil: mostRecentRejected.ValidUntil || '',
           tradePersonName: mostRecentRejected.TradePersonName || '',
           tradePersonEmail: mostRecentRejected.TradePersonEmail || '',
           tradePersonPhone: mostRecentRejected.TradePersonPhone || ''

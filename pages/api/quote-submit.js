@@ -99,7 +99,7 @@ export default async function handler(req, res) {
         const pdfData = {
           quoteId: quoteId,
           quoteDate: fullRow.TimeStamp,
-          validUntil: fullRow.ValidUnitl,
+          validUntil: fullRow.ValidUntil,
           customerName: fullRow.CustomerName,
           customerEmail: fullRow.CustomerEmail,
           customerPhone: fullRow.CustomerPhone,
@@ -110,7 +110,7 @@ export default async function handler(req, res) {
           tradespersonPhone: fullRow.TradePersonPhone,
           tradespersonLicense: '',
           rooms: fullRow.Rooms ? JSON.parse(fullRow.Rooms) : [],
-          breakdown: {
+            breakdown: {
             labourRate: parseFloat(fullRow.LabourRate || 0),
             labourHours: parseFloat(fullRow.LabourHours || 0),
             labourTotal: parseFloat(fullRow.LabourTotal || 0),
@@ -122,8 +122,8 @@ export default async function handler(req, res) {
             travelTotal: parseFloat(fullRow.TravelTotal || 0),
             installationCost: parseFloat(fullRow.InstallationCost || 0),
             totalSqm: fullRow.Rooms ? JSON.parse(fullRow.Rooms).reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0) : 0
-          },
-          totals: {
+            },
+            totals: {
             labour: parseFloat(fullRow.LabourTotal || 0),
             materials: parseFloat(fullRow.MaterialsTotal || 0),
             travel: parseFloat(fullRow.TravelTotal || 0),
@@ -259,26 +259,18 @@ async function sendAdminQuoteEmail(to, pdf, row) {
           <p>Please review the attached quote and take action:</p>
           
           <div style="margin: 20px 0;">
-            <a href="${baseUrl}/api/admin/approve?quoteId=${row.QuoteID}" 
+            <a href="${baseUrl}/admin/approve?quoteId=${row.QuoteID}" 
                style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; display: inline-block; margin: 10px; font-weight: bold; box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);">
               ✅ Approve Quote
             </a>
             
-            <a href="${baseUrl}/api/admin/decline?quoteId=${row.QuoteID}" 
+            <a href="${baseUrl}/admin/decline?quoteId=${row.QuoteID}" 
                style="background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; display: inline-block; margin: 10px; font-weight: bold; box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);">
               ❌ Decline Quote
             </a>
+          </div>
                     </div>
                     
-          <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h4>📄 View Quote Details</h4>
-            <a href="${baseUrl}/quote/view/${row.QuoteID}" 
-               style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
-              📊 View Full Quote
-            </a>
-          </div>
-        </div>
-        
         <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
           <h4>⚠️ Important</h4>
           <p><strong>Please review the attached PDF quote before making your decision.</strong></p>

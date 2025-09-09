@@ -61,7 +61,7 @@ export function buildQuoteRow({
     GST: body.gst || '',
     TotalQuote: body.totalQuote || '',
     Notes: body.notes || '',
-    ValidUnitl: body.validUntil || '',  // Note: exact spelling with typo
+    ValidUntil: body.validUntil || '',
 
     // Decision fields
     Decison: '',  // Note: exact spelling with typo

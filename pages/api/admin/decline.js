@@ -97,7 +97,7 @@ export default async function handler(req, res) {
                 gst: quoteData.GST || '',
                 totalQuote: quoteData.TotalQuote || '',
                 notes: quoteData.Notes || '',
-                validUntil: quoteData.ValidUnitl || ''
+                validUntil: quoteData.ValidUntil || ''
             },
             mode: 'rejected'
         });

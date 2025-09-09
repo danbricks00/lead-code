@@ -1,6 +1,9 @@
 import { getGoogleSheetsClient, getSpreadsheetId } from "../../../lib/googleSheets.js";
 import { generateQuotePDF, generateQuoteHTML } from "../../../lib/pdfGenerator.js";
 import { sendEmail } from '../../../lib/emailHelper';
+import { getLeadById, upsertQuoteRow } from '../../../utils/sheets.js';
+import { buildQuoteRow } from '../../../utils/quotes.js';
+import quoteLogger from '../../../lib/quoteLogger.js';
 import crypto from "crypto";
 
 // --- Helper Functions ---
@@ -26,7 +29,7 @@ function generateQuoteViewLink(quoteId) {
 
 async function findRowAndGetData(options) {
     const { sheets, spreadsheetId, tab, searchColumn, searchValue, columnsToFetch } = options;
-    const range = `${tab}!A:Z`;
+    const range = `${tab}!A:AJ`; // Use 36-column range to match quote-submit.js
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
     const rows = response.data.values;
     if (!rows || rows.length < 2) return null;
@@ -84,132 +87,129 @@ async function findRowAndGetData(options) {
 
 // --- Main Handler ---
 export default async function handler(req, res) {
+    const requestId = quoteLogger.generateRequestId();
+    const startTime = Date.now();
+    
+    // Log incoming request details
+    quoteLogger.adminAccept('Request received', {
+        method: req.method,
+        url: req.url,
+        query: req.query,
+        headers: {
+            'user-agent': req.headers['user-agent'],
+            'referer': req.headers['referer'],
+            'x-forwarded-for': req.headers['x-forwarded-for']
+        },
+        bodySize: req.body ? JSON.stringify(req.body).length : 0
+    }, requestId);
+    
     if (req.method !== 'GET') {
-        return res.status(405).json({ success: false, error: 'Method not allowed' });
+        quoteLogger.error('Invalid method', null, requestId);
+        quoteLogger.response('Sending 405 Method Not Allowed', { method: req.method }, requestId);
+        return res.status(405).json({ success: false, error: 'Method Not Allowed' });
     }
 
-    const { quoteId } = req.query;
-    if (!quoteId) {
-        return res.redirect(`/quote-status?status=error&message=Quote ID is required.`);
+    const { quoteId, ts, token } = req.query;
+
+    if (!quoteId || !ts || !token || token !== verifyToken(quoteId, ts)) {
+        quoteLogger.error('Invalid approval link', { 
+            quoteId, 
+            hasToken: !!token,
+            tokenValid: token === verifyToken(quoteId, ts)
+        }, requestId);
+        quoteLogger.response('Redirecting to error page - invalid approval link', null, requestId);
+        return res.redirect(`/quote-status?status=error&message=Invalid approval link.`);
     }
+    
+    quoteLogger.adminAccept('Token validated successfully', { quoteId }, requestId);
 
     console.log('🔄 ADMIN APPROVAL: Starting approval process for quote:', quoteId);
 
     try {
+        quoteLogger.sheets('Initializing Google Sheets client', null, requestId);
         const sheets = await getGoogleSheetsClient();
         const spreadsheetId = getSpreadsheetId();
 
-        // 1. FETCH FULL QUOTE DATA FROM GOOGLE SHEETS
-        console.log('📊 Fetching quote data from Google Sheets...');
-        
-        // First, get the header row to see what columns are available
-        const quoteHeaderResponse = await sheets.spreadsheets.values.get({
-            spreadsheetId,
-            range: 'Quotes!1:1'
-        });
-        const quoteHeaders = quoteHeaderResponse.data.values?.[0] || [];
-        console.log('🔍 Available quote columns:', quoteHeaders);
+        // 1. Get Quote and Lead data from Sheets using exact schema
+        quoteLogger.sheets('Fetching quote data from Google Sheets', { 
+            spreadsheetId: spreadsheetId.substring(0, 10) + '...', 
+            quoteId 
+        }, requestId);
         
         const quoteData = await findRowAndGetData({
             sheets, spreadsheetId, tab: 'Quotes',
             searchColumn: 'QuoteID', searchValue: quoteId,
             columnsToFetch: [
-                // Standardized column names (primary) - WITH CALCULATED TOTALS
-                'AdminStatus', 'LeadID', 'TradespersonName', 'TradespersonEmail', 'TradespersonPhone',
+                'AdminPersonStatus', 'LeadID', 'TradePersonName', 'TradePersonEmail', 'TradePersonPhone',
                 'LabourRate', 'LabourHours', 'LabourTotal', 'MaterialsCost', 'MaterialsQuantity', 'MaterialsTotal',
-                'TravelCost', 'TravelDistance', 'TravelTotal', 'InstallationCost', 'Subtotal', 'GST', 'TotalQuote',
-                'ValidUntil', 'Notes', 'Rooms', 'CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Location', 'Timeline',
-                // Legacy column names (fallback)
-                'Admin Status', 'LeadiD', 'Labour Cost', 'Labour Hour', 'Materials Cost', 'Materials Quanitity', 
-                'Travel Cost', 'Travel Distance', 'Installation Cost', 'Total Quote', 'TradePerson Name', 
-                'TradePerson Email', 'TradePerson Phone'
+                'TravelCost', 'TravelDistance', 'TravelTotal', 'InstallationCost', 'Subtotal', 'GST', 'TotalQuote', 
+                'Notes', 'ValidUntil', 'ResubmissionAllowed', 'Decision', 'DecisionTimeStamp',
+                'CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Location', 'Timeline', 'Budget', 'Rooms', 'BreakDown'
             ]
         });
 
         if (!quoteData) {
-            console.error('❌ Quote not found:', quoteId);
+            quoteLogger.error('Quote not found in Google Sheets', { quoteId }, requestId);
+            quoteLogger.response('Redirecting to error page - quote not found', null, requestId);
             return res.redirect(`/quote-status?status=error&message=Quote not found.`);
         }
-
-        if (quoteData['Admin Status'] === 'Approved') {
-            console.log('⚠️ Quote already approved');
-            return res.redirect(`/quote-status?status=error&message=This quote has already been approved.`);
+        
+        quoteLogger.dataFlow('Quote data retrieved from Google Sheets', {
+            quoteId,
+            adminStatus: quoteData['AdminPersonStatus'],
+            leadId: quoteData['LeadID'],
+            customerName: quoteData['CustomerName'],
+            totalQuote: quoteData['TotalQuote']
+        }, requestId);
+        
+        // ONE-TIME ENFORCEMENT: Check if already approved
+        if (quoteData['AdminPersonStatus'] === 'Approved') {
+            quoteLogger.adminAccept('Quote already approved - preventing duplicate', { 
+                quoteId,
+                adminStatus: quoteData['AdminPersonStatus']
+            }, requestId);
+            
+            quoteLogger.response('Sending already approved page', { 
+                quoteId,
+                processingTime: Date.now() - startTime
+            }, requestId);
+            
+            const statusPage = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Quote Already Approved</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f7fa; }
+                        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
+                        .error-icon { font-size: 48px; margin-bottom: 20px; }
+                        .error-title { color: #dc3545; font-size: 24px; margin-bottom: 15px; }
+                        .error-message { color: #6c757d; font-size: 16px; margin-bottom: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="error-icon">⚠️</div>
+                        <h1>Quote Already Approved</h1>
+                        <p>This quote has already been approved and cannot be approved again.</p>
+                        <p style="color: #6c757d; font-size: 14px;">
+                            If you believe this is an error, please contact the system administrator.
+                        </p>
+                    </div>
+                </body>
+                </html>
+            `;
+            return res.status(400).send(statusPage);
         }
-
-        // 2. FETCH FULL LEAD DATA FROM GOOGLE SHEETS
-        console.log('📊 Fetching lead data from Google Sheets...');
-        const leadId = quoteData.LeadiD || quoteData.LeadId;
-        if (!leadId) {
-            console.error('❌ Lead ID not found in quote data');
-            return res.redirect(`/quote-status?status=error&message=Lead ID not found.`);
-        }
-
-        // First, get the header row to see what columns are available
-        const leadHeaderResponse = await sheets.spreadsheets.values.get({
-            spreadsheetId,
-            range: 'Leads!1:1'
-        });
-        const leadHeaders = leadHeaderResponse.data.values?.[0] || [];
-        console.log('🔍 Available lead columns:', leadHeaders);
 
         const leadData = await findRowAndGetData({
             sheets, spreadsheetId, tab: 'Leads',
-            searchColumn: 'Lead', searchValue: leadId,
-            columnsToFetch: ['CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Area', 'Suburb', 'Rooms', 'Timelline', 'Budget']
+            searchColumn: 'Lead', searchValue: quoteData['LeadID'],
+            columnsToFetch: ['CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Area', 'Suburb', 'Rooms', 'Budget', 'Timelline', 'Specfic Details']
         });
 
-        if (!leadData) {
-            console.error('❌ Lead not found:', leadId);
-            return res.redirect(`/quote-status?status=error&message=Lead data not found.`);
-        }
-
-        console.log('✅ Data fetched successfully:');
-        console.log('  - Quote ID:', quoteId);
-        console.log('  - Lead ID:', leadId);
-        console.log('  - Customer:', leadData.CustomerName, leadData.CustomerEmail);
-        console.log('  - Tradesperson:', quoteData.TradespersonName, quoteData.TradespersonEmail);
-        console.log('  - Total Quote:', quoteData.TotalQuote || quoteData['Total Quote']);
-        
-        // DEBUG: Log all fetched data to identify missing values
-        console.log('🔍 DEBUG - Lead Data:', JSON.stringify(leadData, null, 2));
-        console.log('🔍 DEBUG - Quote Data:', JSON.stringify(quoteData, null, 2));
-
-        // 3. BUILD COMPLETE DATA PAYLOAD FOR PDF GENERATION
-        console.log('🔧 Building complete data payload...');
-        
-        // Parse quote values - prioritize standardized column names with calculated totals
-        const labourRate = parseFloat(quoteData.LabourRate || quoteData['Labour Cost'] || 0);
-        const labourHours = parseFloat(quoteData.LabourHours || quoteData['Labour Hour'] || 0);
-        const labourTotal = parseFloat(quoteData.LabourTotal || (labourRate * labourHours) || 0);
-        const materialsCost = parseFloat(quoteData.MaterialsCost || quoteData['Materials Cost'] || 0);
-        const materialsQuantity = parseFloat(quoteData.MaterialsQuantity || quoteData['Materials Quanitity'] || 0);
-        const materialsTotal = parseFloat(quoteData.MaterialsTotal || (materialsCost * materialsQuantity) || 0);
-        const travelCost = parseFloat(quoteData.TravelCost || quoteData['Travel Cost'] || 0);
-        const travelDistance = parseFloat(quoteData.TravelDistance || quoteData['Travel Distance'] || 0);
-        const travelTotal = parseFloat(quoteData.TravelTotal || (travelCost * travelDistance) || 0);
-        const installationCost = parseFloat(quoteData.InstallationCost || quoteData['Installation Cost'] || 0);
-        const subtotal = parseFloat(quoteData.Subtotal || (labourTotal + materialsTotal + travelTotal + installationCost) || 0);
-        const gst = parseFloat(quoteData.GST || (subtotal * 0.15) || 0);
-        const totalQuote = parseFloat(quoteData.TotalQuote || quoteData['Total Quote'] || 0);
-        
-        console.log('🔍 DEBUG - Parsed quote values:');
-        console.log('  - Labour Rate:', labourRate, 'Hours:', labourHours, 'Total:', labourTotal);
-        console.log('  - Materials Cost:', materialsCost, 'Quantity:', materialsQuantity, 'Total:', materialsTotal);
-        console.log('  - Travel Cost:', travelCost, 'Distance:', travelDistance, 'Total:', travelTotal);
-        console.log('  - Installation Cost:', installationCost);
-        console.log('  - Subtotal:', subtotal, 'GST:', gst, 'Final Total:', totalQuote);
-        
-        // Get tradesperson info with fallbacks (prioritize standardized column names)
-        const tradespersonName = quoteData.TradespersonName || quoteData['TradesPerson Name'] || quoteData['TradePerson Name'] || 'Professional Tradesperson';
-        const tradespersonEmail = quoteData.TradespersonEmail || quoteData['TradePerson Email'] || '';
-        const tradespersonPhone = quoteData.TradespersonPhone || quoteData['TradePerson Phone'] || '';
-        
-        // Get customer info with fallbacks (in case it's stored in quote data)
-        const customerName = leadData.CustomerName || quoteData.CustomerName || 'Valued Customer';
-        const customerEmail = leadData.CustomerEmail || quoteData.CustomerEmail || '';
-        const customerPhone = leadData.CustomerPhone || quoteData.CustomerPhone || '';
-
-        // Parse rooms data
+        // 2. Generate PDF using EXACT SAME logic as quote-submit.js (working system)
+        // Use stored rooms data from quote submission, fallback to lead data
         let rooms = [];
         if (quoteData.Rooms) {
             try {
@@ -221,36 +221,68 @@ export default async function handler(req, res) {
         } else {
             rooms = leadData.Rooms ? JSON.parse(leadData.Rooms) : [];
         }
-
         const totalSqm = rooms.reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0);
+        
+        // Parse quote values using exact schema column names
+        const labourRate = parseFloat(quoteData.LabourRate || 0);
+        const labourHours = parseFloat(quoteData.LabourHours || 0);
+        const materialsCost = parseFloat(quoteData.MaterialsCost || 0);
+        const materialsQuantity = parseFloat(quoteData.MaterialsQuantity || 0);
+        const travelCost = parseFloat(quoteData.TravelCost || 0);
+        const travelDistance = parseFloat(quoteData.TravelDistance || 0);
+        const installationCost = parseFloat(quoteData.InstallationCost || 0);
+        const totalQuote = parseFloat(quoteData.TotalQuote || 0);
+        
+        // Use actual totals from Google Sheets (from quote submission form)
+        const subtotal = parseFloat(quoteData.Subtotal || 0);
+        const gst = parseFloat(quoteData.GST || 0);
+        const finalTotal = parseFloat(quoteData.TotalQuote || 0);
+        
+        console.log('💰 Admin/Approve - Using actual totals from Google Sheets:', { 
+            subtotal, gst, finalTotal, 
+            totalQuote: quoteData.TotalQuote,
+            subtotalRaw: quoteData.Subtotal,
+            gstRaw: quoteData.GST
+        });
+        
+        // Calculate per-room breakdown (same as quote-submit.js)
+        const roomsWithDetails = rooms.map(room => {
+            const roomSqm = parseFloat(room.sqm) || 0;
+            const roomRatio = totalSqm > 0 ? roomSqm / totalSqm : 0;
+            
+            return {
+                name: room.name,
+                dimensions: room.dimensions || room.originalInput,
+                sqm: roomSqm,
+                labourHours: roomRatio * labourHours,
+                labourCost: roomRatio * (labourRate * labourHours),
+                materialsCost: roomRatio * (materialsCost * materialsQuantity)
+            };
+        });
 
-        // Build complete quote data for PDF
-        const completeQuoteData = {
+        // EXACT SAME data structure as quote-submit.js
+        const quoteDataForPdf = {
             quoteId,
-            quoteDate: new Date().toISOString(),
-            validUntil: quoteData.ValidUntil || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-            customerName: leadData.CustomerName,
-            customerEmail: leadData.CustomerEmail,
-            customerPhone: leadData.CustomerPhone,
-            customerAddress: `${leadData.Area || ''}, ${leadData.Suburb || ''}`.trim(),
-            serviceType: leadData.ServiceType,
-            tradespersonName: quoteData.TradespersonName,
-            tradespersonEmail: quoteData.TradespersonEmail,
-            tradespersonPhone: quoteData.TradespersonPhone,
-            tradespersonLicense: 'Licensed Tradesperson',
-            rooms: rooms.map(room => {
-                const roomSqm = parseFloat(room.sqm) || 0;
-                const roomRatio = totalSqm > 0 ? roomSqm / totalSqm : 0;
-                
-                return {
-                    name: room.name,
-                    dimensions: room.dimensions || room.originalInput,
-                    sqm: roomSqm,
-                    labourHours: roomRatio * labourHours,
-                    labourCost: roomRatio * (labourRate * labourHours),
-                    materialsCost: roomRatio * (materialsCost * materialsQuantity)
-                };
+            quoteDate: new Date().toLocaleString('en-NZ', {
+                timeZone: 'Pacific/Auckland',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
             }),
+            validUntil: quoteData.ValidUntil || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('en-NZ'),
+            customerName: quoteData.CustomerName || leadData.CustomerName,
+            customerEmail: quoteData.CustomerEmail || leadData.CustomerEmail,
+            customerPhone: quoteData.CustomerPhone || leadData.CustomerPhone,
+            customerAddress: quoteData.Location || `${leadData.Area || ''}, ${leadData.Suburb || ''}`.trim(),
+            serviceType: quoteData.ServiceType || leadData.ServiceType,
+            tradespersonName: quoteData.TradePersonName || '',
+            tradespersonEmail: quoteData.TradePersonEmail || '',
+            tradespersonPhone: quoteData.TradePersonPhone || '',
+            tradespersonLicense: '',
+            rooms: roomsWithDetails,
+            // EXACT SAME breakdown structure as quote-submit.js
             breakdown: {
                 labourRate: labourRate,
                 labourHours: labourHours,
@@ -264,74 +296,59 @@ export default async function handler(req, res) {
                 installationCost: installationCost,
                 totalSqm: totalSqm
             },
+            // EXACT SAME totals structure as quote-submit.js - using actual values from Google Sheets
             totals: {
                 labour: labourRate * labourHours,
                 materials: materialsCost * materialsQuantity,
                 travel: travelCost * travelDistance,
                 installation: installationCost,
-                subtotal: (labourRate * labourHours) + (materialsCost * materialsQuantity) + (travelCost * travelDistance) + installationCost,
-                gst: ((labourRate * labourHours) + (materialsCost * materialsQuantity) + (travelCost * travelDistance) + installationCost) * 0.15,
-                final: totalQuote
+                subtotal: subtotal,        // From Google Sheets (quote submission form)
+                gst: gst,                  // From Google Sheets (quote submission form)
+                final: finalTotal          // From Google Sheets (quote submission form)
             }
         };
 
-        console.log('✅ Complete quote data built:');
-        console.log('  - Customer:', completeQuoteData.customerName, completeQuoteData.customerEmail);
-        console.log('  - Service:', completeQuoteData.serviceType);
-        console.log('  - Total:', completeQuoteData.totals.final);
-        console.log('  - Rooms:', completeQuoteData.rooms.length);
-
-        // 4. GENERATE PDF WITH REAL DATA
-        console.log('📄 Generating PDF with real data...');
-        let pdfBuffer;
+        // 3. Generate PDF/HTML with our mobile-optimized fallback system
+        let pdfBuffer = null;
+        let htmlQuote = null;
+        
+        console.log('📊 Quote data for PDF generation:', JSON.stringify(quoteDataForPdf, null, 2));
+        
         try {
             // Try Adobe PDF API first
             pdfBuffer = await generateQuotePDF(completeQuoteData);
             console.log('✅ PDF generated successfully using Adobe API');
         } catch (pdfError) {
-            console.error('❌ Adobe PDF generation failed:', pdfError.message);
-            console.log('🔄 Falling back to alternative PDF generation...');
-            
-            // Fallback: Generate HTML and convert to PDF using alternative method
+            console.error("❌ Admin PDF Generation failed:", pdfError);
+            console.error("❌ PDF Error details:", pdfError.message, pdfError.stack);
             try {
-                const html = generateQuoteHTML(completeQuoteData);
-                // Use a simple HTML-to-PDF conversion or return HTML for now
-                pdfBuffer = Buffer.from(html, 'utf-8');
-                console.log('✅ Fallback PDF generation completed');
-            } catch (fallbackError) {
-                console.error('❌ Fallback PDF generation failed:', fallbackError.message);
-                throw new Error('PDF generation failed: ' + fallbackError.message);
+                htmlQuote = generateQuoteHTML(quoteDataForPdf);
+                console.log(`✅ HTML backup generated for approved quote: ${quoteId}`);
+            } catch (htmlError) {
+                console.error("❌ Admin HTML Generation also failed:", htmlError);
+                console.error("❌ HTML Error details:", htmlError.message, htmlError.stack);
+                console.error("❌ Quote data that failed:", JSON.stringify(quoteDataForPdf, null, 2));
+                return res.redirect(`/quote-status?status=error&message=Failed to generate quote document.`);
             }
         }
 
-        // 5. UPDATE QUOTE STATUS IN GOOGLE SHEETS
-        console.log('📝 Updating quote status in Google Sheets...');
-        await sheets.spreadsheets.values.update({
-            spreadsheetId,
-            range: `Quotes!A${quoteData.rowIndex}`,
-            valueInputOption: 'USER_ENTERED',
-            requestBody: { 
-                values: [[
-                    new Date().toISOString(), // Update timestamp
-                    quoteId,
-                    quoteData.LeadiD || quoteData.LeadId,
-                    quoteData.TradespersonName,
-                    quoteData.TradespersonEmail,
-                    quoteData.TradespersonPhone,
-                    totalQuote,
-                    quoteData.Notes || '',
-                    quoteData.ValidUntil || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-                    'Approved', // Admin Status
-                    leadData.CustomerName,
-                    leadData.CustomerEmail,
-                    leadData.CustomerPhone,
-                    leadData.ServiceType,
-                    `${leadData.Area || ''}, ${leadData.Suburb || ''}`.trim(),
-                    leadData.Timelline || 'Not specified',
-                    leadData.Budget || 'Not specified'
-                ]]
-            },
-        });
+        // 4. Create attachment - PDF preferred, HTML mobile-friendly backup
+        let attachment;
+        if (pdfBuffer) {
+            attachment = {
+                filename: `Quote_${quoteId}.pdf`,
+                content: pdfBuffer,
+                contentType: 'application/pdf'
+            };
+        } else if (htmlQuote) {
+            attachment = {
+                filename: `Quote_${quoteId}.html`,
+                content: Buffer.from(htmlQuote, 'utf8'),
+                contentType: 'text/html'
+            };
+        } else {
+            return res.redirect(`/quote-status?status=error&message=Failed to generate quote attachment.`);
+        }
 
         // 6. SEND CUSTOMER EMAIL WITH PDF ATTACHMENT
         console.log('📧 Sending customer email with PDF attachment...');
@@ -356,241 +373,246 @@ export default async function handler(req, res) {
         const declineLink = generateCustomerDecisionLink('decline', quoteId);
         const viewLink = generateQuoteViewLink(quoteId);
 
-        const customerEmailObj = {
-            to: customerEmail,
-            cc: process.env.ADMIN_EMAIL, // Always CC admin for recordkeeping
-            subject: `🎯 Your Quote for ${leadData.ServiceType} - $${totalQuote.toFixed(2)} is Ready!`,
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
-                    <div style="background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
-                        
-                        <!-- Header -->
-                        <div style="text-align: center; margin-bottom: 40px;">
-                            <div style="display: inline-block; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); padding: 20px; border-radius: 50%; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);">
-                                <div style="font-size: 48px; color: white;">📋</div>
-                            </div>
-                            <h1 style="color: #007bff; margin: 0; font-size: 32px; font-weight: bold;">Your Quote is Ready!</h1>
-                            <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">Professional quote for ${leadData.ServiceType}</p>
-                        </div>
-
-                        <!-- Quote Summary -->
-                        <div style="background: #e8f4fd; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #b8daff;">
-                            <h3 style="color: #0066cc; margin: 0 0 20px 0; font-size: 20px;">📊 Quote Summary</h3>
-                            <div style="background: white; padding: 20px; border-radius: 8px;">
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                                    <div>
-                                        <h4 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">👤 Customer Information</h4>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${customerName}</p>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${customerEmail}</p>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Phone:</strong> ${customerPhone}</p>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Location:</strong> ${leadData.Area}, ${leadData.Suburb}</p>
-                                    </div>
-                                    <div>
-                                        <h4 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">👷‍♂️ Tradesperson Information</h4>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${tradespersonName}</p>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${tradespersonEmail}</p>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Phone:</strong> ${tradespersonPhone}</p>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>License:</strong> Licensed Tradesperson</p>
-                                    </div>
-                                </div>
-                                <div style="border-top: 1px solid #e9ecef; padding-top: 20px;">
-                                    <h4 style="color: #495057; margin: 0 0 15px 0; font-size: 16px;">💰 Detailed Quote Breakdown</h4>
-                                    
-                                    <!-- Detailed Breakdown Table -->
-                                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                                        <table style="width: 100%; border-collapse: collapse;">
-                                            <thead>
-                                                <tr style="background: #e9ecef;">
-                                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: bold;">Item</th>
-                                                    <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: bold;">Rate</th>
-                                                    <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: bold;">Quantity</th>
-                                                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6; font-weight: bold;">Total</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr>
-                                                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">🔨 Labour & Installation</td>
-                                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">$${labourRate.toFixed(2)}/hr</td>
-                                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">${labourHours.toFixed(1)} hrs</td>
-                                                    <td style="padding: 12px; text-align: right; border-bottom: 1px solid #dee2e6; font-weight: bold;">$${labourTotal.toFixed(2)}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">🧱 Materials & Equipment</td>
-                                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">$${materialsCost.toFixed(2)}/unit</td>
-                                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">${materialsQuantity.toFixed(0)} units</td>
-                                                    <td style="padding: 12px; text-align: right; border-bottom: 1px solid #dee2e6; font-weight: bold;">$${materialsTotal.toFixed(2)}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">🚗 Travel & Transport</td>
-                                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">$${travelCost.toFixed(2)}/km</td>
-                                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">${travelDistance.toFixed(0)} km</td>
-                                                    <td style="padding: 12px; text-align: right; border-bottom: 1px solid #dee2e6; font-weight: bold;">$${travelTotal.toFixed(2)}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">⚙️ Installation Setup</td>
-                                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">-</td>
-                                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">1</td>
-                                                    <td style="padding: 12px; text-align: right; border-bottom: 1px solid #dee2e6; font-weight: bold;">$${installationCost.toFixed(2)}</td>
-                                                </tr>
-                                                <tr style="background: #e9ecef; font-weight: bold;">
-                                                    <td style="padding: 12px; border-bottom: 2px solid #dee2e6;">Subtotal</td>
-                                                    <td style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">-</td>
-                                                    <td style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">-</td>
-                                                    <td style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">$${subtotal.toFixed(2)}</td>
-                                                </tr>
-                                                <tr style="background: #e9ecef; font-weight: bold;">
-                                                    <td style="padding: 12px; border-bottom: 2px solid #dee2e6;">GST (15%)</td>
-                                                    <td style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">-</td>
-                                                    <td style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">-</td>
-                                                    <td style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">$${gst.toFixed(2)}</td>
-                                                </tr>
-                                                <tr style="background: #28a745; color: white; font-weight: bold;">
-                                                    <td style="padding: 15px; font-size: 18px;">TOTAL QUOTE</td>
-                                                    <td style="padding: 15px; text-align: center; font-size: 18px;">-</td>
-                                                    <td style="padding: 15px; text-align: center; font-size: 18px;">-</td>
-                                                    <td style="padding: 15px; text-align: right; font-size: 18px;">$${totalQuote.toFixed(2)}</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Decision Buttons -->
-                        <div style="text-align: center; margin: 30px 0;">
-                            <h3 style="color: #495057; margin: 0 0 20px 0; font-size: 20px;">🎯 Make Your Decision</h3>
-                            <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
-                                <a href="${acceptLink}" style="display: inline-block; background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">✅ Accept Quote</a>
-                                <a href="${declineLink}" style="display: inline-block; background: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">❌ Decline Quote</a>
-                            </div>
-                            <p style="color: #6c757d; font-size: 14px; margin-top: 15px;">
-                                <a href="${viewLink}" style="color: #007bff; text-decoration: none;">📄 View Full Quote Details</a>
-                            </p>
-                        </div>
-
-                        <!-- Footer -->
-                        <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e9ecef;">
-                            <p style="color: #6c757d; font-size: 14px; margin: 0 0 10px 0;">
-                                This quote is valid until ${new Date(completeQuoteData.validUntil).toLocaleDateString('en-NZ')}
-                            </p>
-                            <p style="color: #495057; font-weight: bold; margin: 0;">
-                                🏠 Kiwi Trade Team
-                            </p>
-                        </div>
-
-                    </div>
+        // 6. Send CUSTOMER-SPECIFIC quote email (different tracking journey)
+        // Always CC the super admin for recordkeeping
+        const customerEmailOptions = {
+          to: leadData['CustomerEmail'],
+          cc: process.env.ADMIN_EMAIL, // Always CC super admin
+          subject: `🎯 Your Quote for ${leadData['ServiceType']} - $${finalTotal.toFixed(2)} is Ready!`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
+              <div style="background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                
+                <!-- Header with Approval Badge -->
+                <div style="text-align: center; margin-bottom: 40px;">
+                  <div style="display: inline-block; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 20px; border-radius: 50%; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);">
+                    <div style="font-size: 48px; color: white;">✅</div>
+                  </div>
+                  <h1 style="color: #28a745; margin: 0; font-size: 32px; font-weight: bold;">Quote Approved!</h1>
+                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">Your professional quote is ready for review</p>
                 </div>
-            `,
-            attachments: [
-                {
-                    filename: `Quote-${quoteId}.pdf`,
-                    content: pdfBuffer,
-                    contentType: 'application/pdf'
-                }
-            ]
-        };
 
-        await sendEmail(customerEmailObj);
-        console.log('✅ Customer email sent successfully with PDF attachment');
-
-        // 7. SEND ADMIN CONFIRMATION EMAIL
-        console.log('📧 Sending admin confirmation email...');
-        const adminEmail = {
-            to: process.env.ADMIN_EMAIL,
-            subject: `✅ Quote Approved: ${leadData.ServiceType} for ${customerName} - $${totalQuote.toFixed(2)}`,
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
-                    <div style="background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
-                        
-                        <!-- Header -->
-                        <div style="text-align: center; margin-bottom: 40px;">
-                            <div style="display: inline-block; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 20px; border-radius: 50%; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);">
-                                <div style="font-size: 48px; color: white;">✅</div>
-                            </div>
-                            <h1 style="color: #28a745; margin: 0; font-size: 32px; font-weight: bold;">Quote Approved!</h1>
-                            <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">Customer has been notified and can now make their decision</p>
-                        </div>
-
-                        <!-- Approval Summary -->
-                        <div style="background: #d4edda; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #c3e6cb;">
-                            <h3 style="color: #155724; margin: 0 0 20px 0; font-size: 20px;">📋 Approval Summary</h3>
-                            <div style="background: white; padding: 20px; border-radius: 8px;">
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                                    <div>
-                                        <h4 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">👤 Customer Details</h4>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${customerName}</p>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${customerEmail}</p>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Service:</strong> ${leadData.ServiceType}</p>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Location:</strong> ${leadData.Area}, ${leadData.Suburb}</p>
-                                    </div>
-                                    <div>
-                                        <h4 style="color: #495057; margin: 0 0 10px 0; font-size: 16px;">👷‍♂️ Tradesperson Details</h4>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${tradespersonName}</p>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${tradespersonEmail}</p>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Phone:</strong> ${tradespersonPhone}</p>
-                                        <p style="margin: 5px 0; color: #495057;"><strong>Quote Total:</strong> <span style="color: #28a745; font-weight: bold;">$${totalQuote.toFixed(2)}</span></p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Next Steps -->
-                        <div style="background: #e8f4fd; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #b8daff;">
-                            <h3 style="color: #0066cc; margin: 0 0 15px 0; font-size: 20px;">📝 Next Steps</h3>
-                            <div style="display: flex; align-items: flex-start; margin: 15px 0;">
-                                <div style="background: #0066cc; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0; font-size: 12px;">1</div>
-                                <div>
-                                    <strong style="color: #0066cc;">Customer Decision</strong>
-                                    <p style="margin: 5px 0 0 0; color: #495057;">Customer will receive email with accept/decline options</p>
-                                </div>
-                            </div>
-                            <div style="display: flex; align-items: flex-start; margin: 15px 0;">
-                                <div style="background: #0066cc; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0; font-size: 12px;">2</div>
-                                <div>
-                                    <strong style="color: #0066cc;">Notification</strong>
-                                    <p style="margin: 5px 0 0 0; color: #495057;">All parties will be notified of the customer's decision</p>
-                                </div>
-                            </div>
-                            <div style="display: flex; align-items: flex-start; margin: 15px 0;">
-                                <div style="background: #0066cc; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0; font-size: 12px;">3</div>
-                                <div>
-                                    <strong style="color: #0066cc;">Project Execution</strong>
-                                    <p style="margin: 5px 0 0 0; color: #495057;">If accepted, tradesperson will contact customer to begin work</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Footer -->
-                        <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e9ecef;">
-                            <p style="color: #28a745; font-size: 16px; font-weight: bold; margin: 0 0 10px 0;">
-                                ✅ Quote approval process completed successfully!
-                            </p>
-                            <p style="color: #6c757d; font-size: 14px; margin: 0;">
-                                <strong>Kiwi Trade Admin System</strong> - Automated Excellence
-                            </p>
-                        </div>
-
+                <!-- Customer Journey Progress -->
+                <div style="margin: 30px 0;">
+                  <h3 style="color: #495057; margin: 0 0 20px 0; font-size: 20px;">📋 Your Quote Journey</h3>
+                  
+                  <!-- Step 1: Lead Submitted -->
+                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
+                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white;">✓</div>
+                    <div>
+                      <strong style="color: #155724; font-size: 16px;">Lead Submitted</strong>
+                      <p style="margin: 5px 0 0 0; color: #155724;">Your project requirements were received and processed.</p>
                     </div>
+                  </div>
+                  
+                  <!-- Step 2: Quote Prepared -->
+                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
+                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white;">✓</div>
+                    <div>
+                      <strong style="color: #155724; font-size: 16px;">Quote Prepared</strong>
+                      <p style="margin: 5px 0 0 0; color: #155724;">Professional tradesperson created your detailed quote.</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Step 3: Admin Approval -->
+                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745; position: relative;">
+                    <div style="position: absolute; top: 0; right: 0; background: #ffc107; color: #856404; padding: 5px 10px; font-size: 12px; font-weight: bold; border-bottom-left-radius: 8px;">JUST COMPLETED!</div>
+                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white;">✓</div>
+                    <div>
+                      <strong style="color: #155724; font-size: 16px;">Quote Approved & Sent! 🎉</strong>
+                      <p style="margin: 5px 0 0 0; color: #155724;">Admin reviewed and approved - now ready for your decision!</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Step 4: Your Decision -->
+                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #ffc107; color: #856404;">⏳</div>
+                    <div>
+                      <strong style="color: #856404; font-size: 16px;">Your Decision - Awaiting Response</strong>
+                      <p style="margin: 5px 0 0 0; color: #856404;">Review the quote and accept or decline when ready.</p>
+                    </div>
+                  </div>
                 </div>
-            `
+
+                <!-- Quote Details -->
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <h3 style="color: #34495e; margin-top: 0;">📋 Quote Details:</h3>
+                  <p><strong>Quote ID:</strong> ${quoteId}</p>
+                  <p><strong>Service:</strong> ${leadData['ServiceType']}</p>
+                  <p><strong>Tradesperson:</strong> ${quoteDataForPdf.tradespersonName}</p>
+                  <p><strong>Total Amount:</strong> $${finalTotal.toFixed(2)}</p>
+                  <p><strong>Your Budget:</strong> ${leadData['Budget'] || 'Not specified'}</p>
+                  <p><strong>Timeline:</strong> ${leadData['Timelline'] || leadData['Timeline'] || 'Not specified'}</p>
+                  <p><strong>Location:</strong> ${leadData['Area']}, ${leadData['Suburb']}</p>
+                  <p><strong>Valid Until:</strong> ${new Date(quoteDataForPdf.validUntil).toLocaleDateString('en-NZ')}</p>
+                </div>
+
+                <!-- Quote Breakdown -->
+                <div style="background: #e8f4f8; padding: 20px; border-radius: 8px; margin: 20px 0; border: 2px solid #b8daff;">
+                  <h3 style="color: #0066cc; margin-top: 0;">💰 Quote Breakdown:</h3>
+                  <div style="background: white; padding: 15px; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                      <span><strong>Labour & Installation:</strong></span>
+                      <span>$${quoteDataForPdf.totals.labour.toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                      <span><strong>Materials & Equipment:</strong></span>
+                      <span>$${quoteDataForPdf.totals.materials.toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                      <span><strong>Travel & Transport:</strong></span>
+                      <span>$${quoteDataForPdf.totals.travel.toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                      <span><strong>Installation:</strong></span>
+                      <span>$${quoteDataForPdf.totals.installation.toFixed(2)}</span>
+                    </div>
+                    <hr style="margin: 15px 0; border: none; border-top: 1px solid #dee2e6;">
+                    <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                      <span><strong>Subtotal (excl. GST):</strong></span>
+                      <span>$${quoteDataForPdf.totals.subtotal.toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                      <span><strong>GST (15%):</strong></span>
+                      <span>$${quoteDataForPdf.totals.gst.toFixed(2)}</span>
+                    </div>
+                    <hr style="margin: 15px 0; border: none; border-top: 2px solid #007bff;">
+                    <div style="display: flex; justify-content: space-between; margin: 8px 0; font-size: 18px; font-weight: bold; color: #007bff;">
+                      <span><strong>TOTAL (incl. GST):</strong></span>
+                      <span>$${quoteDataForPdf.totals.final.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Quick Decision Buttons -->
+                <div style="background-color: #e8f4f8; border-radius: 10px; padding: 25px; text-align: center; margin: 20px 0; border: 2px solid #b8daff;">
+                  <h3 style="color: #0066cc; margin: 0 0 15px 0; font-size: 20px;">🎯 Make Your Decision</h3>
+                  <p style="color: #495057; margin: 0 0 20px 0;">Review the attached PDF and choose your next step:</p>
+                  
+                  <div style="margin: 20px 0;">
+                    <a href="${acceptLink}" style="display: inline-block; background-color: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; margin: 0 10px;">✅ ACCEPT QUOTE</a>
+                    <a href="${declineLink}" style="display: inline-block; background-color: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; margin: 0 10px;">❌ DECLINE QUOTE</a>
+                  </div>
+                  
+                  <p style="color: #6c757d; font-size: 14px; margin: 15px 0 0 0; font-style: italic;">Secure one-click decision buttons</p>
+                </div>
+
+                <!-- PDF Attachment Notice -->
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 10px; margin: 30px 0; text-align: center;">
+                  <h3 style="margin: 0 0 10px 0; font-size: 22px;">📎 Professional PDF Attached</h3>
+                  <p style="margin: 0; font-size: 16px; opacity: 0.9;">Same detailed quote document that your tradesperson and admin received</p>
+                </div>
+
+                <!-- Online Quote Viewer -->
+                <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                  <h4 style="color: #495057; margin: 0 0 10px 0;">🌐 Alternative: View Online</h4>
+                  <p style="margin: 0 0 15px 0; color: #6c757d;">You can also view your quote in your browser:</p>
+                  <a href="${viewQuoteLink}" style="color: #007bff; word-break: break-all;">${viewQuoteLink}</a>
+                </div>
+
+                <!-- Contact Information -->
+                <div style="background-color: #e8f5e8; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                  <h4 style="color: #27ae60; margin: 0 0 10px 0;">👷‍♂️ Your Tradesperson</h4>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${quoteDataForPdf.tradespersonName}</p>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${quoteDataForPdf.tradespersonEmail}</p>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Phone:</strong> ${quoteDataForPdf.tradespersonPhone}</p>
+                  <p style="margin: 15px 0 0 0;">
+                    <a href="mailto:${quoteDataForPdf.tradespersonEmail}" style="display: inline-block; background: #27ae60; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">📧 Contact Tradesperson</a>
+                  </p>
+                </div>
+
+                <!-- Footer -->
+                <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+                  <p style="color: #28a745; font-size: 16px; font-weight: bold; margin: 0 0 10px 0;">
+                    🎉 Your quote is ready - decision time!
+                  </p>
+                  <p style="color: #6c757d; font-size: 14px; margin: 0;">
+                    <strong>Kiwi Trade Team</strong> - Professional service, every time
+                  </p>
+                </div>
+
+              </div>
+            </div>
+          `,
+          attachments: [attachment]
         };
+        
+        quoteLogger.email('Sending customer quote email', { 
+            to: customerEmailOptions.to,
+            subject: customerEmailOptions.subject,
+            hasAttachment: !!customerEmailOptions.attachments
+        }, requestId);
+        
+        await sendEmail(customerEmailOptions);
+        quoteLogger.email('Customer quote email sent successfully', { 
+            customerEmail: leadData['CustomerEmail'],
+            hasAttachment: !!customerEmailOptions.attachments
+        }, requestId);
 
-        await sendEmail(adminEmail);
-        console.log('✅ Admin confirmation email sent successfully');
+        // 5. Update Sheet Status to final using correct schema column names
+        quoteLogger.sheets('Updating Google Sheets with approval status', { quoteId }, requestId);
+        
+        const headerResponse = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Quotes!A1:AJ1' });
+        const header = headerResponse.data.values[0];
+        // Use new unified system for approval
+        const lead = await getLeadById(quoteData.LeadID);
+        if (!lead) {
+            throw new Error('Lead not found for approval');
+        }
 
-        console.log('🎉 ADMIN APPROVAL COMPLETED SUCCESSFULLY!');
-        console.log('  - Quote ID:', quoteId);
-        console.log('  - Customer:', customerName, customerEmail);
-        console.log('  - Tradesperson:', tradespersonName, tradespersonEmail);
-        console.log('  - Total:', totalQuote);
-        console.log('  - PDF generated and attached');
-        console.log('  - All emails sent');
+        const approvedRow = buildQuoteRow({
+            lead,
+            quoteId: quoteData.QuoteID,
+            tradePersonName: quoteData.TradePersonName || '',
+            tradePersonEmail: quoteData.TradePersonEmail || '',
+            tradePersonPhone: quoteData.TradePersonPhone || '',
+            body: {
+                labourRate: quoteData.LabourRate || '',
+                labourHours: quoteData.LabourHours || '',
+                labourTotal: quoteData.LabourTotal || '',
+                materialsCost: quoteData.MaterialsCost || '',
+                materialsQuantity: quoteData.MaterialsQuantity || '',
+                materialsTotal: quoteData.MaterialsTotal || '',
+                travelCost: quoteData.TravelCost || '',
+                travelDistance: quoteData.TravelDistance || '',
+                travelTotal: quoteData.TravelTotal || '',
+                installationCost: quoteData.InstallationCost || '',
+                subtotal: quoteData.Subtotal || '',
+                gst: quoteData.GST || '',
+                totalQuote: quoteData.TotalQuote || '',
+                notes: quoteData.Notes || '',
+                validUntil: quoteData.ValidUnitl || ''
+            },
+            mode: 'accepted'
+        });
 
-        return res.redirect(`/quote-status?status=success&message=Quote approved successfully! Customer has been notified.`);
+        // Override with admin approval status
+        approvedRow.AdminPersonStatus = 'Approved';
+        approvedRow.CustomerStatus = 'Quote Sent';
+        approvedRow.Decison = 'Admin Approved';
+
+        quoteLogger.dataFlow('Preparing Google Sheets update with unified system', { 
+            quoteId: quoteData.QuoteID,
+            leadId: quoteData.LeadID
+        }, requestId);
+
+        const result = await upsertQuoteRow(quoteData.QuoteID, approvedRow, { req, caller: 'admin-approve' });
+        
+        quoteLogger.sheets('Google Sheets updated with approval status', null, requestId);
+        
+        quoteLogger.response('Redirecting to success page', { 
+            quoteId,
+            processingTime: Date.now() - startTime
+        }, requestId);
+        
+        return res.redirect(`/quote-status?status=success&message=Quote approved and sent to the customer!`);
 
     } catch (error) {
-        console.error('❌ ADMIN APPROVAL ERROR:', error);
-        return res.redirect(`/quote-status?status=error&message=An error occurred during approval: ${error.message}`);
+        quoteLogger.error('Quote approval error', error, requestId);
+        quoteLogger.response('Redirecting to error page', { 
+            error: error.message,
+            processingTime: Date.now() - startTime
+        }, requestId);
+        return res.redirect(`/quote-status?status=error&message=An internal server error occurred during quote approval.`);
     }
 }

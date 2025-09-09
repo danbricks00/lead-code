@@ -1,88 +1,112 @@
-import { getGoogleSheetsClient, getSpreadsheetId } from "../../lib/googleSheets.js";
+import { getGoogleSheetsClient, getSpreadsheetId } from '../../lib/googleSheets.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
-        return res.status(405).json({ success: false, error: 'Method not allowed' });
+        return res.status(405).json({ success: false, error: 'Method Not Allowed' });
+    }
+
+    const { leadId } = req.body;
+    console.log('🔍 GET-LEAD-BY-ID: Fetching lead data for ID:', leadId);
+
+    if (!leadId) {
+        return res.status(400).json({ success: false, error: 'Lead ID is required' });
     }
 
     try {
-        const { leadId } = req.body;
-        
-        if (!leadId) {
-            return res.status(400).json({ success: false, error: 'Lead ID is required' });
-        }
-
-        console.log('🔍 Fetching lead data for ID:', leadId);
-
         const sheets = await getGoogleSheetsClient();
         const spreadsheetId = getSpreadsheetId();
 
-        // Get the Leads sheet data
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId,
-            range: 'Leads!A:Z'
-        });
-
+        // Get all data from the "Leads" tab
+        const range = 'Leads!A:Z';
+        const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
         const rows = response.data.values;
+        
         if (!rows || rows.length < 2) {
             return res.status(404).json({ success: false, error: 'No leads found' });
         }
-
+        
         const header = rows[0];
-        console.log('🔍 Available lead columns:', header);
-
-        // Find the lead row
         const leadIndex = header.indexOf('Lead');
+        
         if (leadIndex === -1) {
-            return res.status(500).json({ success: false, error: 'Lead column not found' });
+            return res.status(500).json({ success: false, error: 'Lead column not found in sheet' });
         }
-
-        const leadRow = rows.find(row => row[leadIndex] === leadId);
-        if (!leadRow) {
+        
+        // Find the row with the matching lead ID
+        const dataRow = rows.find(row => row[leadIndex] === leadId);
+        
+        if (!dataRow) {
             return res.status(404).json({ success: false, error: 'Lead not found' });
         }
-
-        // Build lead data object
-        const leadData = {
+        
+        // Build lead object by mapping headers to values
+        const lead = {
             leadId: leadId
         };
-
-        // Map all the columns to the lead data
-        header.forEach((columnName, index) => {
-            if (columnName && leadRow[index]) {
-                // Convert column names to camelCase for consistency
-                const camelCaseKey = columnName
-                    .toLowerCase()
-                    .replace(/\s+/g, '')
-                    .replace(/^[a-z]/, (match) => match.toUpperCase());
-                
-                leadData[camelCaseKey] = leadRow[index];
-                
-                // Also keep original column name for compatibility
-                leadData[columnName] = leadRow[index];
+        
+        header.forEach((headerName, index) => {
+            if (headerName && dataRow[index]) {
+                // Map column names to expected field names
+                switch (headerName) {
+                    case 'CustomerName':
+                        lead.customerName = dataRow[index];
+                        break;
+                    case 'CustomerEmail':
+                        lead.customerEmail = dataRow[index];
+                        break;
+                    case 'CustomerPhone':
+                        lead.customerPhone = dataRow[index];
+                        break;
+                    case 'ServiceType':
+                        lead.selectedService = dataRow[index];
+                        break;
+                    case 'Area':
+                        lead.area = dataRow[index];
+                        break;
+                    case 'Suburb':
+                        lead.suburb = dataRow[index];
+                        break;
+                    case 'Budget':
+                        lead.budget = dataRow[index];
+                        break;
+                    case 'Timelline':
+                        lead.timeline = dataRow[index];
+                        break;
+                    case 'Specfic Details':
+                        lead.specificDetails = dataRow[index];
+                        break;
+                    case 'Rooms':
+                        lead.rooms = dataRow[index];
+                        lead.Rooms = dataRow[index]; // Also store with capital R for consistency
+                        break;
+                    case 'TotalSqm':
+                        lead.totalSqm = dataRow[index];
+                        break;
+                    default:
+                        // Store other fields as-is
+                        lead[headerName] = dataRow[index];
+                        break;
+                }
             }
         });
-
-        console.log('✅ Lead data retrieved:', {
-            leadId: leadData.leadId,
-            customerName: leadData.CustomerName,
-            customerEmail: leadData.CustomerEmail,
-            serviceType: leadData.ServiceType,
-            area: leadData.Area,
-            suburb: leadData.Suburb,
-            rooms: leadData.Rooms ? 'Present' : 'Not present'
-        });
-
-        return res.status(200).json({
-            success: true,
-            lead: leadData
+        
+        // Set default values for missing fields
+        lead.location = lead.area ? `${lead.area}, ${lead.suburb}` : 'Auckland';
+        lead.projectDetails = lead.specificDetails || '';
+        lead.projectSize = lead.totalSqm ? `${lead.totalSqm} sqm` : '';
+        
+        console.log('✅ GET-LEAD-BY-ID: Lead data retrieved successfully:', lead);
+        
+        res.status(200).json({ 
+            success: true, 
+            lead: lead 
         });
 
     } catch (error) {
-        console.error('❌ Error fetching lead data:', error);
-        return res.status(500).json({
-            success: false,
-            error: error.message
+        console.error('❌ GET-LEAD-BY-ID: Error fetching lead data:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Failed to retrieve lead data from Google Sheets.' 
         });
     }
 }

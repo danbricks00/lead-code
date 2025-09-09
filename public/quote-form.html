@@ -199,38 +199,6 @@
         <div class="form-group">
             <h3>🏠 Room Details & Custom Pricing</h3>
             <div id="roomDetailsContainer">
-                <!-- Room Input Section -->
-                <div class="room-input-section" style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #28a745;">
-                    <h4 style="margin-top: 0; color: #155724;">📐 Add Room Dimensions</h4>
-                    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
-                        <strong>💡 Instructions:</strong> Add each room with its dimensions. The system will automatically calculate square meters and apply pricing.
-                    </p>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 15px; align-items: end; margin-bottom: 15px;">
-                        <div>
-                            <label for="roomNameInput">Room Name:</label>
-                            <input type="text" id="roomNameInput" placeholder="e.g., Kitchen, Bathroom" style="width: 100%;">
-                        </div>
-                        <div>
-                            <label for="roomLengthInput">Length (m):</label>
-                            <input type="number" id="roomLengthInput" step="0.1" min="0" placeholder="e.g., 3.5" style="width: 100%;">
-                        </div>
-                        <div>
-                            <label for="roomWidthInput">Width (m):</label>
-                            <input type="number" id="roomWidthInput" step="0.1" min="0" placeholder="e.g., 2.8" style="width: 100%;">
-                        </div>
-                        <div>
-                            <button type="button" id="addRoomBtn" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">
-                                ➕ Add Room
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div id="roomsList" style="margin-top: 20px;">
-                        <!-- Rooms will be dynamically added here -->
-                    </div>
-                </div>
-                
                 <div class="room-details-section">
                     <h4>Room Type Multipliers (Customizable)</h4>
                     <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
@@ -343,7 +311,7 @@
                     </div>
                     <div class="breakdown-col">
                         <label for="materialSQM">Total SQM:</label>
-                        <input type="number" id="materialSQM" name="materialSQM" step="0.1" min="0" placeholder="e.g., 25.5" readonly style="background-color: #f8f9fa; border-color: #6c757d; color: #495057; font-weight: 600;">
+                        <input type="number" id="materialSQM" name="materialSQM" step="0.1" min="0" placeholder="e.g., 25.5">
                         <small style="color: #666;">Auto-calculated from room areas</small>
                     </div>
                     <div class="breakdown-col">
@@ -408,7 +376,7 @@
             <textarea id="additionalNotes" name="additionalNotes" rows="4"></textarea>
         </div>
 
-                        <button type="submit" id="submitButton">Submit Quote</button>
+                        <button type="submit" id="submitButton">Submit Quote to Customer</button>
     </form>
 
     <script>
@@ -696,49 +664,6 @@
                     return;
                 }
                 
-                // Add summary table at the top
-                let summaryHTML = `
-                    <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #28a745;">
-                        <h4 style="margin: 0 0 15px 0; color: #155724;">📊 Room Summary</h4>
-                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                            <thead>
-                                <tr style="background: #d4edda;">
-                                    <th style="padding: 8px; text-align: left; border: 1px solid #c3e6cb;">Room Name</th>
-                                    <th style="padding: 8px; text-align: center; border: 1px solid #c3e6cb;">Customer Input</th>
-                                    <th style="padding: 8px; text-align: center; border: 1px solid #c3e6cb;">Dimensions</th>
-                                    <th style="padding: 8px; text-align: right; border: 1px solid #c3e6cb;">Square Meters</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                `;
-                
-                rooms.forEach((room, index) => {
-                    const roomSqm = parseFloat(room.sqm) || 0;
-                    const roomDimensions = room.dimensions || 'N/A';
-                    const originalInput = room.originalInput || 'N/A';
-                    
-                    summaryHTML += `
-                        <tr style="background: ${index % 2 === 0 ? '#f8f9fa' : 'white'};">
-                            <td style="padding: 8px; border: 1px solid #c3e6cb; font-weight: bold;">${room.name || `Room ${index + 1}`}</td>
-                            <td style="padding: 8px; border: 1px solid #c3e6cb; text-align: center; font-family: monospace;">${originalInput}</td>
-                            <td style="padding: 8px; border: 1px solid #c3e6cb; text-align: center; font-family: monospace;">${roomDimensions}</td>
-                            <td style="padding: 8px; border: 1px solid #c3e6cb; text-align: right; font-weight: bold; color: #28a745;">${roomSqm.toFixed(1)} m²</td>
-                        </tr>
-                    `;
-                });
-                
-                summaryHTML += `
-                            </tbody>
-                            <tfoot>
-                                <tr style="background: #28a745; color: white; font-weight: bold;">
-                                    <td style="padding: 10px; border: 1px solid #1e7e34;" colspan="3">TOTAL AREA</td>
-                                    <td style="padding: 10px; border: 1px solid #1e7e34; text-align: right; font-size: 16px;">${totalSqm.toFixed(1)} m²</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                `;
-                
                 let roomsHTML = '';
                 let totalSqm = 0;
                 let totalLabourHours = 0;
@@ -797,16 +722,8 @@
                             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; align-items: start;">
                                 <div>
                                     <h4 style="margin: 0 0 10px 0; color: #333;">${roomName}</h4>
-                                    <div style="background: #f8f9fa; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
-                                        <div style="font-size: 12px; color: #666; margin-bottom: 4px;">
-                                            <strong>Customer Input:</strong> ${room.originalInput || roomDimensions}
-                                        </div>
-                                        <div style="font-size: 12px; color: #495057;">
-                                            <strong>Parsed:</strong> ${roomDimensions}
-                                        </div>
-                                    </div>
-                                    <p style="margin: 5px 0 0 0; color: #28a745; font-weight: bold; font-size: 16px;">${roomSqm.toFixed(1)} m²</p>
-                                    ${room.format === 'unparseable' ? '<p style="margin: 5px 0 0 0; color: #dc3545; font-size: 12px;">⚠️ Could not parse dimensions</p>' : ''}
+                                    <p style="margin: 0; color: #666; font-size: 14px;">${roomDimensions}</p>
+                                    <p style="margin: 5px 0 0 0; color: #28a745; font-weight: bold;">${roomSqm.toFixed(3)} m²</p>
                                 </div>
                                 
                                 <div>
@@ -899,23 +816,19 @@
                                     <div style="margin-top: 10px; font-size: 12px; color: #666;">
                                         ${complexityIndicator} Complexity
                                     </div>
-                                    <button type="button" onclick="removeRoom(${index})" 
-                                            style="margin-top: 10px; background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                                        🗑️ Remove
-                                    </button>
                                 </div>
                             </div>
                         </div>
                     `;
                 });
                 
-                roomsListEl.innerHTML = summaryHTML + roomsHTML;
+                roomsListEl.innerHTML = roomsHTML;
                 
                 // Add event listeners to all the new multiplier inputs
                 addRoomMultiplierListeners(rooms);
                 
                 // Update totals based on room calculations
-                document.getElementById('materialSQM').value = totalSqm.toFixed(1);
+                document.getElementById('materialSQM').value = totalSqm.toFixed(3);
                 document.getElementById('labourHours').value = totalLabourHours.toFixed(1);
                 
                 // Recalculate totals
@@ -1049,7 +962,7 @@
                 });
                 
                 // Update form totals
-                document.getElementById('materialSQM').value = totalSqm.toFixed(1);
+                document.getElementById('materialSQM').value = totalSqm.toFixed(3);
                 document.getElementById('labourHours').value = totalLabourHours.toFixed(1);
                 
                 // Update installation total if there are manual installation costs
@@ -1061,7 +974,7 @@
                 calculateTotals();
                 
                 console.log('✅ Room totals recalculated:', {
-                    totalSqm: totalSqm.toFixed(1),
+                    totalSqm: totalSqm.toFixed(3),
                     totalLabourHours: totalLabourHours.toFixed(1),
                     totalLabourCost: totalLabourCost.toFixed(0),
                     totalMaterialsCost: totalMaterialsCost.toFixed(0),
@@ -1123,26 +1036,6 @@
                     console.log('✅ Added event listener to:', id);
                 } else {
                     console.error('❌ Element not found:', id);
-                }
-            });
-            
-            // Add room management event listeners
-            const addRoomBtn = document.getElementById('addRoomBtn');
-            if (addRoomBtn) {
-                addRoomBtn.addEventListener('click', addRoomFromInput);
-                console.log('✅ Added event listener to Add Room button');
-            }
-            
-            // Add Enter key support for room inputs
-            const roomInputs = ['roomNameInput', 'roomLengthInput', 'roomWidthInput'];
-            roomInputs.forEach(inputId => {
-                const inputEl = document.getElementById(inputId);
-                if (inputEl) {
-                    inputEl.addEventListener('keypress', (e) => {
-                        if (e.key === 'Enter') {
-                            addRoomFromInput();
-                        }
-                    });
                 }
             });
             
@@ -1244,10 +1137,13 @@
                 
                 // Fetch lead data from API
                 loadLeadData(leadId);
-            } else if (quoteId) {
-                // If quoteId is provided instead of leadId, we need to look up the leadId first
-                console.log('🔍 QuoteId provided, looking up leadId...');
-                loadLeadDataFromQuoteId(quoteId);
+            } else {
+                // Check if quoteId is provided instead of leadId
+                const quoteId = urlParams.get('quoteId');
+                if (quoteId) {
+                    console.log('📋 QuoteId provided, looking up leadId...');
+                    loadLeadDataFromQuoteId(quoteId);
+                }
             }
             
             // Fallback: Populate from URL parameters if available
@@ -1268,64 +1164,131 @@
              calculateTotals(); // Initial calculation
         });
         
-        // Function to show error messages to user
-        function showError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.style.cssText = `
-                background: #f8d7da;
-                color: #721c24;
-                padding: 15px;
-                border-radius: 8px;
-                margin: 20px 0;
-                border: 1px solid #f5c6cb;
-                text-align: center;
-                font-weight: bold;
-            `;
-            errorDiv.innerHTML = `❌ ${message}`;
-            
-            // Insert at the top of the form
-            const form = document.getElementById('quoteForm');
-            if (form) {
-                form.insertBefore(errorDiv, form.firstChild);
-            }
-        }
-
         // Function to load lead data from quoteId (looks up leadId first)
         async function loadLeadDataFromQuoteId(quoteId) {
             try {
-                console.log('🔍 Looking up leadId for quoteId:', quoteId);
+                console.log('🔍 Looking up quote and lead data for quoteId:', quoteId);
                 
                 const response = await fetch(`/api/get-lead-details?quoteId=${encodeURIComponent(quoteId)}`);
                 const data = await response.json();
                 
-                console.log('📥 Lead details response:', data);
-                
-                if (data.success && data.data) {
-                    const leadData = data.data;
+                if (data.success && data.quote && data.lead) {
+                    const quoteData = data.quote;
+                    const leadData = data.lead;
+                    const leadId = quoteData.LeadID || leadData.Lead;
                     
-                    // Extract leadId from the response
-                    const leadId = leadData.Lead || leadData.leadId;
                     if (leadId) {
-                        console.log('✅ Found leadId:', leadId);
+                        console.log('✅ Found leadId:', leadId, 'for quoteId:', quoteId);
                         document.getElementById('leadId').value = leadId;
                         document.getElementById('leadIdDisplay').textContent = leadId;
                         
-                        // Now load the full lead data using the leadId
-                        await loadLeadData(leadId);
+                        // Populate form with both quote and lead data
+                        await populateFormWithData(leadData, quoteData);
                     } else {
-                        console.error('❌ No leadId found in response');
-                        showError('Could not find lead information for this quote.');
+                        console.error('❌ No leadId found in quote data');
+                        showError('Quote found but no associated lead ID');
                     }
                 } else {
-                    console.error('❌ Failed to get lead details:', data.error);
-                    showError(data.error || 'Could not load lead information.');
+                    console.error('❌ Failed to find quote:', data.error);
+                    showError('Quote not found: ' + (data.error || 'Unknown error'));
                 }
             } catch (error) {
-                console.error('❌ Error loading lead data from quoteId:', error);
-                showError('Failed to load lead information.');
+                console.error('❌ Error looking up quote:', error);
+                showError('Error looking up quote: ' + error.message);
             }
         }
-
+        
+        // Function to populate form with lead and quote data
+        async function populateFormWithData(leadData, quoteData) {
+            try {
+                console.log('📝 Populating form with lead data:', leadData);
+                console.log('📝 Populating form with quote data:', quoteData);
+                
+                // Populate customer information
+                if (leadData.CustomerName) {
+                    document.getElementById('customerName').value = leadData.CustomerName;
+                }
+                if (leadData.CustomerEmail) {
+                    document.getElementById('customerEmail').value = leadData.CustomerEmail;
+                }
+                if (leadData.CustomerPhone) {
+                    document.getElementById('customerPhone').value = leadData.CustomerPhone;
+                }
+                if (leadData.ServiceType) {
+                    document.getElementById('serviceType').value = leadData.ServiceType;
+                }
+                if (leadData.Area && leadData.Suburb) {
+                    document.getElementById('customerAddress').value = `${leadData.Area}, ${leadData.Suburb}`;
+                } else if (leadData.Area) {
+                    document.getElementById('customerAddress').value = leadData.Area;
+                } else if (leadData.Suburb) {
+                    document.getElementById('customerAddress').value = leadData.Suburb;
+                }
+                if (leadData.Budget) {
+                    document.getElementById('budget').value = leadData.Budget;
+                }
+                if (leadData.Timelline) {
+                    document.getElementById('timeline').value = leadData.Timelline;
+                }
+                if (leadData['Specfic Details']) {
+                    document.getElementById('projectDetails').value = leadData['Specfic Details'];
+                }
+                
+                // Process room data if available
+                if (leadData.Rooms) {
+                    try {
+                        const rooms = typeof leadData.Rooms === 'string' ? JSON.parse(leadData.Rooms) : leadData.Rooms;
+                        console.log('🏠 Processing room data from Leads tab:', rooms);
+                        populateRoomDetails(rooms);
+                        
+                        // Calculate and display total SQM
+                        const totalSqm = rooms.reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0);
+                        const totalSqmElement = document.getElementById('totalSqm');
+                        if (totalSqmElement) {
+                            totalSqmElement.textContent = `${totalSqm.toFixed(3)} sqm`;
+                        }
+                        
+                        // Update project size field
+                        const projectSizeElement = document.getElementById('projectSize');
+                        if (projectSizeElement) {
+                            projectSizeElement.value = `${totalSqm.toFixed(3)} sqm`;
+                        }
+                        
+                    } catch (error) {
+                        console.error('❌ Error parsing room data from Leads tab:', error);
+                        // Try to parse as simple text if JSON parsing fails
+                        const roomsListEl = document.getElementById('roomsList');
+                        if (roomsListEl) {
+                            roomsListEl.innerHTML = `<p style="color: #666; font-style: italic;">Room data: ${leadData.Rooms}</p>`;
+                        }
+                    }
+                } else {
+                    console.log('ℹ️ No room data available in lead');
+                    const roomsListEl = document.getElementById('roomsList');
+                    if (roomsListEl) {
+                        roomsListEl.innerHTML = '<p style="color: #666; font-style: italic;">No room details available from lead data.</p>';
+                    }
+                }
+                
+                console.log('✅ Form populated successfully with lead data');
+                
+            } catch (error) {
+                console.error('❌ Error populating form with data:', error);
+            }
+        }
+        
+        // Function to show error message
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = 'background: #f8d7da; color: #721c24; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #f5c6cb;';
+            errorDiv.innerHTML = `
+                <h3>❌ Error Loading Quote Form</h3>
+                <p>${message}</p>
+                <p>Please check the URL and try again, or contact support if the problem persists.</p>
+            `;
+            document.body.insertBefore(errorDiv, document.body.firstChild);
+        }
+        
         // Function to load lead data from API
         async function loadLeadData(leadId) {
             try {
@@ -1379,40 +1342,14 @@
                     // Process room data if available
                     if (lead.rooms) {
                         try {
-                            const leadRooms = typeof lead.rooms === 'string' ? JSON.parse(lead.rooms) : lead.rooms;
-                            console.log('🏠 Processing room data:', leadRooms);
-                            
-                            // Parse room dimensions using smart parser
-                            const parsedRooms = leadRooms.map(room => {
-                                const parsed = parseRoomDimensions(room.dimensions);
-                                return {
-                                    name: room.name || 'Unnamed Room',
-                                    dimensions: `${parsed.length.toFixed(2)}m x ${parsed.width.toFixed(2)}m`,
-                                    sqm: parsed.sqm,
-                                    originalInput: parsed.originalInput,
-                                    format: parsed.format,
-                                    length: parsed.length,
-                                    width: parsed.width
-                                };
-                            });
-                            
-                            console.log('✅ Parsed rooms:', parsedRooms);
-                            
-                            // Update global rooms array
-                            rooms = parsedRooms;
-                            
+                            const rooms = typeof lead.rooms === 'string' ? JSON.parse(lead.rooms) : lead.rooms;
+                            console.log('🏠 Processing room data:', rooms);
                             populateRoomDetails(rooms);
                         } catch (error) {
                             console.error('❌ Error parsing room data:', error);
-                            // Clear rooms array if parsing fails
-                            rooms = [];
-                            populateRoomDetails(rooms);
                         }
                     } else {
                         console.log('ℹ️ No room data available in lead');
-                        // Clear rooms array if no data
-                        rooms = [];
-                        populateRoomDetails(rooms);
                     }
                     
                     console.log('✅ Lead data loaded successfully');
@@ -1842,19 +1779,60 @@
                   // Continue with submission - backend will catch duplicates
               }
              
-                           try {
-                  console.log('📤 Submitting quote data:', data);
-                  console.log('📧 Tradesman Email:', data.tradesmanEmail);
-                  console.log('📞 Tradesman Phone:', data.tradesmanPhone);
-                  console.log('💰 Total Amount:', data.totalAmount);
-                  console.log('🔢 Quote ID:', data.quoteId);
-                  console.log('📋 Lead ID:', data.leadId);
-                 
-                 const response = await fetch('/api/quote-submission', {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify(data)
-                 });
+             try {
+                 console.log('📤 Submitting quote data:', data);
+                 console.log('📧 Tradesman Email:', data.tradesmanEmail);
+                 console.log('📞 Tradesman Phone:', data.tradesmanPhone);
+                 console.log('💰 Total Amount:', data.totalAmount);
+                 console.log('🔢 Quote ID:', data.quoteId);
+                 console.log('📋 Lead ID:', data.leadId);
+                
+                // Structure data to match backend expectations
+                const submissionData = {
+                    quoteId: data.quoteId,
+                    ts: data.ts,
+                    token: data.token,
+                    quoteDetails: {
+                        labourRate: data.labourRate,
+                        labourHours: data.labourHours,
+                        materialsCost: data.materialRate,
+                        materialsQuantity: data.materialSQM,
+                        travelCost: data.travelAmount,
+                        travelDistance: data.travelDistance || 0,
+                        installationCost: data.installationAmount,
+                        subtotal: data.labourSubtotal + data.materialSubtotal + data.installationSubtotal,
+                        gst: (data.labourSubtotal + data.materialSubtotal + data.installationSubtotal) * 0.15,
+                        totalQuote: data.totalAmount,
+                        notes: data.notes || '',
+                        validUntil: data.validUntil || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        tradespersonName: data.tradesmanName,
+                        tradespersonEmail: data.tradesmanEmail,
+                        tradespersonPhone: data.tradesmanPhone
+                    },
+                    leadDetails: {
+                        Lead: data.leadId,
+                        CustomerName: data.customerName,
+                        CustomerEmail: data.customerEmail,
+                        CustomerPhone: data.customerPhone,
+                        ServiceType: data.serviceType,
+                        Rooms: data.rooms || '[]',
+                        Area: data.area,
+                        Suburb: data.suburb,
+                        Budget: data.budget,
+                        Timelline: data.timeline,
+                        'Specfic Details': data.projectDetails,
+                        Time: new Date().toISOString(),
+                        status: 'Quote Submitted'
+                    }
+                };
+                
+                console.log('📤 Structured submission data:', submissionData);
+                
+                const response = await fetch('/api/quote-submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(submissionData)
+                });
                  
                  console.log('📥 Response status:', response.status);
                  

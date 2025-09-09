@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Quote Actions - With Comprehensive Logging</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .quote-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background: #f9f9f9;
+        }
+        .quote-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .quote-id {
+            font-weight: bold;
+            color: #333;
+        }
+        .quote-status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-declined {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .quote-details {
+            margin: 15px 0;
+        }
+        .quote-details p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        .btn-approve {
+            background: #28a745;
+            color: white;
+        }
+        .btn-approve:hover {
+            background: #218838;
+        }
+        .btn-decline {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-decline:hover {
+            background: #c82333;
+        }
+        .btn-view {
+            background: #007bff;
+            color: white;
+        }
+        .btn-view:hover {
+            background: #0056b3;
+        }
+        .logging-info {
+            background: #e8f4f8;
+            border: 1px solid #b8daff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .logging-info h4 {
+            margin: 0 0 10px 0;
+            color: #0066cc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Quote Actions</h1>
+        <p>This page demonstrates comprehensive logging for admin quote approval/decline actions.</p>
+        
+        <div class="logging-info">
+            <h4>🔍 Logging Information</h4>
+            <p><strong>Session ID:</strong> <span id="sessionId">Loading...</span></p>
+            <p><strong>All button clicks and actions are logged with:</strong></p>
+            <ul>
+                <li>Timestamp and session ID</li>
+                <li>Button clicked and quote details</li>
+                <li>Browser and page information</li>
+                <li>Request data being sent</li>
+                <li>Response status and timing</li>
+            </ul>
+            <p><strong>Check browser console and server logs for detailed tracking.</strong></p>
+        </div>
+
+        <!-- Sample Quote 1 -->
+        <div class="quote-card">
+            <div class="quote-header">
+                <span class="quote-id">Quote ID: Q-2024-001</span>
+                <span class="quote-status status-pending">Pending Review</span>
+            </div>
+            <div class="quote-details">
+                <p><strong>Customer:</strong> John Smith</p>
+                <p><strong>Service:</strong> Underfloor Heating</p>
+                <p><strong>Total:</strong> $4,500.00</p>
+                <p><strong>Submitted:</strong> 2024-01-15 10:30 AM</p>
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-approve" onclick="approveQuote('Q-2024-001', 'John Smith', 4500.00)">
+                    ✅ Approve Quote
+                </button>
+                <button class="btn btn-decline" onclick="declineQuote('Q-2024-001', 'John Smith')">
+                    ❌ Decline Quote
+                </button>
+                <button class="btn btn-view" onclick="viewQuote('Q-2024-001')">
+                    👁️ View Details
+                </button>
+            </div>
+        </div>
+
+        <!-- Sample Quote 2 -->
+        <div class="quote-card">
+            <div class="quote-header">
+                <span class="quote-id">Quote ID: Q-2024-002</span>
+                <span class="quote-status status-pending">Pending Review</span>
+            </div>
+            <div class="quote-details">
+                <p><strong>Customer:</strong> Sarah Johnson</p>
+                <p><strong>Service:</strong> Heat Pump Installation</p>
+                <p><strong>Total:</strong> $8,200.00</p>
+                <p><strong>Submitted:</strong> 2024-01-15 11:45 AM</p>
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-approve" onclick="approveQuote('Q-2024-002', 'Sarah Johnson', 8200.00)">
+                    ✅ Approve Quote
+                </button>
+                <button class="btn btn-decline" onclick="declineQuote('Q-2024-002', 'Sarah Johnson')">
+                    ❌ Decline Quote
+                </button>
+                <button class="btn btn-view" onclick="viewQuote('Q-2024-002')">
+                    👁️ View Details
+                </button>
+            </div>
+        </div>
+
+        <!-- Sample Quote 3 -->
+        <div class="quote-card">
+            <div class="quote-header">
+                <span class="quote-id">Quote ID: Q-2024-003</span>
+                <span class="quote-status status-approved">Approved</span>
+            </div>
+            <div class="quote-details">
+                <p><strong>Customer:</strong> Mike Wilson</p>
+                <p><strong>Service:</strong> Solar Panel Installation</p>
+                <p><strong>Total:</strong> $12,500.00</p>
+                <p><strong>Approved:</strong> 2024-01-14 2:15 PM</p>
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-view" onclick="viewQuote('Q-2024-003')">
+                    👁️ View Details
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the frontend logger
+        import frontendLogger from '/lib/frontendLogger.js';
+        
+        // Make logger available globally
+        window.frontendLogger = frontendLogger;
+        
+        // Display session ID
+        document.getElementById('sessionId').textContent = frontendLogger.getSessionId();
+        
+        // Log page load
+        frontendLogger.info('Admin quote actions page loaded', {
+            totalQuotes: 3,
+            pendingQuotes: 2,
+            approvedQuotes: 1
+        });
+        
+        // Global functions for button actions
+        window.approveQuote = function(quoteId, customerName, totalAmount) {
+            const startTime = Date.now();
+            
+            // Log button click
+            frontendLogger.adminAccept('Approve button clicked', {
+                quoteId,
+                customerName,
+                totalAmount,
+                buttonType: 'approve',
+                timestamp: new Date().toISOString()
+            });
+            
+            // Log the data being sent
+            const requestData = {
+                quoteId,
+                customerName,
+                totalAmount,
+                action: 'approve',
+                adminUser: 'admin@kiwitrade.co.nz',
+                timestamp: new Date().toISOString()
+            };
+            
+            frontendLogger.apiCall('Preparing approve request', {
+                url: `/api/admin/approve?quoteId=${quoteId}`,
+                method: 'GET',
+                data: requestData,
+                dataSize: JSON.stringify(requestData).length
+            });
+            
+            // Simulate API call with logging
+            fetch(`/api/admin/approve?quoteId=${quoteId}&ts=${Date.now()}&token=example_token`)
+                .then(response => {
+                    const processingTime = Date.now() - startTime;
+                    
+                    frontendLogger.apiCall('Approve API response received', {
+                        quoteId,
+                        status: response.status,
+                        statusText: response.statusText,
+                        processingTime,
+                        responseHeaders: Object.fromEntries(response.headers.entries())
+                    });
+                    
+                    if (response.ok) {
+                        frontendLogger.adminAccept('Quote approved successfully', {
+                            quoteId,
+                            customerName,
+                            totalAmount,
+                            processingTime
+                        });
+                        
+                        // Update UI
+                        const quoteCard = document.querySelector(`[onclick*="${quoteId}"]`).closest('.quote-card');
+                        const statusSpan = quoteCard.querySelector('.quote-status');
+                        statusSpan.textContent = 'Approved';
+                        statusSpan.className = 'quote-status status-approved';
+                        
+                        // Remove action buttons
+                        const actionButtons = quoteCard.querySelector('.action-buttons');
+                        actionButtons.innerHTML = '<button class="btn btn-view" onclick="viewQuote(\'' + quoteId + '\')">👁️ View Details</button>';
+                        
+                    } else {
+                        frontendLogger.error('Quote approval failed', {
+                            quoteId,
+                            status: response.status,
+                            statusText: response.statusText,
+                            processingTime
+                        });
+                    }
+                })
+                .catch(error => {
+                    const processingTime = Date.now() - startTime;
+                    
+                    frontendLogger.error('Quote approval API error', {
+                        quoteId,
+                        error: error.message,
+                        processingTime
+                    });
+                });
+        };
+        
+        window.declineQuote = function(quoteId, customerName) {
+            const startTime = Date.now();
+            
+            // Log button click
+            frontendLogger.adminDecline('Decline button clicked', {
+                quoteId,
+                customerName,
+                buttonType: 'decline',
+                timestamp: new Date().toISOString()
+            });
+            
+            // Log the data being sent
+            const requestData = {
+                quoteId,
+                customerName,
+                action: 'decline',
+                adminUser: 'admin@kiwitrade.co.nz',
+                timestamp: new Date().toISOString()
+            };
+            
+            frontendLogger.apiCall('Preparing decline request', {
+                url: `/api/admin/decline?quoteId=${quoteId}`,
+                method: 'GET',
+                data: requestData,
+                dataSize: JSON.stringify(requestData).length
+            });
+            
+            // Simulate API call with logging
+            fetch(`/api/admin/decline?quoteId=${quoteId}&ts=${Date.now()}&token=example_token`)
+                .then(response => {
+                    const processingTime = Date.now() - startTime;
+                    
+                    frontendLogger.apiCall('Decline API response received', {
+                        quoteId,
+                        status: response.status,
+                        statusText: response.statusText,
+                        processingTime,
+                        responseHeaders: Object.fromEntries(response.headers.entries())
+                    });
+                    
+                    if (response.ok) {
+                        frontendLogger.adminDecline('Quote declined successfully', {
+                            quoteId,
+                            customerName,
+                            processingTime
+                        });
+                        
+                        // Update UI
+                        const quoteCard = document.querySelector(`[onclick*="${quoteId}"]`).closest('.quote-card');
+                        const statusSpan = quoteCard.querySelector('.quote-status');
+                        statusSpan.textContent = 'Declined';
+                        statusSpan.className = 'quote-status status-declined';
+                        
+                        // Remove action buttons
+                        const actionButtons = quoteCard.querySelector('.action-buttons');
+                        actionButtons.innerHTML = '<button class="btn btn-view" onclick="viewQuote(\'' + quoteId + '\')">👁️ View Details</button>';
+                        
+                    } else {
+                        frontendLogger.error('Quote decline failed', {
+                            quoteId,
+                            status: response.status,
+                            statusText: response.statusText,
+                            processingTime
+                        });
+                    }
+                })
+                .catch(error => {
+                    const processingTime = Date.now() - startTime;
+                    
+                    frontendLogger.error('Quote decline API error', {
+                        quoteId,
+                        error: error.message,
+                        processingTime
+                    });
+                });
+        };
+        
+        window.viewQuote = function(quoteId) {
+            // Log button click
+            frontendLogger.userAction('View quote button clicked', {
+                quoteId,
+                buttonType: 'view',
+                timestamp: new Date().toISOString()
+            });
+            
+            // Simulate navigation
+            frontendLogger.navigation('Navigating to quote view', {
+                quoteId,
+                destination: `/quote-view/${quoteId}`
+            });
+            
+            // In a real app, this would navigate to the quote view page
+            alert(`Viewing quote ${quoteId} - This would navigate to the quote details page`);
+        };
+        
+        // Log any JavaScript errors
+        window.addEventListener('error', function(event) {
+            frontendLogger.error('JavaScript error occurred', {
+                message: event.message,
+                filename: event.filename,
+                lineno: event.lineno,
+                colno: event.colno,
+                error: event.error?.stack
+            });
+        });
+        
+        // Log unhandled promise rejections
+        window.addEventListener('unhandledrejection', function(event) {
+            frontendLogger.error('Unhandled promise rejection', {
+                reason: event.reason,
+                promise: event.promise
+            });
+        });
+    </script>
+</body>
+</html>

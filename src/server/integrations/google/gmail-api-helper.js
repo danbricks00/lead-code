@@ -121,10 +121,41 @@ async function sendEmailViaGmailAPI(to, subject, htmlContent, attachment = null,
   }
 }
 
-// Validate email address format
+// Enhanced email validation with domain checking
 function validateEmail(email) {
+  if (!email) return false;
+  
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  const trimmedEmail = email.trim();
+  
+  // Basic email format validation
+  if (!emailRegex.test(trimmedEmail)) {
+    return false;
+  }
+  
+  // Extract domain part
+  const domain = trimmedEmail.split('@')[1];
+  if (!domain) return false;
+  
+  // Invalid domain patterns (like .x.x for Outlook)
+  const invalidDomainPatterns = [
+    /\.x\.x$/i,           // .x.x pattern
+    /\.x\.\w+$/i,         // .x.anything pattern
+    /\.\w+\.x$/i,         // .anything.x pattern
+    /\.x$/i,              // .x pattern
+    /\.\d+\.\d+$/i,       // .number.number pattern
+    /\.\d+$/i,            // .number pattern
+  ];
+  
+  // Check for invalid domain patterns
+  for (const pattern of invalidDomainPatterns) {
+    if (pattern.test(domain)) {
+      console.log(`❌ Invalid domain pattern detected: ${domain}`);
+      return false;
+    }
+  }
+  
+  return true;
 }
 
 // Log email attempt with timestamp

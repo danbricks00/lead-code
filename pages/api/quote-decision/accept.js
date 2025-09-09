@@ -1,6 +1,20 @@
 import { getGoogleSheetsClient, getSpreadsheetId } from "../../../lib/googleSheets.js";
 import { sendEmail } from '../../../lib/emailHelper';
+import { generateQuotePDF } from '../../../lib/pdfGenerator.js';
+import quoteLogger from '../../../lib/quoteLogger.js';
 import crypto from "crypto";
+
+// NZ timestamp helper function
+function getNZTimestamp(date = new Date()) {
+    return date.toLocaleString("en-NZ", {
+        timeZone: "Pacific/Auckland",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+    }).replace(",", "");
+}
 
 function verifyToken(id, ts) {
     const hmac = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET);
@@ -19,47 +33,149 @@ function formatTimestamp(isoString) {
             year: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
-        }) + ' NZT';
+        });
     } catch (e) {
-        return isoString; // Fallback to original string if parsing fails
+        return isoString;
     }
 }
 
-async function sendNotificationEmails(quoteData, leadData = {}) {
-    console.log('📧 Preparing notification emails for quote acceptance');
-    console.log('📋 Quote data keys:', Object.keys(quoteData));
-    console.log('📋 Lead data keys:', Object.keys(leadData));
+async function sendNotificationEmails(quoteData, leadData = {}, requestId = null) {
+    quoteLogger.email('Preparing notification emails for quote acceptance', {
+        quoteDataKeys: Object.keys(quoteData),
+        leadDataKeys: Object.keys(leadData)
+    }, requestId);
     
-    // Get customer email - try quote data first, then lead data
-    const customerEmail = quoteData['CustomerEmail'] || quoteData['Customer Email'] || quoteData['customerEmail'] || 
-                         leadData['CustomerEmail'] || leadData['Customer Email'] || leadData['customerEmail'];
-    const customerName = quoteData['CustomerName'] || quoteData['Customer Name'] || quoteData['customerName'] || 
-                        leadData['CustomerName'] || leadData['Customer Name'] || leadData['customerName'];
+    // Get customer email - using exact schema column names
+    const customerEmail = quoteData['CustomerEmail'] || leadData['CustomerEmail'];
+    const customerName = quoteData['CustomerName'] || leadData['CustomerName'];
     
-    // Get tradesperson email - try different possible column names  
-    const tradespersonEmail = quoteData['TradespersonEmail'] || quoteData['Tradesperson Email'] || quoteData['tradespersonEmail'] || 
-                             quoteData['TradePerson Email'] || quoteData['TradesPerson Email'];
-    const tradespersonName = quoteData['TradespersonName'] || quoteData['Tradesperson Name'] || quoteData['tradespersonName'] || 
-                            quoteData['TradePerson Name'] || quoteData['TradesPerson Name'];
+    // Get tradesperson email - using exact schema column names
+    const tradespersonEmail = quoteData['TradePersonEmail'];
+    const tradespersonName = quoteData['TradePersonName'];
     
-    console.log('📧 Email recipients:');
-    console.log('  - Customer:', customerEmail);
-    console.log('  - Tradesperson:', tradespersonEmail);
-    console.log('  - Admin:', process.env.ADMIN_EMAIL);
+    // Get other fields from exact schema
+    const serviceType = quoteData['ServiceType'] || leadData['ServiceType'] || '';
+    const budget = quoteData['Budget'] || leadData['Budget'] || '';
+    const timeline = quoteData['Timeline'] || leadData['Timelline'] || leadData['Timeline'] || '';
+    const validUntil = quoteData['ValidUntil'] || 'N/A';
+    
+    quoteLogger.email('Email recipients identified', {
+        customerEmail,
+        tradespersonEmail,
+        adminEmail: process.env.ADMIN_EMAIL ? 'SET' : 'NOT_SET'
+    }, requestId);
 
     // Validate email addresses
-    if (!customerEmail) {
-        console.error('❌ Customer email not found in quote or lead data');
+    if (!customerEmail || customerEmail === 'undefined' || customerEmail === 'N/A (Column not found)') {
+        quoteLogger.error('Customer email not found in quote or lead data', { customerEmail }, requestId);
         throw new Error('Customer email not found');
     }
-    if (!tradespersonEmail) {
-        console.error('❌ Tradesperson email not found in quote data');
+    if (!tradespersonEmail || tradespersonEmail === 'undefined' || tradespersonEmail === 'N/A (Column not found)') {
+        quoteLogger.error('Tradesperson email not found in quote data', { tradespersonEmail }, requestId);
         throw new Error('Tradesperson email not found');
     }
 
+    // Build finalQuoteData for PDF generation using ACTUAL quote data from Google Sheets
+    const finalQuoteData = {
+        quoteId: quoteData['QuoteID'],
+        quoteDate: quoteData['TimeStamp'] || getNZTimestamp(),
+        validUntil: validUntil,
+        customerName: customerName,
+        customerEmail: customerEmail,
+        customerPhone: quoteData['CustomerPhone'] || '',
+        customerAddress: quoteData['Location'] || `${leadData['Area'] || ''} ${leadData['Suburb'] || ''}`.trim(),
+        serviceType: serviceType,
+        tradespersonName: tradespersonName || '',
+        tradespersonEmail: tradespersonEmail || '',
+        tradespersonPhone: quoteData['TradePersonPhone'] || '',
+        tradespersonLicense: '',
+        rooms: [],
+        breakdown: {
+            labourRate: parseFloat(quoteData['LabourRate'] || 0),
+            labourHours: parseFloat(quoteData['LabourHours'] || 0),
+            labourTotal: parseFloat(quoteData['LabourTotal'] || 0),
+            materialsCost: parseFloat(quoteData['MaterialsCost'] || 0),
+            materialsQuantity: parseFloat(quoteData['MaterialsQuantity'] || 0),
+            materialsTotal: parseFloat(quoteData['MaterialsTotal'] || 0),
+            travelCost: parseFloat(quoteData['TravelCost'] || 0),
+            travelDistance: parseFloat(quoteData['TravelDistance'] || 0),
+            travelTotal: parseFloat(quoteData['TravelTotal'] || 0),
+            installationCost: parseFloat(quoteData['InstallationCost'] || 0),
+            totalSqm: 0
+        },
+        totals: {
+            labour: parseFloat(quoteData['LabourTotal'] || 0),
+            materials: parseFloat(quoteData['MaterialsTotal'] || 0),
+            travel: parseFloat(quoteData['TravelTotal'] || 0),
+            installation: parseFloat(quoteData['InstallationCost'] || 0),
+            subtotal: parseFloat(quoteData['Subtotal'] || 0),
+            gst: parseFloat(quoteData['GST'] || 0),
+            final: parseFloat(quoteData['TotalQuote'] || 0)
+        }
+    };
+
+    // Parse rooms data if available
+    try {
+        const roomsData = quoteData['Rooms'] || leadData['Rooms'];
+        if (roomsData) {
+            const parsedRooms = JSON.parse(roomsData);
+            if (Array.isArray(parsedRooms)) {
+                finalQuoteData.rooms = parsedRooms;
+                finalQuoteData.breakdown.totalSqm = parsedRooms.reduce((total, room) => total + (parseFloat(room.sqm) || 0), 0);
+            }
+        }
+    } catch (error) {
+        console.log('⚠️ Could not parse rooms data:', error.message);
+    }
+
+    quoteLogger.dataFlow('Final quote data prepared for PDF generation', {
+        quoteId: finalQuoteData.quoteId,
+        customerName: finalQuoteData.customerName,
+        totalAmount: finalQuoteData.totals.final,
+        hasRooms: finalQuoteData.rooms.length > 0
+    }, requestId);
+
+    // Generate PDF using the same function as admin/tradesman
+    let pdfBuffer;
+    try {
+        quoteLogger.pdf('Generating PDF for customer', { quoteId: finalQuoteData.quoteId }, requestId);
+        pdfBuffer = await generateQuotePDF(finalQuoteData);
+        quoteLogger.pdf('PDF generated successfully for customer', { 
+            quoteId: finalQuoteData.quoteId,
+            pdfSize: pdfBuffer ? pdfBuffer.length : 0
+        }, requestId);
+    } catch (error) {
+        quoteLogger.error('PDF generation failed', error, requestId);
+        throw new Error('Failed to generate PDF');
+    }
+
+    // Format currency for display
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-NZ', {
+            style: 'currency',
+            currency: 'NZD'
+        }).format(amount || 0);
+    };
+
+    // Format date for display
+    const formatDate = (dateString) => {
+        if (!dateString || dateString === 'N/A') return 'N/A';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-NZ', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+        } catch (error) {
+            return dateString;
+        }
+    };
+
     const customerMail = {
         to: customerEmail,
-        subject: `🎉 Quote Accepted! Your Project Journey Begins`,
+        cc: process.env.ADMIN_EMAIL,
+        subject: `🎉 Quote Accepted! Your ${finalQuoteData.serviceType} Project Journey Begins`,
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f7fa; padding: 20px;">
               <div style="background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
@@ -70,7 +186,29 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
                     <div style="font-size: 48px; color: white;">🏆</div>
                   </div>
                   <h1 style="color: #28a745; margin: 0; font-size: 32px; font-weight: bold;">Project Approved!</h1>
-                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">Congratulations ${customerName}, your quote has been accepted!</p>
+                  <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">Congratulations ${finalQuoteData.customerName}, your ${finalQuoteData.serviceType} quote has been accepted!</p>
+                </div>
+
+                <!-- Quote Summary Card -->
+                <div style="background: #e8f4f8; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #b8daff;">
+                  <h3 style="color: #0066cc; margin: 0 0 20px 0; font-size: 20px;">📋 Your Approved Quote Summary</h3>
+                  <div style="background: white; padding: 20px; border-radius: 8px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                      <div>
+                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Service:</strong> ${finalQuoteData.serviceType}</p>
+                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Budget:</strong> ${budget || 'Not specified'}</p>
+                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
+                      </div>
+                      <div>
+                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Tradesperson:</strong> ${finalQuoteData.tradespersonName}</p>
+                        <p style="margin: 8px 0; color: #495057; font-size: 16px;"><strong>Valid Until:</strong> ${formatDate(finalQuoteData.validUntil)}</p>
+                        <p style="margin: 8px 0; color: #28a745; font-size: 18px; font-weight: bold;"><strong>Total Quote:</strong> ${formatCurrency(finalQuoteData.totals.final)}</p>
+                      </div>
+                    </div>
+                    <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                      <p style="color: #6c757d; font-size: 14px; margin: 0;">📎 Your detailed quote PDF is attached to this email</p>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Progress Bar -->
@@ -84,56 +222,6 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
                   </div>
                 </div>
 
-                <!-- Gamified Journey Checklist -->
-                <div style="margin: 30px 0;">
-                  <h3 style="color: #495057; margin: 0 0 20px 0; font-size: 20px;">🎯 Your Project Journey</h3>
-                  
-                  <!-- Step 1: Lead Submitted -->
-                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
-                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);">✓</div>
-                    <div>
-                      <strong style="color: #155724; font-size: 16px;">Lead Submitted</strong>
-                      <p style="margin: 5px 0 0 0; color: #155724;">Your project requirements were successfully received and processed.</p>
-                    </div>
-                  </div>
-                  
-                  <!-- Step 2: Quote Prepared -->
-                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
-                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);">✓</div>
-                    <div>
-                      <strong style="color: #155724; font-size: 16px;">Professional Quote Prepared</strong>
-                      <p style="margin: 5px 0 0 0; color: #155724;">Our expert tradesperson created a detailed quote just for you.</p>
-                    </div>
-                  </div>
-                  
-                  <!-- Step 3: Decision Made -->
-                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745; position: relative; overflow: hidden;">
-                    <div style="position: absolute; top: 0; right: 0; background: #ffc107; color: #856404; padding: 5px 10px; font-size: 12px; font-weight: bold; border-bottom-left-radius: 8px;">JUST COMPLETED!</div>
-                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3); animation: pulse 2s infinite;">✓</div>
-                    <div>
-                      <strong style="color: #155724; font-size: 16px;">Quote Accepted! 🎉</strong>
-                      <p style="margin: 5px 0 0 0; color: #155724;">You've made your decision - the project is approved and ready to begin!</p>
-                    </div>
-                  </div>
-                  
-                  <!-- Step 4: Project Execution -->
-                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
-                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #ffc107; color: #856404; box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);">🔄</div>
-                    <div>
-                      <strong style="color: #856404; font-size: 16px;">Project Execution - Starting Soon!</strong>
-                      <p style="margin: 5px 0 0 0; color: #856404;">Your tradesperson will contact you within 24 hours to schedule the work.</p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Achievement Unlocked -->
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 10px; margin: 30px 0; text-align: center; position: relative; overflow: hidden;">
-                  <div style="position: absolute; top: -10px; right: -10px; background: rgba(255,255,255,0.2); width: 60px; height: 60px; border-radius: 50%;"></div>
-                  <div style="position: absolute; bottom: -15px; left: -15px; background: rgba(255,255,255,0.1); width: 80px; height: 80px; border-radius: 50%;"></div>
-                  <h3 style="margin: 0 0 10px 0; font-size: 22px;">🏅 Achievement Unlocked!</h3>
-                  <p style="margin: 0; font-size: 16px; opacity: 0.9;">"Decisive Customer" - Made a quick and confident project decision!</p>
-                </div>
-
                 <!-- What Happens Next -->
                 <div style="background: #e8f4f8; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #b8daff;">
                   <h3 style="color: #0066cc; margin: 0 0 15px 0; font-size: 20px;">📞 What Happens Next?</h3>
@@ -141,14 +229,14 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
                     <div style="background: #0066cc; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">1</div>
                     <div>
                       <strong style="color: #0066cc;">Tradesperson Contact (Within 24 hours)</strong>
-                      <p style="margin: 5px 0 0 0; color: #495057;">${tradespersonName} will call you to discuss project details and scheduling.</p>
+                      <p style="margin: 5px 0 0 0; color: #495057;">${finalQuoteData.tradespersonName} will call you to discuss project details and scheduling.</p>
                     </div>
                   </div>
                   <div style="display: flex; align-items: flex-start; margin: 15px 0;">
                     <div style="background: #0066cc; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">2</div>
                     <div>
                       <strong style="color: #0066cc;">Project Planning Session</strong>
-                      <p style="margin: 5px 0 0 0; color: #495057;">Review final details, materials, and timeline for your underfloor heating installation.</p>
+                      <p style="margin: 5px 0 0 0; color: #495057;">Review final details, materials, and timeline for your ${finalQuoteData.serviceType} installation.</p>
                     </div>
                   </div>
                   <div style="display: flex; align-items: flex-start; margin: 15px 0;">
@@ -163,10 +251,11 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
                 <!-- Quick Contact Card -->
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #dee2e6; margin: 30px 0;">
                   <h4 style="color: #495057; margin: 0 0 15px 0;">👷‍♂️ Your Assigned Tradesperson</h4>
-                  <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${tradespersonName}</p>
-                  <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${tradespersonEmail}</p>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${finalQuoteData.tradespersonName}</p>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${finalQuoteData.tradespersonEmail}</p>
+                  <p style="margin: 5px 0; color: #495057;"><strong>Phone:</strong> ${finalQuoteData.tradespersonPhone}</p>
                   <p style="margin: 15px 0 0 0;">
-                    <a href="mailto:${tradespersonEmail}" style="display: inline-block; background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">📧 Send Message</a>
+                    <a href="mailto:${finalQuoteData.tradespersonEmail}" style="display: inline-block; background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">📧 Send Message</a>
                   </p>
                 </div>
 
@@ -182,15 +271,14 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
 
               </div>
             </div>
-
-            <style>
-              @keyframes pulse {
-                0% { transform: scale(1); }
-                50% { transform: scale(1.1); }
-                100% { transform: scale(1); }
-              }
-            </style>
         `,
+        attachments: [
+            {
+                filename: `Quote-${finalQuoteData.quoteId}.pdf`,
+                content: pdfBuffer,
+                contentType: 'application/pdf'
+            }
+        ]
     };
 
     const tradespersonMail = {
@@ -217,55 +305,6 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
                   </div>
                   <div style="background: #e9ecef; height: 12px; border-radius: 6px; overflow: hidden; margin-bottom: 20px;">
                     <div style="background: linear-gradient(90deg, #28a745 0%, #20c997 100%); height: 100%; width: 100%; border-radius: 6px; box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);"></div>
-                  </div>
-                </div>
-
-                <!-- Gamified Achievement Journey -->
-                <div style="margin: 30px 0;">
-                  <h3 style="color: #495057; margin: 0 0 20px 0; font-size: 20px;">🎯 Your Achievement Journey</h3>
-                  
-                  <!-- Step 1: Lead Received -->
-                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
-                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);">✓</div>
-                    <div>
-                      <strong style="color: #155724; font-size: 16px;">Lead Received & Assigned</strong>
-                      <p style="margin: 5px 0 0 0; color: #155724;">Successfully matched with a quality customer lead.</p>
-                    </div>
-                  </div>
-                  
-                  <!-- Step 2: Quote Prepared -->
-                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
-                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);">✓</div>
-                    <div>
-                      <strong style="color: #155724; font-size: 16px;">Professional Quote Delivered</strong>
-                      <p style="margin: 5px 0 0 0; color: #155724;">Created and submitted a competitive, detailed quote.</p>
-                    </div>
-                  </div>
-                  
-                  <!-- Step 3: Quote Won! -->
-                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border-radius: 8px; border-left: 4px solid #ffc107; position: relative; overflow: hidden;">
-                    <div style="position: absolute; top: 0; right: 0; background: #ff6b35; color: white; padding: 5px 10px; font-size: 12px; font-weight: bold; border-bottom-left-radius: 8px;">🔥 HOT WIN!</div>
-                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #ffc107; color: #856404; box-shadow: 0 2px 8px rgba(255, 193, 7, 0.4); animation: bounce 2s infinite;">🏆</div>
-                    <div>
-                      <strong style="color: #856404; font-size: 16px;">Quote Accepted - You Won! 🎉</strong>
-                      <p style="margin: 5px 0 0 0; color: #856404;">Customer chose YOU! Your expertise and competitive pricing won the day!</p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Achievement Badges -->
-                <div style="display: flex; justify-content: space-around; margin: 30px 0; text-align: center;">
-                  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; flex: 1; margin: 0 5px;">
-                    <div style="font-size: 24px; margin-bottom: 10px;">🎯</div>
-                    <strong style="font-size: 14px;">Quote Winner</strong>
-                  </div>
-                  <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 10px; flex: 1; margin: 0 5px;">
-                    <div style="font-size: 24px; margin-bottom: 10px;">⚡</div>
-                    <strong style="font-size: 14px;">Fast Response</strong>
-                  </div>
-                  <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; border-radius: 10px; flex: 1; margin: 0 5px;">
-                    <div style="font-size: 24px; margin-bottom: 10px;">💼</div>
-                    <strong style="font-size: 14px;">Professional</strong>
                   </div>
                 </div>
 
@@ -327,14 +366,6 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
 
               </div>
             </div>
-
-            <style>
-              @keyframes bounce {
-                0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-                40% { transform: translateY(-10px); }
-                60% { transform: translateY(-5px); }
-              }
-            </style>
         `
     };
     
@@ -352,52 +383,6 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
                   </div>
                   <h1 style="color: #3498db; margin: 0; font-size: 32px; font-weight: bold;">Success Metrics</h1>
                   <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 18px;">Quote acceptance recorded - Business growing!</p>
-                </div>
-
-                <!-- System Performance Dashboard -->
-                <div style="margin: 30px 0;">
-                  <h3 style="color: #495057; margin: 0 0 20px 0; font-size: 20px;">📈 System Performance Dashboard</h3>
-                  
-                  <!-- Success Indicator -->
-                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
-                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);">✓</div>
-                    <div>
-                      <strong style="color: #155724; font-size: 16px;">Lead Conversion Success</strong>
-                      <p style="margin: 5px 0 0 0; color: #155724;">Another customer journey completed successfully from lead to conversion!</p>
-                    </div>
-                  </div>
-                  
-                  <!-- Process Flow -->
-                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
-                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #28a745; color: white; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);">✓</div>
-                    <div>
-                      <strong style="color: #155724; font-size: 16px;">Automated Workflow Executed</strong>
-                      <p style="margin: 5px 0 0 0; color: #155724;">All notification emails sent, databases updated, timeline tracking active.</p>
-                    </div>
-                  </div>
-                  
-                  <!-- Revenue Tracking -->
-                  <div style="display: flex; align-items: center; margin: 15px 0; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
-                    <div style="width: 35px; height: 35px; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background: #ffc107; color: #856404; box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);">💰</div>
-                    <div>
-                      <strong style="color: #856404; font-size: 16px;">Revenue Pipeline Active</strong>
-                      <p style="margin: 5px 0 0 0; color: #856404;">Project moving to execution phase - revenue generation in progress.</p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Key Performance Indicators -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 30px 0;">
-                  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center;">
-                    <div style="font-size: 24px; margin-bottom: 10px;">🎯</div>
-                    <strong style="font-size: 16px;">Lead Quality</strong>
-                    <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">High-converting lead matched successfully</p>
-                  </div>
-                  <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 10px; text-align: center;">
-                    <div style="font-size: 24px; margin-bottom: 10px;">⚡</div>
-                    <strong style="font-size: 16px;">Response Time</strong>
-                    <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">Fast decision made by customer</p>
-                  </div>
                 </div>
 
                 <!-- Transaction Details -->
@@ -425,49 +410,6 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
                   </div>
                 </div>
 
-                <!-- Action Items & Next Steps -->
-                <div style="background: #fff3cd; padding: 25px; border-radius: 10px; margin: 30px 0; border: 2px solid #ffeaa7;">
-                  <h3 style="color: #856404; margin: 0 0 15px 0; font-size: 20px;">📝 Admin Action Items</h3>
-                  <div style="display: flex; align-items: flex-start; margin: 15px 0;">
-                    <div style="background: #856404; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0; font-size: 12px;">1</div>
-                    <div>
-                      <strong style="color: #856404;">Monitor Project Progress</strong>
-                      <p style="margin: 5px 0 0 0; color: #6c757d;">Track project timeline and ensure smooth execution.</p>
-                    </div>
-                  </div>
-                  <div style="display: flex; align-items: flex-start; margin: 15px 0;">
-                    <div style="background: #856404; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0; font-size: 12px;">2</div>
-                    <div>
-                      <strong style="color: #856404;">Customer Satisfaction Follow-up</strong>
-                      <p style="margin: 5px 0 0 0; color: #6c757d;">Schedule check-in after project completion for feedback.</p>
-                    </div>
-                  </div>
-                  <div style="display: flex; align-items: flex-start; margin: 15px 0;">
-                    <div style="background: #856404; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0; font-size: 12px;">3</div>
-                    <div>
-                      <strong style="color: #856404;">Performance Analytics Update</strong>
-                      <p style="margin: 5px 0 0 0; color: #6c757d;">Record conversion metrics for business intelligence.</p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- System Status -->
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #dee2e6; margin: 30px 0;">
-                  <h4 style="color: #495057; margin: 0 0 15px 0;">⚙️ System Status</h4>
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: #495057;">All automated processes:</span>
-                    <span style="color: #28a745; font-weight: bold;">✅ EXECUTED SUCCESSFULLY</span>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                    <span style="color: #495057;">Database updates:</span>
-                    <span style="color: #28a745; font-weight: bold;">✅ COMPLETED</span>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                    <span style="color: #495057;">Email notifications:</span>
-                    <span style="color: #28a745; font-weight: bold;">✅ SENT TO ALL PARTIES</span>
-                  </div>
-                </div>
-
                 <!-- Footer -->
                 <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e9ecef;">
                   <p style="color: #3498db; font-size: 16px; font-weight: bold; margin: 0 0 10px 0;">
@@ -484,70 +426,138 @@ async function sendNotificationEmails(quoteData, leadData = {}) {
     };
 
     try {
-        console.log('📧 Sending customer confirmation email...');
+        quoteLogger.email('Sending customer confirmation email', { 
+            to: customerMail.to,
+            subject: customerMail.subject
+        }, requestId);
         await sendEmail(customerMail);
-        console.log('✅ Customer email sent successfully');
+        quoteLogger.email('Customer email sent successfully', null, requestId);
         
-        console.log('📧 Sending tradesperson notification email...');
+        quoteLogger.email('Sending tradesperson notification email', { 
+            to: tradespersonMail.to,
+            subject: tradespersonMail.subject
+        }, requestId);
         await sendEmail(tradespersonMail);
-        console.log('✅ Tradesperson email sent successfully');
+        quoteLogger.email('Tradesperson email sent successfully', null, requestId);
         
-        console.log('📧 Sending admin notification email...');
+        quoteLogger.email('Sending admin notification email', { 
+            to: adminMail.to,
+            subject: adminMail.subject
+        }, requestId);
         await sendEmail(adminMail);
-        console.log('✅ Admin email sent successfully');
+        quoteLogger.email('Admin email sent successfully', null, requestId);
         
-        console.log('✅ All notification emails sent successfully');
+        quoteLogger.email('All notification emails sent successfully', null, requestId);
     } catch (error) {
-        console.error('❌ Error sending notification emails:', error);
+        quoteLogger.error('Error sending notification emails', error, requestId);
         throw error;
     }
 }
 
-
 export default async function handler(req, res) {
+    const requestId = quoteLogger.generateRequestId();
+    const startTime = Date.now();
+    
+    // Log incoming request details
+    quoteLogger.apiAccept('Request received', {
+        method: req.method,
+        url: req.url,
+        query: req.query,
+        headers: {
+            'user-agent': req.headers['user-agent'],
+            'referer': req.headers['referer'],
+            'x-forwarded-for': req.headers['x-forwarded-for']
+        },
+        bodySize: req.body ? JSON.stringify(req.body).length : 0
+    }, requestId);
+    
     if (req.method !== 'GET') {
+        quoteLogger.error('Invalid method', null, requestId);
+        quoteLogger.response('Sending 405 Method Not Allowed', { method: req.method }, requestId);
         return res.status(405).json({ success: false, error: 'Method Not Allowed' });
     }
 
     const { quoteId, ts, token } = req.query;
 
     if (!quoteId || !ts || !token) {
+        quoteLogger.error('Missing required parameters', { quoteId, ts, token }, requestId);
+        quoteLogger.response('Redirecting to error page - missing parameters', null, requestId);
         return res.redirect(`/quote-status?status=error&message=Missing required parameters.`);
     }
 
     const expectedToken = verifyToken(quoteId, ts);
     if (token !== expectedToken) {
+        quoteLogger.error('Invalid token', { 
+            providedToken: token.substring(0, 10) + '...', 
+            expectedToken: expectedToken.substring(0, 10) + '...' 
+        }, requestId);
+        quoteLogger.response('Redirecting to error page - invalid token', null, requestId);
         return res.redirect(`/quote-status?status=error&message=Invalid or expired link.`);
     }
     
+    quoteLogger.customerAccept('Token validated successfully', { quoteId }, requestId);
+    
     try {
+        quoteLogger.sheets('Initializing Google Sheets client', null, requestId);
         const sheets = await getGoogleSheetsClient();
         const spreadsheetId = getSpreadsheetId();
-        const range = 'Quotes!A:Z';
+        const range = 'Quotes!A:AJ';
 
+        quoteLogger.sheets('Fetching quote data from Google Sheets', { 
+            spreadsheetId: spreadsheetId.substring(0, 10) + '...', 
+            range 
+        }, requestId);
+        
         const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
         const rows = response.data.values;
+        
         if (!rows) {
+            quoteLogger.error('Could not connect to Google Sheets', null, requestId);
+            quoteLogger.response('Redirecting to error page - database connection failed', null, requestId);
             return res.redirect(`/quote-status?status=error&message=Could not connect to the database.`);
         }
         
+        quoteLogger.sheets('Google Sheets data retrieved', { 
+            totalRows: rows.length,
+            hasHeader: rows.length > 0 
+        }, requestId);
+        
         const header = rows[0];
-        const rowIndex = rows.findIndex(row => row[0] === quoteId);
+        const rowIndex = rows.findIndex(row => row[1] === quoteId); // QuoteID is in column B (index 1)
 
         if (rowIndex === -1) {
+            quoteLogger.error('Quote ID not found in Google Sheets', { 
+                quoteId, 
+                searchedRows: rows.length - 1,
+                availableQuoteIds: rows.slice(1).map(row => row[1]).filter(id => id)
+            }, requestId);
+            quoteLogger.response('Redirecting to error page - quote not found', null, requestId);
             return res.redirect(`/quote-status?status=error&message=Quote ID not found.`);
         }
         
+        quoteLogger.sheets('Quote found in Google Sheets', { 
+            quoteId, 
+            rowIndex: rowIndex + 1,
+            totalColumns: header.length
+        }, requestId);
+        
         const targetRow = rows[rowIndex];
         
-        // Get lead ID to fetch customer information
-        const leadIdIndex = header.findIndex(col => col && (col.toLowerCase().includes('lead') || col.toLowerCase().includes('leadi')));
-        const leadId = leadIdIndex !== -1 ? targetRow[leadIdIndex] : null;
+        // Get lead ID to fetch customer information (LeadID is in column C, index 2)
+        const leadId = targetRow[2] || null;
+        
+        quoteLogger.dataFlow('Quote row data extracted', {
+            quoteId,
+            leadId,
+            rowLength: targetRow.length,
+            hasLeadId: !!leadId
+        }, requestId);
         
         // Fetch lead data to get customer information
         let leadData = {};
         if (leadId) {
             try {
+                quoteLogger.sheets('Fetching lead data', { leadId }, requestId);
                 const leadResponse = await sheets.spreadsheets.values.get({ 
                     spreadsheetId, 
                     range: 'Leads!A:Z' 
@@ -561,45 +571,204 @@ export default async function handler(req, res) {
                         leadHeader.forEach((headerName, index) => {
                             leadData[headerName] = leadRow[index] || '';
                         });
+                        quoteLogger.sheets('Lead data retrieved successfully', { 
+                            leadId, 
+                            leadRowIndex: leadRowIndex + 1,
+                            leadDataKeys: Object.keys(leadData)
+                        }, requestId);
+                    } else {
+                        quoteLogger.error('Lead ID not found in Leads sheet', { leadId }, requestId);
                     }
                 }
             } catch (leadError) {
-                console.log('⚠️ Could not fetch lead data:', leadError.message);
+                quoteLogger.error('Could not fetch lead data', leadError, requestId);
             }
+        } else {
+            quoteLogger.info('No lead ID found in quote data', null, requestId);
         }
         
-        // Check if quote has expired (Valid Until date)
-        const validUntilIndex = header.findIndex(col => 
-            col && (col.toLowerCase().includes('valid until') || 
-                   col.toLowerCase().includes('expiry') || 
-                   col.toLowerCase().includes('expires'))
-        );
-        
-        if (validUntilIndex !== -1 && targetRow[validUntilIndex]) {
-            const validUntilDate = new Date(targetRow[validUntilIndex]);
-            const now = new Date();
-            
-            if (validUntilDate < now) {
-                const expiredMessage = encodeURIComponent(
-                    "This quote has expired and is no longer valid. Please contact us to request a new quote."
-                );
-                return res.redirect(`/quote-status?status=error&message=${expiredMessage}`);
-            }
-        }
-        
+        // Check for existing decision and expiry using correct schema column names
         const decisionIndex = header.indexOf('Decision');
-        const decisionTimestampIndex = header.indexOf('Decision Timestamp');
+        const decisionTimestampIndex = header.indexOf('DecisionTimestamp');
+        const validUntilIndex = header.indexOf('ValidUntil');
+        
+        const currentDecision = decisionIndex !== -1 ? targetRow[decisionIndex] : '';
+        const currentDecisionTimestamp = decisionTimestampIndex !== -1 ? targetRow[decisionTimestampIndex] : '';
+        const validUntil = validUntilIndex !== -1 ? targetRow[validUntilIndex] : '';
+        
+        quoteLogger.dataFlow('Decision and expiry data extracted', {
+            currentDecision,
+            currentDecisionTimestamp,
+            validUntil,
+            decisionIndex,
+            decisionTimestampIndex,
+            validUntilIndex
+        }, requestId);
+        
+        // Check if quote has been rejected
+        const statusIndex = header.indexOf('Status');
+        const quoteStatus = statusIndex !== -1 ? targetRow[statusIndex] : '';
+        
+        if (quoteStatus === 'Rejected') {
+            quoteLogger.customerAccept('Quote rejected - preventing acceptance', { 
+                quoteId, 
+                status: quoteStatus 
+            }, requestId);
+            
+            const rejectionPage = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Quote Not Available - Kiwi Trade</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+                        .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                        .info { background: #d1ecf1; color: #0c5460; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Quote Not Available</h1>
+                    <div class="error">
+                        <h2>Sorry, this quote is no longer available.</h2>
+                        <p>This quote has been rejected and is no longer valid.</p>
+                        <p>If you have any questions, please contact us directly.</p>
+                    </div>
+                    <div class="info">
+                        <p>Contact us for assistance:</p>
+                        <p>Email: info@kiwitrade.co.nz<br>Phone: 0800 KIWI TRADE</p>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            quoteLogger.response('Sending rejection page', { 
+                quoteId, 
+                processingTime: Date.now() - startTime 
+            }, requestId);
+            return res.status(400).send(rejectionPage);
+        }
 
-        // ROBUST ONE-TIME DECISION CHECK
-        if (decisionIndex !== -1 && targetRow[decisionIndex] && targetRow[decisionIndex].trim() !== '') {
-            const decision = targetRow[decisionIndex];
-            const timestamp = (decisionTimestampIndex !== -1) ? targetRow[decisionTimestampIndex] : '';
-            const formattedTime = formatTimestamp(timestamp);
+        // Check if quote has expired
+        let isExpired = false;
+        if (validUntil) {
+            try {
+                const validUntilDate = new Date(validUntil);
+                const now = new Date();
+                isExpired = validUntilDate < now;
+                quoteLogger.dataFlow('Expiry check completed', {
+                    validUntil,
+                    validUntilDate: validUntilDate.toISOString(),
+                    now: now.toISOString(),
+                    isExpired
+                }, requestId);
+            } catch (error) {
+                quoteLogger.error('Could not parse ValidUntil date', error, requestId);
+            }
+        } else {
+            quoteLogger.info('No ValidUntil date found', null, requestId);
+        }
+        
+        // EXPIRY LOCK LOGIC
+        if (isExpired) {
+            quoteLogger.customerAccept('Quote expired - processing expiry logic', { 
+                validUntil, 
+                currentDecision 
+            }, requestId);
             
-            console.log(`🚫 DECISION ALREADY MADE: ${decision} on ${formattedTime}`);
+            // If quote expired and no decision made yet, lock it as "Expired"
+            if (!currentDecision || currentDecision.trim() === '') {
+                quoteLogger.sheets('Locking expired quote as "Expired"', { quoteId }, requestId);
+                
+                // Update the sheet to mark as expired
+                const updateData = {
+                    'Decision': 'Expired',
+                    'DecisionTimestamp': getNZTimestamp(new Date()),
+                };
+                
+                const quoteDataForUpdate = {};
+                header.forEach((headerName, index) => {
+                    quoteDataForUpdate[headerName] = targetRow[index] || '';
+                    if (updateData[headerName] !== undefined) {
+                        targetRow[index] = updateData[headerName];
+                        quoteDataForUpdate[headerName] = updateData[headerName];
+                    }
+                });
+                
+                quoteLogger.sheets('Updating Google Sheets with expired status', { 
+                    updateData,
+                    rowIndex: rowIndex + 1
+                }, requestId);
+                
+                await sheets.spreadsheets.values.update({
+                    spreadsheetId,
+                    range: `Quotes!A${rowIndex + 1}`,
+                    valueInputOption: 'USER_ENTERED',
+                    requestBody: { values: [targetRow] },
+                });
+                
+                quoteLogger.sheets('Google Sheets updated with expired status', null, requestId);
+            }
             
-            // Create a detailed error page showing the decision status
-            const errorMessage = `This quote was already ${decision.toLowerCase()} on ${formattedTime}.`;
+            // Always return expired page (whether just locked or already expired)
+            quoteLogger.response('Sending expired quote page', { 
+                validUntil, 
+                currentDecision,
+                processingTime: Date.now() - startTime
+            }, requestId);
+            
+            const expiredPage = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Quote Expired</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f7fa; }
+                        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
+                        .error-icon { font-size: 48px; margin-bottom: 20px; }
+                        .error-title { color: #dc3545; font-size: 24px; margin-bottom: 15px; }
+                        .error-message { color: #6c757d; font-size: 16px; margin-bottom: 20px; }
+                        .expiry-info { background: #f8d7da; padding: 20px; border-radius: 8px; border: 1px solid #f5c6cb; margin: 20px 0; }
+                        .expiry-status { color: #721c24; font-weight: bold; font-size: 18px; }
+                        .timestamp { color: #6c757d; font-size: 14px; margin-top: 10px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="error-icon">❌</div>
+                        <h1>Quote Expired</h1>
+                        <p>This quote expired on ${validUntil}.</p>
+                        <div class="expiry-info">
+                            <div class="expiry-status">Quote Status: Expired</div>
+                            <div class="timestamp">Expired on: ${validUntil}</div>
+                        </div>
+                        <p style="color: #6c757d; font-size: 14px;">
+                            Please contact us again via the website to request a new quote.
+                        </p>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            return res.status(200).send(expiredPage);
+        }
+        
+        // DECISION LOCK LOGIC (for valid quotes)
+        // Allow customer to accept even if admin pre-approved, but prevent if already accepted/declined by customer
+        if (currentDecision && currentDecision.trim() !== '' && currentDecision !== 'Admin Approved') {
+            const formattedTime = formatTimestamp(currentDecisionTimestamp);
+            quoteLogger.customerAccept('Decision already made - preventing duplicate', { 
+                currentDecision, 
+                formattedTime,
+                quoteId
+            }, requestId);
+            
+            // Return user-friendly HTML page for already-made decision
+            quoteLogger.response('Sending already-made decision page', { 
+                currentDecision,
+                formattedTime,
+                processingTime: Date.now() - startTime
+            }, requestId);
+            
             const statusPage = `
                 <!DOCTYPE html>
                 <html>
@@ -609,20 +778,20 @@ export default async function handler(req, res) {
                         body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f7fa; }
                         .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
                         .error-icon { font-size: 48px; margin-bottom: 20px; }
-                        .error-title { color: #dc3545; font-size: 24px; margin-bottom: 15px; }
+                        .error-title { color: #ffc107; font-size: 24px; margin-bottom: 15px; }
                         .error-message { color: #6c757d; font-size: 16px; margin-bottom: 20px; }
-                        .decision-info { background: #f8d7da; padding: 20px; border-radius: 8px; border: 1px solid #f5c6cb; margin: 20px 0; }
-                        .decision-status { color: #721c24; font-weight: bold; font-size: 18px; }
+                        .decision-info { background: #fff3cd; padding: 20px; border-radius: 8px; border: 1px solid #ffeaa7; margin: 20px 0; }
+                        .decision-status { color: #856404; font-weight: bold; font-size: 18px; }
                         .timestamp { color: #6c757d; font-size: 14px; margin-top: 10px; }
                     </style>
                 </head>
                 <body>
                     <div class="container">
                         <div class="error-icon">⚠️</div>
-                        <h1 class="error-title">Decision Already Made</h1>
-                        <p class="error-message">This quote decision has already been processed and cannot be changed.</p>
+                        <h1>Quote Decision Already Made</h1>
+                        <p>You already chose ${currentDecision} on ${formattedTime}.</p>
                         <div class="decision-info">
-                            <div class="decision-status">Decision: ${decision}</div>
+                            <div class="decision-status">Decision: ${currentDecision}</div>
                             <div class="timestamp">Made on: ${formattedTime}</div>
                         </div>
                         <p style="color: #6c757d; font-size: 14px;">
@@ -633,51 +802,96 @@ export default async function handler(req, res) {
                 </html>
             `;
             
-            return res.status(400).send(statusPage);
+            return res.status(200).send(statusPage);
         }
         
-        // --- Update Sheet Data ---
-        console.log('📝 Updating quote decision in Google Sheets...');
+        // --- Update Sheet Data using correct schema column names ---
+        quoteLogger.customerAccept('Processing quote acceptance', { quoteId }, requestId);
         
-        // Find the correct column indices for updating (reuse existing variables)
-        const customerStatusIndex = header.indexOf('Customer Status');
-        const tradespersonStatusIndex = header.indexOf('Tradesperson Status');
-        const adminStatusIndex = header.indexOf('Admin Status');
+        const nzTimestamp = getNZTimestamp();
+        const updateData = {
+            'Decision': 'Accepted',
+            'DecisionTimestamp': nzTimestamp,
+        };
 
-        // Update the target row with decision data
-        if (decisionIndex !== -1) targetRow[decisionIndex] = 'Accepted';
-        if (decisionTimestampIndex !== -1) targetRow[decisionTimestampIndex] = new Date().toISOString();
-        if (customerStatusIndex !== -1) targetRow[customerStatusIndex] = 'Quote Decision';
-        if (tradespersonStatusIndex !== -1) targetRow[tradespersonStatusIndex] = 'Quote Decision';
-        if (adminStatusIndex !== -1) targetRow[adminStatusIndex] = 'Accepted';
+        quoteLogger.dataFlow('Preparing Google Sheets update', { 
+            updateData,
+            rowIndex: rowIndex + 1
+        }, requestId);
 
-        // Prepare data for email notifications
         const quoteDataForEmail = {};
         header.forEach((headerName, index) => {
             quoteDataForEmail[headerName] = targetRow[index] || '';
         });
 
-        // Update the Google Sheet
-        try {
-            await sheets.spreadsheets.values.update({
-                spreadsheetId,
-                range: `Quotes!A${rowIndex + 1}:Z${rowIndex + 1}`,
-                valueInputOption: 'USER_ENTERED',
-                requestBody: { values: [targetRow] },
-            });
-            console.log('✅ Quote decision updated in Google Sheets');
-        } catch (updateError) {
-            console.error('❌ Error updating Google Sheets:', updateError);
-            throw new Error('Failed to update quote decision: ' + updateError.message);
-        }
+        quoteLogger.sheets('Updating Google Sheets with acceptance', { 
+            updateData,
+            rowIndex: rowIndex + 1,
+            quoteDataKeys: Object.keys(quoteDataForEmail)
+        }, requestId);
+
+        await sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: `Quotes!A${rowIndex + 1}`,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [targetRow] },
+        });
+
+        quoteLogger.sheets('Google Sheets updated successfully', null, requestId);
 
         // --- Send Emails ---
-        await sendNotificationEmails(quoteDataForEmail, leadData);
+        try {
+            quoteLogger.email('Starting notification email process', { 
+                customerEmail: quoteDataForEmail['CustomerEmail'],
+                tradespersonEmail: quoteDataForEmail['TradePersonEmail']
+            }, requestId);
+            
+            await sendNotificationEmails(quoteDataForEmail, leadData, requestId);
+            quoteLogger.email('All notification emails sent successfully', null, requestId);
+        } catch (emailError) {
+            quoteLogger.error('Error sending notification emails', emailError, requestId);
+            // Still return success page even if emails fail
+        }
         
-        return res.redirect(`/quote-status?status=success&message=Your acceptance has been recorded!`);
+        // Return confirmation HTML page
+        quoteLogger.response('Sending success confirmation page', { 
+            quoteId,
+            processingTime: Date.now() - startTime
+        }, requestId);
+        
+        const confirmationPage = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Quote Accepted</title>
+                <style>
+                    body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f7fa; }
+                    .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
+                    .success-icon { font-size: 48px; margin-bottom: 20px; }
+                    .success-title { color: #28a745; font-size: 24px; margin-bottom: 15px; }
+                    .success-message { color: #6c757d; font-size: 16px; margin-bottom: 20px; }
+                    .timestamp { color: #6c757d; font-size: 14px; margin-top: 20px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="success-icon">✅</div>
+                    <h1>✅ Quote Accepted</h1>
+                    <p>Thanks, your choice has been recorded.</p>
+                    <div class="timestamp">Accepted on: ${nzTimestamp}</div>
+                </div>
+            </body>
+            </html>
+        `;
+        
+        return res.status(200).send(confirmationPage);
 
     } catch (error) {
-        console.error("Quote acceptance error:", error);
+        quoteLogger.error('Quote acceptance error', error, requestId);
+        quoteLogger.response('Redirecting to error page', { 
+            error: error.message,
+            processingTime: Date.now() - startTime
+        }, requestId);
         return res.redirect(`/quote-status?status=error&message=An internal server error occurred.`);
     }
 }

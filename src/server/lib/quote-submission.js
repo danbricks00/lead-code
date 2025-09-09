@@ -338,7 +338,7 @@ export default async function handler(req, res) {
     if (location) queryParams.append('location', location);
     
     const queryString = queryParams.toString();
-    const redirectUrl = `/quote-form.html${queryString ? '?' + queryString : ''}`;
+    const redirectUrl = `/quote-submit/${leadId}${queryString ? '?' + queryString : ''}`;
     
     return res.redirect(redirectUrl);
   }
@@ -366,12 +366,36 @@ export default async function handler(req, res) {
         });
       }
       
-      if (quoteData.tradesmanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(quoteData.tradesmanEmail)) {
-        console.log('❌ Email pattern validation failed:', quoteData.tradesmanEmail);
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid email format. Please enter a valid email address.'
-        });
+      if (quoteData.tradesmanEmail) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(quoteData.tradesmanEmail)) {
+          console.log('❌ Email pattern validation failed:', quoteData.tradesmanEmail);
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid email format. Please enter a valid email address.'
+          });
+        }
+        
+        // Check for invalid domain patterns (like .x.x for Outlook)
+        const domain = quoteData.tradesmanEmail.split('@')[1];
+        const invalidDomainPatterns = [
+            /\.x\.x$/i,           // .x.x pattern
+            /\.x\.\w+$/i,         // .x.anything pattern
+            /\.\w+\.x$/i,         // .anything.x pattern
+            /\.x$/i,              // .x pattern
+            /\.\d+\.\d+$/i,       // .number.number pattern
+            /\.\d+$/i,            // .number pattern
+        ];
+        
+        for (const pattern of invalidDomainPatterns) {
+            if (pattern.test(domain)) {
+                console.log(`❌ Invalid domain pattern detected: ${domain}`);
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid email domain format'
+                });
+            }
+        }
       }
       
       if (!quoteData.tradesmanName || !quoteData.tradesmanEmail || !quoteData.totalAmount) {
@@ -591,12 +615,46 @@ export default async function handler(req, res) {
               quoteData.budget || '', // AH: Budget
               JSON.stringify(quoteData.rooms || []), // AI: Rooms
               '' // AJ: Breakdown
+              new Date().toISOString(),
+              quoteData.quoteId,
+              quoteData.quoteNumber,
+              quoteData.tradesmanName,
+              quoteData.tradesmanEmail,
+              quoteData.tradesmanPhone,
+              quoteData.totalAmount,
+              quoteData.itemBreakdown,
+              quoteData.validUntil,
+              quoteData.additionalNotes,
+              'submitted',
+              quoteData.customerName,
+              quoteData.customerEmail,
+              quoteData.customerPhone,
+              quoteData.serviceType,
+              quoteData.location,
+              quoteData.projectDetails,
+              quoteData.projectSize,
+              quoteData.budget,
+              quoteData.timeline,
+              // Add detailed breakdown data for admin approval
+              quoteData.labourRate,
+              quoteData.labourHours,
+              quoteData.materialsCost,
+              quoteData.materialsQuantity,
+              quoteData.travelCost,
+              quoteData.travelDistance,
+              quoteData.installationCost,
+              quoteData.subtotal,
+              quoteData.gst,
+              quoteData.totalQuote,
+              JSON.stringify(quoteData.rooms || []), // Store rooms data as JSON
+              quoteData.leadId // Store lead ID for reference
             ]
           ];
 
           await sheets.spreadsheets.values.append({
             spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
             range: 'Quotes!A:AJ',
+            range: 'Quotes!A:AF',
             valueInputOption: 'RAW',
             insertDataOption: 'INSERT_ROWS',
             resource: { values }

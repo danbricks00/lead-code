@@ -1,4 +1,5 @@
-import { getGoogleSheetsClient, getSpreadsheetId } from "../../../lib/googleSheets.js";
+import { getLeadById, upsertQuoteRow } from '../../../utils/sheets';
+import { buildQuoteRow } from '../../../utils/quotes';
 import { sendEmail } from '../../../lib/emailHelper';
 import crypto from "crypto";
 
@@ -9,32 +10,40 @@ function verifyToken(id, ts) {
     return hmac.digest("hex");
 }
 
-function generateQuoteSubmissionLink(quoteId) {
+function generateQuoteSubmissionLink(leadId) {
     const ts = Date.now().toString();
-    const token = verifyToken(quoteId, ts);
+    const token = verifyToken(leadId, ts);
     const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
-    return `https://${baseUrl}/quote-submit/${quoteId}?ts=${ts}&token=${token}`;
+    return `https://${baseUrl}/quote-submit/${leadId}?ts=${ts}&token=${token}`;
 }
 
-async function findRowAndGetData(options) {
-    const { sheets, spreadsheetId, tab, searchColumn, searchValue, columnsToFetch } = options;
-    const range = `${tab}!A:Z`;
-    const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
-    const rows = response.data.values;
-    if (!rows || rows.length < 2) return null;
-    const header = rows[0];
-    const searchColumnIndex = header.indexOf(searchColumn);
-    if (searchColumnIndex === -1) throw new Error(`Column "${searchColumn}" not found in tab "${tab}".`);
-    const dataRow = rows.find(row => row[searchColumnIndex] === searchValue);
-    if (!dataRow) return null;
-    const result = {
-        rowIndex: rows.indexOf(dataRow) + 1 // 1-based index
-    };
-    columnsToFetch.forEach(columnName => {
-        const index = header.indexOf(columnName);
-        result[columnName] = index !== -1 ? dataRow[index] || '' : 'N/A (Column not found)';
-    });
-    return result;
+async function getQuoteById(quoteId) {
+    try {
+        const { getGoogleSheetsClient, getSpreadsheetId } = await import("../../../lib/googleSheets.js");
+        const sheets = await getGoogleSheetsClient();
+        const spreadsheetId = getSpreadsheetId();
+        
+        const range = 'Quotes!A:Z';
+        const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
+        const rows = response.data.values || [];
+        
+        if (rows.length === 0) return null;
+        
+        const headers = rows[0];
+        const quoteRow = rows.find(row => row[0] === quoteId); // QuoteID is first column
+        
+        if (!quoteRow) return null;
+        
+        const quote = {};
+        headers.forEach((header, index) => {
+            quote[header] = quoteRow[index] || '';
+        });
+        
+        return quote;
+    } catch (error) {
+        console.error(`[ADMIN-DECLINE] Error getting quote ${quoteId}:`, error);
+        return null;
+    }
 }
 
 // --- Main Handler ---
@@ -50,54 +59,64 @@ export default async function handler(req, res) {
     }
 
     try {
-        const sheets = getGoogleSheetsClient();
-        const spreadsheetId = getSpreadsheetId();
-
-        // 1. Get Quote and Lead data from Sheets
-        const quoteData = await findRowAndGetData({
-            sheets, spreadsheetId, tab: 'Quotes',
-            searchColumn: 'QuoteID', searchValue: quoteId,
-            columnsToFetch: ['Admin Status', 'TradePerson Email', 'TradesPerson Name', 'LeadiD', 'Reesubmission Allowed']
-        });
-
+        // 1. Get Quote data using new unified system
+        const quoteData = await getQuoteById(quoteId);
         if (!quoteData) return res.redirect(`/quote-status?status=error&message=Quote not found.`);
-        if (quoteData['Admin Status'] === 'Declined') return res.redirect(`/quote-status?status=error&message=This quote has already been declined.`);
-        if (quoteData['Admin Status'] === 'Approved') return res.redirect(`/quote-status?status=error&message=This quote has already been approved and cannot be declined.`);
-
-        const leadData = await findRowAndGetData({
-            sheets, spreadsheetId, tab: 'Leads',
-            searchColumn: 'Lead', searchValue: quoteData['LeadiD'],
-            columnsToFetch: ['CustomerName', 'CustomerEmail', 'ServiceType']
-        });
         
-        if (!leadData) return res.redirect(`/quote-status?status=error&message=Lead data not found.`);
+        // Check if already declined or approved
+        if (quoteData.AdminPersonStatus === 'Declined') {
+            return res.redirect(`/quote-status?status=error&message=This quote has already been declined.`);
+        }
+        if (quoteData.AdminPersonStatus === 'Approved') {
+            return res.redirect(`/quote-status?status=error&message=This quote has already been approved and cannot be declined.`);
+        }
 
-        // 2. Update Sheet Status to declined but allow resubmission
-        const headerResponse = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Quotes!A1:Z1' });
-        const header = headerResponse.data.values[0];
-        const updates = { 
-            'Admin Status': 'Declined', 
-            'TradePerson Status': 'Needs Revision',
-            'Reesubmission Allowed': 'Yes'
-        };
-        let targetRow = (await sheets.spreadsheets.values.get({ spreadsheetId, range: `Quotes!A${quoteData.rowIndex}:Z${quoteData.rowIndex}` })).data.values[0];
-        
-        header.forEach((colName, index) => {
-            if(updates[colName]) targetRow[index] = updates[colName];
+        // 2. Get Lead data using new unified system
+        const lead = await getLeadById(quoteData.LeadID);
+        if (!lead) return res.redirect(`/quote-status?status=error&message=Lead data not found.`);
+
+        // 3. Update Quote using new unified system with rejected mode
+        const rejectedRow = buildQuoteRow({
+            lead,
+            quoteId: quoteData.QuoteID,
+            tradePersonName: quoteData.TradePersonName || '',
+            tradePersonEmail: quoteData.TradePersonEmail || '',
+            tradePersonPhone: quoteData.TradePersonPhone || '',
+            body: {
+                labourRate: quoteData.LabourRate || '',
+                labourHours: quoteData.LabourHours || '',
+                labourTotal: quoteData.LabourTotal || '',
+                materialsCost: quoteData.MaterialsCost || '',
+                materialsQuantity: quoteData.MaterialsQuantity || '',
+                materialsTotal: quoteData.MaterialsTotal || '',
+                travelCost: quoteData.TravelCost || '',
+                travelDistance: quoteData.TravelDistance || '',
+                travelTotal: quoteData.TravelTotal || '',
+                installationCost: quoteData.InstallationCost || '',
+                subtotal: quoteData.Subtotal || '',
+                gst: quoteData.GST || '',
+                totalQuote: quoteData.TotalQuote || '',
+                notes: quoteData.Notes || '',
+                validUntil: quoteData.ValidUnitl || ''
+            },
+            mode: 'rejected'
         });
 
-        await sheets.spreadsheets.values.update({
-            spreadsheetId, range: `Quotes!A${quoteData.rowIndex}`,
-            valueInputOption: 'USER_ENTERED', requestBody: { values: [targetRow] },
-        });
+        // Override with decline-specific status
+        rejectedRow.AdminPersonStatus = 'Declined';
+        rejectedRow.TradePersonStatus = 'Needs Revision';
+        rejectedRow.ResubmissionAllowed = 'Yes';
+
+        const result = await upsertQuoteRow(quoteData.QuoteID, rejectedRow, { req, caller: 'admin-decline' });
+        console.log(`[ADMIN-DECLINE] Quote ${quoteId} declined, result:`, result);
 
         // 3. Generate resubmission link
-        const resubmissionLink = generateQuoteSubmissionLink(quoteId);
+        const resubmissionLink = generateQuoteSubmissionLink(quoteData.LeadID);
 
         // 4. Send notification email to tradesperson
         const tradespersonEmailOptions = {
-          to: quoteData['TradePerson Email'],
-          subject: `⚠️ Quote Revision Required - ${leadData['ServiceType']} for ${leadData['CustomerName']}`,
+          to: quoteData.TradePersonEmail,
+          subject: `⚠️ Quote Revision Required - ${lead.ServiceType} for ${lead.CustomerName}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
               <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -111,8 +130,8 @@ export default async function handler(req, res) {
                 <!-- Quote Details -->
                 <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 20px; margin-bottom: 25px;">
                   <h3 style="color: #856404; margin: 0 0 15px 0; font-size: 18px;">📋 Quote Details</h3>
-                  <p style="margin: 5px 0; color: #856404;"><strong>Customer:</strong> ${leadData['CustomerName']}</p>
-                  <p style="margin: 5px 0; color: #856404;"><strong>Service:</strong> ${leadData['ServiceType']}</p>
+                  <p style="margin: 5px 0; color: #856404;"><strong>Customer:</strong> ${lead.CustomerName}</p>
+                  <p style="margin: 5px 0; color: #856404;"><strong>Service:</strong> ${lead.ServiceType}</p>
                   <p style="margin: 5px 0; color: #856404;"><strong>Quote ID:</strong> ${quoteId}</p>
                   <p style="margin: 5px 0; color: #856404;"><strong>Status:</strong> Declined - Revision Required</p>
                 </div>
@@ -157,20 +176,20 @@ export default async function handler(req, res) {
         };
 
         await sendEmail(tradespersonEmailOptions);
-        console.log(`✅ Quote decline notification sent to ${quoteData['TradePerson Email']}`);
+        console.log(`✅ Quote decline notification sent to ${quoteData.TradePersonEmail}`);
 
         // 5. Send notification to admin
         const adminEmailOptions = {
           to: process.env.ADMIN_EMAIL,
-          subject: `Quote Declined - ${leadData['ServiceType']} for ${leadData['CustomerName']}`,
+          subject: `Quote Declined - ${lead.ServiceType} for ${lead.CustomerName}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <h2 style="color: #e74c3c;">Quote Declined Successfully</h2>
               <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
                 <p><strong>Quote ID:</strong> ${quoteId}</p>
-                <p><strong>Customer:</strong> ${leadData['CustomerName']}</p>
-                <p><strong>Service:</strong> ${leadData['ServiceType']}</p>
-                <p><strong>Tradesperson:</strong> ${quoteData['TradesPerson Name']}</p>
+                <p><strong>Customer:</strong> ${lead.CustomerName}</p>
+                <p><strong>Service:</strong> ${lead.ServiceType}</p>
+                <p><strong>Tradesperson:</strong> ${quoteData.TradePersonName}</p>
                 <p><strong>Status:</strong> Declined - Tradesperson notified for revision</p>
                 ${reason ? `<p><strong>Decline Reason:</strong> ${decodeURIComponent(reason)}</p>` : ''}
                 <p>The tradesperson has been notified and can resubmit the quote after making revisions.</p>

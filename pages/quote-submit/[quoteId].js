@@ -65,6 +65,7 @@ const QuoteSubmitPage = () => {
   const [isEditing, setIsEditing] = useState(false); // New state for edit mode
   const [isResubmission, setIsResubmission] = useState(false); // Track if this is a resubmission
   const [declineReason, setDeclineReason] = useState(''); // Store admin's decline reason
+  const [versionedQuoteId, setVersionedQuoteId] = useState(''); // Store the versioned quote ID from API
   
   // Set default expiry date to 2 weeks from now
   const defaultExpiryDate = new Date();
@@ -92,23 +93,82 @@ const QuoteSubmitPage = () => {
   useEffect(() => {
     if (isReady && quoteId) {
       const fetchLeadDetails = async () => {
-        console.log(`[FORM] useEffect triggered. Fetching details for quoteId: ${quoteId}`);
+        console.log(`[FORM] useEffect triggered. Fetching details for leadId: ${quoteId}`);
         try {
-          const response = await fetch(`/api/get-lead-details?quoteId=${quoteId}`);
+        const response = await fetch(`/api/quote/init?leadId=${quoteId}`);
           const result = await response.json();
           
           console.log('[FORM] API Response received:', result);
 
-          if (result.success && result.data) {
-            console.log('[FORM] Success. Setting lead details:', result.data);
-            setLeadDetails(result.data);
+          if (result.lead) {
+            console.log('[FORM] Success. Setting lead details:', result.lead);
+            setLeadDetails(result.lead);
+            
+            // Store the versioned quote ID for submission
+            if (result.quoteId) {
+              console.log('[FORM] Using versioned quote ID:', result.quoteId);
+              setVersionedQuoteId(result.quoteId);
+              
+              // Check if this is a resubmission (has version suffix)
+              const isVersioned = /^(.+)-([A-Z]|\d+)$/.test(result.quoteId);
+              setIsResubmission(isVersioned);
+              
+              if (isVersioned) {
+                console.log('[FORM] This is a resubmission with versioned quote ID:', result.quoteId);
+              }
+            }
+
+            // Preload existing quote data if available (for resubmission)
+            if (result.existingQuote) {
+              console.log('[FORM] Preloading existing quote data:', result.existingQuote);
+              setCosts(prev => ({
+                ...prev,
+                labourRate: result.existingQuote.labourRate || '',
+                labourHours: result.existingQuote.labourHours || '',
+                materialsCost: result.existingQuote.materialsCost || '',
+                materialsQuantity: result.existingQuote.materialsQuantity || '',
+                travelCost: result.existingQuote.travelCost || '',
+                travelDistance: result.existingQuote.travelDistance || '',
+                installationCost: result.existingQuote.installationCost || ''
+              }));
+              
+              setNotes(result.existingQuote.notes || '');
+              setValidUntil(result.existingQuote.validUntil || '');
+              
+              // Set tradesperson details if available
+              if (result.existingQuote.tradePersonName) {
+                setTradespersonDetails(prev => ({
+                  ...prev,
+                  name: result.existingQuote.tradePersonName,
+                  email: result.existingQuote.tradePersonEmail,
+                  phone: result.existingQuote.tradePersonPhone
+                }));
+              }
+            }
 
             // Make room data lookup case-insensitive to handle inconsistencies
-            const roomDataString = result.data.Rooms || result.data.rooms; 
+            const roomDataString = result.lead.rooms; 
+            console.log('[FORM] Room data received:', roomDataString, 'Type:', typeof roomDataString);
 
             if (roomDataString) {
                 try {
-                    const roomsData = JSON.parse(roomDataString);
+                    // Handle different data formats
+                    let roomsData;
+                    if (Array.isArray(roomDataString)) {
+                        roomsData = roomDataString;
+                    } else if (typeof roomDataString === 'string') {
+                        // Check if it's a JSON string or just a string representation of an object
+                        if (roomDataString.startsWith('[') || roomDataString.startsWith('{')) {
+                            roomsData = JSON.parse(roomDataString);
+                        } else {
+                            console.log('[FORM] Room data is not valid JSON, skipping:', roomDataString);
+                            roomsData = [];
+                        }
+                    } else {
+                        console.log('[FORM] Room data is not array or string, skipping:', roomDataString);
+                        roomsData = [];
+                    }
+                    console.log('[FORM] Parsed rooms data:', roomsData);
                     
                     // Parse dimensions and calculate sqm for each room
                     const parsedRoomsWithSqm = Array.isArray(roomsData) ? roomsData.map(room => {
@@ -149,40 +209,8 @@ const QuoteSubmitPage = () => {
             setIsEditing(true);
           }
 
-          // Check for existing quote data (resubmission)
-          try {
-            const quoteResponse = await fetch(`/api/get-quote-details?quoteId=${quoteId}`);
-            const quoteResult = await quoteResponse.json();
-            
-            if (quoteResult.success && quoteResult.quote) {
-              const quote = quoteResult.quote;
-              
-              // Check if this is a declined quote that can be resubmitted
-              if (quote['Admin Status'] === 'Declined' && quote['Reesubmission Allowed'] === 'Yes') {
-                setIsResubmission(true);
-                setDeclineReason(quote['Decline Reason'] || 'Quote needs revision');
-                
-                // Pre-populate the form with existing quote data
-                if (quote['TradesPerson Name']) setTradesperson(prev => ({...prev, name: quote['TradesPerson Name']}));
-                if (quote['TradePerson Email']) setTradesperson(prev => ({...prev, email: quote['TradePerson Email']}));
-                
-                setCosts({
-                  labourRate: quote['Labour Cost'] || '',
-                  labourHours: quote['Labour Hour'] || '',
-                  materialsCost: quote['Materials Cost'] || '',
-                  materialsQuantity: quote['Materials Quanitity'] || '',
-                  travelCost: quote['Travel Cost'] || '',
-                  travelDistance: quote['Travel Distance'] || '',
-                  installationCost: quote['Installation Cost'] || '',
-                });
-                
-                setNotes(quote['Notes'] || '');
-                if (quote['Quote Valid Unitl']) setValidUntil(quote['Quote Valid Unitl']);
-              }
-            }
-          } catch (quoteError) {
-            console.log("[FORM] No existing quote data found (normal for new quotes)");
-          }
+          // Note: Resubmission logic removed - using new unified system
+          // The new system handles quote states through the Quotes tab directly
 
         } catch (error) {
           console.error("[FORM] Fatal fetch error, enabling edit mode.", error);
@@ -262,73 +290,6 @@ const QuoteSubmitPage = () => {
     setParsedRooms([...parsedRooms, newRoom]);
   };
 
-  const generatePDF = async () => {
-    try {
-      console.log('🔄 Generating PDF for quote:', quoteId);
-      
-      const quoteData = {
-        quoteId,
-        quoteDate: new Date().toISOString(),
-        validUntil: validUntil,
-        customerName: leadDetails?.CustomerName || 'N/A',
-        customerEmail: leadDetails?.CustomerEmail || 'N/A',
-        customerPhone: leadDetails?.CustomerPhone || 'N/A',
-        customerAddress: leadDetails?.Location || 'N/A',
-        serviceType: leadDetails?.ServiceType || 'Underfloor Heating',
-        tradespersonName: tradesperson.name,
-        tradespersonEmail: tradesperson.email,
-        tradespersonPhone: tradesperson.phone,
-        tradespersonLicense: 'Licensed Tradesperson',
-        rooms: parsedRooms.map(room => ({
-          name: room.name,
-          dimensions: room.dimensions || room.originalInput,
-          sqm: room.sqm,
-          labourHours: parseFloat(costs.labourHours) || 0,
-          labourCost: (parseFloat(costs.labourRate) || 0) * (parseFloat(costs.labourHours) || 0),
-          materialsCost: (parseFloat(costs.materialsCost) || 0) * (parseFloat(costs.materialsQuantity) || 0)
-        })),
-        totals: {
-          labour: totals.labour,
-          materials: totals.materials,
-          travel: totals.travel,
-          installation: totals.installation,
-          subtotal: totals.subtotal,
-          gst: totals.gst,
-          final: totals.final
-        }
-      };
-
-      const response = await fetch('/api/generate-quote-pdf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(quoteData),
-      });
-
-      if (response.ok) {
-        // Create blob and download
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `quote-${quoteId}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        
-        console.log('✅ PDF generated and downloaded successfully');
-      } else {
-        const error = await response.json();
-        console.error('❌ PDF generation failed:', error);
-        alert('Failed to generate PDF: ' + (error.error || 'Unknown error'));
-      }
-    } catch (error) {
-      console.error('❌ PDF generation error:', error);
-      alert('Failed to generate PDF: ' + error.message);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -336,6 +297,14 @@ const QuoteSubmitPage = () => {
     setErrorMessage('');
 
     const { token, ts } = query;
+    
+    // Use the versioned quote ID from the API response
+    if (!versionedQuoteId) {
+      setErrorMessage('Quote ID not available. Please refresh the page and try again.');
+      setSubmissionStatus('error');
+      return;
+    }
+    
     const quoteDetails = {
       ...costs,
       notes,
@@ -359,11 +328,9 @@ const QuoteSubmitPage = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          quoteId,
-          ts,
-          token,
-          quoteDetails,
-          leadDetails: updatedLeadDetails, // Pass the updated lead details including edited rooms
+          quoteId: versionedQuoteId, // Use the versioned quote ID
+          leadId: quoteId, // The URL parameter is actually the leadId now
+          ...quoteDetails, // Spread the quote details directly
         }),
       });
 
@@ -401,7 +368,10 @@ const QuoteSubmitPage = () => {
         <h1 style={styles.header}>
           {isResubmission ? '🔄 Quote Resubmission Form' : 'Quote Submission Form'}
         </h1>
-        <p><strong>Quote ID:</strong> {quoteId}</p>
+        <p><strong>Lead ID:</strong> {quoteId}</p>
+        {versionedQuoteId && (
+          <p><strong>Quote ID:</strong> {versionedQuoteId}</p>
+        )}
         
         {isResubmission && (
           <div style={styles.resubmissionBanner}>
@@ -426,24 +396,24 @@ const QuoteSubmitPage = () => {
           {!isEditing ? (
             <div style={styles.detailsGrid}>
               {/* Display static details, now with consistent bracket notation and null checks */}
-              <div><strong>Name:</strong> {leadDetails['CustomerName'] || 'N/A'}</div>
-              <div><strong>Email:</strong> {leadDetails['CustomerEmail'] || 'N/A'}</div>
-              <div><strong>Phone:</strong> {leadDetails['CustomerPhone'] || 'N/A'}</div>
-              <div><strong>Service:</strong> {leadDetails['ServiceType'] || 'Underfloor Heating'}</div>
-              <div><strong>Area:</strong> {leadDetails['Area'] || 'N/A'}</div>
-              <div><strong>Suburb:</strong> {leadDetails['Suburb'] || 'N/A'}</div>
-              <div><strong>Timeline:</strong> {leadDetails['Timelline'] || 'N/A'}</div>
+              <div><strong>Name:</strong> {leadDetails['customerName'] || leadDetails['CustomerName'] || 'N/A'}</div>
+              <div><strong>Email:</strong> {leadDetails['customerEmail'] || leadDetails['CustomerEmail'] || 'N/A'}</div>
+              <div><strong>Phone:</strong> {leadDetails['customerPhone'] || leadDetails['CustomerPhone'] || 'N/A'}</div>
+              <div><strong>Service:</strong> {leadDetails['serviceType'] || leadDetails['ServiceType'] || 'Underfloor Heating'}</div>
+              <div><strong>Area:</strong> {leadDetails['area'] || leadDetails['Area'] || 'N/A'}</div>
+              <div><strong>Suburb:</strong> {leadDetails['suburb'] || leadDetails['Suburb'] || 'N/A'}</div>
+              <div><strong>Timeline:</strong> {leadDetails['timeline'] || leadDetails['Timelline'] || 'N/A'}</div>
             </div>
           ) : (
             <div style={styles.detailsGrid}>
               {/* Display input fields, now with consistent bracket notation and null checks */}
-              <div style={styles.inputGroup}><label>Name</label><input type="text" name="CustomerName" value={leadDetails['CustomerName'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
-              <div style={styles.inputGroup}><label>Email</label><input type="email" name="CustomerEmail" value={leadDetails['CustomerEmail'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
-              <div style={styles.inputGroup}><label>Phone</label><input type="tel" name="CustomerPhone" value={leadDetails['CustomerPhone'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
-              <div style={styles.inputGroup}><label>Service</label><input type="text" name="ServiceType" value={leadDetails['ServiceType'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
-              <div style={styles.inputGroup}><label>Area</label><input type="text" name="Area" value={leadDetails['Area'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
-              <div style={styles.inputGroup}><label>Suburb</label><input type="text" name="Suburb" value={leadDetails['Suburb'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
-              <div style={styles.inputGroup}><label>Timeline</label><input type="text" name="Timelline" value={leadDetails['Timelline'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Name</label><input type="text" name="customerName" value={leadDetails['customerName'] || leadDetails['CustomerName'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Email</label><input type="email" name="customerEmail" value={leadDetails['customerEmail'] || leadDetails['CustomerEmail'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Phone</label><input type="tel" name="customerPhone" value={leadDetails['customerPhone'] || leadDetails['CustomerPhone'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Service</label><input type="text" name="serviceType" value={leadDetails['serviceType'] || leadDetails['ServiceType'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Area</label><input type="text" name="area" value={leadDetails['area'] || leadDetails['Area'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Suburb</label><input type="text" name="suburb" value={leadDetails['suburb'] || leadDetails['Suburb'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Timeline</label><input type="text" name="timeline" value={leadDetails['timeline'] || leadDetails['Timelline'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
             </div>
           )}
         </div>
@@ -661,17 +631,25 @@ const QuoteSubmitPage = () => {
             </div>
           </div>
 
-          <div style={styles.buttonGroup}>
-            <button 
-              type="button" 
-              style={styles.pdfButton} 
-              onClick={generatePDF}
-              disabled={submissionStatus === 'submitting'}
-            >
-              📄 Generate PDF Quote
-            </button>
-            <button type="submit" style={styles.button} disabled={submissionStatus === 'submitting'}>
-              {submissionStatus === 'submitting' ? 'Submitting...' : 'Submit Quote to Customer'}
+          <div style={{
+            position: 'sticky',
+            bottom: 0,
+            background: '#fff',
+            padding: '12px',
+            borderTop: '1px solid #eee'
+          }}>
+            <button type="submit" style={{
+              width: '100%',
+              background: '#0a7aff',
+              color: '#fff',
+              padding: '14px 18px',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: 600,
+              fontSize: '16px',
+              cursor: 'pointer'
+            }} disabled={submissionStatus === 'submitting'}>
+              {submissionStatus === 'submitting' ? 'Submitting...' : 'Submit Quote'}
             </button>
           </div>
           {submissionStatus === 'error' && <p style={styles.error}>{errorMessage}</p>}
@@ -710,24 +688,6 @@ const styles = {
   finalTotalRow: { fontSize: '1.2em', fontWeight: 'bold', color: '#2c5530' },
   textarea: { width: '100%', padding: '8px', boxSizing: 'border-box', border: '1px solid #ddd', borderRadius: '4px', minHeight: '80px' },
   button: { width: '100%', padding: '12px', background: '#4caf50', color: 'white', border: 'none', borderRadius: '4px', fontSize: '1em', cursor: 'pointer' },
-  buttonGroup: {
-    display: 'flex',
-    gap: '15px',
-    marginTop: '20px'
-  },
-  pdfButton: {
-    background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '15px 30px',
-    fontSize: '16px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    boxShadow: '0 4px 15px rgba(40, 167, 69, 0.3)',
-    flex: 1
-  },
   error: { color: 'red', marginTop: '10px', textAlign: 'center' },
   editButton: {
     background: 'none',

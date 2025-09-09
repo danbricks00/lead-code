@@ -242,27 +242,9 @@
             
             // Submit decline
             try {
-                const response = await fetch('/api/admin-decline-quote', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        quoteId,
-                        leadId,
-                        reason,
-                        notes: notes.trim()
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert('Quote declined successfully. Both tradesperson and customer have been notified.');
-                    window.location.href = '/admin.html';
-                } else {
-                    alert('Error declining quote: ' + (result.error || 'Unknown error'));
-                }
+                // Use GET method with query parameters to match the admin decline API
+                const declineUrl = `/api/admin/decline?quoteId=${quoteId}&ts=${Date.now()}&token=admin_token&reason=${encodeURIComponent(reason)}`;
+                window.location.href = declineUrl;
             } catch (error) {
                 console.error('Error submitting decline:', error);
                 alert('Error declining quote. Please try again.');

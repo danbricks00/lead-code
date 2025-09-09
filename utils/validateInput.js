@@ -6,6 +6,30 @@ const nzPhoneRegex = /^(?:\+64\d{7,10}|0\d{7,10})$/;
 // Email validation
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Invalid domain patterns (like .x.x for Outlook)
+const invalidDomainPatterns = [
+  /\.x\.x$/i,           // .x.x pattern
+  /\.x\.\w+$/i,         // .x.anything pattern
+  /\.\w+\.x$/i,         // .anything.x pattern
+  /\.x$/i,              // .x pattern
+  /\.\d+\.\d+$/i,       // .number.number pattern
+  /\.\d+$/i,            // .number pattern
+  /\.x\.\w+\.\w+$/i,    // .x.anything.anything pattern (like .x.net.nz)
+];
+
+// Valid TLD patterns for common domains
+const validTLDPatterns = [
+  /\.(com|co|org|net|edu|gov|mil|int)$/i,  // Generic TLDs
+  
+  // New Zealand domains (comprehensive support)
+  /\.(co\.nz|org\.nz|net\.nz|ac\.nz|govt\.nz|school\.nz|iwi\.nz|maori\.nz)$/i,  // NZ second-level domains
+  /\.nz$/i,  // Direct .nz domains
+  
+  // Other country-specific TLDs
+  /\.(co\.uk|com\.au|co\.za|co\.jp|co\.kr|co\.in|co\.br|co\.mx|co\.ca)$/i,  // Country-specific TLDs
+  /\.(uk|au|za|jp|kr|in|br|mx|ca|de|fr|it|es|nl|se|no|dk|fi|pl|cz|hu|ro|bg|hr|si|sk|ee|lv|lt|mt|cy|ie|pt|gr|lu|at|be|ch|li|is|fo|gl|ad|mc|sm|va|gi|je|gg|im|ax|sj|bv|hm|tf|aq|gs|fk|sh|ac|ta|io|cc|tv|me|ly|as|mp|gu|vi|pr|us|dm|lc|vc|ag|bb|gd|kn|ms|tc|vg|ai|bm|ky)$/i  // Country codes
+];
+
 // Sanitize phone number (remove spaces, dashes, brackets)
 export function sanitizePhone(phone) {
   if (!phone) return '';
@@ -19,10 +43,51 @@ export function validatePhone(phone) {
   return nzPhoneRegex.test(sanitized);
 }
 
-// Validate email
+// Enhanced email validation with domain checking
 export function validateEmail(email) {
   if (!email) return false;
-  return emailRegex.test(email.trim());
+  
+  const trimmedEmail = email.trim();
+  
+  // Basic email format validation
+  if (!emailRegex.test(trimmedEmail)) {
+    return false;
+  }
+  
+  // Extract domain part
+  const domain = trimmedEmail.split('@')[1];
+  if (!domain) return false;
+  
+  // Check for invalid domain patterns
+  for (const pattern of invalidDomainPatterns) {
+    if (pattern.test(domain)) {
+      console.log(`❌ Invalid domain pattern detected: ${domain}`);
+      return false;
+    }
+  }
+  
+  // Check for valid TLD patterns (more permissive for international domains)
+  const hasValidTLD = validTLDPatterns.some(pattern => pattern.test(domain));
+  
+  // If no valid TLD pattern matches, do additional checks
+  if (!hasValidTLD) {
+    // Allow domains with at least 2 parts and reasonable length
+    const domainParts = domain.split('.');
+    if (domainParts.length < 2) {
+      console.log(`❌ Domain has insufficient parts: ${domain}`);
+      return false;
+    }
+    
+    // Check if any part is too short or contains invalid characters
+    for (const part of domainParts) {
+      if (part.length < 2 || /[^a-zA-Z0-9\-]/.test(part)) {
+        console.log(`❌ Invalid domain part: ${part} in ${domain}`);
+        return false;
+      }
+    }
+  }
+  
+  return true;
 }
 
 // Validate numeric input
@@ -45,7 +110,7 @@ export function getInvalidMessage(type, value = '') {
     case 'phone':
       return "That doesn't look like a NZ phone number, try 0211234567 or +64211234567";
     case 'email':
-      return "Hmm, that doesn't look like an email, try sample@email.com";
+      return "Please enter a valid email address (e.g., user@outlook.com, user@example.co.nz, user@company.nz)";
     case 'numeric':
       return "Please enter a valid number";
     case 'date':

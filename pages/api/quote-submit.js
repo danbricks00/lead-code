@@ -1,619 +1,250 @@
-import { getGoogleSheetsClient, getSpreadsheetId } from '../../lib/googleSheets.js';
-import { generateQuotePDF, generateQuoteHTML } from '../../lib/pdfGenerator.js';
-import { sendEmail } from '../../lib/emailHelper';
-import crypto from "crypto";
+/**
+ * Quote Submit API - Submitted Write + PDF/Email
+ * POST-only. Merges Lead + body financials; overwrites same QuoteID row; triggers PDF/email only for Submitted.
+ */
 
-// Create HTML backup quote when PDF generation fails
-function createHTMLQuote(quoteData) {
-    const formatCurrency = (amount) => {
-        const num = parseFloat(amount);
-        return isNaN(num) ? '0.00' : num.toFixed(2);
-    };
+import { getLeadById, upsertQuoteRow, getQuoteById, getQuotesByLeadId } from '../../utils/sheets.js';
+import { buildQuoteRow } from '../../utils/quotes.js';
+import { generateQuotePDF } from '../../lib/pdfGenerator.js';
+import { sendEmail } from '../../lib/emailHelper.js';
 
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-NZ', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        });
-    };
-
-    const roomRows = quoteData.rooms.map(room => `
-        <tr>
-            <td style="padding: 10px; border: 1px solid #ddd;">${room.name || 'N/A'}</td>
-            <td style="padding: 10px; border: 1px solid #ddd;">${room.dimensions || 'N/A'}</td>
-            <td style="padding: 10px; border: 1px solid #ddd;">${room.sqm ? formatCurrency(room.sqm) + 'm²' : 'N/A'}</td>
-        </tr>
-    `).join('');
-
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Quote ${quoteData.quoteId}</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .header { background: #667eea; color: white; padding: 20px; text-align: center; border-radius: 8px; }
-        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
-        th { background: #f5f5f5; font-weight: bold; }
-        .total-row { background: #667eea; color: white; font-weight: bold; }
-        .summary { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>🔧 KIWI TRADE - QUOTE</h1>
-        <p>Quote ID: ${quoteData.quoteId}</p>
-        <p>Date: ${formatDate(quoteData.quoteDate)}</p>
-        <p>Valid Until: ${formatDate(quoteData.validUntil)}</p>
-    </div>
-
-    <div class="section">
-        <h2>Customer Details</h2>
-        <p><strong>Name:</strong> ${quoteData.customerName}</p>
-        <p><strong>Email:</strong> ${quoteData.customerEmail}</p>
-        <p><strong>Phone:</strong> ${quoteData.customerPhone || 'N/A'}</p>
-        <p><strong>Address:</strong> ${quoteData.customerAddress || 'N/A'}</p>
-        <p><strong>Service:</strong> ${quoteData.serviceType}</p>
-    </div>
-
-    <div class="section">
-        <h2>Tradesperson Details</h2>
-        <p><strong>Name:</strong> ${quoteData.tradespersonName}</p>
-        <p><strong>Email:</strong> ${quoteData.tradespersonEmail}</p>
-        <p><strong>Phone:</strong> ${quoteData.tradespersonPhone}</p>
-        <p><strong>License:</strong> ${quoteData.tradespersonLicense}</p>
-    </div>
-
-    <div class="section">
-        <h2>Project Details</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Room Name</th>
-                    <th>Dimensions</th>
-                    <th>Square Meters</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${roomRows}
-            </tbody>
-        </table>
-    </div>
-
-    <div class="summary">
-        <h2>Quote Summary</h2>
-        <table>
-            <tr><td><strong>Labour:</strong></td><td style="text-align: right;">$${formatCurrency(quoteData.totals.labour)}</td></tr>
-            <tr><td><strong>Materials:</strong></td><td style="text-align: right;">$${formatCurrency(quoteData.totals.materials)}</td></tr>
-            <tr><td><strong>Travel:</strong></td><td style="text-align: right;">$${formatCurrency(quoteData.totals.travel)}</td></tr>
-            <tr><td><strong>Installation:</strong></td><td style="text-align: right;">$${formatCurrency(quoteData.totals.installation)}</td></tr>
-            <tr style="border-top: 2px solid #333;"><td><strong>Subtotal (excl. GST):</strong></td><td style="text-align: right;"><strong>$${formatCurrency(quoteData.totals.subtotal)}</strong></td></tr>
-            <tr><td><strong>GST (15%):</strong></td><td style="text-align: right;">$${formatCurrency(quoteData.totals.gst)}</td></tr>
-            <tr class="total-row"><td><strong>TOTAL (incl. GST):</strong></td><td style="text-align: right;"><strong>$${formatCurrency(quoteData.totals.final)}</strong></td></tr>
-        </table>
-    </div>
-
-    <div class="section">
-        <h3>Terms & Conditions</h3>
-        <p>• This quote is valid for 14 days from the date of issue.</p>
-        <p>• Payment terms: 50% deposit required to commence work, balance due upon completion.</p>
-        <p>• All work is covered by our comprehensive warranty.</p>
-        <p>• We are fully licensed and insured for your peace of mind.</p>
-    </div>
-
-    <p style="text-align: center; color: #666; margin-top: 30px;">
-        Thank you for choosing Kiwi Trade for your underfloor heating needs.
-    </p>
-</body>
-</html>`;
-}
-
-function verifyToken(id, ts) {
-    const hmac = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET);
-    hmac.update(`${id}|${ts}`);
-    return hmac.digest("hex");
-}
-
-function generateAdminDecisionLink(action, quoteId) {
-    const ts = Date.now().toString();
-    const token = verifyToken(quoteId, ts); 
-    const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
-    return `https://${baseUrl}/api/admin/${action}?quoteId=${quoteId}&ts=${ts}&token=${token}`;
-}
-
-function generateCustomerDecisionLink(action, quoteId) {
-    const ts = Date.now().toString();
-    const token = verifyToken(quoteId, ts);
-    const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
-    return `https://${baseUrl}/api/quote-decision/${action}?quoteId=${quoteId}&ts=${ts}&token=${token}`;
-}
-
-function generateQuoteViewLink(quoteId) {
-    const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
-    return `https://${baseUrl}/quote-view/${quoteId}`;
-}
-
-// Main handler
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, error: 'Method Not Allowed' });
-  }
-  
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
   try {
-    const { quoteId, ts, token, quoteDetails, leadDetails } = req.body;
+    console.log('[QUOTE-SUBMIT] Request received:', req.body);
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    const { quoteId, leadId } = body || {};
+    console.log('[QUOTE-SUBMIT] Parsed body:', { quoteId, leadId, bodyKeys: Object.keys(body) });
+    
+    if (!quoteId || !leadId) return res.status(400).json({ error: 'quoteId and leadId are required' });
 
-    if (!quoteId || !ts || !token || !quoteDetails || !leadDetails) {
-        return res.status(400).json({ success: false, error: 'Missing required fields for quote submission.' });
+    const lead = await getLeadById(String(leadId).trim());
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+
+    // Check for existing quotes for this lead
+    const existingQuotes = await getQuotesByLeadId(String(leadId).trim());
+    console.log('[QUOTE-SUBMIT] Existing quotes for lead:', existingQuotes.length);
+    
+    // Filter out the current quote being submitted (if it's an update)
+    const otherQuotes = existingQuotes.filter(q => q.QuoteID !== quoteId);
+    
+    if (otherQuotes.length > 0) {
+      // Check if any existing quote is not rejected by admin
+      const nonRejectedQuotes = otherQuotes.filter(q => 
+        q.AdminPersonStatus !== 'Declined' && 
+        q.AdminPersonStatus !== 'Rejected' &&
+        q.Decison !== 'Rejected' &&
+        q.Decison !== 'Declined'
+      );
+      
+      if (nonRejectedQuotes.length > 0) {
+        console.log('[QUOTE-SUBMIT] Blocking submission - existing non-rejected quotes found:', nonRejectedQuotes.map(q => ({
+          quoteId: q.QuoteID,
+          adminStatus: q.AdminPersonStatus,
+          decision: q.Decison
+        })));
+        
+        return res.status(400).json({ 
+          error: 'Quote already exists for this lead. Only one quote per lead is allowed unless the previous quote was rejected by admin.',
+          existingQuoteId: nonRejectedQuotes[0].QuoteID,
+          existingStatus: nonRejectedQuotes[0].AdminPersonStatus
+        });
+      }
     }
 
-    if (token !== verifyToken(quoteId, ts)) {
-        return res.status(403).json({ success: false, error: 'Invalid or expired link.' });
-    }
-    
-    // Extract customer details with fallbacks and proper field names
-    const customerName = leadDetails.CustomerName || leadDetails.customerName || 'Unknown Customer';
-    const customerEmail = leadDetails.CustomerEmail || leadDetails.customerEmail || '';
-    const customerPhone = leadDetails.CustomerPhone || leadDetails.customerPhone || '';
-    const customerAddress = leadDetails.Location || leadDetails.location || leadDetails.CustomerAddress || leadDetails.customerAddress || '';
-    const serviceType = leadDetails.ServiceType || leadDetails.serviceType || 'Underfloor Heating';
-    const tradespersonEmail = quoteDetails.tradespersonEmail || '';
-    const tradespersonName = quoteDetails.tradespersonName || '';
-    const tradespersonPhone = quoteDetails.tradespersonPhone || '';
-    
-    console.log('📊 Quote submission data:', {
+    // Compute totals if missing
+    const Subtotal = num(body.subtotal) ?? sum([
+      num(body.labourTotal),
+      num(body.materialsTotal),
+      num(body.travelTotal),
+      num(body.installationCost),
+    ]);
+    const GST = num(body.gst) ?? round2((Subtotal ?? 0) * 0.15);
+    const TotalQuote = num(body.totalQuote) ?? round2((Subtotal ?? 0) + (GST ?? 0));
+
+    const fullRow = buildQuoteRow({
+      lead,
       quoteId,
-      customerName,
-      customerEmail,
-      serviceType,
-      tradespersonName
+      tradePersonName: body.tradespersonName || body.tradePersonName || '',
+      tradePersonEmail: body.tradespersonEmail || body.tradePersonEmail || '',
+      tradePersonPhone: body.tradespersonPhone || body.tradePersonPhone || '',
+      body: {
+        ...body,
+        subtotal: Subtotal ?? '',
+        gst: GST ?? '',
+        totalQuote: TotalQuote ?? '',
+      },
+      mode: 'submitted',
     });
 
-    // Debug quote details
-    console.log('📋 Quote details received:', JSON.stringify(quoteDetails, null, 2));
-    console.log('📋 Lead details received:', JSON.stringify(leadDetails, null, 2));
-    
-    // Calculate totals with safe parsing - moved outside try block for email access
-    const labourRate = parseFloat(quoteDetails.labourRate) || 0;
-    const labourHours = parseFloat(quoteDetails.labourHours) || 0;
-    const materialsCost = parseFloat(quoteDetails.materialsCost) || 0;
-    const materialsQuantity = parseFloat(quoteDetails.materialsQuantity) || 0;
-    const travelCost = parseFloat(quoteDetails.travelCost) || 0;
-    const travelDistance = parseFloat(quoteDetails.travelDistance) || 0;
-    const installationCost = parseFloat(quoteDetails.installationCost) || 0;
-    const subtotal = parseFloat(quoteDetails.subtotal) || 0;
-    const gst = parseFloat(quoteDetails.gst) || 0;
-    const totalQuote = parseFloat(quoteDetails.totalQuote) || 0;
+    console.log('[QUOTE-SUBMIT] About to write to Google Sheets:', { quoteId, fullRowKeys: Object.keys(fullRow) });
+    const result = await upsertQuoteRow(quoteId, fullRow, { req, caller: 'quote-submit' });
+    console.log('[QUOTE-SUBMIT] Google Sheets write result:', result);
+    console.log(JSON.stringify({ tag: 'QUOTE_SUBMIT_WRITE', quoteId, action: result?.action, rowIndex: result?.rowIndex }));
 
-    // Generate PDF using our mobile-optimized system with HTML backup
-    let pdfBuffer = null;
-    let htmlQuote = null;
-    try {
-        
-        console.log('💰 Calculated values:', {
-            labourRate, labourHours, materialsCost, materialsQuantity,
-            travelCost, travelDistance, installationCost, subtotal, gst, totalQuote
-        });
-        
-        // Prepare enhanced quote data with detailed breakdown for PDF generation
-        const rooms = leadDetails.Rooms ? JSON.parse(leadDetails.Rooms) : [];
-        const totalSqm = rooms.reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0);
-        
-        // Calculate per-room breakdown if we have room data
-        const roomsWithDetails = rooms.map(room => {
-            const roomSqm = parseFloat(room.sqm) || 0;
-            const roomRatio = totalSqm > 0 ? roomSqm / totalSqm : 0;
-            
-            return {
-                name: room.name,
-                dimensions: room.dimensions || room.originalInput,
-                sqm: roomSqm,
-                labourHours: roomRatio * labourHours,
-                labourCost: roomRatio * (labourRate * labourHours),
-                materialsCost: roomRatio * (materialsCost * materialsQuantity)
-            };
-        });
-
-        const quoteData = {
-            quoteId,
-            quoteDate: new Date().toISOString(),
-            validUntil: quoteDetails.validUntil,
-            customerName: customerName,
-            customerEmail: customerEmail,
-            customerPhone: customerPhone,
-            customerAddress: customerAddress,
-            serviceType: serviceType,
-            tradespersonName: tradespersonName,
-            tradespersonEmail: tradespersonEmail,
-            tradespersonPhone: tradespersonPhone,
-            tradespersonLicense: 'Licensed Tradesperson',
-            rooms: roomsWithDetails,
-            // Add detailed breakdown for quote summary
-            breakdown: {
-                labourRate: labourRate,
-                labourHours: labourHours,
-                labourTotal: labourRate * labourHours,
-                materialsCost: materialsCost,
-                materialsQuantity: materialsQuantity,
-                materialsTotal: materialsCost * materialsQuantity,
-                travelCost: travelCost,
-                travelDistance: travelDistance,
-                travelTotal: travelCost * travelDistance,
-                installationCost: installationCost,
-                totalSqm: totalSqm
-            },
-            totals: {
-                labour: labourRate * labourHours,
-                materials: materialsCost * materialsQuantity,
-                travel: travelCost * travelDistance,
-                installation: installationCost,
-                subtotal: subtotal,
-                gst: gst,
-                final: totalQuote
-            }
-        };
-        
-        console.log('📊 Final quote data for PDF:', JSON.stringify(quoteData, null, 2));
-
-        try {
-            pdfBuffer = await generateQuotePDF(quoteData);
-            console.log(`✅ PDF generated successfully for Quote ${quoteId}`);
-        } catch (pdfError) {
-            console.error("❌ PDF Generation failed, trying HTML backup:", pdfError);
-            
-            try {
-                // Try formatted HTML backup (maintains all styling and mobile-friendly)
-                htmlQuote = generateQuoteHTML(quoteData);
-                console.log(`✅ Professional HTML quote created for Quote ${quoteId}`);
-            } catch (htmlError) {
-                console.error("❌ HTML Generation also failed, using basic HTML backup:", htmlError);
-                // Create basic HTML as final fallback
-                htmlQuote = createHTMLQuote(quoteData);
-                console.log(`⚠️ Basic HTML backup created for Quote ${quoteId}`);
-            }
-        }
-    } catch (generalError) {
-        console.error("General Quote Generation Error:", generalError);
-        return res.status(500).json({ success: false, error: "Failed to generate quote." });
-    }
-
-    // Update Google Sheet with quote data
-    const sheets = await getGoogleSheetsClient();
-    const spreadsheetId = getSpreadsheetId();
+    // PDF/email only for Submitted and not Declined
+    console.log('[QUOTE-SUBMIT] PDF/Email check:', {
+      customerStatus: fullRow.CustomerStatus,
+      tradePersonStatus: fullRow.TradePersonStatus,
+      enablePdfEmails: process.env.ENABLE_PDF_EMAILS,
+      shouldSend: fullRow.CustomerStatus === 'Submitted' && fullRow.TradePersonStatus !== 'Declined' && (process.env.ENABLE_PDF_EMAILS !== 'false')
+    });
     
     try {
-        // Add quote to Quotes sheet
-        const quotesRange = 'Quotes!A:Z';
-        const quoteRow = [
-            quoteId,
-            new Date().toISOString(),
-            customerName,
-            customerEmail,
-            customerPhone,
-            customerAddress,
-            serviceType,
-            tradespersonName,
-            tradespersonEmail,
-            tradespersonPhone,
-            quoteDetails.labourRate,
-            quoteDetails.labourHours,
-            quoteDetails.materialsCost,
-            quoteDetails.materialsQuantity,
-            quoteDetails.travelCost,
-            quoteDetails.travelDistance,
-            quoteDetails.installationCost,
-            quoteDetails.notes || '',
-            quoteDetails.validUntil,
-            quoteDetails.subtotal,
-            quoteDetails.gst,
-            quoteDetails.totalQuote,
-            'pending', // status
-            leadDetails.LeadId || '', // link to lead
-            JSON.stringify(leadDetails.Rooms || []), // room data
-            new Date().toISOString() // created timestamp
-        ];
-
-        await sheets.spreadsheets.values.append({
-            spreadsheetId,
-            range: quotesRange,
-            valueInputOption: 'RAW',
-            resource: {
-                values: [quoteRow]
-            }
-        });
-
-        console.log(`✅ Quote data saved to Google Sheets: ${quoteId}`);
-    } catch (sheetsError) {
-        console.error("Google Sheets Error:", sheetsError);
-        // Don't fail the whole process, just log the error
+      if (fullRow.CustomerStatus === 'Submitted' && fullRow.TradePersonStatus !== 'Declined' && (process.env.ENABLE_PDF_EMAILS !== 'false')) {
+        const html = renderQuoteHtml(fullRow);
+        const pdfBuffer = await generateQuotePDF(html, { quoteId: quoteId });
+        
+        // Only send admin and tradesperson emails on submission
+        // Customer email will be sent after admin approval
+        await safeSend(sendAdminQuoteEmail, process.env.ADMIN_EMAIL, pdfBuffer, fullRow, 'EMAIL_ADMIN');
+        await safeSend(sendTradesQuoteEmail, fullRow.TradePersonEmail, pdfBuffer, fullRow, 'EMAIL_TRADES');
+        console.log(JSON.stringify({ tag: 'QUOTE_PDF_EMAIL_OK', quoteId }));
+      } else {
+        console.log(JSON.stringify({ tag: 'QUOTE_PDF_EMAIL_SKIPPED', quoteId, reason: 'status/env' }));
+      }
+    } catch (e) {
+      console.error(JSON.stringify({ tag: 'QUOTE_PDF_EMAIL_FAIL', quoteId, msg: String(e?.message || e) }));
     }
 
-    // Generate decision links
-    const approveLink = generateCustomerDecisionLink('accept', quoteId);
-    const declineLink = generateCustomerDecisionLink('decline', quoteId);
-    const quoteViewLink = generateQuoteViewLink(quoteId);
-    const adminApproveLink = generateAdminDecisionLink('approve', quoteId);
-    const declineFormLink = generateAdminDecisionLink('decline-form', quoteId);
-
-    // Send admin/tradesperson review email
-    const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
-    const emailHtml = `
-        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-                <h1 style="margin: 0; font-size: 24px;">📋 Quote Ready for Review</h1>
-            </div>
-            <div style="background: #fff; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #ddd;">
-                <h2 style="color: #333; margin: 0 0 20px 0;">Quote Details</h2>
-                
-                <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin: 15px 0;">
-                    <h3 style="margin: 0 0 10px 0; color: #333;">Customer Information:</h3>
-                    <p><strong>Name:</strong> ${customerName}</p>
-                    <p><strong>Email:</strong> ${customerEmail}</p>
-                    <p><strong>Phone:</strong> ${customerPhone || 'Not provided'}</p>
-                    <p><strong>Address:</strong> ${customerAddress || 'Not provided'}</p>
-                    <p><strong>Service:</strong> ${serviceType}</p>
-                </div>
-
-                <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin: 15px 0;">
-                    <h3 style="margin: 0 0 10px 0; color: #333;">Tradesperson Information:</h3>
-                    <p><strong>Name:</strong> ${tradespersonName}</p>
-                    <p><strong>Email:</strong> ${tradespersonEmail}</p>
-                    <p><strong>Phone:</strong> ${tradespersonPhone || 'Not provided'}</p>
-                </div>
-
-                <h3>Quote Summary:</h3>
-                <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin: 15px 0;">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Labour (${quoteDetails.labourHours}h @ $${quoteDetails.labourRate}/h):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(quoteDetails.labourRate) * parseFloat(quoteDetails.labourHours) || 0).toFixed(2)}</td></tr>
-                        <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Materials (${quoteDetails.materialsQuantity}m² @ $${quoteDetails.materialsCost}/m²):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(quoteDetails.materialsCost) * parseFloat(quoteDetails.materialsQuantity) || 0).toFixed(2)}</td></tr>
-                        <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Travel (${quoteDetails.travelDistance}km @ $${quoteDetails.travelCost}/km):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(quoteDetails.travelCost) * parseFloat(quoteDetails.travelDistance) || 0).toFixed(2)}</td></tr>
-                        <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Installation:</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${parseFloat(quoteDetails.installationCost || 0).toFixed(2)}</td></tr>
-                        <tr><td style="padding: 8px 0; font-weight: bold;">Subtotal (excl. GST):</td><td style="text-align: right; padding: 8px 0; font-weight: bold;">$${parseFloat(quoteDetails.subtotal || 0).toFixed(2)}</td></tr>
-                        <tr><td style="padding: 5px 0;">GST (15%):</td><td style="text-align: right; padding: 5px 0;">$${parseFloat(quoteDetails.gst || 0).toFixed(2)}</td></tr>
-                        <tr style="border-top: 2px solid #333;"><td style="padding: 8px 0; font-weight: bold; font-size: 1.1em;">Total (incl. GST):</td><td style="text-align: right; padding: 8px 0; font-weight: bold; font-size: 1.1em;">$${parseFloat(quoteDetails.totalQuote || 0).toFixed(2)}</td></tr>
-                    </table>
-                </div>
-                <p><strong>Valid Until:</strong> ${new Date(quoteDetails.validUntil).toLocaleDateString('en-NZ')}</p>
-                ${quoteDetails.notes ? `<p><strong>Notes:</strong> ${quoteDetails.notes}</p>` : ''}
-                
-                <div style="margin: 20px 0; text-align: center;">
-                    <a href="${adminApproveLink}" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-right: 10px;">✅ Approve & Send to Customer</a>
-                    <a href="${declineFormLink}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px;">❌ Decline Quote</a>
-                </div>
-                
-                <p><em>Quote ID: ${quoteId}</em></p>
-            </div>
-        </div>
-    `;
-
-    // Build recipient list with validation
-    const recipients = [];
-    if (ADMIN_EMAIL && ADMIN_EMAIL.trim()) {
-        recipients.push(ADMIN_EMAIL.trim());
-    }
-    if (tradespersonEmail && tradespersonEmail.trim()) {
-        recipients.push(tradespersonEmail.trim());
-    }
-
-    console.log('📧 Email recipients:', recipients);
-
-    if (recipients.length === 0) {
-        console.error('❌ No valid email recipients found. ADMIN_EMAIL:', ADMIN_EMAIL, 'tradespersonEmail:', tradespersonEmail);
-    } else {
-        // Create attachment - PDF preferred, HTML backup (maintains formatting), DOCX final fallback
-        let attachment;
-        if (pdfBuffer) {
-            attachment = {
-                filename: `Quote_${quoteId}.pdf`,
-                content: pdfBuffer,
-                contentType: 'application/pdf'
-            };
-        } else if (htmlQuote) {
-            attachment = {
-                filename: `Quote_${quoteId}.html`,
-                content: Buffer.from(htmlQuote, 'utf8'),
-                contentType: 'text/html'
-            };
-        } else {
-            attachment = {
-                filename: `Quote_${quoteId}.txt`,
-                content: Buffer.from(`Quote ${quoteId} - Error generating attachments`, 'utf8'),
-                contentType: 'text/plain'
-            };
-        }
-
-        const emailOptions = {
-            to: recipients,
-            subject: `ACTION REQUIRED: Review Quote for ${customerName} - $${parseFloat(totalQuote || 0).toFixed(2)}`,
-            html: emailHtml,
-            attachments: [attachment]
-        };
-
-        try {
-            await sendEmail(emailOptions);
-            console.log(`✅ Admin/Tradesperson review email sent successfully to: ${recipients.join(', ')}`);
-        } catch (emailError) {
-            console.error('❌ Failed to send review email:', emailError);
-        }
-    }
-
-    // ⚠️ IMPORTANT: Customer emails are NOT sent automatically!
-    // Customers only receive emails after admin approval via /api/admin/approve
-    console.log(`📋 Quote ${quoteId} created and sent to admin for approval. Customer will be notified after approval.`);
-    
-    // REMOVED: Automatic customer email - this was sending quotes before admin approval!
-    /*
-    if (customerEmail && customerEmail.trim()) {
-        const customerEmailHtml = `
-            <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-                    <h1 style="margin: 0; font-size: 24px;">📋 Your Quote is Ready!</h1>
-                </div>
-                <div style="background: #fff; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #ddd;">
-                    <p>Hi ${customerName},</p>
-                    <p>Your quote for <strong>${serviceType}</strong> is ready for review.</p>
-                    
-                    <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin: 15px 0;">
-                        <h3 style="margin: 0 0 10px 0; color: #333;">Quote Summary:</h3>
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Labour (${quoteDetails.labourHours}h @ $${quoteDetails.labourRate}/h):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(quoteDetails.labourRate) * parseFloat(quoteDetails.labourHours) || 0).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Materials (${quoteDetails.materialsQuantity}m² @ $${quoteDetails.materialsCost}/m²):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(quoteDetails.materialsCost) * parseFloat(quoteDetails.materialsQuantity) || 0).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Travel (${quoteDetails.travelDistance}km @ $${quoteDetails.travelCost}/km):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(quoteDetails.travelCost) * parseFloat(quoteDetails.travelDistance) || 0).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Installation:</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${parseFloat(quoteDetails.installationCost || 0).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">Subtotal (excl. GST):</td><td style="text-align: right; padding: 8px 0; font-weight: bold;">$${parseFloat(quoteDetails.subtotal || 0).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 5px 0;">GST (15%):</td><td style="text-align: right; padding: 5px 0;">$${parseFloat(quoteDetails.gst || 0).toFixed(2)}</td></tr>
-                            <tr style="border-top: 2px solid #333;"><td style="padding: 8px 0; font-weight: bold; font-size: 1.1em;">Total (incl. GST):</td><td style="text-align: right; padding: 8px 0; font-weight: bold; font-size: 1.1em;">$${parseFloat(quoteDetails.totalQuote || 0).toFixed(2)}</td></tr>
-                        </table>
-                    </div>
-                    
-                    <p><strong>Valid Until:</strong> ${new Date(quoteDetails.validUntil).toLocaleDateString('en-NZ')}</p>
-                    ${quoteDetails.notes ? `<p><strong>Notes:</strong> ${quoteDetails.notes}</p>` : ''}
-                    
-                    <div style="margin: 20px 0; text-align: center;">
-                        <a href="${approveLink}" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-right: 10px;">✅ Accept Quote</a>
-                        <a href="${declineLink}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px;">❌ Decline Quote</a>
-                    </div>
-                    
-                    <p style="margin-top: 20px; font-size: 12px; color: #666;">
-                        <strong>Web Version:</strong> <a href="${quoteViewLink}">View Quote Online</a><br>
-                        <strong>PDF Attachment:</strong> Your detailed quote is attached to this email.
-                    </p>
-                    
-                    <p><em>Quote ID: ${quoteId}</em></p>
-                </div>
-            </div>
-        `;
-
-        // Create attachment - PDF preferred, DOCX backup, HTML final fallback
-        let customerAttachment;
-        if (pdfBuffer) {
-            customerAttachment = {
-                filename: `Quote_${quoteId}.pdf`,
-                content: pdfBuffer,
-                contentType: 'application/pdf'
-            };
-        } else if (htmlQuote) {
-            customerAttachment = {
-                filename: `Quote_${quoteId}.html`,
-                content: Buffer.from(htmlQuote, 'utf8'),
-                contentType: 'text/html'
-            };
-        // DOCX removed for better mobile experience
-        } else {
-            customerAttachment = {
-                filename: `Quote_${quoteId}.txt`,
-                content: Buffer.from(`Quote ${quoteId} - Error generating attachments`, 'utf8'),
-                contentType: 'text/plain'
-            };
-        }
-
-        const customerEmailOptions = {
-            to: customerEmail.trim(),
-            subject: `📋 Your Quote for ${serviceType} - $${parseFloat(totalQuote || 0).toFixed(2)} - ${quoteId}`,
-            html: customerEmailHtml,
-            attachments: [customerAttachment]
-        };
-
-        try {
-            await sendEmail(customerEmailOptions);
-            console.log(`✅ Customer quote email sent successfully to: ${customerEmail}`);
-        } catch (emailError) {
-            console.error('❌ Failed to send customer email:', emailError);
-        }
-    }
-    */ // End of commented-out automatic customer email section
-
-    // Send tradesperson confirmation email with PDF attachment
-    if (tradespersonEmail && tradespersonEmail.trim()) {
-        const tradespersonEmailHtml = `
-            <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
-                <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-                    <h1 style="margin: 0; font-size: 24px;">📋 Quote Sent Successfully!</h1>
-                </div>
-                <div style="background: #fff; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #ddd;">
-                    <p>Hi ${tradespersonName},</p>
-                    <p>Your quote for <strong>${customerName}</strong>'s <strong>${serviceType}</strong> has been sent successfully.</p>
-                    
-                    <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin: 15px 0;">
-                        <h3 style="margin: 0 0 10px 0; color: #333;">Quote Details:</h3>
-                        <p><strong>Customer:</strong> ${customerName}</p>
-                        <p><strong>Service:</strong> ${serviceType}</p>
-                        <p><strong>Valid Until:</strong> ${new Date(quoteDetails.validUntil).toLocaleDateString('en-NZ')}</p>
-                        
-                        <h4 style="margin: 15px 0 10px 0; color: #333;">Cost Breakdown:</h4>
-                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Labour (${quoteDetails.labourHours}h @ $${quoteDetails.labourRate}/h):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(quoteDetails.labourRate) * parseFloat(quoteDetails.labourHours) || 0).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Materials (${quoteDetails.materialsQuantity}m² @ $${quoteDetails.materialsCost}/m²):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(quoteDetails.materialsCost) * parseFloat(quoteDetails.materialsQuantity) || 0).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Travel (${quoteDetails.travelDistance}km @ $${quoteDetails.travelCost}/km):</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${(parseFloat(quoteDetails.travelCost) * parseFloat(quoteDetails.travelDistance) || 0).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">Installation:</td><td style="text-align: right; padding: 5px 0; border-bottom: 1px solid #e0e0e0;">$${parseFloat(quoteDetails.installationCost || 0).toFixed(2)}</td></tr>
-                            <tr style="border-top: 2px solid #333;"><td style="padding: 8px 0 5px 0; font-weight: bold;">Subtotal (excl. GST):</td><td style="text-align: right; padding: 8px 0 5px 0; font-weight: bold;">$${parseFloat(quoteDetails.subtotal || 0).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 5px 0;">GST (15%):</td><td style="text-align: right; padding: 5px 0;">$${parseFloat(quoteDetails.gst || 0).toFixed(2)}</td></tr>
-                            <tr style="background: #28a745; color: white;"><td style="padding: 10px 5px; font-weight: bold; font-size: 16px;">TOTAL (incl. GST):</td><td style="text-align: right; padding: 10px 5px; font-weight: bold; font-size: 16px;">$${parseFloat(quoteDetails.totalQuote || 0).toFixed(2)}</td></tr>
-                        </table>
-                    </div>
-                    
-                    <p>The customer will receive an email with your quote and can accept or decline it.</p>
-                    <p>You will be notified immediately when they make their decision.</p>
-                    
-                    <div style="margin: 20px 0; text-align: center;">
-                        <a href="${quoteViewLink}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px;">View Quote Online</a>
-                    </div>
-                    
-                    <p style="margin-top: 20px; font-size: 12px; color: #666;">
-                        <strong>PDF Copy:</strong> A copy of the quote is attached to this email for your records.
-                    </p>
-                    
-                    <p><em>Quote ID: ${quoteId}</em></p>
-                </div>
-            </div>
-        `;
-
-        // Create attachment - PDF preferred, DOCX backup, HTML final fallback
-        let tradespersonAttachment;
-        if (pdfBuffer) {
-            tradespersonAttachment = {
-                filename: `Quote_${quoteId}.pdf`,
-                content: pdfBuffer,
-                contentType: 'application/pdf'
-            };
-        } else if (htmlQuote) {
-            tradespersonAttachment = {
-                filename: `Quote_${quoteId}.html`,
-                content: Buffer.from(htmlQuote, 'utf8'),
-                contentType: 'text/html'
-            };
-        // DOCX removed for better mobile experience
-        } else {
-            tradespersonAttachment = {
-                filename: `Quote_${quoteId}.txt`,
-                content: Buffer.from(`Quote ${quoteId} - Error generating attachments`, 'utf8'),
-                contentType: 'text/plain'
-            };
-        }
-
-        const tradespersonEmailOptions = {
-            to: tradespersonEmail.trim(),
-            subject: `📋 Quote Sent to Customer - ${serviceType} - $${parseFloat(totalQuote || 0).toFixed(2)} - ${quoteId}`,
-            html: tradespersonEmailHtml,
-            attachments: [tradespersonAttachment]
-        };
-
-        try {
-            await sendEmail(tradespersonEmailOptions);
-            console.log(`✅ Tradesperson confirmation email sent successfully to: ${tradespersonEmail}`);
-        } catch (emailError) {
-            console.error('❌ Failed to send tradesperson email:', emailError);
-        }
-    }
-    
-    res.status(200).json({ success: true, message: 'Quote submitted successfully with PDF generation.' });
+    return res.status(200).json({ ok: true, quote: (await getQuoteById(quoteId)) || fullRow });
 
   } catch (error) {
-    console.error("A top-level error occurred in quote-submit:", error);
-    res.status(500).json({ success: false, error: 'A fatal error occurred during quote submission.' });
+    console.error('Quote submit error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
+}
+
+function num(v) { const n = Number(v); return Number.isFinite(n) ? n : null; }
+function round2(n) { return Math.round(n * 100) / 100; }
+function sum(arr) { return arr.filter(x => typeof x === 'number').reduce((a, b) => a + b, 0) || null; }
+
+// Minimal HTML renderer
+function renderQuoteHtml(q) {
+  const money = (n) => (n === '' || n == null ? '' : Number(n).toFixed(2));
+  return `
+    <html><head><meta charset="utf-8"><style>
+    body{font-family:Arial,sans-serif;font-size:12px;margin:24px;color:#111}
+    h1{font-size:18px;margin:0 0 8px}
+    table{width:100%;border-collapse:collapse}
+    td,th{border:1px solid #ddd;padding:6px;font-size:12px}
+    .r{text-align:right}
+    </style></head><body>
+    <h1>Quote #${q.QuoteID}</h1>
+    <p><strong>${q.CustomerName}</strong> — ${q.CustomerEmail} — ${q.CustomerPhone}</p>
+    <p>Service: ${q.ServiceType} | Location: ${q.Suburb || q.Area} | Timeline: ${q.Timelline}</p>
+    <table>
+      <tr><th>Item</th><th class="r">Amount</th></tr>
+      <tr><td>Labour</td><td class="r">$${money(q.LabourTotal)}</td></tr>
+      <tr><td>Materials</td><td class="r">$${money(q.MaterialsTotal)}</td></tr>
+      <tr><td>Travel</td><td class="r">$${money(q.TravelTotal)}</td></tr>
+      <tr><td>Installation</td><td class="r">$${money(q.InstallationCost)}</td></tr>
+      <tr><td><strong>Subtotal</strong></td><td class="r"><strong>$${money(q.Subtotal)}</strong></td></tr>
+      <tr><td>GST</td><td class="r">$${money(q.GST)}</td></tr>
+      <tr><td><strong>Total</strong></td><td class="r"><strong>$${money(q.TotalQuote)}</strong></td></tr>
+                    </table>
+    </body></html>
+  `;
+}
+
+async function safeSend(fn, to, pdf, row, tag) {
+  try { 
+    if (to && typeof fn === 'function') { 
+      await fn(to, pdf, row); 
+    } else {
+      console.log(JSON.stringify({ tag: `${tag}_SKIP` })); 
+    } 
+  } catch (e) { 
+    console.error(JSON.stringify({ tag: `${tag}_FAIL`, msg: String(e?.message || e) })); 
+  }
+}
+
+// Email functions using existing email system
+async function sendCustomerQuoteEmail(to, pdf, row) {
+  const subject = `Your Underfloor Heating Quote #${row.QuoteID}`;
+  const html = `
+    <h1>Your Quote is Ready!</h1>
+    <p>Hi ${row.CustomerName},</p>
+    <p>Your underfloor heating quote has been prepared and is attached to this email.</p>
+    <p><strong>Quote Details:</strong></p>
+    <ul>
+      <li>Quote ID: ${row.QuoteID}</li>
+      <li>Service: ${row.ServiceType}</li>
+      <li>Location: ${row.Suburb || row.Area}</li>
+      <li>Total: $${row.TotalQuote}</li>
+    </ul>
+    <p>Please review the attached quote and let us know if you have any questions.</p>
+  `;
+  
+  await sendEmail({
+    to,
+    subject,
+    html,
+    attachments: [{
+      filename: `quote-${row.QuoteID}.pdf`,
+      content: pdf,
+                contentType: 'application/pdf'
+    }]
+  });
+}
+
+async function sendAdminQuoteEmail(to, pdf, row) {
+  const subject = `New Quote Submitted - ${row.CustomerName} - Quote #${row.QuoteID}`;
+  const html = `
+    <h1>New Quote Submitted for Review</h1>
+    <p>A new quote has been submitted and requires your review.</p>
+    <p><strong>Quote Details:</strong></p>
+    <ul>
+      <li>Quote ID: ${row.QuoteID}</li>
+      <li>Customer: ${row.CustomerName}</li>
+      <li>Email: ${row.CustomerEmail}</li>
+      <li>Phone: ${row.CustomerPhone}</li>
+      <li>Service: ${row.ServiceType}</li>
+      <li>Location: ${row.Suburb || row.Area}</li>
+      <li>Total: $${row.TotalQuote}</li>
+      <li>Tradesperson: ${row.TradePersonName}</li>
+    </ul>
+    <p>Please review the attached quote and approve or decline as appropriate.</p>
+  `;
+  
+  await sendEmail({
+    to,
+    subject,
+    html,
+    attachments: [{
+      filename: `quote-${row.QuoteID}.pdf`,
+      content: pdf,
+                contentType: 'application/pdf'
+    }]
+  });
+}
+
+async function sendTradesQuoteEmail(to, pdf, row) {
+  const subject = `Quote Submitted Successfully - Quote #${row.QuoteID}`;
+  const html = `
+    <h1>Quote Submitted Successfully</h1>
+    <p>Hi ${row.TradePersonName},</p>
+    <p>Your quote has been submitted successfully and is now under review.</p>
+    <p><strong>Quote Details:</strong></p>
+    <ul>
+      <li>Quote ID: ${row.QuoteID}</li>
+      <li>Customer: ${row.CustomerName}</li>
+      <li>Service: ${row.ServiceType}</li>
+      <li>Location: ${row.Suburb || row.Area}</li>
+      <li>Total: $${row.TotalQuote}</li>
+    </ul>
+    <p>The customer will be notified once the quote is approved.</p>
+  `;
+  
+  await sendEmail({
+    to,
+    subject,
+    html,
+    attachments: [{
+      filename: `quote-${row.QuoteID}.pdf`,
+      content: pdf,
+      contentType: 'application/pdf'
+    }]
+  });
 }

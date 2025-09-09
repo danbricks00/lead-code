@@ -90,6 +90,20 @@ export default async function handler(req, res) {
     const requestId = quoteLogger.generateRequestId();
     const startTime = Date.now();
     
+    // Enhanced logging for debugging
+    console.log('🔍 [ADMIN-APPROVE] Request received:', {
+        method: req.method,
+        url: req.url,
+        query: req.query,
+        headers: {
+            'user-agent': req.headers['user-agent'],
+            'referer': req.headers['referer'],
+            'x-forwarded-for': req.headers['x-forwarded-for']
+        },
+        bodySize: req.body ? JSON.stringify(req.body).length : 0,
+        timestamp: new Date().toISOString()
+    });
+    
     // Log incoming request details
     quoteLogger.adminAccept('Request received', {
         method: req.method,

@@ -48,7 +48,21 @@ async function getQuoteById(quoteId) {
 
 // --- Main Handler ---
 export default async function handler(req, res) {
+    // Enhanced logging for debugging
+    console.log('🔍 [ADMIN-DECLINE] Request received:', {
+        method: req.method,
+        url: req.url,
+        query: req.query,
+        headers: {
+            'user-agent': req.headers['user-agent'],
+            'referer': req.headers['referer'],
+            'x-forwarded-for': req.headers['x-forwarded-for']
+        },
+        timestamp: new Date().toISOString()
+    });
+    
     if (req.method !== 'GET') {
+        console.log('🔍 [ADMIN-DECLINE] Invalid method:', req.method);
         return res.status(405).json({ success: false, error: 'Method Not Allowed' });
     }
 

@@ -10,25 +10,36 @@ export default function AdminApprove() {
 
   useEffect(() => {
     if (quoteId) {
+      console.log('🔍 [ADMIN-PAGE] Starting approval process for quoteId:', quoteId);
+      
       // Generate the proper approval link with token
       const ts = Date.now().toString();
       const token = generateToken(quoteId, ts);
       
+      const apiUrl = `/api/admin/approve?quoteId=${quoteId}&ts=${ts}&token=${token}`;
+      console.log('🔍 [ADMIN-PAGE] Making request to:', apiUrl);
+      
       // Call the API endpoint with GET method and proper parameters
-      fetch(`/api/admin/approve?quoteId=${quoteId}&ts=${ts}&token=${token}`, {
+      fetch(apiUrl, {
         method: 'GET',
       })
       .then(response => {
+        console.log('🔍 [ADMIN-PAGE] Response received:', {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok
+        });
+        
         if (response.ok) {
           setStatus('success');
           setMessage('Quote approved successfully! Customer has been notified.');
         } else {
           setStatus('error');
-          setMessage('Failed to approve quote. Please try again.');
+          setMessage(`Failed to approve quote. Status: ${response.status}`);
         }
       })
       .catch(error => {
-        console.error('Error approving quote:', error);
+        console.error('🔍 [ADMIN-PAGE] Error approving quote:', error);
         setStatus('error');
         setMessage('An error occurred while approving the quote.');
       });

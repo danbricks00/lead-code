@@ -10,25 +10,36 @@ export default function AdminDecline() {
 
   useEffect(() => {
     if (quoteId) {
+      console.log('🔍 [ADMIN-PAGE] Starting decline process for quoteId:', quoteId);
+      
       // Generate the proper decline link with token
       const ts = Date.now().toString();
       const token = generateToken(quoteId, ts);
       
+      const apiUrl = `/api/admin/decline?quoteId=${quoteId}&ts=${ts}&token=${token}`;
+      console.log('🔍 [ADMIN-PAGE] Making request to:', apiUrl);
+      
       // Call the API endpoint with GET method and proper parameters
-      fetch(`/api/admin/decline?quoteId=${quoteId}&ts=${ts}&token=${token}`, {
+      fetch(apiUrl, {
         method: 'GET',
       })
       .then(response => {
+        console.log('🔍 [ADMIN-PAGE] Response received:', {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok
+        });
+        
         if (response.ok) {
           setStatus('success');
           setMessage('Quote declined successfully! Tradesperson has been notified.');
         } else {
           setStatus('error');
-          setMessage('Failed to decline quote. Please try again.');
+          setMessage(`Failed to decline quote. Status: ${response.status}`);
         }
       })
       .catch(error => {
-        console.error('Error declining quote:', error);
+        console.error('🔍 [ADMIN-PAGE] Error declining quote:', error);
         setStatus('error');
         setMessage('An error occurred while declining the quote.');
       });

@@ -14,11 +14,9 @@ function verifyToken(id, ts) {
     return hmac.digest("hex");
 }
 
-function generateCustomerDecisionLink(action, quoteId) {
-    const ts = Date.now().toString();
-    const token = verifyToken(quoteId, ts);
+function generateCustomerDecisionLink(action, quoteId, leadId) {
     const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
-    return `https://${baseUrl}/api/quote-decision/${action}?quoteId=${quoteId}&ts=${ts}&token=${token}`;
+    return `https://${baseUrl}/api/quote-decision/${action}?quoteId=${quoteId}&leadId=${leadId}`;
 }
 
 function generateQuoteViewLink(quoteId) {
@@ -141,32 +139,44 @@ export default async function handler(req, res) {
         return res.status(405).json({ success: false, error: 'Method Not Allowed' });
     }
 
-    const { quoteId, ts, token } = req.query;
+    const { quoteId, leadId, ts, token } = req.query;
 
-    // Enhanced token validation debugging
-    const expectedToken = verifyToken(quoteId, ts);
-    const tokenValid = token === expectedToken;
+    // Validate required parameters
+    if (!quoteId || !leadId) {
+        console.error(JSON.stringify({ tag: 'APPROVE_PARAM_FAIL', quoteId, leadId }));
+        return res.status(400).json({ error: 'Missing or invalid quoteId/leadId' });
+    }
+
+    // Map to actual sheet header names
+    const QuoteID = quoteId;
+    const LeadID = leadId;
     
-    console.log('🔍 [ADMIN-APPROVE] Token validation:', {
+    console.log('🔍 [ADMIN-APPROVE] Parameter mapping:', {
         quoteId,
-        ts,
-        receivedToken: token,
-        expectedToken,
-        tokenValid,
-        hasSecret: !!process.env.QUOTE_LINK_SECRET
+        leadId,
+        QuoteID,
+        LeadID
     });
 
-    if (!quoteId || !ts || !token || !tokenValid) {
-        quoteLogger.error('Invalid approval link', { 
-            quoteId, 
-            hasToken: !!token,
-            hasTs: !!ts,
-            tokenValid,
+    // Enhanced token validation debugging (if token provided)
+    let tokenValid = true;
+    if (ts && token) {
+        const expectedToken = verifyToken(quoteId, ts);
+        tokenValid = token === expectedToken;
+        
+        console.log('🔍 [ADMIN-APPROVE] Token validation:', {
+            quoteId,
+            ts,
+            receivedToken: token,
             expectedToken,
-            receivedToken: token
-        }, requestId);
-        quoteLogger.response('Redirecting to error page - invalid approval link', null, requestId);
-        return res.redirect(`/quote-status?status=error&message=Invalid approval link.`);
+            tokenValid,
+            hasSecret: !!process.env.QUOTE_LINK_SECRET
+        });
+
+        if (!tokenValid) {
+            console.error(JSON.stringify({ tag: 'APPROVE_TOKEN_FAIL', quoteId, leadId }));
+            return res.status(400).json({ error: 'Invalid token' });
+        }
     }
     
     quoteLogger.adminAccept('Token validated successfully', { quoteId }, requestId);
@@ -186,7 +196,7 @@ export default async function handler(req, res) {
         
         const quoteData = await findRowAndGetData({
             sheets, spreadsheetId, tab: 'Quotes',
-            searchColumn: 'QuoteID', searchValue: quoteId,
+            searchColumn: 'QuoteID', searchValue: QuoteID,
             columnsToFetch: [
                 'AdminPersonStatus', 'LeadID', 'TradePersonName', 'TradePersonEmail', 'TradePersonPhone',
                 'LabourRate', 'LabourHours', 'LabourTotal', 'MaterialsCost', 'MaterialsQuantity', 'MaterialsTotal',
@@ -197,9 +207,12 @@ export default async function handler(req, res) {
         });
 
         if (!quoteData) {
-            quoteLogger.error('Quote not found in Google Sheets', { quoteId }, requestId);
-            quoteLogger.response('Redirecting to error page - quote not found', null, requestId);
-            return res.redirect(`/quote-status?status=error&message=Quote not found.`);
+            console.error(JSON.stringify({
+                tag: 'APPROVE_LOOKUP_FAIL',
+                quoteId,
+                leadId
+            }));
+            return res.status(404).json({ error: 'Quote not found' });
         }
 
         // Check if quote is already processed
@@ -434,8 +447,8 @@ export default async function handler(req, res) {
         console.log('  - Tradesperson:', tradespersonName, tradespersonEmail);
         console.log('  - Total:', totalQuoteAmount);
         
-        const acceptLink = generateCustomerDecisionLink('accept', quoteId);
-        const declineLink = generateCustomerDecisionLink('decline', quoteId);
+        const acceptLink = generateCustomerDecisionLink('accept', quoteId, leadId);
+        const declineLink = generateCustomerDecisionLink('decline', quoteId, leadId);
         const viewLink = generateQuoteViewLink(quoteId);
 
         // 6. Send CUSTOMER-SPECIFIC quote email (different tracking journey)
@@ -620,10 +633,26 @@ export default async function handler(req, res) {
         const headerResponse = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Quotes!A1:AJ1' });
         const header = headerResponse.data.values[0];
         // Use new unified system for approval
-        const lead = await getLeadById(quoteData.LeadID);
-        if (!lead) {
-            throw new Error('Lead not found for approval');
+        const lead = await getLeadById(LeadID);
+        if (!lead || lead.QuoteID !== QuoteID) {
+            console.error(JSON.stringify({
+                tag: 'APPROVE_LOOKUP_FAIL',
+                quoteId,
+                leadId,
+                foundLead: !!lead,
+                leadQuoteID: lead?.QuoteID,
+                expectedQuoteID: QuoteID
+            }));
+            return res.status(404).json({ error: 'Lead or Quote not found' });
         }
+        
+        console.log('✅ [ADMIN-APPROVE] Lookup successful:', {
+            tag: 'APPROVE_LOOKUP_OK',
+            quoteId,
+            leadId,
+            foundQuote: !!quoteData,
+            foundLead: !!lead
+        });
 
         const approvedRow = buildQuoteRow({
             lead,
@@ -696,8 +725,8 @@ export default async function handler(req, res) {
                                 <div style="text-align: center; margin: 30px 0;">
                                     <h3 style="color: #495057; margin: 0 0 20px 0;">Make Your Decision</h3>
                                     <div style="margin: 20px 0;">
-                                        <a href="${generateCustomerDecisionLink('accept', quoteData.QuoteID)}" style="display: inline-block; background-color: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; margin: 0 10px;">✅ ACCEPT QUOTE</a>
-                                        <a href="${generateCustomerDecisionLink('decline', quoteData.QuoteID)}" style="display: inline-block; background-color: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; margin: 0 10px;">❌ DECLINE QUOTE</a>
+                                        <a href="${generateCustomerDecisionLink('accept', quoteData.QuoteID, quoteData.LeadID)}" style="display: inline-block; background-color: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; margin: 0 10px;">✅ ACCEPT QUOTE</a>
+                                        <a href="${generateCustomerDecisionLink('decline', quoteData.QuoteID, quoteData.LeadID)}" style="display: inline-block; background-color: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; margin: 0 10px;">❌ DECLINE QUOTE</a>
                                     </div>
                                     <p style="color: #6c757d; font-size: 14px; margin: 15px 0 0 0; font-style: italic;">Secure one-click decision buttons</p>
                                 </div>
@@ -808,7 +837,7 @@ export default async function handler(req, res) {
             processingTime: Date.now() - startTime
         }, requestId);
         
-        return res.redirect(`/quote-status?status=success&message=Quote approved and sent to the customer!`);
+        return res.status(200).json({ ok: true, quoteId, leadId });
 
     } catch (error) {
         quoteLogger.error('Quote approval error', error, requestId);

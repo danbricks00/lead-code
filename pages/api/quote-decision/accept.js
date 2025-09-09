@@ -2,6 +2,7 @@ import { getGoogleSheetsClient, getSpreadsheetId } from "../../../lib/googleShee
 import { sendEmail } from '../../../lib/emailHelper';
 import { generateQuotePDF } from '../../../lib/pdfGenerator.js';
 import quoteLogger from '../../../lib/quoteLogger.js';
+import { normalizeQueryParams, createIdMismatchError } from '../../../utils/normalize.js';
 import crypto from "crypto";
 
 // NZ timestamp helper function
@@ -477,22 +478,32 @@ export default async function handler(req, res) {
         return res.status(405).json({ success: false, error: 'Method Not Allowed' });
     }
 
-    const { quoteId, ts, token } = req.query;
+    const { quoteId, leadId, ts, token } = req.query;
 
-    if (!quoteId || !ts || !token) {
-        quoteLogger.error('Missing required parameters', { quoteId, ts, token }, requestId);
-        quoteLogger.response('Redirecting to error page - missing parameters', null, requestId);
-        return res.redirect(`/quote-status?status=error&message=Missing required parameters.`);
+    // Validate required parameters
+    if (!quoteId || !leadId) {
+        console.error(JSON.stringify({ tag: 'ACCEPT_PARAM_FAIL', quoteId, leadId }));
+        return res.status(400).json({ error: 'Missing or invalid quoteId/leadId' });
     }
 
-    const expectedToken = verifyToken(quoteId, ts);
-    if (token !== expectedToken) {
-        quoteLogger.error('Invalid token', { 
-            providedToken: token.substring(0, 10) + '...', 
-            expectedToken: expectedToken.substring(0, 10) + '...' 
-        }, requestId);
-        quoteLogger.response('Redirecting to error page - invalid token', null, requestId);
-        return res.redirect(`/quote-status?status=error&message=Invalid or expired link.`);
+    // Normalize parameters
+    const params = normalizeQueryParams({ quoteId, leadId, ts, token });
+    const { QuoteID, LeadID } = params;
+    
+    console.log('🔍 [CUSTOMER-ACCEPT] Parameter mapping:', {
+        quoteId, leadId, QuoteID, LeadID
+    });
+
+    // Enhanced token validation debugging (if token provided)
+    let tokenValid = true;
+    if (ts && token) {
+        const expectedToken = verifyToken(quoteId, ts);
+        tokenValid = token === expectedToken;
+        
+        if (!tokenValid) {
+            console.error(JSON.stringify({ tag: 'ACCEPT_TOKEN_FAIL', quoteId, leadId }));
+            return res.status(400).json({ error: 'Invalid token' });
+        }
     }
     
     quoteLogger.customerAccept('Token validated successfully', { quoteId }, requestId);
@@ -523,16 +534,18 @@ export default async function handler(req, res) {
         }, requestId);
         
         const header = rows[0];
-        const rowIndex = rows.findIndex(row => row[1] === quoteId); // QuoteID is in column B (index 1)
+        const rowIndex = rows.findIndex(row => row[1] === QuoteID); // QuoteID is in column B (index 1)
 
         if (rowIndex === -1) {
-            quoteLogger.error('Quote ID not found in Google Sheets', { 
-                quoteId, 
+            console.error(JSON.stringify({
+                tag: 'ACCEPT_LOOKUP_FAIL',
+                quoteId,
+                leadId,
+                QuoteID,
                 searchedRows: rows.length - 1,
                 availableQuoteIds: rows.slice(1).map(row => row[1]).filter(id => id)
-            }, requestId);
-            quoteLogger.response('Redirecting to error page - quote not found', null, requestId);
-            return res.redirect(`/quote-status?status=error&message=Quote ID not found.`);
+            }));
+            return res.status(404).json({ error: 'Quote not found' });
         }
         
         quoteLogger.sheets('Quote found in Google Sheets', { 
@@ -565,7 +578,7 @@ export default async function handler(req, res) {
                 const leadRows = leadResponse.data.values;
                 if (leadRows) {
                     const leadHeader = leadRows[0];
-                    const leadRowIndex = leadRows.findIndex(row => row[0] === leadId);
+                    const leadRowIndex = leadRows.findIndex(row => row[0] === LeadID);
                     if (leadRowIndex !== -1) {
                         const leadRow = leadRows[leadRowIndex];
                         leadHeader.forEach((headerName, index) => {
@@ -577,15 +590,57 @@ export default async function handler(req, res) {
                             leadDataKeys: Object.keys(leadData)
                         }, requestId);
                     } else {
-                        quoteLogger.error('Lead ID not found in Leads sheet', { leadId }, requestId);
+                        console.error(JSON.stringify({
+                            tag: 'ACCEPT_LOOKUP_FAIL',
+                            quoteId,
+                            leadId,
+                            LeadID,
+                            error: 'Lead not found in Leads sheet'
+                        }));
+                        return res.status(404).json({ error: 'Lead not found' });
                     }
                 }
             } catch (leadError) {
-                quoteLogger.error('Could not fetch lead data', leadError, requestId);
+                console.error(JSON.stringify({
+                    tag: 'ACCEPT_LOOKUP_FAIL',
+                    quoteId,
+                    leadId,
+                    error: 'Could not fetch lead data',
+                    leadError: leadError.message
+                }));
+                return res.status(404).json({ error: 'Lead not found' });
             }
         } else {
-            quoteLogger.info('No lead ID found in quote data', null, requestId);
+            console.error(JSON.stringify({
+                tag: 'ACCEPT_LOOKUP_FAIL',
+                quoteId,
+                leadId,
+                error: 'No lead ID found in quote data'
+            }));
+            return res.status(404).json({ error: 'Lead not found' });
         }
+        
+        // Validate that the lead and quote match
+        if (leadData.LeadID !== LeadID || leadData.QuoteID !== QuoteID) {
+            console.error(JSON.stringify({
+                tag: 'ACCEPT_LOOKUP_FAIL',
+                quoteId,
+                leadId,
+                leadDataLeadID: leadData.LeadID,
+                leadDataQuoteID: leadData.QuoteID,
+                expectedLeadID: LeadID,
+                expectedQuoteID: QuoteID
+            }));
+            return res.status(404).json({ error: 'Lead or Quote not found' });
+        }
+        
+        console.log('✅ [CUSTOMER-ACCEPT] Lookup successful:', {
+            tag: 'ACCEPT_LOOKUP_OK',
+            quoteId,
+            leadId,
+            foundQuote: !!targetRow,
+            foundLead: !!leadData
+        });
         
         // Check for existing decision and expiry using correct schema column names
         const decisionIndex = header.indexOf('Decision');
@@ -883,6 +938,12 @@ export default async function handler(req, res) {
             </body>
             </html>
         `;
+        
+        console.log('✅ [CUSTOMER-ACCEPT] Quote accepted successfully:', {
+            tag: 'QUOTE_ACCEPTED_OK',
+            quoteId,
+            leadId
+        });
         
         return res.status(200).send(confirmationPage);
 

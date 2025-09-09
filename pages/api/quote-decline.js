@@ -88,37 +88,58 @@ export default async function handler(req, res) {
         return res.status(405).json({ success: false, error: 'Method Not Allowed' });
     }
 
-    const { quoteId, ts, token, reason } = req.query;
+    const { quoteId, leadId, ts, token, reason } = req.query;
 
-    // Enhanced token validation debugging
-    const expectedToken = verifyToken(quoteId, ts);
-    const tokenValid = token === expectedToken;
+    // Validate required parameters
+    if (!quoteId || !leadId) {
+        console.error(JSON.stringify({ tag: 'DECLINE_PARAM_FAIL', quoteId, leadId }));
+        return res.status(400).json({ error: 'Missing or invalid quoteId/leadId' });
+    }
+
+    // Map to actual sheet header names
+    const QuoteID = quoteId;
+    const LeadID = leadId;
     
-    console.log('🔍 [ADMIN-DECLINE] Token validation:', {
+    console.log('🔍 [ADMIN-DECLINE] Parameter mapping:', {
         quoteId,
-        ts,
-        receivedToken: token,
-        expectedToken,
-        tokenValid,
-        hasSecret: !!process.env.QUOTE_LINK_SECRET
+        leadId,
+        QuoteID,
+        LeadID
     });
 
-    if (!quoteId || !ts || !token || !tokenValid) {
-        console.log('🔍 [ADMIN-DECLINE] Invalid decline link:', {
+    // Enhanced token validation debugging (if token provided)
+    let tokenValid = true;
+    if (ts && token) {
+        const expectedToken = verifyToken(quoteId, ts);
+        tokenValid = token === expectedToken;
+        
+        console.log('🔍 [ADMIN-DECLINE] Token validation:', {
             quoteId,
-            hasToken: !!token,
-            hasTs: !!ts,
-            tokenValid,
+            ts,
+            receivedToken: token,
             expectedToken,
-            receivedToken: token
+            tokenValid,
+            hasSecret: !!process.env.QUOTE_LINK_SECRET
         });
-        return res.redirect(`/quote-status?status=error&message=Invalid decline link.`);
+
+        if (!tokenValid) {
+            console.error(JSON.stringify({ tag: 'DECLINE_TOKEN_FAIL', quoteId, leadId }));
+            return res.status(400).json({ error: 'Invalid token' });
+        }
     }
 
     try {
         // 1. Get Quote data using new unified system
-        const quoteData = await getQuoteById(quoteId);
-        if (!quoteData) return res.redirect(`/quote-status?status=error&message=Quote not found.`);
+        const quoteData = await getQuoteById(QuoteID);
+        if (!quoteData) {
+            console.error(JSON.stringify({
+                tag: 'DECLINE_LOOKUP_FAIL',
+                quoteId,
+                leadId,
+                QuoteID
+            }));
+            return res.status(404).json({ error: 'Quote not found' });
+        }
         
         // Check if already declined or approved
         if (quoteData.AdminPersonStatus === 'Declined') {
@@ -134,8 +155,26 @@ export default async function handler(req, res) {
         }
 
         // 2. Get Lead data using new unified system
-        const lead = await getLeadById(quoteData.LeadID);
-        if (!lead) return res.redirect(`/quote-status?status=error&message=Lead data not found.`);
+        const lead = await getLeadById(LeadID);
+        if (!lead || lead.QuoteID !== QuoteID) {
+            console.error(JSON.stringify({
+                tag: 'DECLINE_LOOKUP_FAIL',
+                quoteId,
+                leadId,
+                foundLead: !!lead,
+                leadQuoteID: lead?.QuoteID,
+                expectedQuoteID: QuoteID
+            }));
+            return res.status(404).json({ error: 'Lead or Quote not found' });
+        }
+        
+        console.log('✅ [ADMIN-DECLINE] Lookup successful:', {
+            tag: 'DECLINE_LOOKUP_OK',
+            quoteId,
+            leadId,
+            foundQuote: !!quoteData,
+            foundLead: !!lead
+        });
 
         // 3. Update Quote using new unified system with rejected mode
         const rejectedRow = buildQuoteRow({
@@ -368,7 +407,7 @@ export default async function handler(req, res) {
 
         await sendEmail(adminEmailOptions);
         
-        return res.redirect(`/quote-status?status=success&message=Quote declined successfully. Tradesperson has been notified and can resubmit.`);
+        return res.status(200).json({ ok: true, quoteId, leadId });
 
     } catch (error) {
         console.error("Quote Decline Error:", error);

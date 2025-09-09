@@ -59,7 +59,7 @@ const Layout = ({ children }) => {
               <Link href="/" style={router.pathname === '/' ? styles.activeLink : styles.navLink}>Home</Link>
               <Link href="/about" style={router.pathname === '/about' ? styles.activeLink : styles.navLink}>About Us</Link>
               <Link href="/contact" style={router.pathname === '/contact' ? styles.activeLink : styles.navLink}>Contact</Link>
-              <a href="#" style={styles.loginBtn}>Tradesman Login</a>
+              <Link href="/tradesman-login" style={styles.loginBtn}>Tradesman Login</Link>
             </div>
           )}
           
@@ -83,7 +83,7 @@ const Layout = ({ children }) => {
             <Link href="/" style={styles.mobileNavLink} onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
             <Link href="/about" style={styles.mobileNavLink} onClick={() => setIsMobileMenuOpen(false)}>About Us</Link>
             <Link href="/contact" style={styles.mobileNavLink} onClick={() => setIsMobileMenuOpen(false)}>Contact</Link>
-            <a href="#" style={styles.mobileLoginBtn} onClick={() => setIsMobileMenuOpen(false)}>Tradesman Login</a>
+            <Link href="/tradesman-login" style={styles.mobileLoginBtn} onClick={() => setIsMobileMenuOpen(false)}>Tradesman Login</Link>
           </div>
         )}
       </header>

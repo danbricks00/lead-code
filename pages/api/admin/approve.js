@@ -316,7 +316,7 @@ export default async function handler(req, res) {
         
         try {
             // Try Adobe PDF API first
-            pdfBuffer = await generateQuotePDF(completeQuoteData);
+            pdfBuffer = await generateQuotePDF(quoteDataForPdf);
             console.log('✅ PDF generated successfully using Adobe API');
         } catch (pdfError) {
             console.error("❌ Admin PDF Generation failed:", pdfError);
@@ -354,6 +354,12 @@ export default async function handler(req, res) {
         console.log('📧 Sending customer email with PDF attachment...');
         
         // Validate email data before sending
+        const customerEmail = leadData['CustomerEmail'];
+        const customerName = leadData['CustomerName'];
+        const tradespersonName = quoteData['TradePersonName'];
+        const tradespersonEmail = quoteData['TradePersonEmail'];
+        const totalQuote = parseFloat(quoteData['TotalQuote'] || 0);
+        
         if (!customerEmail || !customerName) {
             throw new Error('Customer email or name is missing from data');
         }
@@ -507,7 +513,7 @@ export default async function handler(req, res) {
                 <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
                   <h4 style="color: #495057; margin: 0 0 10px 0;">🌐 Alternative: View Online</h4>
                   <p style="margin: 0 0 15px 0; color: #6c757d;">You can also view your quote in your browser:</p>
-                  <a href="${viewQuoteLink}" style="color: #007bff; word-break: break-all;">${viewQuoteLink}</a>
+                  <a href="${viewLink}" style="color: #007bff; word-break: break-all;">${viewLink}</a>
                 </div>
 
                 <!-- Contact Information -->

@@ -94,7 +94,48 @@ export default async function handler(req, res) {
     try {
       if (fullRow.CustomerStatus === 'Submitted' && fullRow.TradePersonStatus !== 'Declined' && (process.env.ENABLE_PDF_EMAILS !== 'false')) {
         const html = renderQuoteHtml(fullRow);
-        const pdfBuffer = await generateQuotePDF({ ...fullRow, html, quoteId });
+        
+        // Create properly formatted data for PDF generation
+        const pdfData = {
+          quoteId: quoteId,
+          quoteDate: fullRow.TimeStamp,
+          validUntil: fullRow.ValidUnitl,
+          customerName: fullRow.CustomerName,
+          customerEmail: fullRow.CustomerEmail,
+          customerPhone: fullRow.CustomerPhone,
+          customerAddress: `${fullRow.Area || ''}, ${fullRow.Suburb || ''}`.trim(),
+          serviceType: fullRow.ServiceType,
+          tradespersonName: fullRow.TradePersonName,
+          tradespersonEmail: fullRow.TradePersonEmail,
+          tradespersonPhone: fullRow.TradePersonPhone,
+          tradespersonLicense: '',
+          rooms: fullRow.Rooms ? JSON.parse(fullRow.Rooms) : [],
+          breakdown: {
+            labourRate: parseFloat(fullRow.LabourRate || 0),
+            labourHours: parseFloat(fullRow.LabourHours || 0),
+            labourTotal: parseFloat(fullRow.LabourTotal || 0),
+            materialsCost: parseFloat(fullRow.MaterialsCost || 0),
+            materialsQuantity: parseFloat(fullRow.MaterialsQuantity || 0),
+            materialsTotal: parseFloat(fullRow.MaterialsTotal || 0),
+            travelCost: parseFloat(fullRow.TravelCost || 0),
+            travelDistance: parseFloat(fullRow.TravelDistance || 0),
+            travelTotal: parseFloat(fullRow.TravelTotal || 0),
+            installationCost: parseFloat(fullRow.InstallationCost || 0),
+            totalSqm: fullRow.Rooms ? JSON.parse(fullRow.Rooms).reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0) : 0
+          },
+          totals: {
+            labour: parseFloat(fullRow.LabourTotal || 0),
+            materials: parseFloat(fullRow.MaterialsTotal || 0),
+            travel: parseFloat(fullRow.TravelTotal || 0),
+            installation: parseFloat(fullRow.InstallationCost || 0),
+            subtotal: parseFloat(fullRow.Subtotal || 0),
+            gst: parseFloat(fullRow.GST || 0),
+            final: parseFloat(fullRow.TotalQuote || 0)
+          },
+          html: html
+        };
+        
+        const pdfBuffer = await generateQuotePDF(pdfData);
         
         // Only send admin and tradesperson emails on submission
         // Customer email will be sent after admin approval
@@ -191,23 +232,64 @@ async function sendCustomerQuoteEmail(to, pdf, row) {
 
 async function sendAdminQuoteEmail(to, pdf, row) {
   const subject = `New Quote Submitted - ${row.CustomerName} - Quote #${row.QuoteID}`;
-  const html = `
-    <h1>New Quote Submitted for Review</h1>
-    <p>A new quote has been submitted and requires your review.</p>
-    <p><strong>Quote Details:</strong></p>
-    <ul>
-      <li>Quote ID: ${row.QuoteID}</li>
-      <li>Customer: ${row.CustomerName}</li>
-      <li>Email: ${row.CustomerEmail}</li>
-      <li>Phone: ${row.CustomerPhone}</li>
-      <li>Service: ${row.ServiceType}</li>
-      <li>Location: ${row.Suburb || row.Area}</li>
-      <li>Total: $${row.TotalQuote}</li>
-      <li>Tradesperson: ${row.TradePersonName}</li>
-    </ul>
-    <p>Please review the attached quote and approve or decline as appropriate.</p>
-  `;
+  const baseUrl = process.env.NEXTAUTH_URL || 'https://lead-code.vercel.app';
   
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1>📄 New Quote Submitted for Review</h1>
+        <p>A new quote has been submitted and requires your review.</p>
+      </div>
+      
+      <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+        <h2>📋 Quote Details</h2>
+        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <p><strong>Quote ID:</strong> ${row.QuoteID}</p>
+          <p><strong>Customer:</strong> ${row.CustomerName}</p>
+          <p><strong>Email:</strong> ${row.CustomerEmail}</p>
+          <p><strong>Phone:</strong> ${row.CustomerPhone}</p>
+          <p><strong>Service:</strong> ${row.ServiceType}</p>
+          <p><strong>Location:</strong> ${row.Suburb || row.Area}</p>
+          <p><strong>Total:</strong> $${row.TotalQuote}</p>
+          <p><strong>Tradesperson:</strong> ${row.TradePersonName}</p>
+                </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <h3>🎯 Admin Actions Required</h3>
+          <p>Please review the attached quote and take action:</p>
+          
+          <div style="margin: 20px 0;">
+            <a href="${baseUrl}/api/admin/approve?quoteId=${row.QuoteID}" 
+               style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; display: inline-block; margin: 10px; font-weight: bold; box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);">
+              ✅ Approve Quote
+            </a>
+            
+            <a href="${baseUrl}/api/admin/decline?quoteId=${row.QuoteID}" 
+               style="background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; display: inline-block; margin: 10px; font-weight: bold; box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);">
+              ❌ Decline Quote
+            </a>
+                    </div>
+                    
+          <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h4>📄 View Quote Details</h4>
+            <a href="${baseUrl}/quote/view/${row.QuoteID}" 
+               style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px;">
+              📊 View Full Quote
+            </a>
+          </div>
+        </div>
+        
+        <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+          <h4>⚠️ Important</h4>
+          <p><strong>Please review the attached PDF quote before making your decision.</strong></p>
+          <p>Once approved, the customer will receive the quote and can accept or decline it.</p>
+                    </div>
+                    
+        <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+                </div>
+            </div>
+        `;
+
   await sendEmail({
     to,
     subject,

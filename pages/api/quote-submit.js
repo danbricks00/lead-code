@@ -1,510 +1,143 @@
-/**
- * Quote Submit API - Submitted Write + PDF/Email
- * POST-only. Merges Lead + body financials; overwrites same QuoteID row; triggers PDF/email only for Submitted.
- */
+import { google } from 'googleapis';
+import nodemailer from 'nodemailer';
+import { generateQuotePDF } from '@/lib/pdfGenerator';
 
-import { getLeadById, upsertQuoteRow, getQuoteById, getQuotesByLeadId } from '../../utils/sheets.js';
-import { buildQuoteRow } from '../../utils/quotes.js';
-import { generateQuotePDF } from '../../lib/pdfGenerator.js';
-import { sendEmail } from '../../lib/emailHelper.js';
+const GMAIL_USER = process.env.GMAIL_USER;
+const GMAIL_PASS = process.env.GMAIL_PASS;
+const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_ID;
+const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
-/**
- * Generate next available version ID for quote resubmissions
- * @param {string} baseId - Original quote ID (e.g., "26e807wig")
- * @param {Array} existingQuotes - All quotes from getQuotesByLeadId
- * @returns {string} - Next version ID (e.g., "26e807wig-A", "26e807wig-B")
- */
-function getNextVersionId(baseId, existingQuotes) {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  let suffix = 0;
-  
-  while (suffix < alphabet.length) {
-    const versionId = `${baseId}-${alphabet[suffix]}`;
-    
-    // Check if this version already exists
-    const exists = existingQuotes.some(quote => 
-      quote.QuoteID && quote.QuoteID.toString().trim() === versionId
-    );
-    
-    if (!exists) {
-      return versionId;
-    }
-    
-    suffix++;
-  }
-  
-  // Fallback if we somehow exhaust A-Z (very unlikely)
-  return `${baseId}-${Date.now()}`;
+const baseUrl = process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : process.env.BASE_URL || 'http://localhost:3000';
+
+// Sheets auth
+async function getSheetsClient() {
+  const auth = new google.auth.GoogleAuth({
+    credentials: {
+      client_email: GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      private_key: GOOGLE_PRIVATE_KEY,
+    },
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  });
+  return google.sheets({ version: 'v4', auth });
 }
 
 export default async function handler(req, res) {
-  const requestId = `quote-submit-${Date.now()}`;
-  
-  console.log(JSON.stringify({ 
-    tag: 'ROUTE_REQ_START', 
-    route: 'quote-submit', 
-    method: req.method,
-    requestId,
-    timestamp: new Date().toISOString()
-  }));
-  
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
   try {
-    console.log('[QUOTE-SUBMIT] Request received:', req.body);
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-    let { quoteId, leadId } = body || {};
-    console.log('[QUOTE-SUBMIT] Parsed body:', { quoteId, leadId, bodyKeys: Object.keys(body) });
-    
-    if (!quoteId || !leadId) return res.status(400).json({ error: 'quoteId and leadId are required' });
-
-    const lead = await getLeadById(String(leadId).trim());
-    if (!lead) return res.status(404).json({ error: 'Lead not found' });
-
-    // Check for existing quotes for this lead
-    const existingQuotes = await getQuotesByLeadId(String(leadId).trim());
-    console.log('[QUOTE-SUBMIT] Existing quotes for lead:', existingQuotes.length);
-    
-    // Filter out the current quote being submitted (if it's an update)
-    const otherQuotes = existingQuotes.filter(q => q.QuoteID !== quoteId);
-    
-    if (otherQuotes.length > 0) {
-      // Check if any existing quote is not rejected by admin
-      const nonRejectedQuotes = otherQuotes.filter(q => 
-        q.AdminPersonStatus !== 'Declined' && 
-        q.AdminPersonStatus !== 'Rejected' &&
-        q.Decison !== 'Rejected' &&
-        q.Decison !== 'Declined'
-      );
-      
-      if (nonRejectedQuotes.length > 0) {
-        console.log('[QUOTE-SUBMIT] Blocking submission - existing non-rejected quotes found:', nonRejectedQuotes.map(q => ({
-          quoteId: q.QuoteID,
-          adminStatus: q.AdminPersonStatus,
-          decision: q.Decison
-        })));
-        
-        return res.status(400).json({ 
-          error: 'Quote already exists for this lead. Only one quote per lead is allowed unless the previous quote was rejected by admin.',
-          existingQuoteId: nonRejectedQuotes[0].QuoteID,
-          existingStatus: nonRejectedQuotes[0].AdminPersonStatus
-        });
-      }
+    const { quoteId, leadId } = req.body;
+    if (!quoteId || !leadId) {
+      return res.status(400).json({ error: 'Missing quoteId or leadId' });
     }
 
-    // Compute totals if missing
-    const Subtotal = num(body.subtotal) ?? sum([
-      num(body.labourTotal),
-      num(body.materialsTotal),
-      num(body.travelTotal),
-      num(body.installationCost),
-    ]);
-    const GST = num(body.gst) ?? round2((Subtotal ?? 0) * 0.15);
-    const TotalQuote = num(body.totalQuote) ?? round2((Subtotal ?? 0) + (GST ?? 0));
-
-    // Helper function for consistent NZT timestamp formatting
-    function formatDateTimeNZT(date) {
-        const options = {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false,
-            timeZone: 'Pacific/Auckland'
-        };
-        return new Intl.DateTimeFormat('en-NZ', options).format(new Date(date));
-    }
-
-    const fullRow = buildQuoteRow({
-      lead,
-      quoteId,
-      tradePersonName: body.tradespersonName || body.tradePersonName || '',
-      tradePersonEmail: body.tradespersonEmail || body.tradePersonEmail || '',
-      tradePersonPhone: body.tradespersonPhone || body.tradePersonPhone || '',
-      body: {
-        ...body,
-        subtotal: Subtotal ?? '',
-        gst: GST ?? '',
-        totalQuote: TotalQuote ?? '',
-      },
-      mode: 'submitted',
+    const sheets = await getSheetsClient();
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'Quotes!A:AZ',
     });
 
-    // Update timestamp to use NZT format
-    fullRow.TimeStamp = formatDateTimeNZT(new Date());
+    const rows = response.data.values;
+    const headers = rows[0];
+    const row = rows.find(r =>
+      r[headers.indexOf('QuoteID')] === quoteId &&
+      r[headers.indexOf('LeadID')] === leadId
+    );
 
-    // Smart guard: Check for existing quotes and handle resubmissions
-    const existingQuote = existingQuotes.find(q => q.QuoteID === quoteId);
-    
-    if (existingQuote) {
-        console.log('[QUOTE-SUBMIT] Existing quote found:', { 
-      quoteId,
-            existingTimestamp: existingQuote.TimeStamp,
-            existingStatus: existingQuote.CustomerStatus,
-            adminDecision: existingQuote.AdminDecision
-        });
-        
-        // Check if admin has declined this quote
-        if (existingQuote.AdminDecision === 'Declined') {
-            console.log('[QUOTE-SUBMIT] Admin declined quote - allowing resubmission with versioning');
-            
-            // Generate new version ID using helper function
-            const newQuoteId = getNextVersionId(quoteId, existingQuotes);
-            
-            console.log(`🔄 Creating new quote version: ${quoteId} → ${newQuoteId}`);
-            
-            // Update the quoteId for the new submission
-            quoteId = newQuoteId;
-            fullRow.QuoteID = newQuoteId;
-            
-            console.log(JSON.stringify({
-                tag: 'QUOTE_RESUBMITTED',
-                newQuoteId: newQuoteId,
-                fromQuoteId: existingQuote.QuoteID
-            }));
-            
-        } else {
-            // Quote exists but not declined - block duplicate submission
-            console.log('[QUOTE-SUBMIT] Duplicate submission blocked - quote not declined:', {
-                quoteId,
-                adminDecision: existingQuote.AdminDecision
-            });
-            
-            console.log(JSON.stringify({
-                tag: 'QUOTE_ALREADY_SUBMITTED',
-                quoteId,
-                submittedAt: existingQuote.TimeStamp
-            }));
-            
-            return res.status(400).json({
-                tag: "QUOTE_ALREADY_SUBMITTED",
-                quoteId,
-                submittedAt: formatDateTimeNZT(existingQuote.TimeStamp),
-                message: "This quote has already been submitted. Please check your email for confirmation."
-            });
+    if (!row) {
+      return res.status(404).json({ error: 'Quote not found in spreadsheet' });
+    }
+
+    // Generate PDF
+    const pdfBuffer = await generateQuotePDF(row, headers);
+
+    // ⚠️ --- Old Admin Approval Email --- ⚠️
+    /*
+    const adminEmail = process.env.ADMIN_EMAIL;
+    await transporter.sendMail({
+      to: adminEmail,
+      subject: `New Quote Requires Approval`,
+      html: `<p>A new quote has been submitted and requires admin approval.</p>`,
+      attachments: [
+        { filename: `Quote_${quoteId}.pdf`, content: pdfBuffer }
+      ]
+    });
+    */
+
+    // --- New Phase 1: Send directly to Customer ---
+    const customerEmail = row[headers.indexOf('CustomerEmail')];
+    const customerName  = row[headers.indexOf('CustomerName')] || "Customer";
+    const serviceType   = row[headers.indexOf('ServiceType')] || "Service";
+    const totalQuote    = row[headers.indexOf('TotalQuote')] || "0";
+
+    const acceptLink  = `${baseUrl}/api/customer-accept?quoteId=${quoteId}&leadId=${leadId}`;
+    const declineLink = `${baseUrl}/api/customer-decline?quoteId=${quoteId}&leadId=${leadId}`;
+    const viewLink    = `${baseUrl}/quote-view?quoteId=${quoteId}&leadId=${leadId}`;
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: GMAIL_USER, pass: GMAIL_PASS },
+    });
+
+    // Extract all needed values before creating the HTML content
+    const labourTotal      = row[headers.indexOf('LabourTotal')] || '0';
+    const materialsTotal   = row[headers.indexOf('MaterialsTotal')] || '0';
+    const travelTotal      = row[headers.indexOf('TravelTotal')] || '0';
+    const installationCost = row[headers.indexOf('InstallationCost')] || '0';
+    const subtotal         = row[headers.indexOf('Subtotal')] || '0';
+    const gst              = row[headers.indexOf('GST')] || '0';
+
+    // Create HTML content as a separate variable
+    const htmlContent = `
+      <h2>Dear ${customerName},</h2>
+      <p>Thank you for choosing Kiwi Trade. Below is a summary of your quote:</p>
+      
+      <table style="width:100%; border-collapse:collapse; font-family:sans-serif;">
+        <tr><td style="padding:6px; border-bottom:1px solid #ddd;">Labour</td>
+            <td style="padding:6px; border-bottom:1px solid #ddd; text-align:right;">$${labourTotal}</td></tr>
+        <tr><td style="padding:6px; border-bottom:1px solid #ddd;">Materials</td>
+            <td style="padding:6px; border-bottom:1px solid #ddd; text-align:right;">$${materialsTotal}</td></tr>
+        <tr><td style="padding:6px; border-bottom:1px solid #ddd;">Travel</td>
+            <td style="padding:6px; border-bottom:1px solid #ddd; text-align:right;">$${travelTotal}</td></tr>
+        <tr><td style="padding:6px; border-bottom:1px solid #ddd;">Installation</td>
+            <td style="padding:6px; border-bottom:1px solid #ddd; text-align:right;">$${installationCost}</td></tr>
+        <tr><td style="padding:6px; border-top:2px solid #000; font-weight:bold;">Subtotal</td>
+            <td style="padding:6px; border-top:2px solid #000; text-align:right; font-weight:bold;">$${subtotal}</td></tr>
+        <tr><td style="padding:6px;">GST (15%)</td>
+            <td style="padding:6px; text-align:right;">$${gst}</td></tr>
+        <tr><td style="padding:6px; font-size:16px; font-weight:bold; border-top:2px solid #000;">TOTAL</td>
+            <td style="padding:6px; font-size:16px; font-weight:bold; text-align:right; border-top:2px solid #000;">$${totalQuote}</td></tr>
+      </table>
+
+      <p>You can now respond to this quote:</p>
+      <p>
+        <a href="${acceptLink}" style="background:#28a745;color:white;padding:10px 20px;text-decoration:none;border-radius:4px;">✅ Accept Quote</a>
+        <a href="${declineLink}" style="background:#dc3545;color:white;padding:10px 20px;text-decoration:none;border-radius:4px; margin-left:10px;">❌ Decline Quote</a>
+      </p>
+      <p>Or <a href="${viewLink}">View Quote Online</a></p>
+      <p>A detailed PDF is also attached.</p>
+    `;
+
+    // Now send the email with the HTML content
+    await transporter.sendMail({
+      from: `"Kiwi Trade" <${GMAIL_USER}>`,
+      to: customerEmail,
+      subject: `📄 Your Kiwi Trade Quote #${quoteId} - ${serviceType}`,
+      html: htmlContent,
+      attachments: [
+        {
+          filename: `KiwiTrade_Quote_${quoteId}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf'
         }
-    } else {
-        console.log('[QUOTE-SUBMIT] First-time submission for quote ID:', quoteId);
-    }
-
-    console.log('[QUOTE-SUBMIT] About to write to Google Sheets:', { quoteId, fullRowKeys: Object.keys(fullRow) });
-    const result = await upsertQuoteRow(quoteId, fullRow, { req, caller: 'quote-submit' });
-    console.log('[QUOTE-SUBMIT] Google Sheets write result:', result);
-    console.log(JSON.stringify({ tag: 'QUOTE_SUBMIT_WRITE', quoteId, action: result?.action, rowIndex: result?.rowIndex }));
-
-    // PDF/email only for Submitted and not Declined
-    console.log('[QUOTE-SUBMIT] PDF/Email check:', {
-      customerStatus: fullRow.CustomerStatus,
-      tradePersonStatus: fullRow.TradePersonStatus,
-      enablePdfEmails: process.env.ENABLE_PDF_EMAILS,
-      shouldSend: fullRow.CustomerStatus === 'Submitted' && fullRow.TradePersonStatus !== 'Declined' && (process.env.ENABLE_PDF_EMAILS !== 'false')
+      ]
     });
-    
-    try {
-      if (fullRow.CustomerStatus === 'Submitted' && fullRow.TradePersonStatus !== 'Declined' && (process.env.ENABLE_PDF_EMAILS !== 'false')) {
-        const html = renderQuoteHtml(fullRow);
-        
-        // Create properly formatted data for PDF generation
-        const pdfData = {
-          quoteId: quoteId,
-          quoteDate: fullRow.TimeStamp,
-          validUntil: fullRow.ValidUntil,
-          customerName: fullRow.CustomerName,
-          customerEmail: fullRow.CustomerEmail,
-          customerPhone: fullRow.CustomerPhone,
-          customerAddress: `${fullRow.Area || ''}, ${fullRow.Suburb || ''}`.trim(),
-          serviceType: fullRow.ServiceType,
-          tradespersonName: fullRow.TradePersonName,
-          tradespersonEmail: fullRow.TradePersonEmail,
-          tradespersonPhone: fullRow.TradePersonPhone,
-          tradespersonLicense: '',
-          rooms: fullRow.Rooms ? JSON.parse(fullRow.Rooms) : [],
-            breakdown: {
-            labourRate: parseFloat(fullRow.LabourRate || 0),
-            labourHours: parseFloat(fullRow.LabourHours || 0),
-            labourTotal: parseFloat(fullRow.LabourTotal || 0),
-            materialsCost: parseFloat(fullRow.MaterialsCost || 0),
-            materialsQuantity: parseFloat(fullRow.MaterialsQuantity || 0),
-            materialsTotal: parseFloat(fullRow.MaterialsTotal || 0),
-            travelCost: parseFloat(fullRow.TravelCost || 0),
-            travelDistance: parseFloat(fullRow.TravelDistance || 0),
-            travelTotal: parseFloat(fullRow.TravelTotal || 0),
-            installationCost: parseFloat(fullRow.InstallationCost || 0),
-            totalSqm: fullRow.Rooms ? JSON.parse(fullRow.Rooms).reduce((sum, room) => sum + (parseFloat(room.sqm) || 0), 0) : 0
-            },
-            totals: {
-            labour: parseFloat(fullRow.LabourTotal || 0),
-            materials: parseFloat(fullRow.MaterialsTotal || 0),
-            travel: parseFloat(fullRow.TravelTotal || 0),
-            installation: parseFloat(fullRow.InstallationCost || 0),
-            subtotal: parseFloat(fullRow.Subtotal || 0),
-            gst: parseFloat(fullRow.GST || 0),
-            final: parseFloat(fullRow.TotalQuote || 0)
-          },
-          html: html
-        };
-        
-        const pdfBuffer = await generateQuotePDF(pdfData);
-        
-        // Only send admin and tradesperson emails on submission
-        // Customer email will be sent after admin approval
-        await safeSend(sendAdminQuoteEmail, process.env.ADMIN_EMAIL, pdfBuffer, fullRow, 'EMAIL_ADMIN');
-        await safeSend(sendTradesQuoteEmail, fullRow.TradePersonEmail, pdfBuffer, fullRow, 'EMAIL_TRADES');
-        console.log(JSON.stringify({ tag: 'QUOTE_PDF_EMAIL_OK', quoteId }));
-      } else {
-        console.log(JSON.stringify({ tag: 'QUOTE_PDF_EMAIL_SKIPPED', quoteId, reason: 'status/env' }));
-      }
-    } catch (e) {
-      console.error(JSON.stringify({ tag: 'QUOTE_PDF_EMAIL_FAIL', quoteId, msg: String(e?.message || e) }));
-    }
 
-    // Determine response based on whether this was a resubmission
-    const isResubmission = quoteId.includes('-');
-    const responseTag = isResubmission ? 'QUOTE_RESUBMITTED' : 'QUOTE_SUBMITTED';
-    const responseMessage = isResubmission ? 'Quote resubmitted successfully' : 'Quote submitted successfully';
-    
-    console.log(JSON.stringify({ 
-      tag: responseTag, 
-      route: 'quote-submit', 
-            quoteId,
-      leadId,
-      requestId,
-      timestamp: new Date().toISOString()
-    }));
-    
-    const responseData = { 
-      tag: responseTag,
-      ok: true, 
-      quoteId,
-      message: responseMessage,
-      quote: (await getQuoteById(quoteId)) || fullRow 
-    };
-    
-    // Add resubmission details if applicable
-    if (isResubmission) {
-      const baseQuoteId = quoteId.split('-')[0];
-      responseData.fromQuoteId = baseQuoteId;
-      responseData.newQuoteId = quoteId;
-    }
-    
-    return res.status(200).json(responseData);
+    console.log(`✅ Customer email with PDF sent to ${customerEmail}`);
+    return res.status(200).json({ success: true, message: 'Quote sent to customer' });
 
-  } catch (error) {
-    console.error(JSON.stringify({ 
-      tag: 'ROUTE_REQ_FAIL', 
-      route: 'quote-submit', 
-      error: error.message,
-      requestId,
-      timestamp: new Date().toISOString()
-    }));
-    return res.status(500).json({ error: 'Internal server error' });
+  } catch (err) {
+    console.error("[Quote Submit Error]", err);
+    return res.status(500).json({ error: 'Internal error submitting quote' });
   }
-}
-
-function num(v) { const n = Number(v); return Number.isFinite(n) ? n : null; }
-function round2(n) { return Math.round(n * 100) / 100; }
-function sum(arr) { return arr.filter(x => typeof x === 'number').reduce((a, b) => a + b, 0) || null; }
-
-// Minimal HTML renderer
-function renderQuoteHtml(q) {
-  const money = (n) => (n === '' || n == null ? '' : Number(n).toFixed(2));
-  return `
-    <html><head><meta charset="utf-8"><style>
-    body{font-family:Arial,sans-serif;font-size:12px;margin:24px;color:#111}
-    h1{font-size:18px;margin:0 0 8px}
-    table{width:100%;border-collapse:collapse}
-    td,th{border:1px solid #ddd;padding:6px;font-size:12px}
-    .r{text-align:right}
-    </style></head><body>
-    <h1>Quote #${q.QuoteID}</h1>
-    <p><strong>${q.CustomerName}</strong> — ${q.CustomerEmail} — ${q.CustomerPhone}</p>
-    <p>Service: ${q.ServiceType} | Location: ${q.Suburb || q.Area} | Timeline: ${q.Timelline}</p>
-    <table>
-      <tr><th>Item</th><th class="r">Amount</th></tr>
-      <tr><td>Labour</td><td class="r">$${money(q.LabourTotal)}</td></tr>
-      <tr><td>Materials</td><td class="r">$${money(q.MaterialsTotal)}</td></tr>
-      <tr><td>Travel</td><td class="r">$${money(q.TravelTotal)}</td></tr>
-      <tr><td>Installation</td><td class="r">$${money(q.InstallationCost)}</td></tr>
-      <tr><td><strong>Subtotal</strong></td><td class="r"><strong>$${money(q.Subtotal)}</strong></td></tr>
-      <tr><td>GST</td><td class="r">$${money(q.GST)}</td></tr>
-      <tr><td><strong>Total</strong></td><td class="r"><strong>$${money(q.TotalQuote)}</strong></td></tr>
-                    </table>
-    </body></html>
-  `;
-}
-
-async function safeSend(fn, to, pdf, row, tag) {
-  try { 
-    if (to && typeof fn === 'function') { 
-      await fn(to, pdf, row); 
-    } else {
-      console.log(JSON.stringify({ tag: `${tag}_SKIP` })); 
-    } 
-  } catch (e) { 
-    console.error(JSON.stringify({ tag: `${tag}_FAIL`, msg: String(e?.message || e) })); 
-  }
-}
-
-// Email functions using existing email system
-async function sendCustomerQuoteEmail(to, pdf, row) {
-  const subject = `Your Underfloor Heating Quote #${row.QuoteID}`;
-  const html = `
-    <h1>Your Quote is Ready!</h1>
-    <p>Hi ${row.CustomerName},</p>
-    <p>Your underfloor heating quote has been prepared and is attached to this email.</p>
-    <p><strong>Quote Details:</strong></p>
-    <ul>
-      <li>Quote ID: ${row.QuoteID}</li>
-      <li>Service: ${row.ServiceType}</li>
-      <li>Location: ${row.Suburb || row.Area}</li>
-      <li>Total: $${row.TotalQuote}</li>
-    </ul>
-    <p>Please review the attached quote and let us know if you have any questions.</p>
-  `;
-  
-  await sendEmail({
-    to,
-    subject,
-    html,
-    attachments: [{
-      filename: `quote-${row.QuoteID}.pdf`,
-      content: pdf,
-                contentType: 'application/pdf'
-    }]
-  });
-}
-
-async function sendAdminQuoteEmail(to, pdf, row) {
-  const subject = `New Quote #${row.QuoteID} for ${row.CustomerName} - Waiting for Approval`;
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-  
-  // Calculate individual totals
-  const labourTotal = parseFloat(row.LabourRate || 0) * parseFloat(row.LabourHours || 0);
-  const materialsTotal = parseFloat(row.MaterialsCost || 0) * parseFloat(row.MaterialsQuantity || 0);
-  const travelTotal = parseFloat(row.TravelCost || 0) * parseFloat(row.TravelDistance || 0);
-  const installationTotal = parseFloat(row.InstallationCost || 0);
-  
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1>📄 New Quote Submitted for Review</h1>
-        <p>A new quote has been submitted and requires your review.</p>
-                </div>
-      
-      <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
-        <h2>📋 Quote Details</h2>
-        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <p><strong>Quote ID:</strong> ${row.QuoteID}</p>
-          <p><strong>Customer:</strong> ${row.CustomerName}</p>
-          <p><strong>Email:</strong> ${row.CustomerEmail}</p>
-          <p><strong>Phone:</strong> ${row.CustomerPhone}</p>
-          <p><strong>Service:</strong> ${row.ServiceType}</p>
-          <p><strong>Location:</strong> ${row.Suburb || row.Area}</p>
-          <p><strong>Tradesperson:</strong> ${row.TradePersonName}</p>
-          <p><strong>Valid Until:</strong> ${row.ValidUntil}</p>
-        </div>
-        
-        <h3>💰 Cost Breakdown</h3>
-        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr style="border-bottom: 1px solid #eee;">
-              <td style="padding: 8px 0;"><strong>Labour:</strong></td>
-              <td style="padding: 8px 0; text-align: right;">$${labourTotal.toFixed(2)}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid #eee;">
-              <td style="padding: 8px 0;"><strong>Materials:</strong></td>
-              <td style="padding: 8px 0; text-align: right;">$${materialsTotal.toFixed(2)}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid #eee;">
-              <td style="padding: 8px 0;"><strong>Travel:</strong></td>
-              <td style="padding: 8px 0; text-align: right;">$${travelTotal.toFixed(2)}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid #eee;">
-              <td style="padding: 8px 0;"><strong>Installation:</strong></td>
-              <td style="padding: 8px 0; text-align: right;">$${installationTotal.toFixed(2)}</td>
-            </tr>
-            <tr style="border-bottom: 2px solid #333;">
-              <td style="padding: 8px 0;"><strong>Subtotal:</strong></td>
-              <td style="padding: 8px 0; text-align: right;"><strong>$${row.Subtotal}</strong></td>
-            </tr>
-            <tr style="border-bottom: 2px solid #333;">
-              <td style="padding: 8px 0;"><strong>GST (15%):</strong></td>
-              <td style="padding: 8px 0; text-align: right;"><strong>$${row.GST}</strong></td>
-            </tr>
-            <tr style="background: #f8f9fa;">
-              <td style="padding: 12px 0;"><strong>Total Quote:</strong></td>
-              <td style="padding: 12px 0; text-align: right; font-size: 18px; color: #28a745;"><strong>$${row.TotalQuote}</strong></td>
-            </tr>
-                        </table>
-                    </div>
-                    
-        <div style="text-align: center; margin: 30px 0;">
-          <h3>🎯 Admin Actions Required</h3>
-          <p>Please review the attached quote and take action:</p>
-          
-          <div style="margin: 20px 0;">
-            <a href="${baseUrl}/api/admin-accept?quoteId=${row.QuoteID}&leadId=${row.LeadID}" 
-               style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; display: inline-block; margin: 10px; font-weight: bold; box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);">
-              ✅ Approve Quote
-            </a>
-            
-            <a href="${baseUrl}/api/admin-decline?quoteId=${row.QuoteID}&leadId=${row.LeadID}" 
-               style="background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; display: inline-block; margin: 10px; font-weight: bold; box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);">
-              ❌ Decline Quote
-            </a>
-          </div>
-                    </div>
-                    
-        <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
-          <h4>⚠️ Important</h4>
-          <p><strong>Please review the attached PDF quote before making your decision.</strong></p>
-          <p>Once approved, the customer will receive the quote and can accept or decline it.</p>
-                    </div>
-                    
-        <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
-                </div>
-            </div>
-        `;
-
-  await sendEmail({
-    to,
-    subject,
-    html,
-    attachments: [{
-      filename: `quote-${row.QuoteID}.pdf`,
-      content: pdf,
-                contentType: 'application/pdf'
-    }]
-  });
-}
-
-async function sendTradesQuoteEmail(to, pdf, row) {
-  const subject = `Quote Submitted Successfully - Quote #${row.QuoteID}`;
-  const html = `
-    <h1>Quote Submitted Successfully</h1>
-    <p>Hi ${row.TradePersonName},</p>
-    <p>Your quote has been submitted successfully and is now under review.</p>
-    <p><strong>Quote Details:</strong></p>
-    <ul>
-      <li>Quote ID: ${row.QuoteID}</li>
-      <li>Customer: ${row.CustomerName}</li>
-      <li>Service: ${row.ServiceType}</li>
-      <li>Location: ${row.Suburb || row.Area}</li>
-      <li>Total: $${row.TotalQuote}</li>
-    </ul>
-    <p>The customer will be notified once the quote is approved.</p>
-  `;
-  
-  await sendEmail({
-    to,
-    subject,
-    html,
-    attachments: [{
-      filename: `quote-${row.QuoteID}.pdf`,
-      content: pdf,
-      contentType: 'application/pdf'
-    }]
-  });
 }

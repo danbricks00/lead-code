@@ -77,7 +77,7 @@ export default async function handler(req, res) {
         console.log('[4] Getting all lead data to handle flexible column structure...');
         let leadData;
         try {
-            const range = 'Leads!A:Z';
+            const range = 'Leads!A:L';
             const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
             const rows = response.data.values;
             

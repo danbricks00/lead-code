@@ -127,7 +127,7 @@ async function handleLeadCreate(req, res) {
 
       await sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
-        range: "Leads!A:Z",
+        range: "Leads!A:L",
         valueInputOption: "RAW",
         insertDataOption: "INSERT_ROWS",
         requestBody: {
@@ -304,7 +304,7 @@ async function handleSubmitQuote(req, res) {
     
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: 'Quotes!A:T',
+      range: 'Quotes!A:AL',
     });
 
     const rows = response.data.values || [];
@@ -403,7 +403,7 @@ async function handleSubmitQuote(req, res) {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
-      range: 'Quotes!A:Z',
+      range: 'Quotes!A:AL',
       valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       requestBody: {
@@ -607,7 +607,7 @@ async function handleDecision(req, res) {
     // Fetch quote data
     const quoteResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: "Quotes!A:Z"
+      range: "Quotes!A:AL"
     });
     
     const quoteRows = quoteResponse.data.values || [];
@@ -633,7 +633,7 @@ async function handleDecision(req, res) {
     // Fetch lead data
     const leadResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: "Leads!A:Z"
+      range: "Leads!A:L"
     });
     
     const leadRows = leadResponse.data.values || [];

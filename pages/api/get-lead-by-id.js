@@ -17,7 +17,7 @@ export default async function handler(req, res) {
         const spreadsheetId = getSpreadsheetId();
 
         // Get all data from the "Leads" tab
-        const range = 'Leads!A:Z';
+        const range = 'Leads!A:L';
         const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
         const rows = response.data.values;
         

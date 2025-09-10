@@ -583,7 +583,7 @@ export default async function handler(req, res) {
                 quoteLogger.sheets('Fetching lead data', { leadId }, requestId);
                 const leadResponse = await sheets.spreadsheets.values.get({ 
                     spreadsheetId, 
-                    range: 'Leads!A:Z' 
+                    range: 'Leads!A:L' 
                 });
                 const leadRows = leadResponse.data.values;
                 if (leadRows) {

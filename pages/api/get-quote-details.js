@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     const spreadsheetId = getSpreadsheetId();
 
     // Get quote data from Quotes sheet
-    const quotesRange = 'Quotes!A:Z';
+    const quotesRange = 'Quotes!A:AL';
     const quotesResponse = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range: quotesRange,
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
     });
 
     // Get lead data from Leads sheet
-    const leadsRange = 'Leads!A:Z';
+    const leadsRange = 'Leads!A:L';
     const leadsResponse = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range: leadsRange,

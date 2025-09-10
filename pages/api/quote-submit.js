@@ -1,17 +1,23 @@
 import { google } from 'googleapis';
 import nodemailer from 'nodemailer';
 import { generateQuotePDF } from '../../lib/pdfGenerator';
+import { upsertQuoteRow } from '../../utils/sheets.js';
+import { buildQuoteRow } from '../../utils/quotes.js';
+import { getLeadById } from '../../utils/sheets.js';
 
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_PASS = process.env.GMAIL_PASS;
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
 // Fix this line to use the correct environment variable name
 const GOOGLE_CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
-const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\n/g, '\n');
 
 const baseUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
   : process.env.BASE_URL || 'http://localhost:3000';
+
+// Normalize base URL to ensure it doesn't have trailing slash
+const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
 
 // Sheets auth
 async function getSheetsClient() {
@@ -28,9 +34,29 @@ async function getSheetsClient() {
 
 export default async function handler(req, res) {
   try {
-    const { quoteId, leadId } = req.body;
+    const { quoteId, leadId, isDraft = false } = req.body;
+    console.log(`[DEBUG] quote-submit: Received quoteId=${quoteId}, leadId=${leadId}, isDraft=${isDraft}`);
+    
     if (!quoteId || !leadId) {
       return res.status(400).json({ error: 'Missing quoteId or leadId' });
+    }
+
+    // If this is a final submission (not draft), validate required fields
+    if (!isDraft) {
+      const requiredFields = ['customerEmail', 'customerName', 'serviceType', 'subtotal', 'totalQuote'];
+      const missingFields = [];
+      
+      for (const field of requiredFields) {
+        if (!req.body[field]) {
+          missingFields.push(field);
+        }
+      }
+      
+      if (missingFields.length > 0) {
+        return res.status(400).json({ 
+          error: `Cannot submit final quote: missing required fields: ${missingFields.join(', ')}`
+        });
+      }
     }
 
     const sheets = await getSheetsClient();
@@ -41,16 +67,85 @@ export default async function handler(req, res) {
 
     const rows = response.data.values;
     const headers = rows[0];
-    const row = rows.find(r =>
+    
+    console.log(`[DEBUG] quote-submit: Looking for row with QuoteID=${quoteId} and LeadID=${leadId}`);
+    console.log(`[DEBUG] quote-submit: Found ${rows.length} total rows in spreadsheet`);
+    
+    let row = rows.find(r =>
       r[headers.indexOf('QuoteID')] === quoteId &&
       r[headers.indexOf('LeadID')] === leadId
     );
 
+    // Find the row by just quoteId if both don't match
     if (!row) {
-      return res.status(404).json({ error: 'Quote not found in spreadsheet' });
+      console.log(`[DEBUG] quote-submit: Trying to find row with just QuoteID=${quoteId}`);
+      row = rows.find(r => r[headers.indexOf('QuoteID')] === quoteId);
+      
+      if (!row) {
+        console.log(`[DEBUG] quote-submit: Quote not found in spreadsheet. QuoteID=${quoteId}`);
+        
+        // Get lead details to create a new row
+        const lead = await getLeadById(leadId);
+        if (!lead) {
+          return res.status(404).json({ error: 'Lead not found' });
+        }
+        
+        // Create a new quote row
+        const mode = isDraft ? 'draft' : 'submitted';
+        const quoteRow = buildQuoteRow({
+          lead,
+          quoteId,
+          tradePersonName: req.body.tradespersonName,
+          tradePersonEmail: req.body.tradespersonEmail,
+          tradePersonPhone: req.body.tradespersonPhone,
+          body: req.body,
+          mode
+        });
+        
+        // Insert the row
+        await upsertQuoteRow(quoteId, quoteRow, { req, caller: 'quote-submit' });
+        
+        // Re-fetch the row
+        const updatedResponse = await sheets.spreadsheets.values.get({
+          spreadsheetId: SPREADSHEET_ID,
+          range: 'Quotes!A:AZ'
+        });
+        
+        const updatedRows = updatedResponse.data.values || [];
+        const updatedHeaders = updatedRows[0];
+        row = updatedRows.find(r => r[updatedHeaders.indexOf('QuoteID')] === quoteId);
+        
+        if (!row) {
+          return res.status(500).json({ error: 'Failed to create quote row' });
+        }
+      }
     }
 
-    // Generate PDF
+    // If this is a draft submission, just save to spreadsheet and return
+    if (isDraft) {
+      // Update the row with draft status
+      const rowIndex = rows.findIndex(r => r[headers.indexOf('QuoteID')] === quoteId) + 1;
+      
+      if (rowIndex > 0) {
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: SPREADSHEET_ID,
+          range: `Quotes!A${rowIndex}:AZ${rowIndex}`,
+          valueInputOption: 'RAW',
+          resource: {
+            values: [row.map((val, idx) => {
+              if (headers[idx] === 'TradePersonStatus') return 'Draft';
+              if (headers[idx] === 'CustomerStatus') return 'Pending';
+              return val;
+            })]
+          }
+        });
+      }
+      
+      console.log(`✅ Quote saved as draft: ${quoteId}`);
+      return res.status(200).json({ success: true, message: 'Quote saved as draft' });
+    }
+
+    // For final submissions, continue with PDF generation and email
     const pdfBuffer = await generateQuotePDF(row, headers);
 
     // ⚠️ --- Old Admin Approval Email --- ⚠️

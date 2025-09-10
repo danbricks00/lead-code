@@ -29,7 +29,7 @@ function generateQuoteViewLink(quoteId) {
 
 async function findRowAndGetData(options) {
     const { sheets, spreadsheetId, tab, searchColumn, searchValue, columnsToFetch } = options;
-    const range = `${tab}!A:AJ`; // Use 36-column range to match quote-submit.js
+    const range = `${tab}!A:AL`; // Use 38-column range to include AdminDecision columns
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
     const rows = response.data.values;
     if (!rows || rows.length < 2) return null;
@@ -632,7 +632,7 @@ export default async function handler(req, res) {
         // 5. Update Sheet Status to final using correct schema column names
         quoteLogger.sheets('Updating Google Sheets with approval status', { quoteId }, requestId);
         
-        const headerResponse = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Quotes!A1:AJ1' });
+        const headerResponse = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Quotes!A1:AL1' });
         const header = headerResponse.data.values[0];
         // Use new unified system for approval
         const lead = await getLeadById(LeadID);

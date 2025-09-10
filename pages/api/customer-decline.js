@@ -321,7 +321,7 @@ export default async function handler(req, res) {
         quoteLogger.sheets('Initializing Google Sheets client', null, requestId);
         const sheets = await getGoogleSheetsClient();
         const spreadsheetId = getSpreadsheetId();
-        const range = 'Quotes!A:AJ';
+        const range = 'Quotes!A:AL';
 
         quoteLogger.sheets('Fetching quote data from Google Sheets', { 
             spreadsheetId: spreadsheetId.substring(0, 10) + '...', 

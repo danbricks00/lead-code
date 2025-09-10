@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 
 // Environment variables
-const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_ID;
+const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_PASS = process.env.GMAIL_PASS;
 

@@ -20,7 +20,7 @@ export default async function handler(req, res) {
       TEAM_EMAIL: process.env.TEAM_EMAIL || "NOT_SET",
       GOOGLE_CLIENT_EMAIL: process.env.GOOGLE_CLIENT_EMAIL || "NOT_SET",
       GOOGLE_PRIVATE_KEY: process.env.GOOGLE_PRIVATE_KEY ? "SET" : "NOT_SET",
-      GOOGLE_SHEET_ID: process.env.GOOGLE_SHEET_ID || "NOT_SET",
+      GOOGLE_SPREADSHEET_ID: process.env.GOOGLE_SPREADSHEET_ID || "NOT_SET",
       GOOGLE_SPREADSHEET_ID: process.env.GOOGLE_SPREADSHEET_ID || "NOT_SET",
       SITE_URL: process.env.SITE_URL || "NOT_SET",
       NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET ? "SET" : "NOT_SET",

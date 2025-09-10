@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 
 // Environment variables
-const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_ID;
+const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_PASS = process.env.GMAIL_PASS;
 
@@ -84,7 +84,7 @@ export default async function handler(req, res) {
 
         // Fetch quote data from Google Sheets
         const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: SPREADSHEET_ID,
+            spreadsheetId: GOOGLE_SPREADSHEET_ID,
             range: 'Quotes!A:AZ'
         });
 
@@ -131,7 +131,7 @@ export default async function handler(req, res) {
 
         // Update the quote with decline decision
         await sheets.spreadsheets.values.update({
-            spreadsheetId: SPREADSHEET_ID,
+            spreadsheetId: GOOGLE_SPREADSHEET_ID,
             range: `Quotes!${String.fromCharCode(65 + adminDecisionCol)}${rowIndex}:${String.fromCharCode(65 + adminStatusCol)}${rowIndex}`,
             valueInputOption: 'RAW',
             resource: {

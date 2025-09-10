@@ -118,7 +118,7 @@ app.post('/api/send-to-sheets', async (req, res) => {
 
         // Write to Google Sheets
         const response = await sheets.spreadsheets.values.append({
-            spreadsheetId: process.env.SPREADSHEET_ID,
+            spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
             range: 'Sheet1!A:J',
             valueInputOption: 'RAW',
             insertDataOption: 'INSERT_ROWS',

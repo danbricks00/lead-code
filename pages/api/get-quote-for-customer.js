@@ -57,7 +57,7 @@ export default async function handler(req, res) {
 
     try {
         const sheets = await getSheetsClient();
-        const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+        const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
 
         // 1. Get Quote Details from "Quotes" tab
         const quoteData = await findRowByValue(sheets, spreadsheetId, 'Quotes', 0, quoteId);

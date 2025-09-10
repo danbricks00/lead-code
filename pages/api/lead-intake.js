@@ -10,7 +10,7 @@ import crypto from "crypto";
  */
 
 async function appendRowToSheet(sheets, tab, values) {
-  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+  const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
   if (!spreadsheetId) {
     throw new Error("Google Sheet ID is not configured.");
   }

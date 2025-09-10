@@ -31,7 +31,7 @@ export async function getQuoteRowByQuoteId(quoteId) {
   try {
     const sheets = await getGoogleSheetsClient();
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
+      spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
       range: 'Quotes!A:AL',
     });
 
@@ -94,7 +94,7 @@ export async function updateQuoteRow(rowIndex, data) {
     // First get the headers to ensure we're updating the right columns
     const sheets = await getGoogleSheetsClient();
     const headerResponse = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
+      spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
       range: 'Quotes!A1:Z1',
     });
     
@@ -113,7 +113,7 @@ export async function updateQuoteRow(rowIndex, data) {
     
     // Update the row
     await sheets.spreadsheets.values.update({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
+      spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
       range: `Quotes!A${rowIndex}:${String.fromCharCode(65 + headers.length - 1)}${rowIndex}`,
       valueInputOption: 'USER_ENTERED',
       resource: {

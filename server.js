@@ -1113,7 +1113,7 @@ app.post('/api/update-tradesman-progress', async (req, res) => {
             });
         }
 
-        const spreadsheetId = process.env.GOOGLE_SHEETS_ID;
+        const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
         if (!spreadsheetId) {
             return res.status(500).json({ 
                 success: false, 

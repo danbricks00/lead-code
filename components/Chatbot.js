@@ -31,6 +31,49 @@ const commonProviders = {
   "internode": "internode", "internod": "internode"
 };
 
+i// Add this list of disposable domains
+const disposableDomains = [
+  "mailinator.com", "yopmail.com", "10minutemail.com",
+  "guerrillamail.com", "temp-mail.org", "fakemail.net",
+  "trashmail.com", "getnada.com", "dispostable.com", "mintemail.com"
+];
+
+function validateEmailFrontend(email) {
+  if (!email || typeof email !== 'string') {
+    return { valid: false, error: "Please enter an email address" };
+  }
+  
+  const trimmedEmail = email.trim().toLowerCase();
+  
+  // Basic format check
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(trimmedEmail)) {
+    return { valid: false, error: "Please enter a valid email address with a proper domain" };
+  }
+  
+  // Check for disposable domains
+  const parts = trimmedEmail.split("@");
+  const [local, domain] = parts;
+  const domainParts = domain.split(".");
+  const provider = domainParts[0].toLowerCase();
+  const tld = domainParts.slice(1).join(".");
+  
+  // Check if domain is in the disposable domains list
+  if (disposableDomains.includes(domain)) {
+    return { valid: false, error: "⚠️ Temporary or disposable email addresses are not allowed. Please use a personal or business email (e.g. name@gmail.com, name@outlook.com)." };
+  }
+  
+  // Check for common typos
+  const correctedProvider = commonProviders[provider] || provider;
+  
+  if (correctedProvider !== provider) {
+    const correctedEmail = `${local}@${correctedProvider}.${tld}`;
+    return { valid: true, corrected: correctedEmail };
+  }
+  
+  return { valid: true };
+}
+
 function autocorrectEmail(email) {
   if (!email || typeof email !== 'string') return email;
   const trimmedEmail = email.trim().toLowerCase();
@@ -361,8 +404,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
             // Allow any suburb input - we'll handle unlisted suburbs separately
             return value.trim().length > 0 ? null : "Please enter a suburb name.";
         case 'ask_email':
-            // Basic email format validation - detailed validation happens in API
-            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? null : "Please enter a valid email address.";
+            const emailValidation = validateEmailFrontend(value);
+            return emailValidation.valid ? null : emailValidation.error;
         case 'confirm_email_correction':
             // Accept yes/no responses
             const lowerValue = value.toLowerCase().trim();
@@ -496,17 +539,25 @@ const Chatbot = ({ handleClose, handleReset }) => {
             }
             break;
         case 'ask_email':
-            // Check for email autocorrect
-            const correctedEmail = autocorrectEmail(input);
-            if (correctedEmail.toLowerCase() !== input.toLowerCase()) {
+            // Comprehensive email validation
+            const emailResult = validateEmailFrontend(input);
+            
+            if (!emailResult.valid) {
+                addMessage(emailResult.error);
+                return;
+            }
+            
+            // Check for email correction
+            if (emailResult.corrected) {
                 // Email needs correction - ask user to confirm
-                setEmailCorrection({ original: input, corrected: correctedEmail });
-                addMessage(`Did you mean ${correctedEmail}?`, false);
+                setEmailCorrection({ original: input, corrected: emailResult.corrected });
+                addMessage(`Did you mean ${emailResult.corrected}?`, false);
                 addMessage("Type 'yes' to use the corrected email, or 'no' to keep your original email.", false);
                 setStep('confirm_email_correction');
                 return;
             }
-            // Email is correct - proceed normally
+            
+            // Email is valid - proceed normally
             setLeadData(prev => ({
                 ...prev,
                 customerEmail: input,

@@ -33,3 +33,16 @@ const styles = {
 };
 
 export default AboutPage;
+
+export async function getStaticProps() {
+  try {
+    return {
+      props: {}
+    };
+  } catch (error) {
+    console.error('Error in about page getStaticProps:', error);
+    return {
+      props: {}
+    };
+  }
+}

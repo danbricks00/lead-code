@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Layout from '../components/Layout';
 
@@ -87,3 +88,20 @@ const styles = {
 
 // Export with dynamic import and SSR disabled
 export default dynamic(() => Promise.resolve(ContactPage), { ssr: false });
+
+// Add this function to handle any build-time errors
+export async function getStaticProps() {
+  try {
+    // You can add any data fetching here if needed
+    // If it fails, it won't break the build
+    return {
+      props: {}
+    };
+  } catch (error) {
+    console.error('Error in contact page getStaticProps:', error);
+    // Return empty props to prevent build failure
+    return {
+      props: {}
+    };
+  }
+}

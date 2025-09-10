@@ -515,14 +515,14 @@ export default async function handler(req, res) {
         }
         
         // Guard 1: Check if quote has expired
-        if (validUntil) {
+        if (col.ValidUntil !== -1 && targetRow[col.ValidUntil]) {
             try {
-                const validUntilDate = new Date(validUntil);
+                const validUntilDate = new Date(targetRow[col.ValidUntil]);
                 const now = new Date();
                 if (validUntilDate < now) {
                     quoteLogger.customerDecline('Quote expired - preventing decline', { 
                         quoteId, 
-                        validUntil,
+                        validUntil: targetRow[col.ValidUntil],
                         validUntilDate: validUntilDate.toISOString(),
                         now: now.toISOString()
                     }, requestId);
@@ -530,15 +530,14 @@ export default async function handler(req, res) {
                     console.log(JSON.stringify({
                         tag: "QUOTE_EXPIRED",
                         quoteId,
-                        validUntil,
+                        validUntil: targetRow[col.ValidUntil],
                         validUntilDate: validUntilDate.toISOString(),
                         now: now.toISOString()
                     }));
                     
                     return res.status(400).json({ 
                         tag: "QUOTE_EXPIRED",
-                        message: "This quote has expired and can no longer be declined.",
-                        validUntil: formatDateTimeNZT(validUntil)
+                        validUntil: formatDateTimeNZT(targetRow[col.ValidUntil])
                     });
                 }
             } catch (error) {

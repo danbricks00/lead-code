@@ -715,7 +715,7 @@ export default async function handler(req, res) {
             currentStatus: targetRow[col.AdminPersonStatus] || 'none'
         });
 
-        // ✅ Guard: fail only if headers missing or row not found
+        // ✅ Only fail if headers missing or row not found
         if (col.CustomerDecision === -1 || col.CustomerDecisionTimeStamp === -1) {
             return res.json({ tag: "ACCEPT_LOOKUP_FAIL", reason: "Missing header", quoteId });
         }
@@ -731,14 +731,36 @@ export default async function handler(req, res) {
             });
         }
 
-        // ✅ Guard: prevent double‑clicks (allow 'none' and empty as first-time)
-        if (targetRow[col.CustomerDecision] && targetRow[col.CustomerDecision] !== "" && targetRow[col.CustomerDecision] !== "none") {
+        // ✅ Duplicate guard: only if a real decision already exists
+        const currentDecisionValue = targetRow[col.CustomerDecision];
+        if (currentDecisionValue && currentDecisionValue !== "none" && currentDecisionValue.trim() !== "") {
             return res.json({
                 tag: "CUSTOMER_ALREADY_DECIDED",
-                decision: targetRow[col.CustomerDecision],
+                decision: currentDecisionValue,
                 decisionTime: formatDateTimeNZT(targetRow[col.CustomerDecisionTimeStamp])
             });
         }
+
+        // ✅ First-time update: allow when "none" or ""
+        targetRow[col.CustomerDecision] = "Accepted";
+        targetRow[col.CustomerDecisionTimeStamp] = formatDateTimeNZT(new Date());
+        targetRow[col.AdminPersonStatus] = "Pending Admin Review";
+
+        // Update the Google Sheets row
+        const updateResult = await upsertQuoteRow(sheets, spreadsheetId, targetRow);
+        
+        console.log(`[${requestId}] [CUSTOMER-ACCEPT] Decision update success`, {
+            quoteId,
+            adminOrCustomer: "Customer",
+            action: "Accepted",
+            updatedRow: {
+                decision: targetRow[col.CustomerDecision],
+                decisionTime: targetRow[col.CustomerDecisionTimeStamp],
+                status: targetRow[col.AdminPersonStatus]
+            }
+        });
+
+        return res.json({ tag: "CUSTOMER_DECISION_RECORDED", decision: targetRow[col.CustomerDecision] });
         
         // Check if quote has been rejected
         const statusIndex = header.indexOf('Status');

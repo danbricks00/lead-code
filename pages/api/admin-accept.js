@@ -686,21 +686,12 @@ export default async function handler(req, res) {
             currentStatus: quoteData.AdminPersonStatus || 'none'
         });
 
-        // ✅ Guard: fail only if headers missing or row not found
+        // ✅ Only fail if row not found or headers missing
         if (col.AdminDecision === -1 || col.AdminDecisionTimeStamp === -1) {
-            return res.json({
-                tag: "APPROVE_LOOKUP_FAIL",
-                reason: "Missing header",
-                quoteId
-            });
+            return res.json({ tag: "APPROVE_LOOKUP_FAIL", reason: "Missing header", quoteId });
         }
-
         if (!rowFound) {
-            return res.json({
-                tag: "APPROVE_LOOKUP_FAIL",
-                reason: "QuoteID not found",
-                quoteId
-            });
+            return res.json({ tag: "APPROVE_LOOKUP_FAIL", reason: "QuoteID not found", quoteId });
         }
 
         // Expired quote
@@ -724,15 +715,39 @@ export default async function handler(req, res) {
             }
         }
 
-        // ✅ Guard: prevent double‑clicks (allow 'none' and empty as first-time)
-        if (quoteData.AdminDecision && quoteData.AdminDecision !== "" && quoteData.AdminDecision !== "none") {
+        // ✅ Duplicate guard (already decided) - real decision already recorded
+        const currentDecision = quoteData.AdminDecision;
+        if (currentDecision && currentDecision !== "none" && currentDecision.trim() !== "") {
             return res.json({
                 tag: "ADMIN_ALREADY_DECIDED",
-                decision: quoteData.AdminDecision,
+                decision: currentDecision,
                 decisionTime: formatDateTimeNZT(quoteData.AdminDecisionTimeStamp)
             });
         }
+
+        // ✅ Allow first‑time approval when 'none' or '' 
+        // Apply decision directly to quoteData using column mapping
+        quoteData[col.AdminDecision] = "Approved";
+        quoteData[col.AdminDecisionTimeStamp] = formatDateTimeNZT(new Date());
+        quoteData[col.AdminPersonStatus] = "Approved";
+
+        // Update the Google Sheets row
+        const updateResult = await upsertQuoteRow(sheets, spreadsheetId, quoteData);
         
+        console.log(`[${requestId}] [ADMIN-ACCEPT] Decision update success`, {
+            quoteId,
+            adminOrCustomer: "Admin",
+            action: "Approved",
+            updatedRow: {
+                decision: quoteData[col.AdminDecision],
+                decisionTime: quoteData[col.AdminDecisionTimeStamp],
+                status: quoteData[col.AdminPersonStatus]
+            }
+        });
+
+        return res.json({ tag: "ADMIN_DECISION_RECORDED", decision: "Approved" });
+        
+        // LEGACY CODE BELOW - can be removed later
         // Use new unified system for approval
         const lead = await getLeadById(LeadID);
         if (!lead || lead.QuoteID !== QuoteID) {

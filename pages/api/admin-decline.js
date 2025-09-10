@@ -201,21 +201,12 @@ export default async function handler(req, res) {
             currentStatus: quoteData.AdminPersonStatus || 'none'
         });
 
-        // ✅ Guard: fail only if headers missing or row not found
+        // ✅ Only fail if headers missing or row not found
         if (col.AdminDecision === -1 || col.AdminDecisionTimeStamp === -1) {
-            return res.json({
-                tag: "DECLINE_LOOKUP_FAIL",
-                reason: "Missing header",
-                quoteId
-            });
+            return res.json({ tag: "DECLINE_LOOKUP_FAIL", reason: "Missing header", quoteId });
         }
-
         if (!rowFound) {
-            return res.json({
-                tag: "DECLINE_LOOKUP_FAIL",
-                reason: "QuoteID not found",
-                quoteId
-            });
+            return res.json({ tag: "DECLINE_LOOKUP_FAIL", reason: "QuoteID not found", quoteId });
         }
 
         // Expired quote
@@ -239,14 +230,36 @@ export default async function handler(req, res) {
             }
         }
 
-        // ✅ Guard: prevent double‑clicks (allow 'none' and empty as first-time)
-        if (quoteData.AdminDecision && quoteData.AdminDecision !== "" && quoteData.AdminDecision !== "none") {
+        // ✅ Duplicate guard: only if a real decision already exists
+        const currentDecision = quoteData.AdminDecision;
+        if (currentDecision && currentDecision !== "none" && currentDecision.trim() !== "") {
             return res.json({
                 tag: "ADMIN_ALREADY_DECIDED",
-                decision: quoteData.AdminDecision,
+                decision: currentDecision,
                 decisionTime: formatDateTimeNZT(quoteData.AdminDecisionTimeStamp)
             });
         }
+
+        // ✅ First-time update: allow when "none" or ""
+        quoteData[col.AdminDecision] = "Declined";
+        quoteData[col.AdminDecisionTimeStamp] = formatDateTimeNZT(new Date());
+        quoteData[col.AdminPersonStatus] = "Declined";
+
+        // Update the Google Sheets row
+        const updateResult = await upsertQuoteRow(sheets, spreadsheetId, quoteData);
+        
+        console.log(`[${requestId}] [ADMIN-DECLINE] Decision update success`, {
+            quoteId,
+            adminOrCustomer: "Admin",
+            action: "Declined",
+            updatedRow: {
+                decision: quoteData[col.AdminDecision],
+                decisionTime: quoteData[col.AdminDecisionTimeStamp],
+                status: quoteData[col.AdminPersonStatus]
+            }
+        });
+
+        return res.json({ tag: "ADMIN_DECISION_RECORDED", decision: quoteData[col.AdminDecision] });
         
         // Check if already declined or approved (legacy check - keeping for backward compatibility)
         if (quoteData.AdminPersonStatus === 'Declined') {

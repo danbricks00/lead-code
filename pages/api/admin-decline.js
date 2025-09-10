@@ -208,6 +208,7 @@ export default async function handler(req, res) {
         // Override with decline-specific status
         rejectedRow.AdminPersonStatus = 'Declined';
         rejectedRow.AdminDecisionTimeStamp = getNZTTimestamp();
+        rejectedRow.AdminDecision = 'Declined';
         rejectedRow.TradePersonStatus = 'Needs Revision';
         rejectedRow.ResubmissionAllowed = 'Yes';
 

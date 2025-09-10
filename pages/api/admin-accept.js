@@ -203,7 +203,7 @@ export default async function handler(req, res) {
                 'AdminPersonStatus', 'LeadID', 'TradePersonName', 'TradePersonEmail', 'TradePersonPhone',
                 'LabourRate', 'LabourHours', 'LabourTotal', 'MaterialsCost', 'MaterialsQuantity', 'MaterialsTotal',
                 'TravelCost', 'TravelDistance', 'TravelTotal', 'InstallationCost', 'Subtotal', 'GST', 'TotalQuote', 
-                'Notes', 'ValidUntil', 'ResubmissionAllowed', 'Decision', 'DecisionTimeStamp',
+                'Notes', 'ValidUntil', 'ResubmissionAllowed', 'AdminDecision', 'AdminDecisionTimeStamp',
                 'CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Location', 'Timeline', 'Budget', 'Rooms', 'BreakDown'
             ]
         });
@@ -686,7 +686,7 @@ export default async function handler(req, res) {
         approvedRow.AdminPersonStatus = 'Approved';
         approvedRow.AdminDecisionTimeStamp = getNZTTimestamp();
         approvedRow.CustomerStatus = 'Quote Sent';
-        approvedRow.Decison = 'Admin Approved';
+        approvedRow.AdminDecision = 'Approved';
 
         quoteLogger.dataFlow('Preparing Google Sheets update with unified system', { 
             quoteId: quoteData.QuoteID,

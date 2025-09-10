@@ -677,6 +677,7 @@ export default async function handler(req, res) {
         const updateData = {
             'CustomerDecision': 'Declined',
             'CustomerDecisionTimeStamp': nzTimestamp,
+            'AdminPersonStatus': 'Customer Declined',
         };
 
         quoteLogger.dataFlow('Preparing Google Sheets update', { 
@@ -694,6 +695,14 @@ export default async function handler(req, res) {
             rowIndex: rowIndex + 1,
             quoteDataKeys: Object.keys(quoteDataForEmail)
         }, requestId);
+
+        // Update the target row with the new data
+        Object.keys(updateData).forEach(columnName => {
+            const columnIndex = header.indexOf(columnName);
+            if (columnIndex !== -1) {
+                targetRow[columnIndex] = updateData[columnName];
+            }
+        });
 
         await sheets.spreadsheets.values.update({
             spreadsheetId,

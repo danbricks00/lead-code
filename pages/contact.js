@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
 import Layout from '../components/Layout';
 
 const ContactPage = () => {
@@ -85,4 +85,5 @@ const styles = {
   error: { marginTop: '15px', color: 'red', textAlign: 'center' },
 };
 
-export default ContactPage;
+// Export with dynamic import and SSR disabled
+export default dynamic(() => Promise.resolve(ContactPage), { ssr: false });

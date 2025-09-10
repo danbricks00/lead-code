@@ -677,10 +677,82 @@ export default async function handler(req, res) {
             currentDecision,
             currentDecisionTimestamp,
             validUntil,
-            customerDecisionIndex,
-            customerDecisionTimestampIndex,
-            validUntilIndex
+            customerDecisionIndex: col.CustomerDecision,
+            customerDecisionTimestampIndex: col.CustomerDecisionTimeStamp,
+            validUntilIndex: col.ValidUntil
         }, requestId);
+        
+        // --- DECISION GUARDS ---
+        
+        // Helper function for consistent NZT timestamp formatting
+        function formatDateTimeNZT(date) {
+            const options = {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+                timeZone: 'Pacific/Auckland'
+            };
+            return new Intl.DateTimeFormat('en-NZ', options).format(new Date(date));
+        }
+        
+        // Guard 1: Check if quote has expired
+        if (validUntil) {
+            try {
+                const validUntilDate = new Date(validUntil);
+                const now = new Date();
+                if (validUntilDate < now) {
+                    quoteLogger.customerAccept('Quote expired - preventing acceptance', { 
+                        quoteId, 
+                        validUntil,
+                        validUntilDate: validUntilDate.toISOString(),
+                        now: now.toISOString()
+                    }, requestId);
+                    
+                    console.log(JSON.stringify({
+                        tag: "QUOTE_EXPIRED",
+                        quoteId,
+                        validUntil,
+                        validUntilDate: validUntilDate.toISOString(),
+                        now: now.toISOString()
+                    }));
+                    
+                    return res.status(400).json({ 
+                        tag: "QUOTE_EXPIRED",
+                        message: "This quote has expired and can no longer be accepted.",
+                        validUntil: formatDateTimeNZT(validUntil)
+                    });
+                }
+            } catch (error) {
+                quoteLogger.error('Could not parse ValidUntil date', error, requestId);
+            }
+        }
+        
+        // Guard 2: Check if customer has already made a decision
+        if (currentDecision && currentDecision.trim() !== '') {
+            quoteLogger.customerAccept('Customer already decided - preventing duplicate', { 
+                quoteId, 
+                currentDecision,
+                currentDecisionTimestamp
+            }, requestId);
+            
+            console.log(JSON.stringify({
+                tag: "ALREADY_DECIDED",
+                quoteId,
+                currentDecision,
+                currentDecisionTimestamp
+            }));
+            
+            return res.status(400).json({ 
+                tag: "ALREADY_DECIDED",
+                message: "You have already made a decision on this quote.",
+                currentDecision: currentDecision,
+                decisionTime: formatDateTimeNZT(currentDecisionTimestamp)
+            });
+        }
         
         // Check if quote has been rejected
         const statusIndex = header.indexOf('Status');

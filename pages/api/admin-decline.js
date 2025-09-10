@@ -167,7 +167,81 @@ export default async function handler(req, res) {
             }
         });
 
-        // Check if already declined or approved
+        // --- DECISION GUARDS ---
+        
+        // Helper function for consistent NZT timestamp formatting
+        function formatDateTimeNZT(date) {
+            const options = {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+                timeZone: 'Pacific/Auckland'
+            };
+            return new Intl.DateTimeFormat('en-NZ', options).format(new Date(date));
+        }
+        
+        // Guard 1: Check if quote has expired
+        const validUntil = quoteData.ValidUntil;
+        if (validUntil) {
+            try {
+                const validUntilDate = new Date(validUntil);
+                const now = new Date();
+                if (validUntilDate < now) {
+                    quoteLogger.adminDecline('Quote expired - preventing decline', { 
+                        quoteId, 
+                        validUntil,
+                        validUntilDate: validUntilDate.toISOString(),
+                        now: now.toISOString()
+                    }, requestId);
+                    
+                    console.log(JSON.stringify({
+                        tag: "QUOTE_EXPIRED",
+                        quoteId,
+                        validUntil,
+                        validUntilDate: validUntilDate.toISOString(),
+                        now: now.toISOString()
+                    }));
+                    
+                    return res.status(400).json({ 
+                        tag: "QUOTE_EXPIRED",
+                        message: "This quote has expired and can no longer be declined.",
+                        validUntil: formatDateTimeNZT(validUntil)
+                    });
+                }
+            } catch (error) {
+                quoteLogger.error('Could not parse ValidUntil date', error, requestId);
+            }
+        }
+        
+        // Guard 2: Check if admin has already made a decision
+        const currentAdminDecision = quoteData.AdminDecision;
+        if (currentAdminDecision && currentAdminDecision.trim() !== '') {
+            quoteLogger.adminDecline('Admin already decided - preventing duplicate', { 
+                quoteId, 
+                currentAdminDecision,
+                adminDecisionTimestamp: quoteData.AdminDecisionTimeStamp
+            }, requestId);
+            
+            console.log(JSON.stringify({
+                tag: "ALREADY_DECIDED",
+                quoteId,
+                currentAdminDecision,
+                adminDecisionTimestamp: quoteData.AdminDecisionTimeStamp
+            }));
+            
+            return res.status(400).json({ 
+                tag: "ALREADY_DECIDED",
+                message: "This quote has already been decided by admin.",
+                currentAdminDecision: currentAdminDecision,
+                decisionTime: formatDateTimeNZT(quoteData.AdminDecisionTimeStamp)
+            });
+        }
+        
+        // Check if already declined or approved (legacy check - keeping for backward compatibility)
         if (quoteData.AdminPersonStatus === 'Declined') {
             return res.redirect(`/quote-status?status=info&message=Quote ${quoteId} has already been declined.`);
         }

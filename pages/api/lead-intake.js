@@ -201,7 +201,7 @@ export default async function handler(req, res) {
         from: `"Kiwi Trade Leads" <${process.env.GMAIL_USER}>`,
         to: "quangbui0600@gmail.com",
         subject: `${unlistedPrefix}🔔 New Underfloor Heating Lead: ${suburb || area}`,
-        html: `<h1>New Lead Logged (#${leadId})</h1>${leadDetailsHtml}<p>A quote link has been sent to the waiting for submission.</p><p>Quote Link: ${quoteLink}</p>
+        html: `<h1>New Lead Logged (#${leadId})</h1>${leadDetailsHtml}<p>A quote link has been sent to the waiting for your submission.</p><p>Quote Link: ${quoteLink}</p>`,
       });
       console.log('✅ Tradesman email sent successfully');
     } catch (tradesmanEmailError) {

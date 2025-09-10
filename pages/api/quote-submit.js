@@ -140,7 +140,7 @@ export default async function handler(req, res) {
     
     if (existingQuote) {
         console.log('[QUOTE-SUBMIT] Existing quote found:', { 
-            quoteId, 
+      quoteId,
             existingTimestamp: existingQuote.TimeStamp,
             existingStatus: existingQuote.CustomerStatus,
             adminDecision: existingQuote.AdminDecision
@@ -268,7 +268,7 @@ export default async function handler(req, res) {
     console.log(JSON.stringify({ 
       tag: responseTag, 
       route: 'quote-submit', 
-      quoteId,
+            quoteId,
       leadId,
       requestId,
       timestamp: new Date().toISOString()
@@ -391,7 +391,7 @@ async function sendAdminQuoteEmail(to, pdf, row) {
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
         <h1>📄 New Quote Submitted for Review</h1>
         <p>A new quote has been submitted and requires your review.</p>
-      </div>
+                </div>
       
       <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
         <h2>📋 Quote Details</h2>
@@ -437,9 +437,9 @@ async function sendAdminQuoteEmail(to, pdf, row) {
               <td style="padding: 12px 0;"><strong>Total Quote:</strong></td>
               <td style="padding: 12px 0; text-align: right; font-size: 18px; color: #28a745;"><strong>$${row.TotalQuote}</strong></td>
             </tr>
-          </table>
-        </div>
-        
+                        </table>
+                    </div>
+                    
         <div style="text-align: center; margin: 30px 0;">
           <h3>🎯 Admin Actions Required</h3>
           <p>Please review the attached quote and take action:</p>

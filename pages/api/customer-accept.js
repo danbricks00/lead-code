@@ -81,7 +81,7 @@ export default async function handler(req, res) {
                 'x-forwarded-for': req.headers['x-forwarded-for']
             }
         }, requestId);
-
+        
         // Fetch quote data from Google Sheets
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
@@ -161,7 +161,7 @@ export default async function handler(req, res) {
             console.log(`[DECISION-API] Customer decision already exists:`, { 
                 currentDecision, 
                 decisionTime,
-                quoteId 
+                quoteId
             });
             
             const alreadyDecidedPage = `
@@ -225,7 +225,7 @@ export default async function handler(req, res) {
             decision: 'Accepted',
             timestamp: nzTimestamp
         }, requestId);
-
+        
         // Send confirmation page
         const confirmationPage = `
             <!DOCTYPE html>
@@ -251,7 +251,7 @@ export default async function handler(req, res) {
             </body>
             </html>
         `;
-
+        
         return res.status(200).send(confirmationPage);
 
     } catch (error) {

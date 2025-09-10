@@ -73,12 +73,12 @@ export default async function handler(req, res) {
         }
 
         quoteLogger.info('Admin decline request received', {
-            method: req.method,
-            url: req.url,
-            query: req.query,
-            headers: {
-                'user-agent': req.headers['user-agent'],
-                'x-forwarded-for': req.headers['x-forwarded-for']
+        method: req.method,
+        url: req.url,
+        query: req.query,
+        headers: {
+            'user-agent': req.headers['user-agent'],
+            'x-forwarded-for': req.headers['x-forwarded-for']
             }
         }, requestId);
 

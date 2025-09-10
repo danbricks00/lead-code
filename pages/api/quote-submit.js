@@ -5,7 +5,8 @@ import { generateQuotePDF } from '../../lib/pdfGenerator';
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_PASS = process.env.GMAIL_PASS;
 const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_ID;
-const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+// Fix this line to use the correct environment variable name
+const GOOGLE_CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
 const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
 const baseUrl = process.env.VERCEL_URL
@@ -16,7 +17,8 @@ const baseUrl = process.env.VERCEL_URL
 async function getSheetsClient() {
   const auth = new google.auth.GoogleAuth({
     credentials: {
-      client_email: GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      // Update this line to use the correct variable name
+      client_email: GOOGLE_CLIENT_EMAIL,
       private_key: GOOGLE_PRIVATE_KEY,
     },
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],

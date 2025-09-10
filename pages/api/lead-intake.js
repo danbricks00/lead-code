@@ -118,6 +118,12 @@ export default async function handler(req, res) {
     const ts = Date.now();
     const token = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET).update(`${leadId}|${ts}`).digest("hex");
     const quoteLink = `https://${baseUrl}/quote-submit/${leadId}?ts=${ts}&token=${token}`;
+    
+    // Debug: Log the quote link
+    console.log('🔗 Generated quote link:', quoteLink);
+    console.log('🔗 Quote link length:', quoteLink.length);
+    console.log('🔗 Quote link is undefined?', quoteLink === undefined);
+    console.log('🔗 Quote link is empty?', quoteLink === '');
 
     // Format rooms for email display
     const roomsHtml = (rooms && rooms.length > 0)
@@ -178,11 +184,17 @@ export default async function handler(req, res) {
     });
 
     // Tradesperson notification email
+    const tradesmanEmailHtml = `<h1>New Lead Received</h1>${leadDetailsHtml}<p>Please prepare a quote for this customer by clicking the link below:</p><h2><a href="${quoteLink}">Submit Your Quote Now</a></h2>`;
+    
+    console.log('📧 Tradesman email HTML length:', tradesmanEmailHtml.length);
+    console.log('📧 Tradesman email HTML preview (last 200 chars):', tradesmanEmailHtml.slice(-200));
+    console.log('📧 Quote link in HTML:', tradesmanEmailHtml.includes(quoteLink));
+    
     await transporter.sendMail({
       from: `"Kiwi Trade Leads" <${process.env.GMAIL_USER}>`,
       to: "quangbui0600@gmail.com",
       subject: `${unlistedPrefix}🔔 New Underfloor Heating Lead: ${suburb || area}`,
-      html: `<h1>New Lead Received</h1>${leadDetailsHtml}<p>Please prepare a quote for this customer by clicking the link below:</p><h2><a href="${quoteLink}">Submit Your Quote Now</a></h2>`,
+      html: tradesmanEmailHtml,
     });
 
     // Admin notification email

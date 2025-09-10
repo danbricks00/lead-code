@@ -523,8 +523,18 @@
                         addMessage("Finally, what's your email address?");
                         break;
                     case 'customer_email':
-                        chatState.customerEmail = message;
-                        generateLead();
+                        const emailResult = validateAndCorrectEmail(message);
+                        if (emailResult.isValid) {
+                            chatState.customerEmail = emailResult.correctedEmail;
+                            if (emailResult.wasCorrected) {
+                                addMessage(`Perfect! I've corrected your email to: ${emailResult.correctedEmail}. Let me process your request now.`);
+                            } else {
+                                addMessage("Perfect! Let me process your request now.");
+                            }
+                            generateLead();
+                        } else {
+                            addMessage(`That doesn't look like a valid email address. ${emailResult.suggestion || 'Please try again with a valid email like user@outlook.com or user@example.co.nz'}`);
+                        }
                         break;
                     default:
                         addMessage("I'm not sure I understand. Could you please clarify?");

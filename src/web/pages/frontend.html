@@ -738,6 +738,116 @@
     </div>
 
     <script>
+        // Email validation and autocorrection functions
+        function validateAndCorrectEmail(email) {
+            if (!email || typeof email !== 'string') {
+                return { isValid: false, suggestion: 'Please enter a valid email address' };
+            }
+            
+            const trimmedEmail = email.trim().toLowerCase();
+            
+            // Basic email format validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(trimmedEmail)) {
+                return { isValid: false, suggestion: 'Please enter a valid email format like user@domain.com' };
+            }
+            
+            // Split email into local and domain parts
+            const [localPart, domain] = trimmedEmail.split('@');
+            if (!localPart || !domain) {
+                return { isValid: false, suggestion: 'Please enter a valid email format' };
+            }
+            
+            // Common email provider autocorrections
+            const domainCorrections = {
+                '0utlook.com': 'outlook.com',
+                '0utlook.co.nz': 'outlook.co.nz',
+                'gmial.com': 'gmail.com',
+                'gmial.co.nz': 'gmail.co.nz',
+                'yahooo.com': 'yahoo.com',
+                'yahooo.co.nz': 'yahoo.co.nz',
+                'hotmial.com': 'hotmail.com',
+                'hotmial.co.nz': 'hotmail.co.nz',
+                'gmai.com': 'gmail.com',
+                'gmai.co.nz': 'gmail.co.nz',
+                'outlok.com': 'outlook.com',
+                'outlok.co.nz': 'outlook.co.nz',
+                'yaho.com': 'yahoo.com',
+                'yaho.co.nz': 'yahoo.co.nz',
+                'hotmai.com': 'hotmail.com',
+                'hotmai.co.nz': 'hotmail.co.nz'
+            };
+            
+            // Check for domain corrections
+            let correctedDomain = domain;
+            let wasCorrected = false;
+            
+            if (domainCorrections[domain]) {
+                correctedDomain = domainCorrections[domain];
+                wasCorrected = true;
+            }
+            
+            // Check for invalid domain patterns
+            const invalidPatterns = [
+                /\.x\.x$/i,
+                /\.x\.\w+$/i,
+                /\.\w+\.x$/i,
+                /\.x$/i,
+                /\.\d+\.\d+$/i,
+                /\.\d+$/i
+            ];
+            
+            for (const pattern of invalidPatterns) {
+                if (pattern.test(correctedDomain)) {
+                    return { 
+                        isValid: false, 
+                        suggestion: 'The domain part of your email looks invalid. Please check for typos like .x.x or .0utlook' 
+                    };
+                }
+            }
+            
+            // Check for valid TLD patterns
+            const validTLDPatterns = [
+                /\.(com|co|org|net|edu|gov|mil|int)$/i,
+                /\.(co\.nz|org\.nz|net\.nz|ac\.nz|govt\.nz|school\.nz|iwi\.nz|maori\.nz)$/i,
+                /\.nz$/i,
+                /\.(co\.uk|com\.au|co\.za|co\.jp|co\.kr|co\.in|co\.br|co\.mx|co\.ca)$/i,
+                /\.(uk|au|za|jp|kr|in|br|mx|ca|de|fr|it|es|nl|se|no|dk|fi|pl|cz|hu|ro|bg|hr|si|sk|ee|lv|lt|mt|cy|ie|pt|gr|lu|at|be|ch|li|is|fo|gl|ad|mc|sm|va|gi|je|gg|im|ax|sj|bv|hm|tf|aq|gs|fk|sh|ac|ta|io|cc|tv|me|ly|as|mp|gu|vi|pr|us|dm|lc|vc|ag|bb|gd|kn|ms|tc|vg|ai|bm|ky)$/i
+            ];
+            
+            const hasValidTLD = validTLDPatterns.some(pattern => pattern.test(correctedDomain));
+            
+            if (!hasValidTLD) {
+                // Check if domain has at least 2 parts and reasonable length
+                const domainParts = correctedDomain.split('.');
+                if (domainParts.length < 2) {
+                    return { 
+                        isValid: false, 
+                        suggestion: 'The domain part of your email needs at least 2 parts (e.g., domain.com)' 
+                    };
+                }
+                
+                // Check if any part is too short or contains invalid characters
+                for (const part of domainParts) {
+                    if (part.length < 2 || /[^a-zA-Z0-9\-]/.test(part)) {
+                        return { 
+                            isValid: false, 
+                            suggestion: 'The domain part contains invalid characters or is too short' 
+                        };
+                    }
+                }
+            }
+            
+            const correctedEmail = `${localPart}@${correctedDomain}`;
+            
+            return {
+                isValid: true,
+                correctedEmail: correctedEmail,
+                wasCorrected: wasCorrected,
+                originalEmail: trimmedEmail
+            };
+        }
+
         let chatState = {
             step: 'service_selection',
             selectedService: '',
@@ -928,9 +1038,18 @@
                         addMessage("Nice to meet you, " + message + "! What's your email address?");
                         break;
                     case 'customer_email':
-                        chatState.customerEmail = message;
-                        chatState.step = 'customer_phone';
-                        addMessage("Perfect! And finally, what's your phone number? This allows tradesmen to contact you directly.");
+                        const emailResult = validateAndCorrectEmail(message);
+                        if (emailResult.isValid) {
+                            chatState.customerEmail = emailResult.correctedEmail;
+                            chatState.step = 'customer_phone';
+                            if (emailResult.wasCorrected) {
+                                addMessage(`Perfect! I've corrected your email to: ${emailResult.correctedEmail}. Now, what's your phone number?`);
+                            } else {
+                                addMessage("Perfect! And finally, what's your phone number? This allows tradesmen to contact you directly.");
+                            }
+                        } else {
+                            addMessage(`That doesn't look like a valid email address. ${emailResult.suggestion || 'Please try again with a valid email like user@outlook.com or user@example.co.nz'}`);
+                        }
                         break;
                     case 'customer_phone':
                         chatState.customerPhone = message;

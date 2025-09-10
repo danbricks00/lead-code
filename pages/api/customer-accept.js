@@ -66,7 +66,15 @@ export default async function handler(req, res) {
 
     try {
         const { quoteId, leadId } = req.query;
-
+    
+        // Enhanced logging
+        console.log(`[DECISION-API] Processing parameters:`, { 
+            quoteId, 
+            leadId,
+            fullUrl: req.url,
+            headers: req.headers
+        });
+    
         if (!quoteId || !leadId) {
             console.log(`[DECISION-API] Missing parameters:`, { quoteId, leadId });
             return res.redirect('/quote-status?status=error&message=Missing quote or lead ID.');
@@ -271,4 +279,13 @@ export default async function handler(req, res) {
         
         return res.redirect(`/quote-status?status=error&message=An internal server error occurred.`);
     }
+}
+
+// Add at the beginning of the handler function
+res.setHeader('Access-Control-Allow-Origin', '*');
+res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+if (req.method === 'OPTIONS') {
+  return res.status(200).end();
 }

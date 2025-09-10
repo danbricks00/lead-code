@@ -8,6 +8,17 @@ const nextConfig = {
       },
     ];
   },
+  // Add this configuration
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname),
+    };
+    return config;
+  },
 }
+
+// Don't forget to import path at the top
+const path = require('path');
 
 module.exports = nextConfig

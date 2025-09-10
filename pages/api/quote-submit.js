@@ -1,6 +1,6 @@
 import { google } from 'googleapis';
 import nodemailer from 'nodemailer';
-import { generateQuotePDF } from '@/lib/pdfGenerator';
+import { generateQuotePDF } from '../../lib/pdfGenerator';
 
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_PASS = process.env.GMAIL_PASS;
@@ -70,9 +70,9 @@ export default async function handler(req, res) {
     const serviceType   = row[headers.indexOf('ServiceType')] || "Service";
     const totalQuote    = row[headers.indexOf('TotalQuote')] || "0";
 
-    const acceptLink  = `${baseUrl}/api/customer-accept?quoteId=${quoteId}&leadId=${leadId}`;
-    const declineLink = `${baseUrl}/api/customer-decline?quoteId=${quoteId}&leadId=${leadId}`;
-    const viewLink    = `${baseUrl}/quote-view?quoteId=${quoteId}&leadId=${leadId}`;
+    const acceptLink  = `${normalizedBaseUrl}/api/customer-accept?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}`;
+    const declineLink = `${normalizedBaseUrl}/api/customer-decline?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}`;
+    const viewLink    = `${normalizedBaseUrl}/quote-view?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}`;
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',

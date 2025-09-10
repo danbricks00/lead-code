@@ -1,20 +1,12 @@
 export default function handler(req, res) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : process.env.BASE_URL || 'http://localhost:3000';
 
-  if (req.method !== 'GET') {
-    return res.status(405).json({ success: false, error: 'Method Not Allowed' });
-  }
-
-  if (baseUrl) {
-    res.status(200).json({
-      success: true,
-      message: 'Environment variable is available.',
-      NEXT_PUBLIC_BASE_URL: baseUrl,
-    });
-  } else {
-    res.status(500).json({
-      success: false,
-      error: 'Environment variable NEXT_PUBLIC_BASE_URL is not set or is undefined.',
-    });
-  }
+  res.status(200).json({
+    baseUrl,
+    vercelUrl: process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+    baseUrlEnv: process.env.BASE_URL,
+    defaultUrl: 'http://localhost:3000'
+  });
 }

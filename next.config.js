@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');  // Move this to the top
+
 const nextConfig = {
   async rewrites() {
     return [
@@ -17,8 +19,5 @@ const nextConfig = {
     return config;
   },
 }
-
-// Don't forget to import path at the top
-const path = require('path');
 
 module.exports = nextConfig

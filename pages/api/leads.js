@@ -372,6 +372,9 @@ async function handleSubmitQuote(req, res) {
     const sheets = getGoogleSheetsClient();
     const sheetId = getSpreadsheetId();
     
+    // Generate a quote ID
+    const quoteId = `Q${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    
     const quoteRow = [
       new Date().toLocaleString('en-NZ', {
         timeZone: 'Pacific/Auckland',
@@ -398,7 +401,8 @@ async function handleSubmitQuote(req, res) {
       projectSize, // ProjectSize
       breakdown, // Breakdown
       notes || '', // Notes
-      companyName || '' // CompanyName
+      companyName || '', // CompanyName
+      quoteId, // Add QuoteID here
     ];
 
     await sheets.spreadsheets.values.append({

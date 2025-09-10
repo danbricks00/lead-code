@@ -132,26 +132,89 @@ export default async function handler(req, res) {
           const approveUrl = `${baseUrl}/api/admin-accept?quoteId=${quoteId}&leadId=${leadId}`;
           const declineUrl = `${baseUrl}/api/admin-decline?quoteId=${quoteId}&leadId=${leadId}`;
           
+          // Calculate individual totals
+          const labourTotal = parseFloat(fullRow.LabourRate || 0) * parseFloat(fullRow.LabourHours || 0);
+          const materialsTotal = parseFloat(fullRow.MaterialsCost || 0) * parseFloat(fullRow.MaterialsQuantity || 0);
+          const travelTotal = parseFloat(fullRow.TravelCost || 0) * parseFloat(fullRow.TravelDistance || 0);
+          const installationTotal = parseFloat(fullRow.InstallationCost || 0);
+
           await sendEmail({
             to: process.env.ADMIN_EMAIL || 'admin@example.com',
-            subject: `New Quote Submitted - ${fullRow.CustomerName} - ${fullRow.ServiceType}`,
+            subject: `New Quote #${fullRow.QuoteID} for ${fullRow.CustomerName} - Waiting for Approval`,
             html: `
-              <h2>New Quote Submitted</h2>
-              <p><strong>Customer:</strong> ${fullRow.CustomerName}</p>
-              <p><strong>Email:</strong> ${fullRow.CustomerEmail}</p>
-              <p><strong>Phone:</strong> ${fullRow.CustomerPhone}</p>
-              <p><strong>Service:</strong> ${fullRow.ServiceType}</p>
-              <p><strong>Location:</strong> ${fullRow.Suburb}</p>
-              <p><strong>Total Quote:</strong> $${fullRow.TotalQuote}</p>
-              <p><strong>Valid Until:</strong> ${fullRow.ValidUntil}</p>
-              
-              <h3>Actions:</h3>
-              <p>
-                <a href="${approveUrl}" style="background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-right: 10px;">Approve Quote</a>
-                <a href="${declineUrl}" style="background: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Decline Quote</a>
-              </p>
-              
-              <p>Quote PDF is attached.</p>
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                  <h1>📄 New Quote Submitted for Review</h1>
+                  <p>A new quote has been submitted and requires your review.</p>
+                </div>
+                
+                <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+                  <h2>📋 Quote Details</h2>
+                  <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <p><strong>Quote ID:</strong> ${fullRow.QuoteID}</p>
+                    <p><strong>Customer:</strong> ${fullRow.CustomerName}</p>
+                    <p><strong>Email:</strong> ${fullRow.CustomerEmail}</p>
+                    <p><strong>Phone:</strong> ${fullRow.CustomerPhone}</p>
+                    <p><strong>Service:</strong> ${fullRow.ServiceType}</p>
+                    <p><strong>Location:</strong> ${fullRow.Suburb}</p>
+                    <p><strong>Tradesperson:</strong> ${fullRow.TradePersonName}</p>
+                    <p><strong>Valid Until:</strong> ${fullRow.ValidUntil}</p>
+                  </div>
+                  
+                  <h3>💰 Cost Breakdown</h3>
+                  <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <table style="width: 100%; border-collapse: collapse;">
+                      <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 8px 0;"><strong>Labour:</strong></td>
+                        <td style="padding: 8px 0; text-align: right;">$${labourTotal.toFixed(2)}</td>
+                      </tr>
+                      <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 8px 0;"><strong>Materials:</strong></td>
+                        <td style="padding: 8px 0; text-align: right;">$${materialsTotal.toFixed(2)}</td>
+                      </tr>
+                      <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 8px 0;"><strong>Travel:</strong></td>
+                        <td style="padding: 8px 0; text-align: right;">$${travelTotal.toFixed(2)}</td>
+                      </tr>
+                      <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 8px 0;"><strong>Installation:</strong></td>
+                        <td style="padding: 8px 0; text-align: right;">$${installationTotal.toFixed(2)}</td>
+                      </tr>
+                      <tr style="border-bottom: 2px solid #333;">
+                        <td style="padding: 8px 0;"><strong>Subtotal:</strong></td>
+                        <td style="padding: 8px 0; text-align: right;"><strong>$${fullRow.Subtotal}</strong></td>
+                      </tr>
+                      <tr style="border-bottom: 2px solid #333;">
+                        <td style="padding: 8px 0;"><strong>GST (15%):</strong></td>
+                        <td style="padding: 8px 0; text-align: right;"><strong>$${fullRow.GST}</strong></td>
+                      </tr>
+                      <tr style="background: #f8f9fa;">
+                        <td style="padding: 12px 0;"><strong>Total Quote:</strong></td>
+                        <td style="padding: 12px 0; text-align: right; font-size: 18px; color: #28a745;"><strong>$${fullRow.TotalQuote}</strong></td>
+                      </tr>
+                    </table>
+                  </div>
+                  
+                  <div style="text-align: center; margin: 30px 0;">
+                    <h3>🎯 Admin Actions Required</h3>
+                    <p>Please review the attached quote and take action:</p>
+                    
+                    <div style="margin: 20px 0;">
+                      <a href="${approveUrl}" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; display: inline-block; margin: 10px; font-weight: bold; box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);">
+                        ✅ Approve Quote
+                      </a>
+                      
+                      <a href="${declineUrl}" style="background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; display: inline-block; margin: 10px; font-weight: bold; box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);">
+                        ❌ Decline Quote
+                      </a>
+                    </div>
+                  </div>
+                  
+                  <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                    <p style="margin: 0; color: #856404;"><strong>📎 Quote PDF is attached to this email.</strong></p>
+                  </div>
+                </div>
+              </div>
             `,
             attachments: [{
               filename: `quote-${fullRow.QuoteID}.pdf`,

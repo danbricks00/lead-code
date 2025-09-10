@@ -1,6 +1,52 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ChatMessage from './ChatMessage';
 
+// Email validation utility (inline for frontend)
+const commonProviders = {
+  // Gmail typos
+  "gamil": "gmail", "gmal": "gmail", "gmial": "gmail", "gnail": "gmail", "gmai": "gmail",
+  // Outlook typos
+  "outllook": "outlook", "otlook": "outlook", "outlok": "outlook", "outllok": "outlook",
+  // Hotmail typos
+  "hotmial": "hotmail", "hotmil": "hotmail", "hotmai": "hotmail", "htomail": "hotmail",
+  // Yahoo typos
+  "yaho": "yahoo", "yhoo": "yahoo", "yahoos": "yahoo", "yhaoo": "yahoo", "yaoo": "yahoo",
+  
+  // NZ ISP domains and typos
+  "xtra": "xtra", "xtr": "xtra", "xtraa": "xtra",
+  "vodafone": "vodafone", "vodaphone": "vodafone", "voda": "vodafone",
+  "spark": "spark", "sparkk": "spark", "sparknz": "spark",
+  "slingshot": "slingshot", "slinghot": "slingshot",
+  "orcon": "orcon", "orconn": "orcon",
+  
+  // AU ISP domains and typos (NEW)
+  "bigpond": "bigpond", "bigpon": "bigpond", "bigpnd": "bigpond",
+  "optus": "optus", "optusnet": "optus", "optusn": "optus",
+  "telstra": "telstra", "telstr": "telstra",
+  "iinet": "iinet",
+  "tpg": "tpg", "tpgg": "tpg",
+  "dodo": "dodo", "dodoo": "dodo",
+  "exetel": "exetel", "exetl": "exetel",
+  "internode": "internode", "internod": "internode"
+};
+
+function autocorrectEmail(email) {
+  if (!email || typeof email !== 'string') return email;
+  const trimmedEmail = email.trim().toLowerCase();
+  const parts = trimmedEmail.split("@");
+  if (parts.length !== 2) return email;
+  const [local, domain] = parts;
+  const domainParts = domain.split(".");
+  if (domainParts.length < 2) return email;
+  const provider = domainParts[0].toLowerCase();
+  const tld = domainParts.slice(1).join(".");
+  const correctedProvider = commonProviders[provider] || provider;
+  if (correctedProvider !== provider) {
+    return `${local}@${correctedProvider}.${tld}`;
+  }
+  return email;
+}
+
 const ProgressBar = ({ steps, currentStep, isCompleted }) => {
     const progressPercentage = isCompleted ? 100 : (currentStep / (steps.length - 1)) * 100;
     return (
@@ -33,6 +79,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
   const [suburbSuggestions, setSuburbSuggestions] = useState([]);
   const [isCompleted, setIsCompleted] = useState(false);
   const [editingField, setEditingField] = useState(null); // Track which field is being edited
+  const [emailCorrection, setEmailCorrection] = useState(null); // Track email correction suggestion
   const messagesEndRef = useRef(null);
 
   const progressSteps = ["Project Details", "Your Details", "Review & Submit"];
@@ -313,7 +360,12 @@ const Chatbot = ({ handleClose, handleReset }) => {
             // Allow any suburb input - we'll handle unlisted suburbs separately
             return value.trim().length > 0 ? null : "Please enter a suburb name.";
         case 'ask_email':
+            // Basic email format validation - detailed validation happens in API
             return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? null : "Please enter a valid email address.";
+        case 'confirm_email_correction':
+            // Accept yes/no responses
+            const lowerValue = value.toLowerCase().trim();
+            return ['yes', 'y', 'no', 'n'].includes(lowerValue) ? null : "Please type 'yes' or 'no'.";
         default:
             return null; // No validation for other steps like area/suburb selection
     }
@@ -443,7 +495,17 @@ const Chatbot = ({ handleClose, handleReset }) => {
             }
             break;
         case 'ask_email':
-            // Add email to leadData and move to review step
+            // Check for email autocorrect
+            const correctedEmail = autocorrectEmail(input);
+            if (correctedEmail.toLowerCase() !== input.toLowerCase()) {
+                // Email needs correction - ask user to confirm
+                setEmailCorrection({ original: input, corrected: correctedEmail });
+                addMessage(`Did you mean ${correctedEmail}?`, false);
+                addMessage("Type 'yes' to use the corrected email, or 'no' to keep your original email.", false);
+                setStep('confirm_email_correction');
+                return;
+            }
+            // Email is correct - proceed normally
             setLeadData(prev => ({
                 ...prev,
                 customerEmail: input,
@@ -453,6 +515,35 @@ const Chatbot = ({ handleClose, handleReset }) => {
             }));
             setProgressStep(2);
             nextStep('review_data');
+            break;
+        case 'confirm_email_correction':
+            if (input.toLowerCase() === 'yes' || input.toLowerCase() === 'y') {
+                // Use corrected email
+                setLeadData(prev => ({
+                    ...prev,
+                    customerEmail: emailCorrection.corrected,
+                    serviceType: 'Underfloor Heating',
+                    budget: prev.budget || '',
+                }));
+                addMessage(`Great! Using ${emailCorrection.corrected}`, false);
+                setEmailCorrection(null);
+                setProgressStep(2);
+                nextStep('review_data');
+            } else if (input.toLowerCase() === 'no' || input.toLowerCase() === 'n') {
+                // Use original email
+                setLeadData(prev => ({
+                    ...prev,
+                    customerEmail: emailCorrection.original,
+                    serviceType: 'Underfloor Heating',
+                    budget: prev.budget || '',
+                }));
+                addMessage(`No problem! Using ${emailCorrection.original}`, false);
+                setEmailCorrection(null);
+                setProgressStep(2);
+                nextStep('review_data');
+            } else {
+                addMessage("Please type 'yes' to use the corrected email, or 'no' to keep your original email.", false);
+            }
             break;
         case 'review_data':
             // Handle field editing in review mode

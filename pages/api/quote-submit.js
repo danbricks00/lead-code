@@ -256,8 +256,14 @@ async function sendCustomerQuoteEmail(to, pdf, row) {
 }
 
 async function sendAdminQuoteEmail(to, pdf, row) {
-  const subject = `New Quote Submitted - ${row.CustomerName} - Quote #${row.QuoteID}`;
+  const subject = `New Quote #${row.QuoteID} for ${row.CustomerName} - Waiting for Approval`;
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  
+  // Calculate individual totals
+  const labourTotal = parseFloat(row.LabourRate || 0) * parseFloat(row.LabourHours || 0);
+  const materialsTotal = parseFloat(row.MaterialsCost || 0) * parseFloat(row.MaterialsQuantity || 0);
+  const travelTotal = parseFloat(row.TravelCost || 0) * parseFloat(row.TravelDistance || 0);
+  const installationTotal = parseFloat(row.InstallationCost || 0);
   
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -275,9 +281,43 @@ async function sendAdminQuoteEmail(to, pdf, row) {
           <p><strong>Phone:</strong> ${row.CustomerPhone}</p>
           <p><strong>Service:</strong> ${row.ServiceType}</p>
           <p><strong>Location:</strong> ${row.Suburb || row.Area}</p>
-          <p><strong>Total:</strong> $${row.TotalQuote}</p>
           <p><strong>Tradesperson:</strong> ${row.TradePersonName}</p>
-                </div>
+          <p><strong>Valid Until:</strong> ${row.ValidUntil}</p>
+        </div>
+        
+        <h3>💰 Cost Breakdown</h3>
+        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr style="border-bottom: 1px solid #eee;">
+              <td style="padding: 8px 0;"><strong>Labour:</strong></td>
+              <td style="padding: 8px 0; text-align: right;">$${labourTotal.toFixed(2)}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #eee;">
+              <td style="padding: 8px 0;"><strong>Materials:</strong></td>
+              <td style="padding: 8px 0; text-align: right;">$${materialsTotal.toFixed(2)}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #eee;">
+              <td style="padding: 8px 0;"><strong>Travel:</strong></td>
+              <td style="padding: 8px 0; text-align: right;">$${travelTotal.toFixed(2)}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #eee;">
+              <td style="padding: 8px 0;"><strong>Installation:</strong></td>
+              <td style="padding: 8px 0; text-align: right;">$${installationTotal.toFixed(2)}</td>
+            </tr>
+            <tr style="border-bottom: 2px solid #333;">
+              <td style="padding: 8px 0;"><strong>Subtotal:</strong></td>
+              <td style="padding: 8px 0; text-align: right;"><strong>$${row.Subtotal}</strong></td>
+            </tr>
+            <tr style="border-bottom: 2px solid #333;">
+              <td style="padding: 8px 0;"><strong>GST (15%):</strong></td>
+              <td style="padding: 8px 0; text-align: right;"><strong>$${row.GST}</strong></td>
+            </tr>
+            <tr style="background: #f8f9fa;">
+              <td style="padding: 12px 0;"><strong>Total Quote:</strong></td>
+              <td style="padding: 12px 0; text-align: right; font-size: 18px; color: #28a745;"><strong>$${row.TotalQuote}</strong></td>
+            </tr>
+          </table>
+        </div>
         
         <div style="text-align: center; margin: 30px 0;">
           <h3>🎯 Admin Actions Required</h3>

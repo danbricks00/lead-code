@@ -1,5 +1,6 @@
 // pages/api/contact.js - Contact Form API
 import { sendEmail } from '../../lib/emailHelper.js';
+import { validateAndCorrectEmail, logEmailValidation } from '../../utils/emailValidator.js';
 
 export default async function handler(req, res) {
   console.log("✅ Loaded API contact.js");
@@ -23,38 +24,27 @@ export default async function handler(req, res) {
       });
     }
 
-    // Enhanced email validation with domain checking
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    // Smart email validation with autocorrect and MX checking
+    const emailValidation = await validateAndCorrectEmail(email, true);
+    logEmailValidation('EMAIL_VALIDATION', emailValidation, 'contact-form');
+    
+    if (!emailValidation.isValid) {
       console.log("❌ Contact form validation failed - invalid email format");
       return res.status(400).json({
         success: false,
-        error: "Invalid email format"
+        error: emailValidation.error
       });
     }
     
-    // Check for invalid domain patterns (like .x.x for Outlook)
-    const domain = email.split('@')[1];
-    const invalidDomainPatterns = [
-        /\.x\.x$/i,           // .x.x pattern
-        /\.x\.\w+$/i,         // .x.anything pattern
-        /\.\w+\.x$/i,         // .anything.x pattern
-        /\.x$/i,              // .x pattern
-        /\.\d+\.\d+$/i,       // .number.number pattern
-        /\.\d+$/i,            // .number pattern
-    ];
+    // Use corrected email if available
+    const finalEmail = emailValidation.correctedEmail || email;
     
-    for (const pattern of invalidDomainPatterns) {
-        if (pattern.test(domain)) {
-            console.log(`❌ Invalid domain pattern detected: ${domain}`);
-            return res.status(400).json({
-                success: false,
-                error: "Invalid email domain format"
-            });
-        }
+    // Log if email was corrected
+    if (emailValidation.needsCorrection) {
+      console.log(`📧 Email autocorrected: ${email} → ${finalEmail}`);
     }
 
-    console.log("📧 Contact form submission received:", { name, email });
+    console.log("📧 Contact form submission received:", { name, email: finalEmail });
 
     // Environment checks
     console.log("🔧 Environment variables check:", {
@@ -78,7 +68,7 @@ export default async function handler(req, res) {
         <h2 style="color: #333; margin: 20px 0;">New Contact Form Submission</h2>
         <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
           <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Email:</strong> ${finalEmail}</p>
           <p><strong>Message:</strong></p>
           <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0;">
             ${message.replace(/\n/g, '<br>')}

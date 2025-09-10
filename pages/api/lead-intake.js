@@ -1,5 +1,6 @@
 import { getGoogleSheetsClient } from '../../lib/googleSheets.js';
 import { assertLeadWriteOnly } from '../../utils/writeGuard.js';
+import { validateAndCorrectEmail, logEmailValidation } from '../../utils/emailValidator.js';
 import nodemailer from "nodemailer";
 import crypto from "crypto";
 
@@ -55,6 +56,25 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
+    // Smart email validation with autocorrect and MX checking
+    const emailValidation = await validateAndCorrectEmail(customerEmail, true);
+    logEmailValidation('EMAIL_VALIDATION', emailValidation, 'lead-intake');
+    
+    if (!emailValidation.isValid) {
+      console.log("❌ Lead intake validation failed - invalid email format");
+      return res.status(400).json({
+        error: emailValidation.error
+      });
+    }
+    
+    // Use corrected email if available
+    const finalCustomerEmail = emailValidation.correctedEmail || customerEmail;
+    
+    // Log if email was corrected
+    if (emailValidation.needsCorrection) {
+      console.log(`📧 Email autocorrected: ${customerEmail} → ${finalCustomerEmail}`);
+    }
+
     const leadId = crypto.randomBytes(6).toString("hex");
     const sheets = getGoogleSheetsClient();
     
@@ -62,7 +82,7 @@ export default async function handler(req, res) {
     const leadRow = [
       leadId,                                    // Lead
       customerName,                              // CustomerName
-      customerEmail,                             // CustomerEmail
+      finalCustomerEmail,                        // CustomerEmail (corrected)
       customerPhone || "",                       // CustomerPhone
       serviceType || "Underfloor Heating",       // ServiceType
       JSON.stringify(rooms || []),               // Rooms
@@ -127,7 +147,7 @@ export default async function handler(req, res) {
       <ul>
         <li><b>Lead ID:</b> ${leadId}</li>
         <li><b>Customer Name:</b> ${customerName}</li>
-        <li><b>Email:</b> ${customerEmail}</li>
+        <li><b>Email:</b> ${finalCustomerEmail}</li>
         <li><b>Phone:</b> ${customerPhone || "Not provided"}</li>
         <li><b>Service:</b> ${serviceType || "Underfloor Heating"}</li>
         <li><b>Location:</b> ${suburb || ""}${suburb && area ? ", " : ""}${area || ""}</li>
@@ -152,7 +172,7 @@ export default async function handler(req, res) {
     // Customer confirmation email
     await transporter.sendMail({
       from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
-      to: customerEmail,
+      to: finalCustomerEmail,
       subject: "✅ We've Received Your Underfloor Heating Quote Request!",
       html: `<p>Hi ${customerName},</p><p>Thanks for your request. We've received your project details and a tradesperson will be in touch with a quote shortly.</p><p>For your records, here are the details you provided:</p>${leadDetailsHtml}`,
     });

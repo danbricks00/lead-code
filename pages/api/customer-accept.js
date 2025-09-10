@@ -53,6 +53,16 @@ const quoteLogger = {
 };
 
 export default async function handler(req, res) {
+    // Add CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    // Handle OPTIONS request
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    
     const startTime = Date.now();
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
@@ -279,13 +289,4 @@ export default async function handler(req, res) {
         
         return res.redirect(`/quote-status?status=error&message=An internal server error occurred.`);
     }
-}
-
-// Add at the beginning of the handler function
-res.setHeader('Access-Control-Allow-Origin', '*');
-res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-if (req.method === 'OPTIONS') {
-  return res.status(200).end();
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ChatMessage from './ChatMessage';
+import { parseRoomNumber, handleRoomNumberInput } from '../utils/roomValidation';
 
 // Email validation utility (inline for frontend)
 const commonProviders = {

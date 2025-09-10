@@ -241,25 +241,45 @@ export default async function handler(req, res) {
         }
 
         // ✅ First-time update: allow when "none" or ""
-        quoteData[col.AdminDecision] = "Declined";
-        quoteData[col.AdminDecisionTimeStamp] = formatDateTimeNZT(new Date());
-        quoteData[col.AdminPersonStatus] = "Declined";
-
-        // Update the Google Sheets row
-        const updateResult = await upsertQuoteRow(sheets, spreadsheetId, quoteData);
+        // Ensure quoteId is a string, not an object
+        const quoteIdStr = typeof quoteId === "object" ? quoteId.quoteId : String(quoteId);
         
-        console.log(`[${requestId}] [ADMIN-DECLINE] Decision update success`, {
-            quoteId,
-            adminOrCustomer: "Admin",
-            action: "Declined",
-            updatedRow: {
-                decision: quoteData[col.AdminDecision],
-                decisionTime: quoteData[col.AdminDecisionTimeStamp],
-                status: quoteData[col.AdminPersonStatus]
-            }
+        // Log what's being passed before update
+        console.log("[ADMIN-DECLINE] Writing decision", {
+            quoteId: quoteIdStr,
+            decision: "Declined"
         });
 
-        return res.json({ tag: "ADMIN_DECISION_RECORDED", decision: quoteData[col.AdminDecision] });
+        try {
+            // Update the Google Sheets row with proper parameters
+            const updateResult = await upsertQuoteRow(quoteIdStr, {
+                AdminDecision: "Declined",
+                AdminDecisionTimeStamp: formatDateTimeNZT(new Date()),
+                AdminPersonStatus: "Declined"
+            }, { req, caller: 'admin-decline' });
+            
+            console.log(`[${requestId}] [ADMIN-DECLINE] Decision update success`, {
+                quoteId: quoteIdStr,
+                adminOrCustomer: "Admin",
+                action: "Declined",
+                updateResult,
+                updatedRow: {
+                    decision: "Declined",
+                    decisionTime: formatDateTimeNZT(new Date()),
+                    status: "Declined"
+                }
+            });
+
+            return res.json({ tag: "ADMIN_DECISION_RECORDED", decision: "Declined" });
+            
+        } catch (err) {
+            console.error("[ADMIN-DECLINE] Sheets update failed", {
+                quoteId: quoteIdStr,
+                error: err.message,
+                stack: err.stack
+            });
+            return res.status(500).json({ tag: "SHEETS_UPSERT_ERROR", quoteId: quoteIdStr, error: err.message });
+        }
         
         // Check if already declined or approved (legacy check - keeping for backward compatibility)
         if (quoteData.AdminPersonStatus === 'Declined') {

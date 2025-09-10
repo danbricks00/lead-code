@@ -742,25 +742,45 @@ export default async function handler(req, res) {
         }
 
         // ✅ First-time update: allow when "none" or ""
-        targetRow[col.CustomerDecision] = "Accepted";
-        targetRow[col.CustomerDecisionTimeStamp] = formatDateTimeNZT(new Date());
-        targetRow[col.AdminPersonStatus] = "Pending Admin Review";
-
-        // Update the Google Sheets row
-        const updateResult = await upsertQuoteRow(sheets, spreadsheetId, targetRow);
+        // Ensure quoteId is a string, not an object
+        const quoteIdStr = typeof quoteId === "object" ? quoteId.quoteId : String(quoteId);
         
-        console.log(`[${requestId}] [CUSTOMER-ACCEPT] Decision update success`, {
-            quoteId,
-            adminOrCustomer: "Customer",
-            action: "Accepted",
-            updatedRow: {
-                decision: targetRow[col.CustomerDecision],
-                decisionTime: targetRow[col.CustomerDecisionTimeStamp],
-                status: targetRow[col.AdminPersonStatus]
-            }
+        // Log what's being passed before update
+        console.log("[CUSTOMER-ACCEPT] Writing decision", {
+            quoteId: quoteIdStr,
+            decision: "Accepted"
         });
 
-        return res.json({ tag: "CUSTOMER_DECISION_RECORDED", decision: targetRow[col.CustomerDecision] });
+        try {
+            // Update the Google Sheets row with proper parameters
+            const updateResult = await upsertQuoteRow(quoteIdStr, {
+                CustomerDecision: "Accepted",
+                CustomerDecisionTimeStamp: formatDateTimeNZT(new Date()),
+                AdminPersonStatus: "Pending Admin Review"
+            }, { req, caller: 'customer-accept' });
+            
+            console.log(`[${requestId}] [CUSTOMER-ACCEPT] Decision update success`, {
+                quoteId: quoteIdStr,
+                adminOrCustomer: "Customer",
+                action: "Accepted",
+                updateResult,
+                updatedRow: {
+                    decision: "Accepted",
+                    decisionTime: formatDateTimeNZT(new Date()),
+                    status: "Pending Admin Review"
+                }
+            });
+
+            return res.json({ tag: "CUSTOMER_DECISION_RECORDED", decision: "Accepted" });
+            
+        } catch (err) {
+            console.error("[CUSTOMER-ACCEPT] Sheets update failed", {
+                quoteId: quoteIdStr,
+                error: err.message,
+                stack: err.stack
+            });
+            return res.status(500).json({ tag: "SHEETS_UPSERT_ERROR", quoteId: quoteIdStr, error: err.message });
+        }
         
         // Check if quote has been rejected
         const statusIndex = header.indexOf('Status');

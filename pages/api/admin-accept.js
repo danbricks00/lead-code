@@ -726,26 +726,48 @@ export default async function handler(req, res) {
         }
 
         // ✅ Allow first‑time approval when 'none' or '' 
-        // Apply decision directly to quoteData using column mapping
-        quoteData[col.AdminDecision] = "Approved";
-        quoteData[col.AdminDecisionTimeStamp] = formatDateTimeNZT(new Date());
-        quoteData[col.AdminPersonStatus] = "Approved";
-
-        // Update the Google Sheets row
-        const updateResult = await upsertQuoteRow(sheets, spreadsheetId, quoteData);
+        // Ensure quoteId is a string, not an object
+        const quoteIdStr = typeof quoteId === "object" ? quoteId.quoteId : quoteId;
         
-        console.log(`[${requestId}] [ADMIN-ACCEPT] Decision update success`, {
-            quoteId,
-            adminOrCustomer: "Admin",
-            action: "Approved",
-            updatedRow: {
-                decision: quoteData[col.AdminDecision],
-                decisionTime: quoteData[col.AdminDecisionTimeStamp],
-                status: quoteData[col.AdminPersonStatus]
-            }
+        // Log what's being passed before update
+        console.log("[ADMIN-ACCEPT] Before Sheets update", {
+            quoteId: quoteIdStr,
+            quoteIdType: typeof quoteId,
+            originalQuoteId: quoteId,
+            decision: "Approved",
+            rowData: quoteData
         });
 
-        return res.json({ tag: "ADMIN_DECISION_RECORDED", decision: "Approved" });
+        try {
+            // Update the Google Sheets row with proper parameters
+            const updateResult = await upsertQuoteRow(quoteIdStr, {
+                AdminDecision: "Approved",
+                AdminDecisionTimeStamp: formatDateTimeNZT(new Date()),
+                AdminPersonStatus: "Approved"
+            }, { req, caller: 'admin-accept' });
+            
+            console.log(`[${requestId}] [ADMIN-ACCEPT] Decision update success`, {
+                quoteId: quoteIdStr,
+                adminOrCustomer: "Admin",
+                action: "Approved",
+                updateResult,
+                updatedRow: {
+                    decision: "Approved",
+                    decisionTime: formatDateTimeNZT(new Date()),
+                    status: "Approved"
+                }
+            });
+
+            return res.json({ tag: "ADMIN_DECISION_RECORDED", decision: "Approved" });
+            
+        } catch (err) {
+            console.error("[ADMIN-ACCEPT] Sheets update failed", {
+                quoteId: quoteIdStr,
+                error: err.message,
+                stack: err.stack
+            });
+            return res.status(500).json({ tag: "SHEETS_UPSERT_ERROR", error: err.message });
+        }
         
         // LEGACY CODE BELOW - can be removed later
         // Use new unified system for approval

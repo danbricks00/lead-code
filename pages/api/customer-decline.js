@@ -541,25 +541,45 @@ export default async function handler(req, res) {
         }
 
         // ✅ First-time update: allow when "none" or ""
-        targetRow[col.CustomerDecision] = "Declined";
-        targetRow[col.CustomerDecisionTimeStamp] = formatDateTimeNZT(new Date());
-        targetRow[col.AdminPersonStatus] = "Customer Declined";
-
-        // Update the Google Sheets row
-        const updateResult = await upsertQuoteRow(sheets, spreadsheetId, targetRow);
+        // Ensure quoteId is a string, not an object
+        const quoteIdStr = typeof quoteId === "object" ? quoteId.quoteId : String(quoteId);
         
-        console.log(`[${requestId}] [CUSTOMER-DECLINE] Decision update success`, {
-            quoteId,
-            adminOrCustomer: "Customer",
-            action: "Declined",
-            updatedRow: {
-                decision: targetRow[col.CustomerDecision],
-                decisionTime: targetRow[col.CustomerDecisionTimeStamp],
-                status: targetRow[col.AdminPersonStatus]
-            }
+        // Log what's being passed before update
+        console.log("[CUSTOMER-DECLINE] Writing decision", {
+            quoteId: quoteIdStr,
+            decision: "Declined"
         });
 
-        return res.json({ tag: "CUSTOMER_DECISION_RECORDED", decision: targetRow[col.CustomerDecision] });
+        try {
+            // Update the Google Sheets row with proper parameters
+            const updateResult = await upsertQuoteRow(quoteIdStr, {
+                CustomerDecision: "Declined",
+                CustomerDecisionTimeStamp: formatDateTimeNZT(new Date()),
+                AdminPersonStatus: "Customer Declined"
+            }, { req, caller: 'customer-decline' });
+            
+            console.log(`[${requestId}] [CUSTOMER-DECLINE] Decision update success`, {
+                quoteId: quoteIdStr,
+                adminOrCustomer: "Customer",
+                action: "Declined",
+                updateResult,
+                updatedRow: {
+                    decision: "Declined",
+                    decisionTime: formatDateTimeNZT(new Date()),
+                    status: "Customer Declined"
+                }
+            });
+
+            return res.json({ tag: "CUSTOMER_DECISION_RECORDED", decision: "Declined" });
+            
+        } catch (err) {
+            console.error("[CUSTOMER-DECLINE] Sheets update failed", {
+                quoteId: quoteIdStr,
+                error: err.message,
+                stack: err.stack
+            });
+            return res.status(500).json({ tag: "SHEETS_UPSERT_ERROR", quoteId: quoteIdStr, error: err.message });
+        }
         
         // Check if quote has been rejected
         const statusIndex = header.indexOf('Status');

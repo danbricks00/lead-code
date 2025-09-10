@@ -3,6 +3,7 @@ import { buildQuoteRow } from '../../utils/quotes';
 import { sendEmail } from '../../lib/emailHelper';
 import { getNZTTimestamp } from '../../utils/nztTimestamp.js';
 import quoteLogger from '../../lib/quoteLogger.js';
+import { handleDecision } from '../../lib/decisionFlow.js';
 import crypto from "crypto";
 
 // --- Helper Functions ---
@@ -51,11 +52,22 @@ async function getQuoteById(quoteId) {
 
 // --- Main Handler ---
 export default async function handler(req, res) {
-    const requestId = quoteLogger.generateRequestId();
-    const flowId = `decline_${Date.now()}`;
-    const startTime = Date.now();
-    
-    // Debug log for immediate visibility
+    // Top-level error logging
+    console.log("[DECISION-API] Incoming request", {
+        file: __filename,
+        url: req.url,
+        method: req.method,
+        query: req.query,
+        body: req.body,
+        time: new Date().toISOString()
+    });
+
+    try {
+        const requestId = quoteLogger.generateRequestId();
+        const flowId = `decline_${Date.now()}`;
+        const startTime = Date.now();
+        
+        // Debug log for immediate visibility
     console.log(JSON.stringify({ 
         tag: 'ADMIN_DECLINE_REQ_START', 
         flowId, 
@@ -201,15 +213,7 @@ export default async function handler(req, res) {
             currentStatus: quoteData.AdminPersonStatus || 'none'
         });
 
-        // ✅ Only fail if headers missing or row not found
-        if (col.AdminDecision === -1 || col.AdminDecisionTimeStamp === -1) {
-            return res.json({ tag: "DECLINE_LOOKUP_FAIL", reason: "Missing header", quoteId });
-        }
-        if (!rowFound) {
-            return res.json({ tag: "DECLINE_LOOKUP_FAIL", reason: "QuoteID not found", quoteId });
-        }
-
-        // Expired quote
+        // Expired quote check
         if (col.ValidUntil !== -1 && quoteData.ValidUntil) {
             try {
                 const validUntilDate = new Date(quoteData.ValidUntil);
@@ -230,55 +234,30 @@ export default async function handler(req, res) {
             }
         }
 
-        // ✅ Duplicate guard: only if a real decision already exists
-        const currentDecision = quoteData.AdminDecision;
-        if (currentDecision && currentDecision !== "none" && currentDecision.trim() !== "") {
-            return res.json({
-                tag: "ADMIN_ALREADY_DECIDED",
-                decision: currentDecision,
-                decisionTime: formatDateTimeNZT(quoteData.AdminDecisionTimeStamp)
-            });
-        }
-
-        // ✅ First-time update: allow when "none" or ""
-        // Ensure quoteId is a string, not an object
-        const quoteIdStr = typeof quoteId === "object" ? quoteId.quoteId : String(quoteId);
-        
-        // Log what's being passed before update
-        console.log("[ADMIN-DECLINE] Writing decision", {
-            quoteId: quoteIdStr,
-            decision: "Declined"
+        // Use shared decision handler
+        const result = await handleDecision({
+            type: "ADMIN_DECLINE",
+            quoteId,
+            leadId,
+            decisionValue: "Declined",
+            statusField: "Declined",
+            col,
+            rowFound,
+            rowIndex: -1, // Not used in current implementation
+            quoteRow: quoteData,
+            res,
+            req
         });
 
-        try {
-            // Update the Google Sheets row with proper parameters
-            const updateResult = await upsertQuoteRow(quoteIdStr, {
-                AdminDecision: "Declined",
-                AdminDecisionTimeStamp: formatDateTimeNZT(new Date()),
-                AdminPersonStatus: "Declined"
-            }, { req, caller: 'admin-decline' });
-            
-            console.log(`[${requestId}] [ADMIN-DECLINE] Decision update success`, {
-                quoteId: quoteIdStr,
-                adminOrCustomer: "Admin",
-                action: "Declined",
-                updateResult,
-                updatedRow: {
-                    decision: "Declined",
-                    decisionTime: formatDateTimeNZT(new Date()),
-                    status: "Declined"
-                }
-            });
-
-            return res.json({ tag: "ADMIN_DECISION_RECORDED", decision: "Declined" });
-            
-        } catch (err) {
-            console.error("[ADMIN-DECLINE] Sheets update failed", {
-                quoteId: quoteIdStr,
-                error: err.message,
-                stack: err.stack
-            });
-            return res.status(500).json({ tag: "SHEETS_UPSERT_ERROR", quoteId: quoteIdStr, error: err.message });
+        // Return the result from the shared handler
+        if (result.tag === "ADMIN_DECLINE_LOOKUP_FAIL") {
+            return res.status(result.reason === "Missing header" ? 500 : 404).json(result);
+        } else if (result.tag === "ADMIN_DECLINE_ALREADY_DECIDED") {
+            return res.status(400).json(result);
+        } else if (result.tag === "ADMIN_DECLINE_DECISION_RECORDED") {
+            return res.status(200).json(result);
+        } else if (result.tag === "SHEETS_UPSERT_ERROR") {
+            return res.status(500).json(result);
         }
         
         // Check if already declined or approved (legacy check - keeping for backward compatibility)
@@ -576,8 +555,15 @@ export default async function handler(req, res) {
         
         return res.status(200).json({ ok: true, quoteId, leadId });
 
-    } catch (error) {
-        console.error("Quote Decline Error:", error);
-        return res.redirect(`/quote-status?status=error&message=An error occurred while declining the quote.`);
+    } catch (err) {
+        console.error("[DECISION-API] Uncaught error:", {
+            file: __filename,
+            message: err.message,
+            stack: err.stack
+        });
+        return res.status(500).json({
+            tag: "DECISION_ERROR",
+            error: err.message
+        });
     }
 }

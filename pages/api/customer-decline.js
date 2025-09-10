@@ -3,6 +3,7 @@ import { sendEmail } from '../../lib/emailHelper';
 import quoteLogger from '../../lib/quoteLogger.js';
 import { normalizeQueryParams, createIdMismatchError } from '../../utils/normalize.js';
 import { getNZTTimestamp } from '../../utils/nztTimestamp.js';
+import { handleDecision } from '../../lib/decisionFlow.js';
 import crypto from "crypto";
 
 // NZ timestamp helper function
@@ -256,11 +257,22 @@ async function sendNotificationEmails(quoteData, leadData = {}, requestId = null
 }
 
 export default async function handler(req, res) {
-    const requestId = quoteLogger.generateRequestId();
-    const startTime = Date.now();
-    
-    // Clear prefixed logging for customer decline
-    console.log(JSON.stringify({
+    // Top-level error logging
+    console.log("[DECISION-API] Incoming request", {
+        file: __filename,
+        url: req.url,
+        method: req.method,
+        query: req.query,
+        body: req.body,
+        time: new Date().toISOString()
+    });
+
+    try {
+        const requestId = quoteLogger.generateRequestId();
+        const startTime = Date.now();
+        
+        // Clear prefixed logging for customer decline
+        console.log(JSON.stringify({
         tag: 'CUSTOMER_DECLINE_REQ_START',
         requestId,
         method: req.method,
@@ -728,9 +740,25 @@ export default async function handler(req, res) {
             return res.status(200).send(expiredPage);
         }
         
-        // DECISION LOCK LOGIC (for valid quotes)
-        // Allow customer to decline even if admin pre-approved, but prevent if already accepted/declined by customer
-        if (currentDecision && currentDecision.trim() !== '' && currentDecision !== 'Admin Approved') {
+        // Use shared decision handler
+        const result = await handleDecision({
+            type: "CUSTOMER_DECLINE",
+            quoteId,
+            leadId,
+            decisionValue: "Declined",
+            statusField: "Customer Declined",
+            col,
+            rowFound,
+            rowIndex: rowIndex + 1,
+            quoteRow: targetRow,
+            res,
+            req
+        });
+
+        // Handle the result from the shared handler
+        if (result.tag === "CUSTOMER_DECLINE_LOOKUP_FAIL") {
+            return res.status(result.reason === "Missing header" ? 500 : 404).json(result);
+        } else if (result.tag === "CUSTOMER_DECLINE_ALREADY_DECIDED") {
             const formattedTime = formatTimestamp(currentDecisionTimestamp);
             quoteLogger.customerDecline('Decision already made - preventing duplicate', { 
                 currentDecision, 
@@ -779,14 +807,17 @@ export default async function handler(req, res) {
             `;
             
             return res.status(200).send(statusPage);
+        } else if (result.tag === "SHEETS_UPSERT_ERROR") {
+            return res.status(500).json(result);
         }
-        
-        // --- Update Sheet Data using correct schema column names ---
+
+        // If we get here, the decision was recorded successfully
+        // Continue with the rest of the logic (emails, confirmation page, etc.)
         quoteLogger.customerDecline('Processing quote decline', { quoteId }, requestId);
         
         const nzTimestamp = getNZTTimestamp();
         
-        // ✅ First‑time decline
+        // Update the targetRow with the decision data
         targetRow[col.CustomerDecision] = "Declined";
         targetRow[col.CustomerDecisionTimeStamp] = formatDateTimeNZT(new Date());
         targetRow[col.AdminPersonStatus] = "Customer Declined";
@@ -890,12 +921,15 @@ export default async function handler(req, res) {
         
         return res.status(200).send(confirmationPage);
 
-    } catch (error) {
-        quoteLogger.error('Quote decline error', error, requestId);
-        quoteLogger.response('Redirecting to error page', { 
-            error: error.message,
-            processingTime: Date.now() - startTime
-        }, requestId);
-        return res.redirect(`/quote-status?status=error&message=An internal server error occurred.`);
+    } catch (err) {
+        console.error("[DECISION-API] Uncaught error:", {
+            file: __filename,
+            message: err.message,
+            stack: err.stack
+        });
+        return res.status(500).json({
+            tag: "DECISION_ERROR",
+            error: err.message
+        });
     }
 }

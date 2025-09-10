@@ -4,6 +4,7 @@ import { generateQuotePDF } from '../../lib/pdfGenerator.js';
 import quoteLogger from '../../lib/quoteLogger.js';
 import { normalizeQueryParams, createIdMismatchError } from '../../utils/normalize.js';
 import { getNZTTimestamp } from '../../utils/nztTimestamp.js';
+import { handleDecision } from '../../lib/decisionFlow.js';
 import crypto from "crypto";
 
 // NZ timestamp helper function
@@ -457,11 +458,22 @@ async function sendNotificationEmails(quoteData, leadData = {}, requestId = null
 }
 
 export default async function handler(req, res) {
-    const requestId = quoteLogger.generateRequestId();
-    const startTime = Date.now();
-    
-    // Clear prefixed logging for customer accept
-    console.log(JSON.stringify({
+    // Top-level error logging
+    console.log("[DECISION-API] Incoming request", {
+        file: __filename,
+        url: req.url,
+        method: req.method,
+        query: req.query,
+        body: req.body,
+        time: new Date().toISOString()
+    });
+
+    try {
+        const requestId = quoteLogger.generateRequestId();
+        const startTime = Date.now();
+        
+        // Clear prefixed logging for customer accept
+        console.log(JSON.stringify({
         tag: 'CUSTOMER_ACCEPT_REQ_START',
         requestId,
         method: req.method,
@@ -715,14 +727,6 @@ export default async function handler(req, res) {
             currentStatus: targetRow[col.AdminPersonStatus] || 'none'
         });
 
-        // ✅ Only fail if headers missing or row not found
-        if (col.CustomerDecision === -1 || col.CustomerDecisionTimeStamp === -1) {
-            return res.json({ tag: "ACCEPT_LOOKUP_FAIL", reason: "Missing header", quoteId });
-        }
-        if (!rowFound) {
-            return res.json({ tag: "ACCEPT_LOOKUP_FAIL", reason: "QuoteID not found", quoteId });
-        }
-
         // ✅ Guard for expired
         if (new Date(targetRow[col.ValidUntil]) < new Date()) {
             return res.json({
@@ -731,55 +735,30 @@ export default async function handler(req, res) {
             });
         }
 
-        // ✅ Duplicate guard: only if a real decision already exists
-        const currentDecisionValue = targetRow[col.CustomerDecision];
-        if (currentDecisionValue && currentDecisionValue !== "none" && currentDecisionValue.trim() !== "") {
-            return res.json({
-                tag: "CUSTOMER_ALREADY_DECIDED",
-                decision: currentDecisionValue,
-                decisionTime: formatDateTimeNZT(targetRow[col.CustomerDecisionTimeStamp])
-            });
-        }
-
-        // ✅ First-time update: allow when "none" or ""
-        // Ensure quoteId is a string, not an object
-        const quoteIdStr = typeof quoteId === "object" ? quoteId.quoteId : String(quoteId);
-        
-        // Log what's being passed before update
-        console.log("[CUSTOMER-ACCEPT] Writing decision", {
-            quoteId: quoteIdStr,
-            decision: "Accepted"
+        // Use shared decision handler
+        const result = await handleDecision({
+            type: "CUSTOMER_ACCEPT",
+            quoteId,
+            leadId,
+            decisionValue: "Accepted",
+            statusField: "Pending Admin Review",
+            col,
+            rowFound,
+            rowIndex: -1, // Not used in current implementation
+            quoteRow: targetRow,
+            res,
+            req
         });
 
-        try {
-            // Update the Google Sheets row with proper parameters
-            const updateResult = await upsertQuoteRow(quoteIdStr, {
-                CustomerDecision: "Accepted",
-                CustomerDecisionTimeStamp: formatDateTimeNZT(new Date()),
-                AdminPersonStatus: "Pending Admin Review"
-            }, { req, caller: 'customer-accept' });
-            
-            console.log(`[${requestId}] [CUSTOMER-ACCEPT] Decision update success`, {
-                quoteId: quoteIdStr,
-                adminOrCustomer: "Customer",
-                action: "Accepted",
-                updateResult,
-                updatedRow: {
-                    decision: "Accepted",
-                    decisionTime: formatDateTimeNZT(new Date()),
-                    status: "Pending Admin Review"
-                }
-            });
-
-            return res.json({ tag: "CUSTOMER_DECISION_RECORDED", decision: "Accepted" });
-            
-        } catch (err) {
-            console.error("[CUSTOMER-ACCEPT] Sheets update failed", {
-                quoteId: quoteIdStr,
-                error: err.message,
-                stack: err.stack
-            });
-            return res.status(500).json({ tag: "SHEETS_UPSERT_ERROR", quoteId: quoteIdStr, error: err.message });
+        // Return the result from the shared handler
+        if (result.tag === "CUSTOMER_ACCEPT_LOOKUP_FAIL") {
+            return res.status(result.reason === "Missing header" ? 500 : 404).json(result);
+        } else if (result.tag === "CUSTOMER_ACCEPT_ALREADY_DECIDED") {
+            return res.status(400).json(result);
+        } else if (result.tag === "CUSTOMER_ACCEPT_DECISION_RECORDED") {
+            return res.status(200).json(result);
+        } else if (result.tag === "SHEETS_UPSERT_ERROR") {
+            return res.status(500).json(result);
         }
         
         // Check if quote has been rejected
@@ -1091,12 +1070,15 @@ export default async function handler(req, res) {
         
         return res.status(200).send(confirmationPage);
 
-    } catch (error) {
-        quoteLogger.error('Quote acceptance error', error, requestId);
-        quoteLogger.response('Redirecting to error page', { 
-            error: error.message,
-            processingTime: Date.now() - startTime
-        }, requestId);
-        return res.redirect(`/quote-status?status=error&message=An internal server error occurred.`);
+    } catch (err) {
+        console.error("[DECISION-API] Uncaught error:", {
+            file: __filename,
+            message: err.message,
+            stack: err.stack
+        });
+        return res.status(500).json({
+            tag: "DECISION_ERROR",
+            error: err.message
+        });
     }
 }

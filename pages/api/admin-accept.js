@@ -820,7 +820,7 @@ export default async function handler(req, res) {
             leadId: quoteData.LeadID
         }, requestId);
 
-        const result = await upsertQuoteRow(quoteData.QuoteID, approvedRow, { req, caller: 'admin-approve' });
+        await upsertQuoteRow(quoteData.QuoteID, approvedRow, { req, caller: 'admin-approve' });
         
         quoteLogger.sheets('Google Sheets updated with approval status', null, requestId);
 
@@ -979,7 +979,7 @@ export default async function handler(req, res) {
         }));
         
         return res.status(200).json({ ok: true, quoteId, leadId });
-
+    }
     } catch (err) {
         console.error("[DECISION-API] Uncaught error:", {
             file: __filename,

@@ -554,7 +554,6 @@ export default async function handler(req, res) {
         }));
         
         return res.status(200).json({ ok: true, quoteId, leadId });
-
     } catch (err) {
         console.error("[DECISION-API] Uncaught error:", {
             file: __filename,

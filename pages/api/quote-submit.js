@@ -8,6 +8,35 @@ import { buildQuoteRow } from '../../utils/quotes.js';
 import { generateQuotePDF } from '../../lib/pdfGenerator.js';
 import { sendEmail } from '../../lib/emailHelper.js';
 
+/**
+ * Generate next available version ID for quote resubmissions
+ * @param {string} baseId - Original quote ID (e.g., "26e807wig")
+ * @param {Array} existingQuotes - All quotes from getQuotesByLeadId
+ * @returns {string} - Next version ID (e.g., "26e807wig-A", "26e807wig-B")
+ */
+function getNextVersionId(baseId, existingQuotes) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let suffix = 0;
+  
+  while (suffix < alphabet.length) {
+    const versionId = `${baseId}-${alphabet[suffix]}`;
+    
+    // Check if this version already exists
+    const exists = existingQuotes.some(quote => 
+      quote.QuoteID && quote.QuoteID.toString().trim() === versionId
+    );
+    
+    if (!exists) {
+      return versionId;
+    }
+    
+    suffix++;
+  }
+  
+  // Fallback if we somehow exhaust A-Z (very unlikely)
+  return `${baseId}-${Date.now()}`;
+}
+
 export default async function handler(req, res) {
   const requestId = `quote-submit-${Date.now()}`;
   
@@ -24,7 +53,7 @@ export default async function handler(req, res) {
   try {
     console.log('[QUOTE-SUBMIT] Request received:', req.body);
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-    const { quoteId, leadId } = body || {};
+    let { quoteId, leadId } = body || {};
     console.log('[QUOTE-SUBMIT] Parsed body:', { quoteId, leadId, bodyKeys: Object.keys(body) });
     
     if (!quoteId || !leadId) return res.status(400).json({ error: 'quoteId and leadId are required' });
@@ -73,6 +102,21 @@ export default async function handler(req, res) {
     const GST = num(body.gst) ?? round2((Subtotal ?? 0) * 0.15);
     const TotalQuote = num(body.totalQuote) ?? round2((Subtotal ?? 0) + (GST ?? 0));
 
+    // Helper function for consistent NZT timestamp formatting
+    function formatDateTimeNZT(date) {
+        const options = {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+            timeZone: 'Pacific/Auckland'
+        };
+        return new Intl.DateTimeFormat('en-NZ', options).format(new Date(date));
+    }
+
     const fullRow = buildQuoteRow({
       lead,
       quoteId,
@@ -87,6 +131,63 @@ export default async function handler(req, res) {
       },
       mode: 'submitted',
     });
+
+    // Update timestamp to use NZT format
+    fullRow.TimeStamp = formatDateTimeNZT(new Date());
+
+    // Smart guard: Check for existing quotes and handle resubmissions
+    const existingQuote = existingQuotes.find(q => q.QuoteID === quoteId);
+    
+    if (existingQuote) {
+        console.log('[QUOTE-SUBMIT] Existing quote found:', { 
+            quoteId, 
+            existingTimestamp: existingQuote.TimeStamp,
+            existingStatus: existingQuote.CustomerStatus,
+            adminDecision: existingQuote.AdminDecision
+        });
+        
+        // Check if admin has declined this quote
+        if (existingQuote.AdminDecision === 'Declined') {
+            console.log('[QUOTE-SUBMIT] Admin declined quote - allowing resubmission with versioning');
+            
+            // Generate new version ID using helper function
+            const newQuoteId = getNextVersionId(quoteId, existingQuotes);
+            
+            console.log(`🔄 Creating new quote version: ${quoteId} → ${newQuoteId}`);
+            
+            // Update the quoteId for the new submission
+            quoteId = newQuoteId;
+            fullRow.QuoteID = newQuoteId;
+            
+            console.log(JSON.stringify({
+                tag: 'QUOTE_RESUBMITTED',
+                newQuoteId: newQuoteId,
+                fromQuoteId: existingQuote.QuoteID
+            }));
+            
+        } else {
+            // Quote exists but not declined - block duplicate submission
+            console.log('[QUOTE-SUBMIT] Duplicate submission blocked - quote not declined:', {
+                quoteId,
+                adminDecision: existingQuote.AdminDecision
+            });
+            
+            console.log(JSON.stringify({
+                tag: 'QUOTE_ALREADY_SUBMITTED',
+                quoteId,
+                submittedAt: existingQuote.TimeStamp
+            }));
+            
+            return res.status(400).json({
+                tag: "QUOTE_ALREADY_SUBMITTED",
+                quoteId,
+                submittedAt: formatDateTimeNZT(existingQuote.TimeStamp),
+                message: "This quote has already been submitted. Please check your email for confirmation."
+            });
+        }
+    } else {
+        console.log('[QUOTE-SUBMIT] First-time submission for quote ID:', quoteId);
+    }
 
     console.log('[QUOTE-SUBMIT] About to write to Google Sheets:', { quoteId, fullRowKeys: Object.keys(fullRow) });
     const result = await upsertQuoteRow(quoteId, fullRow, { req, caller: 'quote-submit' });
@@ -159,8 +260,13 @@ export default async function handler(req, res) {
       console.error(JSON.stringify({ tag: 'QUOTE_PDF_EMAIL_FAIL', quoteId, msg: String(e?.message || e) }));
     }
 
+    // Determine response based on whether this was a resubmission
+    const isResubmission = quoteId.includes('-');
+    const responseTag = isResubmission ? 'QUOTE_RESUBMITTED' : 'QUOTE_SUBMITTED';
+    const responseMessage = isResubmission ? 'Quote resubmitted successfully' : 'Quote submitted successfully';
+    
     console.log(JSON.stringify({ 
-      tag: 'ROUTE_REQ_OK', 
+      tag: responseTag, 
       route: 'quote-submit', 
       quoteId,
       leadId,
@@ -168,7 +274,22 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString()
     }));
     
-    return res.status(200).json({ ok: true, quote: (await getQuoteById(quoteId)) || fullRow });
+    const responseData = { 
+      tag: responseTag,
+      ok: true, 
+      quoteId,
+      message: responseMessage,
+      quote: (await getQuoteById(quoteId)) || fullRow 
+    };
+    
+    // Add resubmission details if applicable
+    if (isResubmission) {
+      const baseQuoteId = quoteId.split('-')[0];
+      responseData.fromQuoteId = baseQuoteId;
+      responseData.newQuoteId = quoteId;
+    }
+    
+    return res.status(200).json(responseData);
 
   } catch (error) {
     console.error(JSON.stringify({ 

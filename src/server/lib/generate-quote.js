@@ -788,7 +788,7 @@ async function saveQuoteToDatabase(quoteData) {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-      range: 'Quotes!A:V', // Extended range for new fields
+      range: 'Quotes!A:AL', // Extended range for new fields
       valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       resource: { values }
@@ -844,7 +844,7 @@ async function saveQuoteToQuoteDatabase(quoteData) {
     try {
       await sheets.spreadsheets.values.append({
         spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-        range: 'Quotes!A:N', // Use the quote database format
+        range: 'Quotes!A:AL', // Use the quote database format
         valueInputOption: 'RAW',
         insertDataOption: 'INSERT_ROWS',
         resource: { values }
@@ -881,7 +881,7 @@ async function findQuoteInSpreadsheet(quoteId) {
     // Try to find the quote in the main spreadsheet
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-      range: 'Quotes!A:V',
+      range: 'Quotes!A:AL',
     });
 
     const rows = response.data.values;

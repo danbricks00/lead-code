@@ -699,6 +699,22 @@ export default async function handler(req, res) {
             return new Intl.DateTimeFormat('en-NZ', options).format(new Date(date));
         }
         
+        // Guard 0: Check for missing headers (only fail if truly missing)
+        if (col.CustomerDecision === -1 || col.CustomerDecisionTimeStamp === -1) {
+            console.error(JSON.stringify({
+                tag: 'ACCEPT_LOOKUP_FAIL',
+                reason: 'Missing header',
+                quoteId,
+                customerDecisionIndex: col.CustomerDecision,
+                customerDecisionTimestampIndex: col.CustomerDecisionTimeStamp
+            }));
+            return res.status(500).json({ 
+                tag: "ACCEPT_LOOKUP_FAIL",
+                reason: "Missing header",
+                quoteId 
+            });
+        }
+        
         // Guard 1: Check if quote has expired
         if (validUntil) {
             try {
@@ -732,25 +748,24 @@ export default async function handler(req, res) {
         }
         
         // Guard 2: Check if customer has already made a decision
-        if (currentDecision && currentDecision.trim() !== '') {
+        if (targetRow[col.CustomerDecision] && targetRow[col.CustomerDecision] !== "") {
             quoteLogger.customerAccept('Customer already decided - preventing duplicate', { 
                 quoteId, 
-                currentDecision,
-                currentDecisionTimestamp
+                currentDecision: targetRow[col.CustomerDecision],
+                currentDecisionTimestamp: targetRow[col.CustomerDecisionTimeStamp]
             }, requestId);
             
             console.log(JSON.stringify({
-                tag: "ALREADY_DECIDED",
+                tag: "CUSTOMER_ALREADY_DECIDED",
                 quoteId,
-                currentDecision,
-                currentDecisionTimestamp
+                decision: targetRow[col.CustomerDecision],
+                decisionTime: targetRow[col.CustomerDecisionTimeStamp]
             }));
             
             return res.status(400).json({ 
-                tag: "ALREADY_DECIDED",
-                message: "You have already made a decision on this quote.",
-                currentDecision: currentDecision,
-                decisionTime: formatDateTimeNZT(currentDecisionTimestamp)
+                tag: "CUSTOMER_ALREADY_DECIDED",
+                decision: targetRow[col.CustomerDecision],
+                decisionTime: formatDateTimeNZT(targetRow[col.CustomerDecisionTimeStamp])
             });
         }
         
@@ -964,7 +979,7 @@ export default async function handler(req, res) {
             targetRow[col.CustomerDecision] = "Accepted";
         }
         if (col.CustomerDecisionTimeStamp !== -1) {
-            targetRow[col.CustomerDecisionTimeStamp] = nzTimestamp;
+            targetRow[col.CustomerDecisionTimeStamp] = formatDateTimeNZT(new Date());
         }
         if (col.AdminPersonStatus !== -1) {
             targetRow[col.AdminPersonStatus] = "Pending Admin Review";

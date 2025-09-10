@@ -35,7 +35,7 @@ export default async function handler(req, res) {
           // Fetch quote data from Google Sheets
           const response = await sheets.spreadsheets.values.get({
             spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-            range: 'Quotes!A:Z',
+            range: 'Quotes!A:AL',
           });
 
           const rows = response.data.values || [];

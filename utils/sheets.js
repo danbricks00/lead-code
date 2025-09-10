@@ -32,7 +32,7 @@ export async function getQuoteRowByQuoteId(quoteId) {
     const sheets = await getGoogleSheetsClient();
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: 'Quotes!A:Z',
+      range: 'Quotes!A:AL',
     });
 
     const rows = response.data.values || [];
@@ -399,7 +399,7 @@ export async function getQuotesByLeadId(leadId) {
     const sheets = getGoogleSheetsClient();
     const spreadsheetId = getSpreadsheetId();
     
-    const range = 'Quotes!A:Z';
+    const range = 'Quotes!A:AL';
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
     const rows = response.data.values || [];
     

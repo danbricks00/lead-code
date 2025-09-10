@@ -21,7 +21,7 @@ export default async function handler(req, res) {
         // Check the Quotes sheet for existing quotes from this tradesman for this lead
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: 'Quotes!A:Z',
+            range: 'Quotes!A:AL',
         });
 
         const rows = response.data.values || [];

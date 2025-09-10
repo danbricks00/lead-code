@@ -669,6 +669,22 @@ export default async function handler(req, res) {
             return new Intl.DateTimeFormat('en-NZ', options).format(new Date(date));
         }
         
+        // Guard 0: Check for missing headers (only fail if truly missing)
+        if (col.AdminDecision === -1 || col.AdminDecisionTimeStamp === -1) {
+            console.error(JSON.stringify({
+                tag: 'APPROVE_LOOKUP_FAIL',
+                reason: 'Missing header',
+                quoteId,
+                adminDecisionIndex: col.AdminDecision,
+                adminDecisionTimestampIndex: col.AdminDecisionTimeStamp
+            }));
+            return res.status(500).json({ 
+                tag: "APPROVE_LOOKUP_FAIL",
+                reason: "Missing header",
+                quoteId 
+            });
+        }
+        
         // Guard 1: Check if quote has expired
         const validUntil = quoteData.ValidUntil;
         if (validUntil) {
@@ -703,25 +719,23 @@ export default async function handler(req, res) {
         }
         
         // Guard 2: Check if admin has already made a decision
-        const currentAdminDecision = quoteData.AdminDecision;
-        if (currentAdminDecision && currentAdminDecision.trim() !== '') {
+        if (quoteData.AdminDecision && quoteData.AdminDecision !== "") {
             quoteLogger.adminAccept('Admin already decided - preventing duplicate', { 
                 quoteId, 
-                currentAdminDecision,
+                currentAdminDecision: quoteData.AdminDecision,
                 adminDecisionTimestamp: quoteData.AdminDecisionTimeStamp
             }, requestId);
             
             console.log(JSON.stringify({
-                tag: "ALREADY_DECIDED",
+                tag: "ADMIN_ALREADY_DECIDED",
                 quoteId,
-                currentAdminDecision,
-                adminDecisionTimestamp: quoteData.AdminDecisionTimeStamp
+                decision: quoteData.AdminDecision,
+                decisionTime: quoteData.AdminDecisionTimeStamp
             }));
             
             return res.status(400).json({ 
-                tag: "ALREADY_DECIDED",
-                message: "This quote has already been decided by admin.",
-                currentAdminDecision: currentAdminDecision,
+                tag: "ADMIN_ALREADY_DECIDED",
+                decision: quoteData.AdminDecision,
                 decisionTime: formatDateTimeNZT(quoteData.AdminDecisionTimeStamp)
             });
         }
@@ -779,7 +793,7 @@ export default async function handler(req, res) {
             approvedRow.AdminPersonStatus = 'Approved';
         }
         if (col.AdminDecisionTimeStamp !== -1) {
-            approvedRow.AdminDecisionTimeStamp = getNZTTimestamp();
+            approvedRow.AdminDecisionTimeStamp = formatDateTimeNZT(new Date());
         }
         if (col.AdminDecision !== -1) {
             approvedRow.AdminDecision = 'Approved';

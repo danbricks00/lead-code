@@ -451,15 +451,26 @@ export default async function handler(req, res) {
             foundLead: !!leadData
         });
         
-        // Check for existing decision and expiry using correct schema column names
-        // Z = CustomerDecision, AA = CustomerDecisionTimeStamp
-        const customerDecisionIndex = header.indexOf('CustomerDecision');
-        const customerDecisionTimestampIndex = header.indexOf('CustomerDecisionTimeStamp');
-        const validUntilIndex = header.indexOf('ValidUntil');
+        // Build header column mapping for decision columns
+        const col = {
+            CustomerDecision: header.indexOf('CustomerDecision'),
+            CustomerDecisionTimeStamp: header.indexOf('CustomerDecisionTimeStamp'),
+            AdminDecisionTimeStamp: header.indexOf('AdminDecisionTimeStamp'),
+            AdminDecision: header.indexOf('AdminDecision'),
+            AdminPersonStatus: header.indexOf('AdminPersonStatus'),
+            ValidUntil: header.indexOf('ValidUntil')
+        };
         
-        const currentDecision = customerDecisionIndex !== -1 ? targetRow[customerDecisionIndex] : '';
-        const currentDecisionTimestamp = customerDecisionTimestampIndex !== -1 ? targetRow[customerDecisionTimestampIndex] : '';
-        const validUntil = validUntilIndex !== -1 ? targetRow[validUntilIndex] : '';
+        // Log missing headers as warnings but don't fail
+        Object.entries(col).forEach(([key, index]) => {
+            if (index === -1) {
+                console.warn(`[CUSTOMER-DECLINE] Warning: Column '${key}' not found in header`);
+            }
+        });
+        
+        const currentDecision = col.CustomerDecision !== -1 ? targetRow[col.CustomerDecision] : '';
+        const currentDecisionTimestamp = col.CustomerDecisionTimeStamp !== -1 ? targetRow[col.CustomerDecisionTimeStamp] : '';
+        const validUntil = col.ValidUntil !== -1 ? targetRow[col.ValidUntil] : '';
         
         quoteLogger.dataFlow('Decision and expiry data extracted', {
             currentDecision,
@@ -674,6 +685,18 @@ export default async function handler(req, res) {
         quoteLogger.customerDecline('Processing quote decline', { quoteId }, requestId);
         
         const nzTimestamp = getNZTTimestamp();
+        
+        // Update the target row with the new data using column mapping
+        if (col.CustomerDecision !== -1) {
+            targetRow[col.CustomerDecision] = "Declined";
+        }
+        if (col.CustomerDecisionTimeStamp !== -1) {
+            targetRow[col.CustomerDecisionTimeStamp] = nzTimestamp;
+        }
+        if (col.AdminPersonStatus !== -1) {
+            targetRow[col.AdminPersonStatus] = "Customer Declined";
+        }
+
         const updateData = {
             'CustomerDecision': 'Declined',
             'CustomerDecisionTimeStamp': nzTimestamp,
@@ -682,7 +705,8 @@ export default async function handler(req, res) {
 
         quoteLogger.dataFlow('Preparing Google Sheets update', { 
             updateData,
-            rowIndex: rowIndex + 1
+            rowIndex: rowIndex + 1,
+            columnMapping: col
         }, requestId);
 
         const quoteDataForEmail = {};
@@ -695,14 +719,6 @@ export default async function handler(req, res) {
             rowIndex: rowIndex + 1,
             quoteDataKeys: Object.keys(quoteDataForEmail)
         }, requestId);
-
-        // Update the target row with the new data
-        Object.keys(updateData).forEach(columnName => {
-            const columnIndex = header.indexOf(columnName);
-            if (columnIndex !== -1) {
-                targetRow[columnIndex] = updateData[columnName];
-            }
-        });
 
         await sheets.spreadsheets.values.update({
             spreadsheetId,

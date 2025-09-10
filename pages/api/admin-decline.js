@@ -143,6 +143,30 @@ export default async function handler(req, res) {
             return res.status(404).json({ error: 'Quote not found' });
         }
         
+        // Build header column mapping for decision columns
+        const { getGoogleSheetsClient, getSpreadsheetId } = await import("../../lib/googleSheets.js");
+        const sheets = await getGoogleSheetsClient();
+        const spreadsheetId = getSpreadsheetId();
+        
+        const headerResponse = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Quotes!A1:AL1' });
+        const header = headerResponse.data.values[0];
+        
+        const col = {
+            CustomerDecision: header.indexOf('CustomerDecision'),
+            CustomerDecisionTimeStamp: header.indexOf('CustomerDecisionTimeStamp'),
+            AdminDecisionTimeStamp: header.indexOf('AdminDecisionTimeStamp'),
+            AdminDecision: header.indexOf('AdminDecision'),
+            AdminPersonStatus: header.indexOf('AdminPersonStatus'),
+            ValidUntil: header.indexOf('ValidUntil')
+        };
+        
+        // Log missing headers as warnings but don't fail
+        Object.entries(col).forEach(([key, index]) => {
+            if (index === -1) {
+                console.warn(`[ADMIN-DECLINE] Warning: Column '${key}' not found in header`);
+            }
+        });
+
         // Check if already declined or approved
         if (quoteData.AdminPersonStatus === 'Declined') {
             return res.redirect(`/quote-status?status=info&message=Quote ${quoteId} has already been declined.`);
@@ -205,10 +229,16 @@ export default async function handler(req, res) {
             mode: 'rejected'
         });
 
-        // Override with decline-specific status
-        rejectedRow.AdminPersonStatus = 'Declined';
-        rejectedRow.AdminDecisionTimeStamp = getNZTTimestamp();
-        rejectedRow.AdminDecision = 'Declined';
+        // Override with decline-specific status using column mapping
+        if (col.AdminPersonStatus !== -1) {
+            rejectedRow.AdminPersonStatus = 'Declined';
+        }
+        if (col.AdminDecisionTimeStamp !== -1) {
+            rejectedRow.AdminDecisionTimeStamp = getNZTTimestamp();
+        }
+        if (col.AdminDecision !== -1) {
+            rejectedRow.AdminDecision = 'Declined';
+        }
         rejectedRow.TradePersonStatus = 'Needs Revision';
         rejectedRow.ResubmissionAllowed = 'Yes';
 

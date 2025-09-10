@@ -634,6 +634,24 @@ export default async function handler(req, res) {
         
         const headerResponse = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Quotes!A1:AL1' });
         const header = headerResponse.data.values[0];
+        
+        // Build header column mapping for decision columns
+        const col = {
+            CustomerDecision: header.indexOf('CustomerDecision'),
+            CustomerDecisionTimeStamp: header.indexOf('CustomerDecisionTimeStamp'),
+            AdminDecisionTimeStamp: header.indexOf('AdminDecisionTimeStamp'),
+            AdminDecision: header.indexOf('AdminDecision'),
+            AdminPersonStatus: header.indexOf('AdminPersonStatus'),
+            ValidUntil: header.indexOf('ValidUntil')
+        };
+        
+        // Log missing headers as warnings but don't fail
+        Object.entries(col).forEach(([key, index]) => {
+            if (index === -1) {
+                console.warn(`[ADMIN-ACCEPT] Warning: Column '${key}' not found in header`);
+            }
+        });
+        
         // Use new unified system for approval
         const lead = await getLeadById(LeadID);
         if (!lead || lead.QuoteID !== QuoteID) {
@@ -682,11 +700,17 @@ export default async function handler(req, res) {
             mode: 'accepted'
         });
 
-        // Override with admin approval status
-        approvedRow.AdminPersonStatus = 'Approved';
-        approvedRow.AdminDecisionTimeStamp = getNZTTimestamp();
+        // Override with admin approval status using column mapping
+        if (col.AdminPersonStatus !== -1) {
+            approvedRow.AdminPersonStatus = 'Approved';
+        }
+        if (col.AdminDecisionTimeStamp !== -1) {
+            approvedRow.AdminDecisionTimeStamp = getNZTTimestamp();
+        }
+        if (col.AdminDecision !== -1) {
+            approvedRow.AdminDecision = 'Approved';
+        }
         approvedRow.CustomerStatus = 'Quote Sent';
-        approvedRow.AdminDecision = 'Approved';
 
         quoteLogger.dataFlow('Preparing Google Sheets update with unified system', { 
             quoteId: quoteData.QuoteID,

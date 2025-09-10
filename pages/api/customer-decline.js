@@ -504,8 +504,23 @@ export default async function handler(req, res) {
             return new Intl.DateTimeFormat('en-NZ', options).format(new Date(date));
         }
         
+        // Enhanced logging for decision flow
+        console.log(`[${new Date().toISOString()}] [${requestId}] [CUSTOMER-DECLINE] Start decision flow`, {
+            quoteId,
+            leadId,
+            headers: Object.keys(col),
+            rowFound,
+            currentDecision: targetRow[col.CustomerDecision] || 'none',
+            currentStatus: targetRow[col.AdminPersonStatus] || 'none'
+        });
+
         // Guard headers + row
         if (col.CustomerDecision === -1 || col.CustomerDecisionTimeStamp === -1) {
+            console.error(`[${requestId}] [CUSTOMER-DECLINE] Header missing`, { 
+                col,
+                customerDecisionIndex: col.CustomerDecision,
+                customerDecisionTimestampIndex: col.CustomerDecisionTimeStamp
+            });
             return res.status(500).json({ 
                 tag: "DECLINE_LOOKUP_FAIL", 
                 reason: "Missing header", 
@@ -513,6 +528,11 @@ export default async function handler(req, res) {
             });
         }
         if (!rowFound) {
+            console.error(`[${requestId}] [CUSTOMER-DECLINE] Row not found`, { 
+                quoteId,
+                leadId,
+                QuoteID
+            });
             return res.status(404).json({ 
                 tag: "DECLINE_LOOKUP_FAIL", 
                 reason: "QuoteID not found", 
@@ -526,6 +546,11 @@ export default async function handler(req, res) {
                 const validUntilDate = new Date(targetRow[col.ValidUntil]);
                 const now = new Date();
                 if (validUntilDate < now) {
+                    console.warn(`[${requestId}] [CUSTOMER-DECLINE] Quote expired`, {
+                        validUntil: targetRow[col.ValidUntil],
+                        validUntilDate: validUntilDate.toISOString(),
+                        now: now.toISOString()
+                    });
                     return res.status(400).json({ 
                         tag: "QUOTE_EXPIRED", 
                         validUntil: formatDateTimeNZT(targetRow[col.ValidUntil]) 
@@ -538,6 +563,10 @@ export default async function handler(req, res) {
 
         // Already decided
         if (targetRow[col.CustomerDecision] && targetRow[col.CustomerDecision] !== "") {
+            console.warn(`[${requestId}] [CUSTOMER-DECLINE] Already decided`, {
+                currentDecision: targetRow[col.CustomerDecision],
+                decisionTime: targetRow[col.CustomerDecisionTimeStamp]
+            });
             return res.status(400).json({
                 tag: "CUSTOMER_ALREADY_DECIDED",
                 decision: targetRow[col.CustomerDecision],
@@ -754,6 +783,18 @@ export default async function handler(req, res) {
         targetRow[col.CustomerDecision] = "Declined";
         targetRow[col.CustomerDecisionTimeStamp] = formatDateTimeNZT(new Date());
         targetRow[col.AdminPersonStatus] = "Customer Declined";
+
+        // Log successful decision update
+        console.log(`[${requestId}] [CUSTOMER-DECLINE] Decision update success`, {
+            quoteId,
+            adminOrCustomer: "Customer",
+            action: "Declined",
+            updatedRow: {
+                decision: targetRow[col.CustomerDecision],
+                decisionTime: targetRow[col.CustomerDecisionTimeStamp],
+                status: targetRow[col.AdminPersonStatus]
+            }
+        });
 
         const updateData = {
             'CustomerDecision': 'Declined',

@@ -676,8 +676,23 @@ export default async function handler(req, res) {
             return new Intl.DateTimeFormat('en-NZ', options).format(new Date(date));
         }
         
+        // Enhanced logging for decision flow
+        console.log(`[${new Date().toISOString()}] [${requestId}] [ADMIN-ACCEPT] Start decision flow`, {
+            quoteId,
+            leadId,
+            headers: Object.keys(col),
+            rowFound,
+            currentDecision: quoteData.AdminDecision || 'none',
+            currentStatus: quoteData.AdminPersonStatus || 'none'
+        });
+
         // Guard headers + row
         if (col.AdminDecision === -1 || col.AdminDecisionTimeStamp === -1) {
+            console.error(`[${requestId}] [ADMIN-ACCEPT] Header missing`, { 
+                col,
+                adminDecisionIndex: col.AdminDecision,
+                adminDecisionTimestampIndex: col.AdminDecisionTimeStamp
+            });
             return res.status(500).json({ 
                 tag: "APPROVE_LOOKUP_FAIL", 
                 reason: "Missing header", 
@@ -685,6 +700,11 @@ export default async function handler(req, res) {
             });
         }
         if (!rowFound) {
+            console.error(`[${requestId}] [ADMIN-ACCEPT] Row not found`, { 
+                quoteId,
+                leadId,
+                QuoteID
+            });
             return res.status(404).json({ 
                 tag: "APPROVE_LOOKUP_FAIL", 
                 reason: "QuoteID not found", 
@@ -698,6 +718,11 @@ export default async function handler(req, res) {
                 const validUntilDate = new Date(quoteData.ValidUntil);
                 const now = new Date();
                 if (validUntilDate < now) {
+                    console.warn(`[${requestId}] [ADMIN-ACCEPT] Quote expired`, {
+                        validUntil: quoteData.ValidUntil,
+                        validUntilDate: validUntilDate.toISOString(),
+                        now: now.toISOString()
+                    });
                     return res.status(400).json({ 
                         tag: "QUOTE_EXPIRED", 
                         validUntil: formatDateTimeNZT(quoteData.ValidUntil) 
@@ -710,6 +735,10 @@ export default async function handler(req, res) {
 
         // Already decided
         if (quoteData.AdminDecision && quoteData.AdminDecision !== "") {
+            console.warn(`[${requestId}] [ADMIN-ACCEPT] Already decided`, {
+                currentDecision: quoteData.AdminDecision,
+                decisionTime: quoteData.AdminDecisionTimeStamp
+            });
             return res.status(400).json({
                 tag: "ADMIN_ALREADY_DECIDED",
                 decision: quoteData.AdminDecision,
@@ -773,6 +802,18 @@ export default async function handler(req, res) {
         approvedRow.AdminDecision = 'Approved';
         approvedRow.AdminDecisionTimeStamp = formatDateTimeNZT(new Date());
         approvedRow.CustomerStatus = 'Quote Sent';
+
+        // Log successful decision update
+        console.log(`[${requestId}] [ADMIN-ACCEPT] Decision update success`, {
+            quoteId,
+            adminOrCustomer: "Admin",
+            action: "Approved",
+            updatedRow: {
+                decision: approvedRow.AdminDecision,
+                decisionTime: approvedRow.AdminDecisionTimeStamp,
+                status: approvedRow.AdminPersonStatus
+            }
+        });
 
         quoteLogger.dataFlow('Preparing Google Sheets update with unified system', { 
             quoteId: quoteData.QuoteID,

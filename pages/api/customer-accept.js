@@ -715,60 +715,25 @@ export default async function handler(req, res) {
             currentStatus: targetRow[col.AdminPersonStatus] || 'none'
         });
 
-        // Guard headers + row
+        // ✅ Guard: fail only if headers missing or row not found
         if (col.CustomerDecision === -1 || col.CustomerDecisionTimeStamp === -1) {
-            console.error(`[${requestId}] [CUSTOMER-ACCEPT] Header missing`, { 
-                col,
-                customerDecisionIndex: col.CustomerDecision,
-                customerDecisionTimestampIndex: col.CustomerDecisionTimeStamp
-            });
-            return res.status(500).json({ 
-                tag: "ACCEPT_LOOKUP_FAIL", 
-                reason: "Missing header", 
-                quoteId 
-            });
+            return res.json({ tag: "ACCEPT_LOOKUP_FAIL", reason: "Missing header", quoteId });
         }
         if (!rowFound) {
-            console.error(`[${requestId}] [CUSTOMER-ACCEPT] Row not found`, { 
-                quoteId,
-                leadId,
-                QuoteID
-            });
-            return res.status(404).json({ 
-                tag: "ACCEPT_LOOKUP_FAIL", 
-                reason: "QuoteID not found", 
-                quoteId 
+            return res.json({ tag: "ACCEPT_LOOKUP_FAIL", reason: "QuoteID not found", quoteId });
+        }
+
+        // ✅ Guard for expired
+        if (new Date(targetRow[col.ValidUntil]) < new Date()) {
+            return res.json({
+                tag: "QUOTE_EXPIRED",
+                validUntil: formatDateTimeNZT(targetRow[col.ValidUntil])
             });
         }
 
-        // Expired quote
-        if (col.ValidUntil !== -1 && targetRow[col.ValidUntil]) {
-            try {
-                const validUntilDate = new Date(targetRow[col.ValidUntil]);
-                const now = new Date();
-                if (validUntilDate < now) {
-                    console.warn(`[${requestId}] [CUSTOMER-ACCEPT] Quote expired`, {
-                        validUntil: targetRow[col.ValidUntil],
-                        validUntilDate: validUntilDate.toISOString(),
-                        now: now.toISOString()
-                    });
-                    return res.status(400).json({ 
-                        tag: "QUOTE_EXPIRED", 
-                        validUntil: formatDateTimeNZT(targetRow[col.ValidUntil]) 
-                    });
-                }
-            } catch (error) {
-                quoteLogger.error('Could not parse ValidUntil date', error, requestId);
-            }
-        }
-
-        // Already decided
-        if (targetRow[col.CustomerDecision] && targetRow[col.CustomerDecision] !== "") {
-            console.warn(`[${requestId}] [CUSTOMER-ACCEPT] Already decided`, {
-                currentDecision: targetRow[col.CustomerDecision],
-                decisionTime: targetRow[col.CustomerDecisionTimeStamp]
-            });
-            return res.status(400).json({
+        // ✅ Guard: prevent double‑clicks (allow 'none' and empty as first-time)
+        if (targetRow[col.CustomerDecision] && targetRow[col.CustomerDecision] !== "" && targetRow[col.CustomerDecision] !== "none") {
+            return res.json({
                 tag: "CUSTOMER_ALREADY_DECIDED",
                 decision: targetRow[col.CustomerDecision],
                 decisionTime: formatDateTimeNZT(targetRow[col.CustomerDecisionTimeStamp])
@@ -980,7 +945,7 @@ export default async function handler(req, res) {
         
         const nzTimestamp = getNZTTimestamp();
         
-        // First-time accept
+        // ✅ First‑time accept
         targetRow[col.CustomerDecision] = "Accepted";
         targetRow[col.CustomerDecisionTimeStamp] = formatDateTimeNZT(new Date());
         targetRow[col.AdminPersonStatus] = "Pending Admin Review";

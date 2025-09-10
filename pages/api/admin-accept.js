@@ -686,29 +686,20 @@ export default async function handler(req, res) {
             currentStatus: quoteData.AdminPersonStatus || 'none'
         });
 
-        // Guard headers + row
+        // ✅ Guard: fail only if headers missing or row not found
         if (col.AdminDecision === -1 || col.AdminDecisionTimeStamp === -1) {
-            console.error(`[${requestId}] [ADMIN-ACCEPT] Header missing`, { 
-                col,
-                adminDecisionIndex: col.AdminDecision,
-                adminDecisionTimestampIndex: col.AdminDecisionTimeStamp
-            });
-            return res.status(500).json({ 
-                tag: "APPROVE_LOOKUP_FAIL", 
-                reason: "Missing header", 
-                quoteId 
+            return res.json({
+                tag: "APPROVE_LOOKUP_FAIL",
+                reason: "Missing header",
+                quoteId
             });
         }
+
         if (!rowFound) {
-            console.error(`[${requestId}] [ADMIN-ACCEPT] Row not found`, { 
-                quoteId,
-                leadId,
-                QuoteID
-            });
-            return res.status(404).json({ 
-                tag: "APPROVE_LOOKUP_FAIL", 
-                reason: "QuoteID not found", 
-                quoteId 
+            return res.json({
+                tag: "APPROVE_LOOKUP_FAIL",
+                reason: "QuoteID not found",
+                quoteId
             });
         }
 
@@ -733,13 +724,9 @@ export default async function handler(req, res) {
             }
         }
 
-        // Already decided
-        if (quoteData.AdminDecision && quoteData.AdminDecision !== "") {
-            console.warn(`[${requestId}] [ADMIN-ACCEPT] Already decided`, {
-                currentDecision: quoteData.AdminDecision,
-                decisionTime: quoteData.AdminDecisionTimeStamp
-            });
-            return res.status(400).json({
+        // ✅ Guard: prevent double‑clicks (allow 'none' and empty as first-time)
+        if (quoteData.AdminDecision && quoteData.AdminDecision !== "" && quoteData.AdminDecision !== "none") {
+            return res.json({
                 tag: "ADMIN_ALREADY_DECIDED",
                 decision: quoteData.AdminDecision,
                 decisionTime: formatDateTimeNZT(quoteData.AdminDecisionTimeStamp)
@@ -798,10 +785,10 @@ export default async function handler(req, res) {
         if (col.AdminPersonStatus !== -1) {
             approvedRow.AdminPersonStatus = 'Approved';
         }
-        // First-time approve
-        approvedRow.AdminDecision = 'Approved';
+        // ✅ First‑time update
+        approvedRow.AdminDecision = "Approved";
         approvedRow.AdminDecisionTimeStamp = formatDateTimeNZT(new Date());
-        approvedRow.CustomerStatus = 'Quote Sent';
+        approvedRow.AdminPersonStatus = "Approved";
 
         // Log successful decision update
         console.log(`[${requestId}] [ADMIN-ACCEPT] Decision update success`, {

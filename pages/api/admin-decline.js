@@ -1,568 +1,184 @@
-import { getLeadById, upsertQuoteRow } from '../../utils/sheets';
-import { buildQuoteRow } from '../../utils/quotes';
-import { sendEmail } from '../../lib/emailHelper';
-import { getNZTTimestamp } from '../../utils/nztTimestamp.js';
-import quoteLogger from '../../lib/quoteLogger.js';
-import { handleDecision } from '../../lib/decisionFlow.js';
-import crypto from "crypto";
+import { google } from 'googleapis';
+import nodemailer from 'nodemailer';
+import crypto from 'crypto';
 
-// --- Helper Functions ---
-function verifyToken(id, ts) {
-    const secret = process.env.QUOTE_LINK_SECRET || 'fallback-secret';
-    const hmac = crypto.createHmac("sha256", secret);
-    hmac.update(`${id}|${ts}`);
-    return hmac.digest("hex");
-}
+// Environment variables
+const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_ID;
+const GMAIL_USER = process.env.GMAIL_USER;
+const GMAIL_PASS = process.env.GMAIL_PASS;
 
-function generateQuoteSubmissionLink(leadId) {
-    const ts = Date.now().toString();
-    const token = verifyToken(leadId, ts);
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    return `${baseUrl}/quote-submit/${leadId}?ts=${ts}&token=${token}`;
-}
+// Initialize Google Sheets
+const auth = new google.auth.GoogleAuth({
+    credentials: {
+        type: 'service_account',
+        project_id: process.env.GOOGLE_PROJECT_ID,
+        private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
+        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+        token_uri: 'https://oauth2.googleapis.com/token',
+        auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
+        client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${process.env.GOOGLE_CLIENT_EMAIL}`
+    },
+    scopes: ['https://www.googleapis.com/auth/spreadsheets']
+});
 
-async function getQuoteById(quoteId) {
-    try {
-        const { getGoogleSheetsClient, getSpreadsheetId } = await import("../../lib/googleSheets.js");
-        const sheets = await getGoogleSheetsClient();
-        const spreadsheetId = getSpreadsheetId();
-        
-        const range = 'Quotes!A:AL';
-    const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
-        const rows = response.data.values || [];
-        
-        if (rows.length === 0) return null;
-        
-        const headers = rows[0];
-        const quoteRow = rows.find(row => row[0] === quoteId); // QuoteID is first column
-        
-        if (!quoteRow) return null;
-        
-        const quote = {};
-        headers.forEach((header, index) => {
-            quote[header] = quoteRow[index] || '';
-        });
-        
-        return quote;
-    } catch (error) {
-        console.error(`[ADMIN-DECLINE] Error getting quote ${quoteId}:`, error);
-        return null;
+const sheets = google.sheets({ version: 'v4', auth });
+
+// Email transporter
+const transporter = nodemailer.createTransporter({
+    service: 'gmail',
+    auth: {
+        user: GMAIL_USER,
+        pass: GMAIL_PASS
     }
-}
+});
 
-// --- Main Handler ---
+// Logger utility
+const quoteLogger = {
+    info: (message, data, requestId) => {
+        console.log(`[${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}] [${requestId}] ${message}`, JSON.stringify(data));
+    },
+    error: (message, error, requestId) => {
+        console.error(`[${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}] [${requestId}] [ERROR] ${message}`, {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
+    },
+    response: (message, data, requestId) => {
+        console.log(`[${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}] [${requestId}] [RESPONSE] ${message}`, JSON.stringify(data));
+    }
+};
+
 export default async function handler(req, res) {
-    // Top-level error logging
-    console.log("[DECISION-API] Incoming request", {
-        file: __filename,
+    const startTime = Date.now();
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    console.log(`[DECISION-API] Admin Decline - Incoming request`, {
+        file: 'admin-decline.js',
         url: req.url,
         method: req.method,
         query: req.query,
-        body: req.body,
         time: new Date().toISOString()
     });
 
     try {
-        const requestId = quoteLogger.generateRequestId();
-        const flowId = `decline_${Date.now()}`;
-        const startTime = Date.now();
-        
-        // Debug log for immediate visibility
-    console.log(JSON.stringify({ 
-        tag: 'ADMIN_DECLINE_REQ_START', 
-        flowId, 
-        requestId, 
-        method: req.method, 
-        url: req.url,
-        timestamp: new Date().toISOString()
-    }));
-    
-    // Simple test to see if the endpoint is reachable at all
-    console.log('🔍 [QUOTE-DECLINE] ENDPOINT HIT!', {
-        method: req.method,
-        url: req.url,
-        timestamp: new Date().toISOString()
-    });
-    
-    // Enhanced logging for debugging
-    console.log('🔍 [ADMIN-DECLINE] Request received:', {
-        method: req.method,
-        url: req.url,
-        query: req.query,
-        headers: {
-            'user-agent': req.headers['user-agent'],
-            'referer': req.headers['referer'],
-            'x-forwarded-for': req.headers['x-forwarded-for']
-        },
-        timestamp: new Date().toISOString()
-    });
-    
-    if (req.method !== 'GET') {
-        console.log('🔍 [ADMIN-DECLINE] Invalid method:', req.method);
-        return res.status(405).json({ success: false, error: 'Method Not Allowed' });
-    }
+        const { quoteId, leadId } = req.query;
 
-    const { quoteId, leadId, ts, token, reason } = req.query;
+        if (!quoteId || !leadId) {
+            console.log(`[DECISION-API] Missing parameters:`, { quoteId, leadId });
+            return res.redirect('/quote-status?status=error&message=Missing quote or lead ID.');
+        }
 
-    // Validate required parameters
-    if (!quoteId || !leadId) {
-        console.error(JSON.stringify({ tag: 'DECLINE_PARAM_FAIL', quoteId, leadId }));
-        return res.status(400).json({ error: 'Missing or invalid quoteId/leadId' });
-    }
+        quoteLogger.info('Admin decline request received', {
+            method: req.method,
+            url: req.url,
+            query: req.query,
+            headers: {
+                'user-agent': req.headers['user-agent'],
+                'x-forwarded-for': req.headers['x-forwarded-for']
+            }
+        }, requestId);
 
-    // Map to actual sheet header names
-    const QuoteID = quoteId;
-    const LeadID = leadId;
-    
-    console.log('🔍 [ADMIN-DECLINE] Parameter mapping:', {
-        quoteId,
-        leadId,
-        QuoteID,
-        LeadID
-    });
-
-    // Enhanced token validation debugging (if token provided)
-    let tokenValid = true;
-    if (ts && token) {
-        const expectedToken = verifyToken(quoteId, ts);
-        tokenValid = token === expectedToken;
-        
-        console.log('🔍 [ADMIN-DECLINE] Token validation:', {
-            quoteId,
-            ts,
-            receivedToken: token,
-            expectedToken,
-            tokenValid,
-            hasSecret: !!process.env.QUOTE_LINK_SECRET
+        // Fetch quote data from Google Sheets
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: 'Quotes!A:AZ'
         });
 
-        if (!tokenValid) {
-            console.error(JSON.stringify({ tag: 'DECLINE_TOKEN_FAIL', quoteId, leadId }));
-            return res.status(400).json({ error: 'Invalid token' });
+        const rows = response.data.values;
+        if (!rows || rows.length === 0) {
+            console.log(`[DECISION-API] No quote data found in sheets`);
+            return res.redirect('/quote-status?status=error&message=No quote data found.');
         }
-    }
 
-    try {
-        // 1. Get Quote data using new unified system
-        const quoteData = await getQuoteById(QuoteID);
-        const rowFound = quoteData !== null;
-        
-        if (!rowFound) {
-            console.error(JSON.stringify({
-                tag: 'DECLINE_LOOKUP_FAIL',
-                reason: 'QuoteID not found',
-                quoteId,
-                leadId,
-                QuoteID
-            }));
-            return res.status(404).json({ 
-                tag: "DECLINE_LOOKUP_FAIL",
-                reason: "QuoteID not found",
+        const headers = rows[0];
+        const quoteRow = rows.find(row => row[1] === quoteId); // QuoteID is in column B (index 1)
+
+        if (!quoteRow) {
+            console.log(`[DECISION-API] Quote not found:`, { quoteId, totalRows: rows.length });
+            return res.redirect('/quote-status?status=error&message=Quote not found.');
+        }
+
+        // Get column indices
+        const adminDecisionCol = headers.indexOf('AdminDecision');
+        const adminDecisionTimeCol = headers.indexOf('AdminDecisionTimeStamp');
+        const adminStatusCol = headers.indexOf('AdminPersonStatus');
+
+        // Check if admin has already made a decision
+        const currentDecision = quoteRow[adminDecisionCol];
+        if (currentDecision && currentDecision !== 'none' && currentDecision.trim() !== '') {
+            const decisionTime = quoteRow[adminDecisionTimeCol];
+            console.log(`[DECISION-API] Admin decision already exists:`, { 
+                currentDecision, 
+                decisionTime,
                 quoteId 
             });
+            
+            return res.status(409).json({
+                tag: 'ADMIN_ALREADY_DECIDED',
+                decision: currentDecision,
+                decisionTime: decisionTime,
+                message: 'Admin has already made a decision on this quote'
+            });
         }
-        
-        // Build header column mapping for decision columns
-        const { getGoogleSheetsClient, getSpreadsheetId } = await import("../../lib/googleSheets.js");
-        const sheets = await getGoogleSheetsClient();
-        const spreadsheetId = getSpreadsheetId();
-        
-        const headerResponse = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Quotes!A1:AL1' });
-        const header = headerResponse.data.values[0];
-        
-        const col = {
-            CustomerDecision: header.indexOf('CustomerDecision'),
-            CustomerDecisionTimeStamp: header.indexOf('CustomerDecisionTimeStamp'),
-            AdminDecisionTimeStamp: header.indexOf('AdminDecisionTimeStamp'),
-            AdminDecision: header.indexOf('AdminDecision'),
-            AdminPersonStatus: header.indexOf('AdminPersonStatus'),
-            ValidUntil: header.indexOf('ValidUntil')
-        };
-        
-        // Log missing headers as warnings but don't fail
-        Object.entries(col).forEach(([key, index]) => {
-            if (index === -1) {
-                console.warn(`[ADMIN-DECLINE] Warning: Column '${key}' not found in header`);
+
+        // Record the decline decision
+        const nzTimestamp = new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' });
+        const rowIndex = rows.indexOf(quoteRow) + 1; // +1 because Sheets is 1-indexed
+
+        // Update the quote with decline decision
+        await sheets.spreadsheets.values.update({
+            spreadsheetId: SPREADSHEET_ID,
+            range: `Quotes!${String.fromCharCode(65 + adminDecisionCol)}${rowIndex}:${String.fromCharCode(65 + adminStatusCol)}${rowIndex}`,
+            valueInputOption: 'RAW',
+            resource: {
+                values: [['Declined', nzTimestamp, 'Admin Declined']]
             }
         });
 
-        // --- DECISION GUARDS ---
-        
-        // Helper function for consistent NZT timestamp formatting
-        function formatDateTimeNZT(date) {
-            const options = {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false,
-                timeZone: 'Pacific/Auckland'
-            };
-            return new Intl.DateTimeFormat('en-NZ', options).format(new Date(date));
-        }
-        
-        // Enhanced logging for decision flow
-        console.log(`[${new Date().toISOString()}] [${requestId}] [ADMIN-DECLINE] Start decision flow`, {
+        console.log(`[DECISION-API] Admin decline recorded successfully:`, {
             quoteId,
             leadId,
-            headers: Object.keys(col),
-            rowFound,
-            currentDecision: quoteData.AdminDecision || 'none',
-            currentStatus: quoteData.AdminPersonStatus || 'none'
+            decision: 'Declined',
+            timestamp: nzTimestamp,
+            rowIndex
         });
 
-        // Expired quote check
-        if (col.ValidUntil !== -1 && quoteData.ValidUntil) {
-            try {
-                const validUntilDate = new Date(quoteData.ValidUntil);
-                const now = new Date();
-                if (validUntilDate < now) {
-                    console.warn(`[${requestId}] [ADMIN-DECLINE] Quote expired`, {
-                        validUntil: quoteData.ValidUntil,
-                        validUntilDate: validUntilDate.toISOString(),
-                        now: now.toISOString()
-                    });
-                    return res.status(400).json({ 
-                        tag: "QUOTE_EXPIRED", 
-                        validUntil: formatDateTimeNZT(quoteData.ValidUntil) 
-                    });
-                }
-            } catch (error) {
-                quoteLogger.error('Could not parse ValidUntil date', error, requestId);
-            }
-        }
-
-        // Use shared decision handler
-        const result = await handleDecision({
-            type: "ADMIN_DECLINE",
+        quoteLogger.info('Quote declined successfully', {
             quoteId,
             leadId,
-            decisionValue: "Declined",
-            statusField: "Declined",
-            col,
-            rowFound,
-            rowIndex: -1, // Not used in current implementation
-            quoteRow: quoteData,
-            res,
-            req
-        });
+            decision: 'Declined',
+            timestamp: nzTimestamp
+        }, requestId);
 
-        // Return the result from the shared handler
-        if (result.tag === "ADMIN_DECLINE_LOOKUP_FAIL") {
-            return res.status(result.reason === "Missing header" ? 500 : 404).json(result);
-        } else if (result.tag === "ADMIN_DECLINE_ALREADY_DECIDED") {
-            return res.status(400).json(result);
-        } else if (result.tag === "ADMIN_DECLINE_DECISION_RECORDED") {
-            return res.status(200).json(result);
-        } else if (result.tag === "SHEETS_UPSERT_ERROR") {
-            return res.status(500).json(result);
-        }
-        
-        // Check if already declined or approved (legacy check - keeping for backward compatibility)
-        if (quoteData.AdminPersonStatus === 'Declined') {
-            return res.redirect(`/quote-status?status=info&message=Quote ${quoteId} has already been declined.`);
-        }
-        if (quoteData.AdminPersonStatus === 'Approved') {
-            return res.redirect(`/quote-status?status=info&message=Quote ${quoteId} has already been approved and cannot be declined.`);
-        }
-
-        // If no reason provided, redirect to decline form
-        if (!req.query.reason) {
-            return res.redirect(`/admin/decline-form?quoteId=${quoteId}&ts=${ts}&token=${token}`);
-        }
-
-        // 2. Get Lead data using new unified system
-        const lead = await getLeadById(LeadID);
-        if (!lead || lead.QuoteID !== QuoteID) {
-            console.error(JSON.stringify({
-                tag: 'DECLINE_LOOKUP_FAIL',
-                quoteId,
-                leadId,
-                foundLead: !!lead,
-                leadQuoteID: lead?.QuoteID,
-                expectedQuoteID: QuoteID
-            }));
-            return res.status(404).json({ error: 'Lead or Quote not found' });
-        }
-        
-        console.log('✅ [ADMIN-DECLINE] Lookup successful:', {
-            tag: 'DECLINE_LOOKUP_OK',
-            quoteId,
-            leadId,
-            foundQuote: !!quoteData,
-            foundLead: !!lead
-        });
-
-        // 3. Update Quote using new unified system with rejected mode
-        const rejectedRow = buildQuoteRow({
-            lead,
-            quoteId: quoteData.QuoteID,
-            tradePersonName: quoteData.TradePersonName || '',
-            tradePersonEmail: quoteData.TradePersonEmail || '',
-            tradePersonPhone: quoteData.TradePersonPhone || '',
-            body: {
-                labourRate: quoteData.LabourRate || '',
-                labourHours: quoteData.LabourHours || '',
-                labourTotal: quoteData.LabourTotal || '',
-                materialsCost: quoteData.MaterialsCost || '',
-                materialsQuantity: quoteData.MaterialsQuantity || '',
-                materialsTotal: quoteData.MaterialsTotal || '',
-                travelCost: quoteData.TravelCost || '',
-                travelDistance: quoteData.TravelDistance || '',
-                travelTotal: quoteData.TravelTotal || '',
-                installationCost: quoteData.InstallationCost || '',
-                subtotal: quoteData.Subtotal || '',
-                gst: quoteData.GST || '',
-                totalQuote: quoteData.TotalQuote || '',
-                notes: quoteData.Notes || '',
-                validUntil: quoteData.ValidUntil || ''
-            },
-            mode: 'rejected'
-        });
-
-        // Override with decline-specific status using column mapping
-        if (col.AdminPersonStatus !== -1) {
-            rejectedRow.AdminPersonStatus = 'Declined';
-        }
-        // ✅ First‑time update
-        rejectedRow.AdminDecision = "Declined";
-        rejectedRow.AdminDecisionTimeStamp = formatDateTimeNZT(new Date());
-        rejectedRow.AdminPersonStatus = "Declined";
-
-        // Log successful decision update
-        console.log(`[${requestId}] [ADMIN-DECLINE] Decision update success`, {
-            quoteId,
-            adminOrCustomer: "Admin",
-            action: "Declined",
-            updatedRow: {
-                decision: rejectedRow.AdminDecision,
-                decisionTime: rejectedRow.AdminDecisionTimeStamp,
-                status: rejectedRow.AdminPersonStatus
-            }
-        });
-
-        const result = await upsertQuoteRow(quoteData.QuoteID, rejectedRow, { req, caller: 'admin-decline' });
-        console.log(`[ADMIN-DECLINE] Quote ${quoteId} declined, result:`, result);
-
-        // 3. Send decline notification emails (if enabled)
-        if (process.env.ENABLE_APPROVE_DECLINE_EMAILS === 'true') {
-            try {
-                // Send customer decline email
-                const customerDeclineEmail = {
-                    to: lead.CustomerEmail,
-                    subject: `⚠️ Quote Declined - ${lead.ServiceType} for ${lead.CustomerName}`,
-                    html: `
-                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
-                            <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                                <div style="text-align: center; margin-bottom: 30px;">
-                                    <h1 style="color: #e74c3c; margin: 0; font-size: 28px;">⚠️ Quote Declined</h1>
-                                    <p style="color: #7f8c8d; margin: 10px 0 0 0; font-size: 16px;">Your quote was declined by our admin team</p>
-                                </div>
-                                <div style="background-color: #fdf2f2; border-radius: 8px; padding: 20px; margin: 20px 0;">
-                                    <h3 style="color: #e74c3c; margin: 0 0 10px 0;">Quote Details</h3>
-                                    <p style="margin: 5px 0; color: #495057;"><strong>Quote ID:</strong> ${quoteData.QuoteID}</p>
-                                    <p style="margin: 5px 0; color: #495057;"><strong>Service:</strong> ${lead.ServiceType}</p>
-                                    <p style="margin: 5px 0; color: #495057;"><strong>Total:</strong> $${quoteData.TotalQuote}</p>
-                                </div>
-                                <div style="background-color: #fff3cd; border-radius: 8px; padding: 20px; margin: 20px 0;">
-                                    <h4 style="color: #856404; margin: 0 0 10px 0;">💡 What's Next?</h4>
-                                    <p style="margin: 5px 0; color: #495057;">The tradesperson will be notified and may resubmit a revised quote. You'll receive an email if a new quote is submitted.</p>
-                                </div>
-                                <div style="text-align: center; margin-top: 30px;">
-                                    <p style="color: #6c757d; font-size: 16px;">Thank you for considering our services</p>
-                                </div>
-                            </div>
-                        </div>
-                    `
-                };
-                await sendEmail(customerDeclineEmail);
-
-                // Send tradesperson decline notification email with reason
-                const declineReason = req.query.reason || 'No specific reason provided';
-                const tradespersonDeclineEmail = {
-                    to: quoteData.TradePersonEmail,
-                    subject: `⚠️ Quote Declined - ${lead.ServiceType} for ${lead.CustomerName}`,
-                    html: `
-                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
-                            <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                                <div style="text-align: center; margin-bottom: 30px;">
-                                    <h1 style="color: #e74c3c; margin: 0; font-size: 28px;">⚠️ Quote Declined</h1>
-                                    <p style="color: #7f8c8d; margin: 10px 0 0 0; font-size: 16px;">Admin has declined your quote</p>
-                                </div>
-                                <div style="background-color: #fdf2f2; border-radius: 8px; padding: 20px; margin: 20px 0;">
-                                    <h3 style="color: #e74c3c; margin: 0 0 10px 0;">Customer Details</h3>
-                                    <p style="margin: 5px 0; color: #495057;"><strong>Name:</strong> ${lead.CustomerName}</p>
-                                    <p style="margin: 5px 0; color: #495057;"><strong>Email:</strong> ${lead.CustomerEmail}</p>
-                                    <p style="margin: 5px 0; color: #495057;"><strong>Phone:</strong> ${lead.CustomerPhone}</p>
-                                    <p style="margin: 5px 0; color: #495057;"><strong>Service:</strong> ${lead.ServiceType}</p>
-                                    <p style="margin: 5px 0; color: #495057;"><strong>Quote Total:</strong> $${quoteData.TotalQuote}</p>
-                                </div>
-                                <div style="background-color: #fff3cd; border-radius: 8px; padding: 20px; margin: 20px 0;">
-                                    <h4 style="color: #856404; margin: 0 0 10px 0;">📝 Admin Feedback</h4>
-                                    <p style="margin: 5px 0; color: #495057; font-style: italic;">"${declineReason}"</p>
-                                </div>
-                                <div style="background-color: #e8f5e8; border-radius: 8px; padding: 20px; margin: 20px 0;">
-                                    <h4 style="color: #27ae60; margin: 0 0 10px 0;">🔄 Next Steps</h4>
-                                    <p style="margin: 5px 0; color: #495057;">Please review the feedback above and resubmit a revised quote addressing the concerns mentioned.</p>
-                                    <p style="margin: 10px 0 0 0;">
-                                        <a href="${generateQuoteSubmissionLink(quoteData.LeadID)}" style="display: inline-block; background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">📝 Resubmit Quote</a>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    `
-                };
-                await sendEmail(tradespersonDeclineEmail);
-
-                // Send admin confirmation email
-                const adminConfirmationEmail = {
-                    to: process.env.ADMIN_EMAIL,
-                    subject: `⚠️ Quote ${quoteData.QuoteID} Declined - Confirmation`,
-                    html: `
-                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
-                            <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                                <div style="text-align: center; margin-bottom: 30px;">
-                                    <h1 style="color: #e74c3c; margin: 0; font-size: 28px;">⚠️ Quote Declined</h1>
-                                    <p style="color: #7f8c8d; margin: 10px 0 0 0; font-size: 16px;">Admin decline confirmation</p>
-                                </div>
-                                <div style="background-color: #fdf2f2; border-radius: 8px; padding: 20px; margin: 20px 0;">
-                                    <h3 style="color: #e74c3c; margin: 0 0 10px 0;">Quote Details</h3>
-                                    <p style="margin: 5px 0; color: #495057;"><strong>Quote ID:</strong> ${quoteData.QuoteID}</p>
-                                    <p style="margin: 5px 0; color: #495057;"><strong>Customer:</strong> ${lead.CustomerName}</p>
-                                    <p style="margin: 5px 0; color: #495057;"><strong>Service:</strong> ${lead.ServiceType}</p>
-                                    <p style="margin: 5px 0; color: #495057;"><strong>Tradesperson:</strong> ${quoteData.TradePersonName}</p>
-                                    <p style="margin: 5px 0; color: #495057;"><strong>Total:</strong> $${quoteData.TotalQuote}</p>
-                                </div>
-                                <div style="text-align: center; margin-top: 30px;">
-                                    <p style="color: #e74c3c; font-size: 16px; font-weight: bold;">⚠️ Decline emails sent to customer and tradesperson</p>
-                                </div>
-                            </div>
-                        </div>
-                    `
-                };
-                await sendEmail(adminConfirmationEmail);
-
-                console.log(JSON.stringify({ tag: 'QUOTE_REJECTED_EMAILS_SENT', quoteId: quoteData.QuoteID }));
-            } catch (emailError) {
-                console.error(JSON.stringify({ tag: 'QUOTE_REJECTED_EMAILS_FAIL', quoteId: quoteData.QuoteID, error: String(emailError?.message || emailError) }));
-            }
-        } else {
-            console.log(JSON.stringify({ tag: 'QUOTE_REJECTED_EMAILS_SKIPPED', quoteId: quoteData.QuoteID, reason: 'env flag off' }));
-        }
-
-        // 4. Generate resubmission link
-        const resubmissionLink = generateQuoteSubmissionLink(quoteData.LeadID);
-
-        // 4. Send notification email to tradesperson
-        const tradespersonEmailOptions = {
-          to: quoteData.TradePersonEmail,
-          subject: `⚠️ Quote Revision Required - ${lead.ServiceType} for ${lead.CustomerName}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
-              <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                
-                <!-- Header -->
-                <div style="text-align: center; margin-bottom: 30px;">
-                  <h1 style="color: #e74c3c; margin: 0; font-size: 28px;">⚠️ Quote Needs Revision</h1>
-                  <p style="color: #7f8c8d; margin: 10px 0 0 0; font-size: 16px;">Admin review required changes</p>
-                </div>
-
-                <!-- Quote Details -->
-                <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 20px; margin-bottom: 25px;">
-                  <h3 style="color: #856404; margin: 0 0 15px 0; font-size: 18px;">📋 Quote Details</h3>
-                  <p style="margin: 5px 0; color: #856404;"><strong>Customer:</strong> ${lead.CustomerName}</p>
-                  <p style="margin: 5px 0; color: #856404;"><strong>Service:</strong> ${lead.ServiceType}</p>
-                  <p style="margin: 5px 0; color: #856404;"><strong>Quote ID:</strong> ${quoteId}</p>
-                  <p style="margin: 5px 0; color: #856404;"><strong>Status:</strong> Declined - Revision Required</p>
-                </div>
-
-                <!-- Reason for Decline -->
-                ${reason ? `
-                <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 6px; padding: 20px; margin-bottom: 25px;">
-                  <h3 style="color: #721c24; margin: 0 0 15px 0; font-size: 18px;">📝 Reason for Decline</h3>
-                  <p style="color: #721c24; margin: 0;">${decodeURIComponent(reason)}</p>
-                </div>
-                ` : ''}
-
-                <!-- Next Steps -->
-                <div style="background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 6px; padding: 20px; margin-bottom: 25px;">
-                  <h3 style="color: #0c5460; margin: 0 0 15px 0; font-size: 18px;">🔄 Next Steps</h3>
-                  <p style="color: #0c5460; margin: 0 0 15px 0;">
-                    Your quote has been declined by the admin and needs revision. You can:
-                  </p>
-                  <ul style="color: #0c5460; margin: 0; padding-left: 20px;">
-                    <li>Review and edit the quote details</li>
-                    <li>Update pricing, timeline, or other information</li>
-                    <li>Resubmit for admin approval</li>
-                  </ul>
-                </div>
-
-                <!-- Resubmission Button -->
-                <div style="text-align: center; margin: 30px 0;">
-                  <a href="${resubmissionLink}" style="display: inline-block; background-color: #17a2b8; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px;">🔄 Revise & Resubmit Quote</a>
-                </div>
-
-                <!-- Footer -->
-                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ecf0f1;">
-                  <p style="color: #7f8c8d; font-size: 14px; margin: 0;">
-                    Questions about the required changes? Reply to this email.<br>
-                    <strong>Kiwi Trade Team</strong>
-                  </p>
-                </div>
-
-              </div>
-            </div>
-          `
-        };
-
-        await sendEmail(tradespersonEmailOptions);
-        console.log(`✅ Quote decline notification sent to ${quoteData.TradePersonEmail}`);
-
-        // 5. Send notification to admin
-        const adminEmailOptions = {
-          to: process.env.ADMIN_EMAIL,
-          subject: `Quote Declined - ${lead.ServiceType} for ${lead.CustomerName}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #e74c3c;">Quote Declined Successfully</h2>
-              <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-                <p><strong>Quote ID:</strong> ${quoteId}</p>
-                <p><strong>Customer:</strong> ${lead.CustomerName}</p>
-                <p><strong>Service:</strong> ${lead.ServiceType}</p>
-                <p><strong>Tradesperson:</strong> ${quoteData.TradePersonName}</p>
-                <p><strong>Status:</strong> Declined - Tradesperson notified for revision</p>
-                ${reason ? `<p><strong>Decline Reason:</strong> ${decodeURIComponent(reason)}</p>` : ''}
-                <p>The tradesperson has been notified and can resubmit the quote after making revisions.</p>
-              </div>
-            </div>
-          `
-        };
-
-        await sendEmail(adminEmailOptions);
-        
-        console.log(JSON.stringify({ 
-            tag: 'ADMIN_DECLINE_OK', 
+        // Send success response
+        return res.status(200).json({ 
+            tag: 'ADMIN_DECISION_RECORDED',
+            ok: true, 
             quoteId, 
             leadId,
-            status: 'Declined',
-            timestamp: rejectedRow.AdminDecisionTimeStamp,
-            flowId,
-            requestId,
-            processingTime: Date.now() - startTime
-        }));
+            decision: 'Declined',
+            timestamp: nzTimestamp
+        });
+
+    } catch (error) {
+        console.error(`[DECISION-API] Admin Decline - Uncaught error:`, {
+            file: 'admin-decline.js',
+            message: error.message,
+            stack: error.stack,
+            quoteId: req.query?.quoteId,
+            leadId: req.query?.leadId
+        });
         
-        return res.status(200).json({ ok: true, quoteId, leadId });
-    } catch (err) {
-        console.error("[DECISION-API] Uncaught error:", {
-            file: __filename,
-            message: err.message,
-            stack: err.stack
-        });
-        return res.status(500).json({
-            tag: "DECISION_ERROR",
-            error: err.message
-        });
+        quoteLogger.error('Quote decline error', error, requestId);
+        quoteLogger.response('Redirecting to error page', { 
+            error: error.message,
+            processingTime: Date.now() - startTime
+        }, requestId);
+        
+        return res.redirect(`/quote-status?status=error&message=An error occurred while declining the quote.`);
     }
 }

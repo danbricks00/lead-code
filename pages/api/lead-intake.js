@@ -184,26 +184,44 @@ export default async function handler(req, res) {
     });
 
     // Tradesperson notification email
+    console.log('🔗 About to create tradesmanEmailHtml with quoteLink:', quoteLink);
+    console.log('🔗 quoteLink type:', typeof quoteLink);
+    console.log('🔗 quoteLink is undefined?', quoteLink === undefined);
+    console.log('🔗 quoteLink is null?', quoteLink === null);
+    console.log('🔗 quoteLink is empty string?', quoteLink === '');
+    
     const tradesmanEmailHtml = `<h1>New Lead Received</h1>${leadDetailsHtml}<p>Please prepare a quote for this customer by clicking the link below:</p><h2><a href="${quoteLink}">Submit Your Quote Now</a></h2>`;
     
     console.log('📧 Tradesman email HTML length:', tradesmanEmailHtml.length);
     console.log('📧 Tradesman email HTML preview (last 200 chars):', tradesmanEmailHtml.slice(-200));
     console.log('📧 Quote link in HTML:', tradesmanEmailHtml.includes(quoteLink));
     
-    await transporter.sendMail({
-      from: `"Kiwi Trade Leads" <${process.env.GMAIL_USER}>`,
-      to: "quangbui0600@gmail.com",
-      subject: `${unlistedPrefix}🔔 New Underfloor Heating Lead: ${suburb || area}`,
-      html: tradesmanEmailHtml,
-    });
+    try {
+      await transporter.sendMail({
+        from: `"Kiwi Trade Leads" <${process.env.GMAIL_USER}>`,
+        to: "quangbui0600@gmail.com",
+        subject: `${unlistedPrefix}🔔 New Underfloor Heating Lead: ${suburb || area}`,
+        html: `<h1>New Lead Logged (#${leadId})</h1>${leadDetailsHtml}<p>A quote link has been sent to the waiting for submission.</p><p>Quote Link: ${quoteLink}</p>
+      });
+      console.log('✅ Tradesman email sent successfully');
+    } catch (tradesmanEmailError) {
+      console.error('❌ Tradesman email failed:', tradesmanEmailError.message);
+      console.error('❌ Tradesman email error details:', tradesmanEmailError);
+    }
 
     // Admin notification email
-    await transporter.sendMail({
-      from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
-      to: "danbricks18@gmail.com",
-      subject: `${unlistedPrefix}New Lead Logged: ${customerName} in ${suburb || area}`,
-      html: `<h1>New Lead Logged (#${leadId})</h1>${leadDetailsHtml}<p>A quote link has been sent to the tradesperson.</p><p>Quote Link: ${quoteLink}</p>`,
-    });
+    try {
+      await transporter.sendMail({
+        from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
+        to: "danbricks18@gmail.com",
+        subject: `${unlistedPrefix}New Lead Logged: ${customerName} in ${suburb || area}`,
+        html: `<h1>New Lead Logged (#${leadId})</h1>${leadDetailsHtml}<p>A quote link has been sent to the tradesperson.</p><p>Quote Link: ${quoteLink}</p>`,
+      });
+      console.log('✅ Admin email sent successfully');
+    } catch (adminEmailError) {
+      console.error('❌ Admin email failed:', adminEmailError.message);
+      console.error('❌ Admin email error details:', adminEmailError);
+    }
 
     console.log(JSON.stringify({ 
       tag: 'ROUTE_REQ_OK', 

@@ -146,7 +146,26 @@ export default async function handler(req, res) {
     }
 
     // For final submissions, continue with PDF generation and email
-    const pdfBuffer = await generateQuotePDF(row, headers);
+    // Create a proper quoteData object from row and headers
+    const quoteData = {};
+    headers.forEach((header, index) => {
+      if (index < row.length) {
+        quoteData[header] = row[index];
+      }
+    });
+
+    // Make sure quoteId is properly set
+    quoteData.quoteId = quoteId;
+    
+    // Additional validation before PDF generation
+    if (!quoteData.CustomerEmail || !quoteData.TotalQuote) {
+      return res.status(400).json({ 
+        error: 'Cannot submit final quote: missing required customer or total fields.' 
+      });
+    }
+
+    // Now pass the properly formatted quoteData object
+    const pdfBuffer = await generateQuotePDF(quoteData);
 
     // ⚠️ --- Old Admin Approval Email --- ⚠️
     /*

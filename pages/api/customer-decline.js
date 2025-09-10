@@ -344,17 +344,23 @@ export default async function handler(req, res) {
         
         const header = rows[0];
         const rowIndex = rows.findIndex(row => row[1] === QuoteID); // QuoteID is in column B (index 1)
+        const rowFound = rowIndex !== -1;
 
-        if (rowIndex === -1) {
+        if (!rowFound) {
             console.error(JSON.stringify({
                 tag: 'DECLINE_LOOKUP_FAIL',
+                reason: 'QuoteID not found',
                 quoteId,
                 leadId,
                 QuoteID,
                 searchedRows: rows.length - 1,
                 availableQuoteIds: rows.slice(1).map(row => row[1]).filter(id => id)
             }));
-            return res.status(404).json({ error: 'Quote not found' });
+            return res.status(404).json({ 
+                tag: "DECLINE_LOOKUP_FAIL",
+                reason: "QuoteID not found",
+                quoteId 
+            });
         }
         
         quoteLogger.sheets('Quote found in Google Sheets', { 
@@ -498,69 +504,41 @@ export default async function handler(req, res) {
             return new Intl.DateTimeFormat('en-NZ', options).format(new Date(date));
         }
         
-        // Guard 0: Check for missing headers (only fail if truly missing)
+        // Guard headers + row
         if (col.CustomerDecision === -1 || col.CustomerDecisionTimeStamp === -1) {
-            console.error(JSON.stringify({
-                tag: 'ACCEPT_LOOKUP_FAIL',
-                reason: 'Missing header',
-                quoteId,
-                customerDecisionIndex: col.CustomerDecision,
-                customerDecisionTimestampIndex: col.CustomerDecisionTimeStamp
-            }));
             return res.status(500).json({ 
-                tag: "ACCEPT_LOOKUP_FAIL",
-                reason: "Missing header",
+                tag: "DECLINE_LOOKUP_FAIL", 
+                reason: "Missing header", 
                 quoteId 
             });
         }
-        
-        // Guard 1: Check if quote has expired
+        if (!rowFound) {
+            return res.status(404).json({ 
+                tag: "DECLINE_LOOKUP_FAIL", 
+                reason: "QuoteID not found", 
+                quoteId 
+            });
+        }
+
+        // Expired quote
         if (col.ValidUntil !== -1 && targetRow[col.ValidUntil]) {
             try {
                 const validUntilDate = new Date(targetRow[col.ValidUntil]);
                 const now = new Date();
                 if (validUntilDate < now) {
-                    quoteLogger.customerDecline('Quote expired - preventing decline', { 
-                        quoteId, 
-                        validUntil: targetRow[col.ValidUntil],
-                        validUntilDate: validUntilDate.toISOString(),
-                        now: now.toISOString()
-                    }, requestId);
-                    
-                    console.log(JSON.stringify({
-                        tag: "QUOTE_EXPIRED",
-                        quoteId,
-                        validUntil: targetRow[col.ValidUntil],
-                        validUntilDate: validUntilDate.toISOString(),
-                        now: now.toISOString()
-                    }));
-                    
                     return res.status(400).json({ 
-                        tag: "QUOTE_EXPIRED",
-                        validUntil: formatDateTimeNZT(targetRow[col.ValidUntil])
+                        tag: "QUOTE_EXPIRED", 
+                        validUntil: formatDateTimeNZT(targetRow[col.ValidUntil]) 
                     });
                 }
             } catch (error) {
                 quoteLogger.error('Could not parse ValidUntil date', error, requestId);
             }
         }
-        
-        // Guard 2: Check if customer has already made a decision
+
+        // Already decided
         if (targetRow[col.CustomerDecision] && targetRow[col.CustomerDecision] !== "") {
-            quoteLogger.customerDecline('Customer already decided - preventing duplicate', { 
-                quoteId, 
-                currentDecision: targetRow[col.CustomerDecision],
-                currentDecisionTimestamp: targetRow[col.CustomerDecisionTimeStamp]
-            }, requestId);
-            
-            console.log(JSON.stringify({
-                tag: "CUSTOMER_ALREADY_DECIDED",
-                quoteId,
-                decision: targetRow[col.CustomerDecision],
-                decisionTime: targetRow[col.CustomerDecisionTimeStamp]
-            }));
-            
-            return res.status(400).json({ 
+            return res.status(400).json({
                 tag: "CUSTOMER_ALREADY_DECIDED",
                 decision: targetRow[col.CustomerDecision],
                 decisionTime: formatDateTimeNZT(targetRow[col.CustomerDecisionTimeStamp])
@@ -772,16 +750,10 @@ export default async function handler(req, res) {
         
         const nzTimestamp = getNZTTimestamp();
         
-        // Update the target row with the new data using column mapping
-        if (col.CustomerDecision !== -1) {
-            targetRow[col.CustomerDecision] = "Declined";
-        }
-        if (col.CustomerDecisionTimeStamp !== -1) {
-            targetRow[col.CustomerDecisionTimeStamp] = formatDateTimeNZT(new Date());
-        }
-        if (col.AdminPersonStatus !== -1) {
-            targetRow[col.AdminPersonStatus] = "Customer Declined";
-        }
+        // First-time decline
+        targetRow[col.CustomerDecision] = "Declined";
+        targetRow[col.CustomerDecisionTimeStamp] = formatDateTimeNZT(new Date());
+        targetRow[col.AdminPersonStatus] = "Customer Declined";
 
         const updateData = {
             'CustomerDecision': 'Declined',

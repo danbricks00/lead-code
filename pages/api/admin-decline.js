@@ -16,8 +16,8 @@ function verifyToken(id, ts) {
 function generateQuoteSubmissionLink(leadId) {
     const ts = Date.now().toString();
     const token = verifyToken(leadId, ts);
-    const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/^(https?:\/\/)/, '');
-    return `https://${baseUrl}/quote-submit/${leadId}?ts=${ts}&token=${token}`;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    return `${baseUrl}/quote-submit/${leadId}?ts=${ts}&token=${token}`;
 }
 
 async function getQuoteById(quoteId) {

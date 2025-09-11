@@ -110,7 +110,23 @@ export default async function handler(req, res) {
         // Check if quote is still valid
         const validUntil = quoteRow[validUntilCol];
         const now = new Date();
-        const expiryDate = new Date(validUntil);
+        let expiryDate;
+        
+        try {
+            expiryDate = validUntil ? new Date(validUntil) : null;
+            // Check if we got an invalid date
+            if (isNaN(expiryDate) || !expiryDate) {
+                throw new Error('Invalid expiry date');
+            }
+        } catch (error) {
+            console.error(`[DECISION-API] Invalid expiry date format:`, { 
+                quoteId, 
+                validUntil,
+                error: error.message 
+            });
+            // Default to a valid date (not expired) to allow the customer to proceed
+            expiryDate = new Date(now.getTime() + 24 * 60 * 60 * 1000); // Set to tomorrow
+        }
 
         if (now > expiryDate) {
             console.log(`[DECISION-API] Quote expired:`, { 
@@ -197,7 +213,7 @@ export default async function handler(req, res) {
         }
 
         // Record the decline decision
-        const now = new Date();
+        // Reuse the existing 'now' variable instead of redeclaring it
         const nzTimestamp = now.toLocaleString('en-NZ', { 
             timeZone: 'Pacific/Auckland',
             day: '2-digit',

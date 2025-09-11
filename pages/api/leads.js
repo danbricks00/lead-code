@@ -438,7 +438,7 @@ async function handleSubmitQuote(req, res) {
 
   try {
     const SITE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const quoteViewUrl = `${SITE_URL}/quote-view?leadId=${leadId}`;
+    const quoteViewUrl = `${SITE_URL}/quote/view/${leadId}`;
     const acceptUrl = `${SITE_URL}/api/leads?action=decision&leadId=${leadId}&action=accept`;
     const declineUrl = `${SITE_URL}/api/leads?action=decision&leadId=${leadId}&action=decline`;
 

@@ -304,7 +304,7 @@ export async function getServerSideProps(context) {
     // Fetch lead data
     const leadsResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'Leads!A:AJ'
+      range: 'Leads!A:AL'
     });
 
     const leadRows = leadsResponse.data.values;

@@ -357,12 +357,57 @@ export async function getServerSideProps(context) {
 
     console.log(`[SERVER] QuoteID ${normalizedQuoteId} searched, row found at index ${foundIndex}.`);
     
+    // Create structured quote object from row data
+    const quote = { 
+      quoteId: foundRow[1] || "", 
+      leadId: foundRow[2] || "", 
+      tradePersonName: foundRow[3] || "", 
+      tradePersonEmail: foundRow[4] || "", 
+      tradePersonPhone: foundRow[5] || "", 
+      customerStatus: foundRow[6] || "", 
+      tradePersonStatus: foundRow[7] || "", 
+      adminPersonStatus: foundRow[8] || "", 
+      labourRate: foundRow[9] || "", 
+      labourHours: foundRow[10] || "", 
+      labourTotal: foundRow[11] || "", 
+      materialsCost: foundRow[12] || "", 
+      materialsQuantity: foundRow[13] || "", 
+      materialsTotal: foundRow[14] || "", 
+      travelCost: foundRow[15] || "", 
+      travelDistance: foundRow[16] || "", 
+      travelTotal: foundRow[17] || "", 
+      installationCost: foundRow[18] || "", 
+      subtotal: foundRow[19] || "", 
+      gst: foundRow[20] || "", 
+      totalQuote: foundRow[21] || "", 
+      notes: foundRow[22] || "", 
+      validUntil: foundRow[23] || "", 
+      resubmissionAllowed: foundRow[24] || "", 
+      customerDecision: foundRow[25] || "", 
+      customerDecisionTimeStamp: foundRow[26] || "", 
+      customerName: foundRow[27] || "", 
+      customerEmail: foundRow[28] || "", 
+      customerPhone: foundRow[29] || "", 
+      serviceType: foundRow[30] || "", 
+      location: foundRow[31] || "", 
+      timeline: foundRow[32] || "", 
+      budget: foundRow[33] || "", 
+      rooms: foundRow[34] || "", 
+      breakDown: foundRow[35] || "", 
+      adminDecisionTimeStamp: foundRow[36] || "", 
+      adminDecision: foundRow[37] || "" 
+    };
+    
+    // Add debug logging
+    console.log("[SERVER] Quote object created:", quote.quoteId, quote.leadId);
+    
     // Return the data as props
     return {
       props: {
         initialQuoteInfo: {
           quoteData,
-          leadData
+          leadData,
+          quote // Include the structured quote object
         },
         initialError: ''
       }

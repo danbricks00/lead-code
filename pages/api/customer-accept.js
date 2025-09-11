@@ -75,7 +75,7 @@ export default async function handler(req, res) {
 
     try {
         // Get QuoteID Parameter and normalize it
-        let { quoteId, leadId } = req.query;
+        let { quoteId } = req.query;
         
         // Normalize quoteId with trim and toLowerCase
         const normalizedQuoteId = quoteId ? quoteId.trim().toLowerCase() : null;
@@ -84,14 +84,13 @@ export default async function handler(req, res) {
         console.log(`[DECISION-API] Processing parameters:`, { 
             originalQuoteId: quoteId,
             normalizedQuoteId,
-            leadId,
             fullUrl: req.url,
             headers: req.headers
         });
     
-        if (!normalizedQuoteId || !leadId) {
-            console.log(`[DECISION-API] Missing parameters:`, { normalizedQuoteId, leadId });
-            return res.redirect('/quote-status?status=error&message=Missing quote or lead ID.');
+        if (!normalizedQuoteId) {
+            console.log(`[DECISION-API] Missing parameters:`, { normalizedQuoteId });
+            return res.redirect('/quote-status?status=error&message=Missing quote ID.');
         }
 
         quoteLogger.info('Customer acceptance request received', {

@@ -59,7 +59,30 @@ const disposableDomains = [
   "dumpandjunk.com", "dumpmail.de", "dumpyemail.com", "e4ward.com",
   "email60.com", "emaildienst.de", "emailias.com", "emailigo.de",
   "gmailnator.com", "maildrop.cc", "33mail.com", "e4ward.com",
-  "pm.me", "proton.me", "protonmail.ch", "protonmail.com"
+  "pm.me", "proton.me", "protonmail.ch", "protonmail.com",
+  // Additional temporary email domains
+  "1secmail.com", "1secmail.net", "1secmail.org",
+  "addy.io", "altmails.com", "anonaddy.com", "anonaddy.me",
+  "burnermail.io", "cryptogmail.com", "duck.com",
+  "emailnator.com", "emailondeck.com", "emailtemp.org",
+  "fakermail.com", "fastmail.com", "firemail.cc",
+  "forwardemail.net", "getairmail.com", "hide.biz.st",
+  "hidemail.pro", "inboxalias.com", "inboxkitten.com",
+  "instant-mail.de", "kopeechka.store", "mail.tm",
+  "mailforspam.com", "mailpoof.com", "mailsac.com",
+  "mohmal.com", "mohmal.im", "mohmal.in",
+  "moakt.co", "moakt.ws", "muellmail.com",
+  "nada.email", "nada.ltd", "notmyemail.tech",
+  "onetimeemail.net", "pokemail.net", "privymail.com",
+  "quickmail.best", "randomail.net", "receivemail.org",
+  "sharklasers.com", "simplelogin.co", "simplelogin.io",
+  "spambox.xyz", "spamgourmet.com", "spamgourmet.net",
+  "spamhereplease.com", "spammail.xyz", "tempemail.co",
+  "tempmail.dev", "tempmail.plus", "tempmailo.com",
+  "tempr.email", "throwawaymail.com", "throwmail.app",
+  "tmpmail.org", "trashmail.io", "trashmail.ws",
+  "vomoto.com", "wegwerfmail.de", "wegwerfmail.net",
+  "yomail.info", "zeroe.ml"
 ];
 
 function validateEmailFrontend(email) {

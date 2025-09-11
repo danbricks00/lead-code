@@ -1,18 +1,19 @@
 import { useRouter } from 'next/router';
 import React, { useState, useEffect } from 'react';
 import Layout from '../../../components/Layout';
+import { google } from 'googleapis';
 
-const CustomerQuoteView = () => {
+const CustomerQuoteView = ({ initialQuoteInfo, initialError }) => {
   const router = useRouter();
   const { quoteId, ts, token } = router.query;
-  const [quoteInfo, setQuoteInfo] = useState(null);
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [quoteInfo, setQuoteInfo] = useState(initialQuoteInfo);
+  const [error, setError] = useState(initialError);
+  const [isLoading, setIsLoading] = useState(!initialQuoteInfo && !initialError);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [decisionMade, setDecisionMade] = useState(false);
+  const [decisionMade, setDecisionMade] = useState(initialQuoteInfo?.quoteData?.Decision ? true : false);
 
   useEffect(() => {
-    if (router.isReady) {
+    if (router.isReady && !initialQuoteInfo && !initialError) {
       if (!quoteId || !ts || !token) {
         setError('This link is invalid or incomplete.');
         setIsLoading(false);
@@ -45,7 +46,7 @@ const CustomerQuoteView = () => {
 
       fetchQuote();
     }
-  }, [router.isReady, quoteId, ts, token]);
+  }, [router.isReady, quoteId, ts, token, initialQuoteInfo, initialError]);
 
   // Handle decision with client-side protection
   const handleDecision = async (decision) => {
@@ -59,7 +60,7 @@ const CustomerQuoteView = () => {
     try {
       // Normalize quoteId before sending to API
       const normalizedQuoteId = quoteId.trim().toLowerCase();
-      const decisionUrl = `/api/quote-decision/${decision}?quoteId=${normalizedQuoteId}&ts=${ts}&token=${token}`;
+      const decisionUrl = `/api/customer-${decision}?quoteId=${normalizedQuoteId}`;
       
       // Open in new window to prevent double-clicking
       const newWindow = window.open(decisionUrl, '_blank');
@@ -194,6 +195,161 @@ const CustomerQuoteView = () => {
     </Layout>
   );
 };
+
+// Add server-side rendering
+export async function getServerSideProps(context) {
+  const { params } = context;
+  const { quoteId } = params;
+  
+  console.log(`[SERVER] Fetching quote for ID: ${quoteId}`);
+  
+  // If we don't have ts and token, we can't use the get-quote-for-customer API
+  // Instead, we'll directly query the Google Sheets
+  try {
+    // Initialize Google Sheets
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        type: 'service_account',
+        project_id: process.env.GOOGLE_PROJECT_ID,
+        private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
+        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\n/g, '\n'),
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+        token_uri: 'https://oauth2.googleapis.com/token',
+        auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs'
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets']
+    });
+
+    const sheets = google.sheets({ version: 'v4', auth });
+    const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
+
+    // Normalize quoteId
+    const normalizedQuoteId = quoteId.trim().toLowerCase();
+    
+    // Fetch all rows from the "Quotes" sheet
+    const quotesResponse = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'Quotes!A:AJ'
+    });
+
+    const rows = quotesResponse.data.values;
+    if (!rows || rows.length === 0) {
+      console.log(`[SERVER] No quote data found in sheets`);
+      return {
+        props: {
+          initialError: 'No quote data found.',
+          initialQuoteInfo: null
+        }
+      };
+    }
+
+    const headers = rows[0];
+    // Find QuoteID column index
+    const quoteIdColIndex = headers.indexOf('QuoteID');
+    const quoteIdCol = quoteIdColIndex !== -1 ? quoteIdColIndex : 1; // Default to column B (index 1) if not found
+    
+    // Find quote row with case-insensitive comparison
+    const quoteRow = rows.find(row => {
+      if (!row[quoteIdCol]) return false;
+      return row[quoteIdCol].trim().toLowerCase() === normalizedQuoteId;
+    });
+
+    if (!quoteRow) {
+      console.log(`[SERVER] Quote not found: ${normalizedQuoteId}`);
+      return {
+        props: {
+          initialError: 'Quote not found.',
+          initialQuoteInfo: null
+        }
+      };
+    }
+
+    // Convert row to object
+    const quoteData = headers.reduce((obj, key, index) => {
+      obj[key] = quoteRow[index] || '';
+      return obj;
+    }, {});
+
+    // Get Lead ID from quote data
+    const leadId = quoteData['Lead ID'];
+    if (!leadId) {
+      console.log(`[SERVER] Lead ID missing from quote data for quote ID: ${quoteId}`);
+      return {
+        props: {
+          initialError: 'Quote information is incomplete.',
+          initialQuoteInfo: null
+        }
+      };
+    }
+
+    // Fetch lead data
+    const leadsResponse = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'Leads!A:AJ'
+    });
+
+    const leadRows = leadsResponse.data.values;
+    if (!leadRows || leadRows.length === 0) {
+      console.log(`[SERVER] No lead data found in sheets`);
+      return {
+        props: {
+          initialError: 'Lead information not found.',
+          initialQuoteInfo: null
+        }
+      };
+    }
+
+    const leadHeaders = leadRows[0];
+    // Find Lead ID column index
+    const leadIdColIndex = leadHeaders.indexOf('Lead ID');
+    const leadIdCol = leadIdColIndex !== -1 ? leadIdColIndex : 0; // Default to column A (index 0) if not found
+    
+    // Find lead row with case-insensitive comparison
+    const leadRow = leadRows.find(row => {
+      if (!row[leadIdCol]) return false;
+      return row[leadIdCol].trim().toLowerCase() === leadId.trim().toLowerCase();
+    });
+
+    if (!leadRow) {
+      console.log(`[SERVER] Lead not found for ID: ${leadId}`);
+      return {
+        props: {
+          initialError: 'Customer information not found.',
+          initialQuoteInfo: null
+        }
+      };
+    }
+
+    // Convert lead row to object
+    const leadData = leadHeaders.reduce((obj, key, index) => {
+      obj[key] = leadRow[index] || '';
+      return obj;
+    }, {});
+
+    console.log(`[SERVER] QuoteID ${normalizedQuoteId} searched, row found at index ${rows.indexOf(quoteRow)}.`);
+    
+    // Return the data as props
+    return {
+      props: {
+        initialQuoteInfo: {
+          quoteData,
+          leadData
+        },
+        initialError: ''
+      }
+    };
+  } catch (error) {
+    console.error('[SERVER] Error in getServerSideProps:', error);
+    return {
+      props: {
+        initialError: 'An error occurred while retrieving the quote.',
+        initialQuoteInfo: null
+      }
+    };
+  }
+}
 
 const styles = {
     container: { fontFamily: 'Arial, sans-serif', padding: '20px', backgroundColor: '#f4f7f6', display: 'flex', justifyContent: 'center' },

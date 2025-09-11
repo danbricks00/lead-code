@@ -3,6 +3,16 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../../../components/Layout';
 import { google } from 'googleapis';
 
+const parseFloatValue = (value) => {
+  if (typeof value === 'number') return value;
+  if (typeof value !== 'string') return 0;
+  // Remove currency symbols, commas, and whitespace, then parse
+  const cleanedValue = value.replace(/[^\d.-]/g, '');
+  if (cleanedValue === '') return 0;
+  const number = parseFloat(cleanedValue);
+  return isNaN(number) ? 0 : number;
+};
+
 const CustomerQuoteView = ({ initialQuoteInfo, initialError }) => {
   const router = useRouter();
   const { quoteId, ts, token } = router.query;
@@ -105,6 +115,20 @@ const CustomerQuoteView = ({ initialQuoteInfo, initialError }) => {
     if (quoteInfo) {
       const { quoteData, leadData } = quoteInfo;
       const parsedRooms = JSON.parse(leadData.Rooms || '[]');
+
+      // Parse all cost and quantity values to ensure they are numbers
+      const labourCost = parseFloatValue(quoteData['Labour Cost']);
+      const labourHours = parseFloatValue(quoteData['Labour Hours']);
+      const materialsCost = parseFloatValue(quoteData['Materials Cost']);
+      const materialsQuantity = parseFloatValue(quoteData['Materials Quantity']);
+      const travelCost = parseFloatValue(quoteData['Travel Cost']);
+      const travelDistance = parseFloatValue(quoteData['Travel Distance']);
+      const installationCost = parseFloatValue(quoteData['Installation Cost']);
+      const totalQuote = parseFloatValue(quoteData['Total Quote']);
+
+      const labourSubtotal = labourCost * labourHours;
+      const materialsSubtotal = materialsCost * materialsQuantity;
+      const travelSubtotal = travelCost * travelDistance;
       
       return (
         <div style={styles.invoiceBox}>
@@ -130,16 +154,16 @@ const CustomerQuoteView = ({ initialQuoteInfo, initialError }) => {
                     <tr><th>Description</th><th>Rate</th><th>Unit(s)</th><th>Subtotal</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td>Labour</td><td>${quoteData['Labour Cost']} / hr</td><td>{quoteData['Labour Hours']}</td><td>${(quoteData['Labour Cost'] * quoteData['Labour Hours']).toFixed(2)}</td></tr>
-                    <tr><td>Materials</td><td>${quoteData['Materials Cost']} / m²</td><td>{quoteData['Materials Quantity']}</td><td>${(quoteData['Materials Cost'] * quoteData['Materials Quantity']).toFixed(2)}</td></tr>
-                    <tr><td>Travel</td><td>${quoteData['Travel Cost']} / km</td><td>{quoteData['Travel Distance']}</td><td>${(quoteData['Travel Cost'] * quoteData['Travel Distance']).toFixed(2)}</td></tr>
-                    <tr><td>Installation</td><td colSpan="2"></td><td>${parseFloat(quoteData['Installation Cost']).toFixed(2)}</td></tr>
+                    <tr><td>Labour</td><td>${labourCost.toFixed(2)} / hr</td><td>{labourHours}</td><td>${labourSubtotal.toFixed(2)}</td></tr>
+                    <tr><td>Materials</td><td>${materialsCost.toFixed(2)} / m²</td><td>{materialsQuantity}</td><td>${materialsSubtotal.toFixed(2)}</td></tr>
+                    <tr><td>Travel</td><td>${travelCost.toFixed(2)} / km</td><td>{travelDistance}</td><td>${travelSubtotal.toFixed(2)}</td></tr>
+                    <tr><td>Installation</td><td colSpan="2"></td><td>${installationCost.toFixed(2)}</td></tr>
                 </tbody>
             </table>
             
             {/* Total */}
             <div style={styles.totalSection}>
-                <div style={{fontWeight: 'bold', fontSize: '1.2em'}}>Total: ${parseFloat(quoteData['Total Quote']).toFixed(2)}</div>
+                <div style={{fontWeight: 'bold', fontSize: '1.2em'}}>Total: ${totalQuote.toFixed(2)}</div>
             </div>
 
             {/* Decision Buttons */}

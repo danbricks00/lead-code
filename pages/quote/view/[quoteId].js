@@ -117,14 +117,14 @@ const CustomerQuoteView = ({ initialQuoteInfo, initialError }) => {
       const parsedRooms = JSON.parse(leadData.Rooms || '[]');
 
       // Parse all cost and quantity values to ensure they are numbers
-      const labourCost = parseFloatValue(quoteData['Labour Cost']);
-      const labourHours = parseFloatValue(quoteData['Labour Hours']);
-      const materialsCost = parseFloatValue(quoteData['Materials Cost']);
-      const materialsQuantity = parseFloatValue(quoteData['Materials Quantity']);
-      const travelCost = parseFloatValue(quoteData['Travel Cost']);
-      const travelDistance = parseFloatValue(quoteData['Travel Distance']);
-      const installationCost = parseFloatValue(quoteData['Installation Cost']);
-      const totalQuote = parseFloatValue(quoteData['Total Quote']);
+      const labourCost = parseFloatValue(quoteData['LabourRate']);
+      const labourHours = parseFloatValue(quoteData['LabourHours']);
+      const materialsCost = parseFloatValue(quoteData['MaterialsCost']);
+      const materialsQuantity = parseFloatValue(quoteData['MaterialsQuantity']);
+      const travelCost = parseFloatValue(quoteData['TravelCost']);
+      const travelDistance = parseFloatValue(quoteData['TravelDistance']);
+      const installationCost = parseFloatValue(quoteData['InstallationCost']);
+      const totalQuote = parseFloatValue(quoteData['TotalQuote']);
 
       const labourSubtotal = labourCost * labourHours;
       const materialsSubtotal = materialsCost * materialsQuantity;

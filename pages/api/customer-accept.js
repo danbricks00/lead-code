@@ -129,8 +129,23 @@ export default async function handler(req, res) {
         // Check if quote is still valid
         const validUntil = quoteRow[validUntilCol];
         const now = new Date();
-        const expiryDate = new Date(validUntil);
-
+        let expiryDate;
+        
+        try {
+          // Try to parse the date in various formats
+          expiryDate = new Date(validUntil);
+          if (isNaN(expiryDate.getTime())) {
+            // If direct parsing fails, try DD/MM/YYYY format
+            const parts = validUntil.split('/');
+            if (parts.length === 3) {
+              expiryDate = new Date(parts[2], parts[1] - 1, parts[0]);
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing expiry date:', e);
+          expiryDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000); // Default to 14 days from now
+        }
+        
         if (now > expiryDate) {
             console.log(`[DECISION-API] Quote expired:`, { 
                 quoteId, 

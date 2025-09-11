@@ -12,12 +12,14 @@ export function buildQuoteRow({
   body = {},          // financials + notes on submit
   mode = 'draft'      // 'draft' | 'submitted' | 'accepted' | 'rejected'
 }) {
-  // Generate NZT timestamp in DD-MM-YYYY format
+  // Generate NZT timestamp in DD-MM-YYYY HH:mm format
   const now = new Date();
   const options = {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
     timeZone: 'Pacific/Auckland' // Ensure NZT
   };
   const nztFormattedDate = new Intl.DateTimeFormat('en-NZ', options).format(now);

@@ -6,36 +6,91 @@ const QuoteStatusPage = () => {
   const router = useRouter();
   const { status, message } = router.query;
   const [displayMessage, setDisplayMessage] = useState('');
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [isExpired, setIsExpired] = useState(false);
+  const [statusType, setStatusType] = useState('');
+  const [timestamp, setTimestamp] = useState('');
 
   useEffect(() => {
-    if (status === 'success') {
-      setIsSuccess(true);
-      setDisplayMessage(message || 'Your decision has been recorded.');
-    } else if (status === 'error') {
-      setIsSuccess(false);
-      setDisplayMessage(message || 'An unexpected error occurred.');
-      
-      // Check if it's an expired quote error
-      if (message && message.toLowerCase().includes('expired')) {
-        setIsExpired(true);
-      }
+    if (!status) return;
+    
+    setStatusType(status);
+    
+    switch(status) {
+      case 'accepted':
+        setDisplayMessage('You\'ve accepted the quote.');
+        break;
+      case 'declined':
+        setDisplayMessage('You\'ve declined the quote.');
+        break;
+      case 'expired':
+        setDisplayMessage('This quote has expired. Request a new quote.');
+        break;
+      case 'locked':
+        setDisplayMessage('A decision was already recorded for this quote. No changes allowed.');
+        break;
+      case 'error':
+        setDisplayMessage(message || 'Something went wrong, please contact support.');
+        break;
+      default:
+        setDisplayMessage('Quote status updated.');
+    }
+    
+    // Set timestamp if available
+    if (message && message.includes('timestamp:')) {
+      const timestampPart = message.split('timestamp:')[1].trim();
+      setTimestamp(timestampPart);
     }
   }, [status, message]);
 
-  const isExpiredQuote = isExpired && message && message.toLowerCase().includes('expired');
+  const getStatusIcon = () => {
+    switch(statusType) {
+      case 'accepted': return '✅';
+      case 'declined': return '❌';
+      case 'expired': return '⏳';
+      case 'locked': return '🔒';
+      case 'error': return '⚠️';
+      default: return '📄';
+    }
+  };
+
+  const getStatusColor = () => {
+    switch(statusType) {
+      case 'accepted': return '#28a745';
+      case 'declined': return '#dc3545';
+      case 'expired': return '#ffc107';
+      case 'locked': return '#6c757d';
+      case 'error': return '#dc3545';
+      default: return '#007bff';
+    }
+  };
+
+  const getStatusTitle = () => {
+    switch(statusType) {
+      case 'accepted': return 'Quote Accepted';
+      case 'declined': return 'Quote Declined';
+      case 'expired': return 'Quote Expired';
+      case 'locked': return 'Decision Already Made';
+      case 'error': return 'Error';
+      default: return 'Quote Status';
+    }
+  };
 
   return (
     <Layout>
       <div style={styles.container}>
         <div style={styles.card}>
-          <h1 style={isSuccess ? styles.successHeader : styles.errorHeader}>
-            {isSuccess ? '✅ Success!' : isExpiredQuote ? '⏰ Quote Expired' : '❌ An Error Occurred'}
+          <div style={{...styles.statusIcon, backgroundColor: getStatusColor()}}>
+            {getStatusIcon()}
+          </div>
+          <h1 style={{...styles.header, color: getStatusColor()}}>
+            {getStatusTitle()}
           </h1>
           <p style={styles.message}>{displayMessage}</p>
           
-          {isExpiredQuote && (
+          {timestamp && (
+            <div style={styles.timestamp}>on {timestamp}</div>
+          )}
+          
+          {statusType === 'expired' && (
             <div style={styles.contactInfo}>
               <p style={styles.contactTitle}>Need a new quote?</p>
               <p style={styles.contactText}>Contact us to request a fresh quote:</p>
@@ -88,6 +143,27 @@ const styles = {
     link: { 
         color: '#667eea', 
         textDecoration: 'none' 
+    },
+    statusIcon: {
+      width: '60px',
+      height: '60px',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      margin: '0 auto 20px',
+      fontSize: '24px',
+      color: 'white'
+    },
+    header: {
+      margin: '0 0 20px 0',
+      fontSize: '24px'
+    },
+    timestamp: {
+      fontSize: '0.9em',
+      color: '#666',
+      marginBottom: '20px',
+      fontStyle: 'italic'
     }
 };
 

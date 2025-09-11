@@ -215,10 +215,12 @@ export default async function handler(req, res) {
     const customerName  = row[headers.indexOf('CustomerName')] || "Customer";
     const serviceType   = row[headers.indexOf('ServiceType')] || "Service";
     const totalQuote    = row[headers.indexOf('TotalQuote')] || "0";
-
-    const acceptLink  = `${normalizedBaseUrl}/api/customer-accept?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}`;
-    const declineLink = `${normalizedBaseUrl}/api/customer-decline?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}`;
-    const viewLink    = `${normalizedBaseUrl}/quote-view?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}`;
+    
+    // Fix the links to use the correct format
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://lead-code-phi.vercel.app';
+    const acceptLink  = `${baseUrl}/api/QuoteDecision/accept/${quoteId}`;
+    const declineLink = `${baseUrl}/api/QuoteDecision/decline/${quoteId}`;
+    const viewLink    = `${baseUrl}/quote/view/${quoteId}`;
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',

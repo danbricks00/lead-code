@@ -18,8 +18,7 @@ const auth = new google.auth.GoogleAuth({
         client_id: process.env.GOOGLE_CLIENT_ID,
         auth_uri: 'https://accounts.google.com/o/oauth2/auth',
         token_uri: 'https://oauth2.googleapis.com/token',
-        auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
-        client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${process.env.GOOGLE_CLIENT_EMAIL}`
+        auth_provider_x509_cert_url: 'https://www.googleapis.com/auth/spreadsheets'
     },
     scopes: ['https://www.googleapis.com/auth/spreadsheets']
 });
@@ -198,7 +197,15 @@ export default async function handler(req, res) {
         }
 
         // Record the decline decision
-        const nzTimestamp = new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' });
+        const now = new Date();
+        const nzTimestamp = now.toLocaleString('en-NZ', { 
+            timeZone: 'Pacific/Auckland',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        }) + ' NZT';
         const rowIndex = rows.indexOf(quoteRow) + 1; // +1 because Sheets is 1-indexed
 
         // Update the quote with decline decision
@@ -271,4 +278,4 @@ export default async function handler(req, res) {
         
         return res.redirect(`/quote-status?status=error&message=An internal server error occurred.`);
     }
-}       
+}

@@ -256,122 +256,124 @@ export default async function handler(req, res) {
         try {
             // Calculate the row index (1-indexed for Google Sheets)
             const rowIndex = foundIndex + 1;
-            // Create properly formatted range
-            const range = `Quotes!Z${rowIndex}:AA${rowIndex}`;
+            // Define range outside try block
+            const sheetRowIndex = rowIndex;
+            const range = `Quotes!Z${sheetRowIndex}:AA${sheetRowIndex}`;
             
-            // Log the range being updated
-            console.log(`[DECISION-API] Writing to range:`, range);
-            
-            // Check if customer has already made a decision (double-check)
-            const existingDecision = (rows[foundIndex][25] || "").trim().toLowerCase();
-            const existingTimestamp = rows[foundIndex][26] || "";
-            
-            if (existingDecision === "accepted" || existingDecision === "declined") {
-                console.log(`[DECISION-API] Guard - Quote already decided: ${existingDecision} at ${existingTimestamp}`);
-                return res.redirect(`/quote-status?status=locked&decision=${existingDecision}&timestamp=${existingTimestamp}`);
-                // stop execution
-            }
-            
-            await sheets.spreadsheets.values.update({
-                auth,
-                spreadsheetId: SPREADSHEET_ID,
-                range: range,
-                valueInputOption: 'RAW',
-                resource: {
-                    values: [['Accepted', nzTimestamp]]
-                }
-            });
-            
-            console.log(`[DECISION-API] Quote ${normalizedQuoteId} updated -> Accepted at ${nzTimestamp}`);
-        
-            quoteLogger.info('Quote accepted successfully', {
-                normalizedQuoteId,
-                decision: 'Accepted',
-                timestamp: nzTimestamp
-            }, requestId);
-            
-            // Send email notifications
             try {
-                // Get customer email (Column 29, index 28)
-                const customerEmail = quoteRow[28]; // Column AC (0-indexed)
-                // Get tradesperson email (Column 5, index 4)
-                const tradesmanEmail = quoteRow[4]; // Column E (0-indexed)
-                // Get admin email from env var
-                const adminEmail = process.env.ADMIN_EMAIL;
-                
-                const quoteId = quoteRow[quoteIdCol];
-                const customerName = quoteRow[27] || 'Customer'; // Column AB (0-indexed)
-                const emailSubject = `Quote Decision Recorded – Accepted`;
-                const emailBody = `
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                        <h2>Quote Decision Notification</h2>
-                        <p>A decision has been made on quote ${quoteId}.</p>
-                        <p><strong>Customer:</strong> ${customerName}</p>
-                        <p><strong>Decision:</strong> ACCEPTED</p>
-                        <p><strong>Timestamp:</strong> ${nzTimestamp} (New Zealand Time)</p>
-                    </div>
-                `;
-                
-                // Send emails to all parties
-                if (customerEmail) {
-                    await sendEmail({
-                        to: customerEmail,
-                        subject: emailSubject,
-                        html: emailBody
-                    });
-                }
-                
-                if (tradesmanEmail) {
-                    await sendEmail({
-                        to: tradesmanEmail,
-                        subject: emailSubject,
-                        html: emailBody
-                    });
-                }
-                
-                if (adminEmail) {
-                    await sendEmail({
-                        to: adminEmail,
-                        subject: emailSubject,
-                        html: emailBody
-                    });
-                }
-                
-                console.log(`[DECISION-API] Notification emails sent successfully`);
-            } catch (emailError) {
-                console.error(`[DECISION-API] Error sending notification emails:`, emailError);
-                // Continue with redirect even if emails fail
-            }
-            
-            // Redirect to accepted status page
-            return res.redirect('/quote-status?status=accepted');
-        } catch (updateError) {
-            console.error(`[DECISION-API] Error updating sheet:`, {
-                error: updateError.message,
-                normalizedQuoteId,
-                rowIndex,
-                range: range,
-                columns: `Z-AA`
-            });
-            
-            quoteLogger.error('Error updating sheet', updateError, requestId);
-            return res.redirect(`/quote-status?status=error&message=Failed to update quote status.`);
-        }
+              // Log the range being updated
+              console.log(`[DECISION-API] Writing to range:`, range);
+              
+              // Check if customer has already made a decision (double-check)
+              const existingDecision = (rows[foundIndex][25] || "").trim().toLowerCase();
+              const existingTimestamp = rows[foundIndex][26] || "";
+              
+              if (existingDecision === "accepted" || existingDecision === "declined") {
+                  console.log(`[DECISION-API] Guard - Quote already decided: ${existingDecision} at ${existingTimestamp}`);
+                  return res.redirect(`/quote-status?status=locked&decision=${existingDecision}&timestamp=${existingTimestamp}`);
+                  // stop execution
+              }
+              
+              await sheets.spreadsheets.values.update({
+                  auth,
+                  spreadsheetId: SPREADSHEET_ID,
+                  range: range,
+                  valueInputOption: 'RAW',
+                  resource: {
+                      values: [['Accepted', nzTimestamp]]
+                  }
+              });
+              
+              console.log(`[DECISION-API] Quote ${normalizedQuoteId} updated -> Accepted at ${nzTimestamp}`);
+          
+              quoteLogger.info('Quote accepted successfully', {
+                  normalizedQuoteId,
+                  decision: 'Accepted',
+                  timestamp: nzTimestamp
+              }, requestId);
+              
+              // Send email notifications
+              try {
+                  // Get customer email (Column 29, index 28)
+                  const customerEmail = quoteRow[28]; // Column AC (0-indexed)
+                  // Get tradesperson email (Column 5, index 4)
+                  const tradesmanEmail = quoteRow[4]; // Column E (0-indexed)
+                  // Get admin email from env var
+                  const adminEmail = process.env.ADMIN_EMAIL;
+                  
+                  const quoteId = quoteRow[quoteIdCol];
+                  const customerName = quoteRow[27] || 'Customer'; // Column AB (0-indexed)
+                  const emailSubject = `Quote Decision Recorded – Accepted`;
+                  const emailBody = `
+                      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                          <h2>Quote Decision Notification</h2>
+                          <p>A decision has been made on quote ${quoteId}.</p>
+                          <p><strong>Customer:</strong> ${customerName}</p>
+                          <p><strong>Decision:</strong> ACCEPTED</p>
+                          <p><strong>Timestamp:</strong> ${nzTimestamp} (New Zealand Time)</p>
+                      </div>
+                  `;
+                  
+                  // Send emails to all parties
+                  if (customerEmail) {
+                      await sendEmail({
+                          to: customerEmail,
+                          subject: emailSubject,
+                          html: emailBody
+                      });
+                  }
+                  
+                  if (tradesmanEmail) {
+                      await sendEmail({
+                          to: tradesmanEmail,
+                          subject: emailSubject,
+                          html: emailBody
+                      });
+                  }
+                  
+                  if (adminEmail) {
+                      await sendEmail({
+                          to: adminEmail,
+                          subject: emailSubject,
+                          html: emailBody
+                      });
+                  }
+                  
+                  console.log(`[DECISION-API] Notification emails sent successfully`);
+              } catch (emailError) {
+                  console.error(`[DECISION-API] Error sending notification emails:`, emailError);
+                  // Continue with redirect even if emails fail
+              }
+              
+              // Redirect to accepted status page
+              return res.redirect('/quote-status?status=accepted');
+          } catch (updateError) {
+              console.error(`[DECISION-API] Error updating sheet:`, {
+                  error: updateError.message,
+                  normalizedQuoteId,
+                  rowIndex,
+                  range: range, // This might be undefined in the catch block
+                  columns: `Z-AA`
+              });
+              
+              quoteLogger.error('Error updating sheet', updateError, requestId);
+              return res.redirect(`/quote-status?status=error&message=Failed to update quote status.`);
+          }
 
-    } catch (error) {
-        console.error(`[DECISION-API] Customer Accept - Uncaught error:`, {
-            file: 'customer-accept.js',
-            message: error.message,
-            stack: error.stack,
-            quoteId: req.query?.quoteId
-        });
-        
-        quoteLogger.error('Quote acceptance error', error, requestId);
-        quoteLogger.response('Redirecting to error page', { 
-            error: error.message,
-            processingTime: Date.now() - startTime
-        }, requestId);
-        
-        return res.redirect(`/quote-status?status=error&message=An internal server error occurred.`);
-    }
+      } catch (error) {
+          console.error(`[DECISION-API] Customer Accept - Uncaught error:`, {
+              file: 'customer-accept.js',
+              message: error.message,
+              stack: error.stack,
+              quoteId: req.query?.quoteId
+          });
+          
+          quoteLogger.error('Quote acceptance error', error, requestId);
+          quoteLogger.response('Redirecting to error page', { 
+              error: error.message,
+              processingTime: Date.now() - startTime
+          }, requestId);
+          
+          return res.redirect(`/quote-status?status=error&message=An internal server error occurred.`);
+      }
 }

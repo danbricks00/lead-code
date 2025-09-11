@@ -45,27 +45,27 @@ const HomePage = ({ openChat }) => { // Receive openChat prop from Layout
           </div>
         </section>
 
-        {/* Services Section */}
+        {/* Testimonials Section (previously Services Section) */}
         <section style={styles.services}>
           <div style={styles.sectionHeader}>
-            <h2>Why Choose Kiwi Trade?</h2>
+            <h2>What Our Customers Say About Our Underfloor Heating</h2>
             <p>We've revolutionized how customers connect with tradesmen, making the process faster, easier, and more reliable than ever before.</p>
           </div>
           <div style={styles.servicesGrid}>
             <div style={styles.serviceCard}>
-              <span style={styles.serviceIcon}>🤖</span>
-              <h3>Smart Chatbot</h3>
-              <p>Our intelligent chatbot collects project details and matches you with the right tradesmen based on your specific needs and location.</p>
+              <div style={styles.stars}>⭐⭐⭐⭐⭐</div>
+              <p>"Our new underfloor heating has completely changed how we live. It's warm, efficient, and no more cold tiles in winter!"</p>
+              <p><strong>– Sarah M.</strong></p>
             </div>
             <div style={styles.serviceCard}>
-              <span style={styles.serviceIcon}>⚡</span>
-              <h3>Instant Notifications</h3>
-              <p>Get immediate email notifications when new leads are generated, ensuring you never miss a potential customer.</p>
+              <div style={styles.stars}>⭐⭐⭐⭐⭐</div>
+              <p>"The whole process was simple! Kiwi Trade found us a reliable installer who finished on time and within budget."</p>
+              <p><strong>– James R.</strong></p>
             </div>
             <div style={styles.serviceCard}>
-              <span style={styles.serviceIcon}>📊</span>
-              <h3>Professional Dashboard</h3>
-              <p>Access your comprehensive dashboard to track leads, manage quotes, and monitor your business performance in real-time.</p>
+              <div style={styles.stars}>⭐⭐⭐⭐⭐</div>
+              <p>"Worth every dollar. The system runs quietly, the house feels amazing, and our power bills actually went down."</p>
+              <p><strong>– Anika P.</strong></p>
             </div>
           </div>
         </section>
@@ -103,7 +103,7 @@ const styles = {
   sectionHeader: { textAlign: 'center', marginBottom: '3rem' },
   servicesGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', maxWidth: '1200px', margin: '0 auto' },
   serviceCard: { background: 'white', padding: '2rem', borderRadius: '15px', textAlign: 'center', boxShadow: '0 5px 20px rgba(0,0,0,0.1)' },
-  serviceIcon: { fontSize: '3rem', marginBottom: '1rem' },
+  stars: { fontSize: '1.5rem', marginBottom: '1rem', color: '#FFD700' },
   // Removed chatbotContainer and chatBubble styles as they are now in Layout.js
 };
 

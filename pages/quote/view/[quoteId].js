@@ -201,7 +201,7 @@ export async function getServerSideProps(context) {
   const { params } = context;
   const { quoteId } = params;
   
-  console.log(`[SERVER] Fetching quote for ID: ${quoteId}`);
+  console.log("Quote view requested for ID:", quoteId);
   
   // If we don't have ts and token, we can't use the get-quote-for-customer API
   // Instead, we'll directly query the Google Sheets
@@ -251,13 +251,23 @@ export async function getServerSideProps(context) {
     const quoteIdCol = quoteIdColIndex !== -1 ? quoteIdColIndex : 1; // Default to column B (index 1) if not found
     
     // Find quote row with case-insensitive comparison
-    const quoteRow = rows.find(row => {
-      if (!row[quoteIdCol]) return false;
-      return row[quoteIdCol].trim().toLowerCase() === normalizedQuoteId;
-    });
-
-    if (!quoteRow) {
-      console.log(`[SERVER] Quote not found: ${normalizedQuoteId}`);
+    let foundRow = null;
+    let foundIndex = -1;
+    
+    for (let index = 1; index < rows.length; index++) {
+      const row = rows[index];
+      console.log("Checking row", index, "QuoteID in sheet:", row[quoteIdCol]);
+      
+      if (row[quoteIdCol] && row[quoteIdCol].trim().toLowerCase() === normalizedQuoteId) {
+        foundRow = row;
+        foundIndex = index;
+        console.log("Quote match FOUND for ID:", normalizedQuoteId, "at row", index);
+        break;
+      }
+    }
+    
+    if (!foundRow) {
+      console.warn("No matching quote found for ID:", normalizedQuoteId);
       return {
         props: {
           initialError: 'Quote not found.',
@@ -268,7 +278,7 @@ export async function getServerSideProps(context) {
 
     // Convert row to object
     const quoteData = headers.reduce((obj, key, index) => {
-      obj[key] = quoteRow[index] || '';
+      obj[key] = foundRow[index] || '';
       return obj;
     }, {});
 
@@ -307,13 +317,23 @@ export async function getServerSideProps(context) {
     const leadIdCol = leadIdColIndex !== -1 ? leadIdColIndex : 0; // Default to column A (index 0) if not found
     
     // Find lead row with case-insensitive comparison
-    const leadRow = leadRows.find(row => {
-      if (!row[leadIdCol]) return false;
-      return row[leadIdCol].trim().toLowerCase() === leadId.trim().toLowerCase();
-    });
+    let foundLeadRow = null;
+    let foundLeadIndex = -1;
+    
+    for (let index = 1; index < leadRows.length; index++) {
+      const row = leadRows[index];
+      console.log("Checking lead row", index, "LeadID in sheet:", row[leadIdCol]);
+      
+      if (row[leadIdCol] && row[leadIdCol].trim().toLowerCase() === leadId.trim().toLowerCase()) {
+        foundLeadRow = row;
+        foundLeadIndex = index;
+        console.log("Lead match FOUND for ID:", leadId, "at row", index);
+        break;
+      }
+    }
 
-    if (!leadRow) {
-      console.log(`[SERVER] Lead not found for ID: ${leadId}`);
+    if (!foundLeadRow) {
+      console.warn("No matching lead found for ID:", leadId);
       return {
         props: {
           initialError: 'Customer information not found.',
@@ -324,11 +344,11 @@ export async function getServerSideProps(context) {
 
     // Convert lead row to object
     const leadData = leadHeaders.reduce((obj, key, index) => {
-      obj[key] = leadRow[index] || '';
+      obj[key] = foundLeadRow[index] || '';
       return obj;
     }, {});
 
-    console.log(`[SERVER] QuoteID ${normalizedQuoteId} searched, row found at index ${rows.indexOf(quoteRow)}.`);
+    console.log(`[SERVER] QuoteID ${normalizedQuoteId} searched, row found at index ${foundIndex}.`);
     
     // Return the data as props
     return {
@@ -341,7 +361,7 @@ export async function getServerSideProps(context) {
       }
     };
   } catch (error) {
-    console.error('[SERVER] Error in getServerSideProps:', error);
+    console.error("Error fetching quote from Sheets:", error);
     return {
       props: {
         initialError: 'An error occurred while retrieving the quote.',

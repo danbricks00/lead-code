@@ -274,6 +274,17 @@ export async function getServerSideProps(context) {
         }
       };
     }
+    const leadIdRaw = foundRow[2];
+       console.log(`[DEBUG] Raw Lead ID cell value: "${leadIdRaw}"`);
+
+      const leadIdTrimmed = (leadIdRaw || "").toString().trim();
+       console.log(`[DEBUG] Processed Lead ID after trim: "${leadId}"`);
+
+      if (!leadIdTrimmed) {
+       console.log(`[ERROR] Lead ID missing or empty after trim for quote ID: ${quoteId}`);
+}      else {
+     console.log(`[INFO] Lead ID found: ${leadId}`);
+}
 
     // Check for existing decision in Column Z (index 25)
     const existingDecision = (foundRow[25] || "").trim().toLowerCase();
@@ -290,12 +301,10 @@ export async function getServerSideProps(context) {
     }, {});
 
     // Get Lead ID from quote data
-    const leadId = quoteData['Lead ID'];
     if (!leadId) {
-      console.log(`[SERVER] Lead ID missing from quote data for quote ID: ${quoteId}`);
       return {
         props: {
-          initialError: 'Quote information is incomplete.',
+          initialError: 'Quote information is incomplete (missing Lead ID).',
           initialQuoteInfo: null
         }
       };

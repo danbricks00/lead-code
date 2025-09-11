@@ -41,11 +41,11 @@ const QuoteSubmitPage = () => {
   // Form state
   const [tradesperson, setTradesperson] = useState({ name: '', email: '', phone: '' });
   const [costs, setCosts] = useState({
-    labourRate: '',
+    labourRate: '50',
     labourHours: '',
     materialsCost: '',
     materialsQuantity: '',
-    travelCost: '',
+    travelCost: '2',
     travelDistance: '',
     installationCost: '',
   });

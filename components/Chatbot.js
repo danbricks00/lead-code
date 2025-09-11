@@ -443,10 +443,10 @@ const Chatbot = ({ handleClose, handleReset }) => {
             // Allow alphabet characters, spaces, hyphens, apostrophes, and periods (for initials like P.J)
             return /^[a-zA-Z\s'-\.]{2,}$/.test(value) ? null : "Please enter a valid last name (letters only, e.g., Smith, P.J, O'Connor).";
         case 'ask_phone':
-            // Allow only numbers and + sign, 6-10 digits total
+            // Allow only numbers and + sign, 8-10 digits total
             const cleanPhone = value.replace(/[\s()-]/g, ''); // Remove spaces, parentheses, hyphens
-            const phoneRegex = /^\+?[0-9]{6,10}$/;
-            return phoneRegex.test(cleanPhone) ? null : "Please enter a valid phone number (6-10 digits, + allowed for international).";
+            const phoneRegex = /^\+?[0-9]{8,10}$/;
+            return phoneRegex.test(cleanPhone) ? null : "Please enter a valid phone number (8-10 digits, + allowed for international).";
         case 'ask_suburb':
             // Allow any suburb input - we'll handle unlisted suburbs separately
             return value.trim().length > 0 ? null : "Please enter a suburb name.";

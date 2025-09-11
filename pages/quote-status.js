@@ -30,7 +30,7 @@ const QuoteStatusPage = () => {
         break;
       case 'locked':
         const formattedDecision = decision ? decision.charAt(0).toUpperCase() + decision.slice(1).toLowerCase() : 'Processed';
-        setDisplayMessage(`Decision Already Made`);
+        setDisplayMessage(`Decision already made.`);
         setAdditionalMessage(`This quote was ${formattedDecision} on ${timestamp} NZST.`);
         break;
       case 'error':
@@ -90,6 +90,10 @@ const QuoteStatusPage = () => {
           
           {additionalMessage && (
             <p style={styles.additionalMessage}>{additionalMessage}</p>
+          )}
+          
+          {displayTimestamp && statusType !== 'locked' && (
+            <p style={styles.timestamp}>Timestamp: {displayTimestamp} NZST</p>
           )}
           
           {statusType === 'expired' && (

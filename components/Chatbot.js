@@ -31,7 +31,7 @@ const commonProviders = {
   "internode": "internode", "internod": "internode"
 };
 
-i// Add this list of disposable domains
+// Add this list of disposable domains
 const disposableDomains = [
   "mailinator.com", "yopmail.com", "10minutemail.com",
   "guerrillamail.com", "temp-mail.org", "fakemail.net",

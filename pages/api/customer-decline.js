@@ -13,7 +13,7 @@ const auth = new google.auth.GoogleAuth({
         type: 'service_account',
         project_id: process.env.GOOGLE_PROJECT_ID,
         private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\n/g, '\n'),
+        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
         client_email: process.env.GOOGLE_CLIENT_EMAIL,
         client_id: process.env.GOOGLE_CLIENT_ID,
         auth_uri: 'https://accounts.google.com/o/oauth2/auth',
@@ -52,9 +52,20 @@ const quoteLogger = {
 };
 
 export default async function handler(req, res) {
+    // Add CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    // Handle OPTIONS request
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    
     const startTime = Date.now();
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
+    // Log the full request query as required
     console.log(`[DECISION-API] Customer Decline - Incoming request`, {
         file: 'customer-decline.js',
         url: req.url,
@@ -68,11 +79,19 @@ export default async function handler(req, res) {
         let { quoteId } = req.query;
         
         // Normalize quoteId with trim and toLowerCase
-        const normalizedQuoteId = quoteId ? quoteId.trim().toLowerCase() : null;
+        const normalizedQuoteId = (quoteId || "").trim().toLowerCase();
+        
+        // Enhanced logging
+        console.log(`[DECISION-API] Processing parameters:`, { 
+            originalQuoteId: quoteId,
+            normalizedQuoteId,
+            fullUrl: req.url,
+            headers: req.headers
+        });
 
         if (!normalizedQuoteId) {
             console.log(`[DECISION-API] Missing parameters:`, { normalizedQuoteId });
-            return res.redirect('/quote-status?status=error&message=Missing quote ID.');
+            return res.redirect('/quote-status?status=error&message=Missing quote or lead ID');
         }
 
         quoteLogger.info('Customer decline request received', {
@@ -89,7 +108,7 @@ export default async function handler(req, res) {
         // Fetch quote data from Google Sheets
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
-            range: 'Quotes!A:AZ'
+            range: 'Quotes!A:AJ'
         });
 
         const rows = response.data.values;
@@ -104,23 +123,40 @@ export default async function handler(req, res) {
         const quoteIdColIndex = headers.indexOf('QuoteID');
         const quoteIdCol = quoteIdColIndex !== -1 ? quoteIdColIndex : 1; // Default to column B (index 1) if not found
         
-        // Find quote row with case-insensitive comparison
-        const quoteRow = rows.find(row => {
-            if (!row[quoteIdCol]) return false;
-            return row[quoteIdCol].trim().toLowerCase() === normalizedQuoteId;
-        });
-
-        if (!quoteRow) {
-            console.log(`[DECISION-API] Quote not found:`, { normalizedQuoteId, totalRows: rows.length });
-            quoteLogger.info('Quote not found', { normalizedQuoteId }, requestId);
-            return res.redirect('/quote-status?status=error&message=Quote not found.');
+        console.log(`[DECISION-API] Looking for QuoteID in column: ${quoteIdCol} (${String.fromCharCode(65 + quoteIdCol)})`);
+        
+        // Find quote row with case-insensitive comparison using a loop for better logging
+        let quoteRow = null;
+        let rowIndex = -1;
+        
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (row && row[quoteIdCol]) {
+                const rowQuoteId = row[quoteIdCol].trim().toLowerCase();
+                console.log(`[DECISION-API] Comparing: '${rowQuoteId}' with '${normalizedQuoteId}'`);
+                
+                if (rowQuoteId === normalizedQuoteId) {
+                    quoteRow = row;
+                    rowIndex = i + 1; // +1 because Sheets is 1-indexed
+                    console.log(`[DECISION-API] Match found at row ${rowIndex}`);
+                    break;
+                }
+            }
         }
 
-        // Get column indices
-        const customerDecisionCol = headers.indexOf('CustomerDecision');
-        const customerDecisionTimeCol = headers.indexOf('CustomerDecisionTimeStamp');
+        if (!quoteRow) {
+            console.log(`[DECISION-API] QuoteID not found: ${normalizedQuoteId}`, { totalRows: rows.length });
+            quoteLogger.info('Quote not found', { normalizedQuoteId }, requestId);
+            return res.redirect('/quote-status?status=error&message=Invalid Quote ID');
+        }
+
+        // Get column indices - use specific columns Z and AA as required
+        const customerDecisionCol = 25; // Column Z (0-indexed)
+        const customerDecisionTimeCol = 26; // Column AA (0-indexed)
         const validUntilCol = headers.indexOf('ValidUntil');
         const customerStatusCol = headers.indexOf('CustomerStatus');
+        
+        console.log(`[DECISION-API] Using columns: Decision=${String.fromCharCode(65 + customerDecisionCol)}, Timestamp=${String.fromCharCode(65 + customerDecisionTimeCol)}`);
 
         // Check if customer has already made a decision
         const currentDecision = quoteRow[customerDecisionCol];
@@ -198,8 +234,6 @@ export default async function handler(req, res) {
                 minute: '2-digit'
             }) + " NZT";
             
-            const rowIndex = rows.indexOf(quoteRow) + 1; // +1 because Sheets is 1-indexed
-            
             // Update the quote with expired status
             await sheets.spreadsheets.values.update({
                 spreadsheetId: SPREADSHEET_ID,
@@ -223,43 +257,51 @@ export default async function handler(req, res) {
             hour: '2-digit',
             minute: '2-digit'
         }) + " NZT";
-        const rowIndex = rows.indexOf(quoteRow) + 1; // +1 because Sheets is 1-indexed
 
         // Update the quote with decline decision
-        await sheets.spreadsheets.values.update({
-            spreadsheetId: SPREADSHEET_ID,
-            range: `Quotes!${String.fromCharCode(65 + customerDecisionCol)}${rowIndex}:${String.fromCharCode(65 + customerStatusCol)}${rowIndex}`,
-            valueInputOption: 'RAW',
-            resource: {
-                values: [['Declined', nzTimestamp, 'Customer Declined']]
-            }
-        });
+        try {
+            await sheets.spreadsheets.values.update({
+                spreadsheetId: SPREADSHEET_ID,
+                range: `Quotes!${String.fromCharCode(65 + customerDecisionCol)}${rowIndex}:${String.fromCharCode(65 + customerStatusCol)}${rowIndex}`,
+                valueInputOption: 'RAW',
+                resource: {
+                    values: [['Declined', nzTimestamp, 'Customer Declined']]
+                }
+            });
 
-        console.log(`[DECISION-API] Customer decline recorded successfully:`, {
-            normalizedQuoteId,
-            leadId,
-            decision: 'Declined',
-            timestamp: nzTimestamp,
-            rowIndex
-        });
+            console.log(`[DECISION-API] Customer decline recorded successfully:`, {
+                normalizedQuoteId,
+                decision: 'Declined',
+                timestamp: nzTimestamp,
+                rowIndex
+            });
 
-        quoteLogger.info('Quote declined successfully', {
-            normalizedQuoteId,
-            leadId,
-            decision: 'Declined',
-            timestamp: nzTimestamp
-        }, requestId);
+            quoteLogger.info('Quote declined successfully', {
+                normalizedQuoteId,
+                decision: 'Declined',
+                timestamp: nzTimestamp
+            }, requestId);
 
-        // Redirect to declined status page
-        return res.redirect('/quote-status?status=declined');
+            // Redirect to declined status page
+            return res.redirect('/quote-status?status=declined');
+        } catch (updateError) {
+            console.error(`[DECISION-API] Error updating sheet:`, {
+                error: updateError.message,
+                normalizedQuoteId,
+                rowIndex,
+                columns: `${String.fromCharCode(65 + customerDecisionCol)}-${String.fromCharCode(65 + customerStatusCol)}`
+            });
+            
+            quoteLogger.error('Error updating sheet', updateError, requestId);
+            return res.redirect(`/quote-status?status=error&message=Failed to update quote status.`);
+        }
 
     } catch (error) {
         console.error(`[DECISION-API] Customer Decline - Uncaught error:`, {
             file: 'customer-decline.js',
             message: error.message,
             stack: error.stack,
-            quoteId: req.query?.quoteId,
-            leadId: req.query?.leadId
+            quoteId: req.query?.quoteId
         });
         
         quoteLogger.error('Quote decline error', error, requestId);

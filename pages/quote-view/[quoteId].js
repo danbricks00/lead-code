@@ -1,86 +1,17 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import { useRouter } from 'next/router';
+import { google } from 'googleapis';
 
-export default function QuoteView() {
+export default function QuoteView({ quote, error }) {
   const router = useRouter();
   const { quoteId } = router.query;
-  const [quoteData, setQuoteData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    if (quoteId) {
-      fetchQuoteData();
-    }
-  }, [quoteId]);
-
-  const fetchQuoteData = async () => {
-    try {
-      const response = await fetch(`/api/get-quote-details?quoteId=${quoteId}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setQuoteData(data.quoteData);
-      } else {
-        setError(data.error || 'Failed to load quote');
-      }
-    } catch (err) {
-      setError('Failed to load quote');
-      console.error('Error fetching quote:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const generatePDF = async () => {
-    try {
-      const response = await fetch('/api/generate-quote-pdf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(quoteData),
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `quote-${quoteId}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      } else {
-        alert('Failed to generate PDF');
-      }
-    } catch (error) {
-      console.error('PDF generation error:', error);
-      alert('Failed to generate PDF');
-    }
-  };
-
-  if (loading) {
-    return (
-      <div style={styles.container}>
-        <div style={styles.loading}>Loading quote...</div>
-      </div>
-    );
-  }
 
   if (error) {
     return (
       <div style={styles.container}>
-        <div style={styles.error}>Error: {error}</div>
-      </div>
-    );
-  }
-
-  if (!quoteData) {
-    return (
-      <div style={styles.container}>
-        <div style={styles.error}>Quote not found</div>
+        <div style={styles.content}>
+          <div style={styles.error}>Quote Not Available</div>
+        </div>
       </div>
     );
   }
@@ -88,16 +19,13 @@ export default function QuoteView() {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h1 style={styles.title}>Quote #{quoteData.quoteId}</h1>
-        <button onClick={generatePDF} style={styles.pdfButton}>
-          📄 Download PDF
-        </button>
+        <h1 style={styles.title}>Quote Details</h1>
       </div>
-
+      
       <div style={styles.content}>
-        {/* Company Info */}
-        <div style={styles.section}>
-          <h2 style={styles.sectionTitle}>Kiwi Trade</h2>
+        {/* Company Logo and Info */}
+        <div style={styles.companyHeader}>
+          <h1 style={styles.companyName}>Underfloor Heating NZ</h1>
           <p style={styles.tagline}>Professional Underfloor Heating Solutions</p>
         </div>
 
@@ -106,13 +34,14 @@ export default function QuoteView() {
           <h2 style={styles.sectionTitle}>Quote Information</h2>
           <div style={styles.infoGrid}>
             <div style={styles.infoItem}>
-              <strong>Quote ID:</strong> {quoteData.quoteId}
+              <strong>Quote ID:</strong> {quote.quoteData.QuoteID}
             </div>
             <div style={styles.infoItem}>
-              <strong>Date:</strong> {new Date(quoteData.quoteDate).toLocaleDateString('en-NZ')}
+              <strong>Date:</strong> {quote.quoteData.Date || new Date().toLocaleDateString('en-NZ')}
             </div>
             <div style={styles.infoItem}>
-              <strong>Valid Until:</strong> {new Date(quoteData.validUntil).toLocaleDateString('en-NZ')}
+              <strong>Valid Until:</strong> {quote.quoteData['Expiry Date'] || 
+                new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('en-NZ')}
             </div>
           </div>
         </div>
@@ -122,19 +51,19 @@ export default function QuoteView() {
           <h2 style={styles.sectionTitle}>Customer Details</h2>
           <div style={styles.infoGrid}>
             <div style={styles.infoItem}>
-              <strong>Name:</strong> {quoteData.customerName}
+              <strong>Name:</strong> {quote.leadData['Customer Name'] || 'N/A'}
             </div>
             <div style={styles.infoItem}>
-              <strong>Email:</strong> {quoteData.customerEmail}
+              <strong>Email:</strong> {quote.leadData['Email'] || 'N/A'}
             </div>
             <div style={styles.infoItem}>
-              <strong>Phone:</strong> {quoteData.customerPhone}
+              <strong>Phone:</strong> {quote.leadData['Phone'] || 'N/A'}
             </div>
             <div style={styles.infoItem}>
-              <strong>Address:</strong> {quoteData.customerAddress}
+              <strong>Address:</strong> {quote.leadData['Address'] || 'N/A'}
             </div>
             <div style={styles.infoItem}>
-              <strong>Service:</strong> {quoteData.serviceType}
+              <strong>Service:</strong> {quote.quoteData['Service Type'] || 'Underfloor Heating'}
             </div>
           </div>
         </div>
@@ -144,22 +73,22 @@ export default function QuoteView() {
           <h2 style={styles.sectionTitle}>Tradesperson Details</h2>
           <div style={styles.infoGrid}>
             <div style={styles.infoItem}>
-              <strong>Name:</strong> {quoteData.tradespersonName}
+              <strong>Name:</strong> {quote.quoteData['Tradesperson Name'] || 'N/A'}
             </div>
             <div style={styles.infoItem}>
-              <strong>Email:</strong> {quoteData.tradespersonEmail}
+              <strong>Email:</strong> {quote.quoteData['Tradesperson Email'] || 'N/A'}
             </div>
             <div style={styles.infoItem}>
-              <strong>Phone:</strong> {quoteData.tradespersonPhone}
+              <strong>Phone:</strong> {quote.quoteData['Tradesperson Phone'] || 'N/A'}
             </div>
             <div style={styles.infoItem}>
-              <strong>License:</strong> {quoteData.tradespersonLicense}
+              <strong>License:</strong> {quote.quoteData['Tradesperson License'] || 'N/A'}
             </div>
           </div>
         </div>
 
         {/* Room Details */}
-        {quoteData.rooms && quoteData.rooms.length > 0 && (
+        {quote.leadData.Rooms && (
           <div style={styles.section}>
             <h2 style={styles.sectionTitle}>Project Details</h2>
             <table style={styles.roomTable}>
@@ -175,15 +104,15 @@ export default function QuoteView() {
                 </tr>
               </thead>
               <tbody>
-                {quoteData.rooms.map((room, index) => (
+                {JSON.parse(quote.leadData.Rooms || '[]').map((room, index) => (
                   <tr key={index}>
                     <td>{room.name}</td>
                     <td>{room.dimensions}</td>
                     <td>{room.sqm ? `${room.sqm}m²` : 'N/A'}</td>
                     <td>{room.labourHours}</td>
-                    <td>${room.labourCost?.toFixed(2) || '0.00'}</td>
-                    <td>${room.materialsCost?.toFixed(2) || '0.00'}</td>
-                    <td>${((room.labourCost || 0) + (room.materialsCost || 0)).toFixed(2)}</td>
+                    <td>${parseFloat(room.labourCost || 0).toFixed(2)}</td>
+                    <td>${parseFloat(room.materialsCost || 0).toFixed(2)}</td>
+                    <td>${(parseFloat(room.labourCost || 0) + parseFloat(room.materialsCost || 0)).toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -197,35 +126,51 @@ export default function QuoteView() {
           <div style={styles.summaryGrid}>
             <div style={styles.summaryItem}>
               <div style={styles.summaryLabel}>Labour</div>
-              <div style={styles.summaryValue}>${quoteData.totals?.labour?.toFixed(2) || '0.00'}</div>
+              <div style={styles.summaryValue}>${parseFloat(quote.quoteData['Labour Cost'] || 0).toFixed(2)}</div>
             </div>
             <div style={styles.summaryItem}>
               <div style={styles.summaryLabel}>Materials</div>
-              <div style={styles.summaryValue}>${quoteData.totals?.materials?.toFixed(2) || '0.00'}</div>
+              <div style={styles.summaryValue}>${parseFloat(quote.quoteData['Materials Cost'] || 0).toFixed(2)}</div>
             </div>
             <div style={styles.summaryItem}>
               <div style={styles.summaryLabel}>Travel</div>
-              <div style={styles.summaryValue}>${quoteData.totals?.travel?.toFixed(2) || '0.00'}</div>
+              <div style={styles.summaryValue}>${parseFloat(quote.quoteData['Travel Cost'] || 0).toFixed(2)}</div>
             </div>
             <div style={styles.summaryItem}>
               <div style={styles.summaryLabel}>Installation</div>
-              <div style={styles.summaryValue}>${quoteData.totals?.installation?.toFixed(2) || '0.00'}</div>
+              <div style={styles.summaryValue}>${parseFloat(quote.quoteData['Installation Cost'] || 0).toFixed(2)}</div>
             </div>
           </div>
           <div style={styles.totalSection}>
             <div style={styles.totalRow}>
               <span>Subtotal (excl. GST):</span>
-              <span>${quoteData.totals?.subtotal?.toFixed(2) || '0.00'}</span>
+              <span>${parseFloat(quote.quoteData['Subtotal'] || 0).toFixed(2)}</span>
             </div>
             <div style={styles.totalRow}>
               <span>GST (15%):</span>
-              <span>${quoteData.totals?.gst?.toFixed(2) || '0.00'}</span>
+              <span>${parseFloat(quote.quoteData['GST'] || 0).toFixed(2)}</span>
             </div>
             <div style={styles.finalTotalRow}>
               <span>Total (incl. GST):</span>
-              <span>${quoteData.totals?.final?.toFixed(2) || '0.00'}</span>
+              <span>${parseFloat(quote.quoteData['Total'] || 0).toFixed(2)}</span>
             </div>
           </div>
+        </div>
+
+        {/* Decision Buttons */}
+        <div style={styles.decisionButtons}>
+          <a 
+            href={`/api/customer-accept?quoteId=${quoteId}`}
+            style={{...styles.button, ...styles.acceptButton}}
+          >
+            Accept Quote
+          </a>
+          <a 
+            href={`/api/customer-decline?quoteId=${quoteId}`}
+            style={{...styles.button, ...styles.declineButton}}
+          >
+            Decline Quote
+          </a>
         </div>
 
         {/* Terms and Conditions */}
@@ -243,6 +188,166 @@ export default function QuoteView() {
       </div>
     </div>
   );
+}
+
+export async function getServerSideProps(context) {
+  const { params } = context;
+  const { quoteId } = params;
+  
+  // Normalize quoteId
+  const normalizedQuoteId = (quoteId || "").trim().toLowerCase();
+  console.log("Looking for quoteId:", normalizedQuoteId);
+  
+  try {
+    // Initialize Google Sheets
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        type: 'service_account',
+        project_id: process.env.GOOGLE_PROJECT_ID,
+        private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
+        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+        token_uri: 'https://oauth2.googleapis.com/token',
+        auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs'
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets']
+    });
+
+    const sheets = google.sheets({ version: 'v4', auth });
+    const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
+
+    // Fetch all rows from the "Quotes" sheet
+    const quotesResponse = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'Quotes!A:AJ'
+    });
+
+    const rows = quotesResponse.data.values;
+    if (!rows || rows.length === 0) {
+      console.log(`No quote data found in sheets`);
+      return {
+        props: {
+          error: true
+        }
+      };
+    }
+
+    const headers = rows[0];
+    // Find QuoteID column index (should be column B, index 1)
+    const quoteIdColIndex = headers.indexOf('QuoteID');
+    const quoteIdCol = quoteIdColIndex !== -1 ? quoteIdColIndex : 1; // Default to column B (index 1) if not found
+    
+    // Find quote row with case-insensitive comparison
+    let quoteRow = null;
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (row[quoteIdCol]) {
+        const sheetId = row[quoteIdCol].trim().toLowerCase();
+        console.log("Comparing with row[1]:", sheetId);
+        if (sheetId === normalizedQuoteId) {
+          quoteRow = row;
+          break;
+        }
+      }
+    }
+
+    if (!quoteRow) {
+      console.log(`Quote not found: ${normalizedQuoteId}`);
+      return {
+        props: {
+          error: true
+        }
+      };
+    }
+
+    // Convert row to object
+    const quoteData = headers.reduce((obj, key, index) => {
+      obj[key] = quoteRow[index] || '';
+      return obj;
+    }, {});
+
+    // Get Lead ID from quote data
+    const leadId = quoteData['Lead ID'];
+    if (!leadId) {
+      console.log(`Lead ID missing from quote data for quote ID: ${quoteId}`);
+      return {
+        props: {
+          error: true
+        }
+      };
+    }
+
+    // Fetch lead data
+    const leadsResponse = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'Leads!A:AJ'
+    });
+
+    const leadRows = leadsResponse.data.values;
+    if (!leadRows || leadRows.length === 0) {
+      console.log(`No lead data found in sheets`);
+      return {
+        props: {
+          error: true
+        }
+      };
+    }
+
+    const leadHeaders = leadRows[0];
+    // Find Lead ID column index
+    const leadIdColIndex = leadHeaders.indexOf('Lead ID');
+    const leadIdCol = leadIdColIndex !== -1 ? leadIdColIndex : 0; // Default to column A (index 0) if not found
+    
+    // Find lead row with case-insensitive comparison
+    let leadRow = null;
+    for (let i = 1; i < leadRows.length; i++) {
+      const row = leadRows[i];
+      if (row[leadIdCol]) {
+        const sheetLeadId = row[leadIdCol].trim().toLowerCase();
+        if (sheetLeadId === leadId.trim().toLowerCase()) {
+          leadRow = row;
+          break;
+        }
+      }
+    }
+
+    if (!leadRow) {
+      console.log(`Lead not found for ID: ${leadId}`);
+      return {
+        props: {
+          error: true
+        }
+      };
+    }
+
+    // Convert lead row to object
+    const leadData = leadHeaders.reduce((obj, key, index) => {
+      obj[key] = leadRow[index] || '';
+      return obj;
+    }, {});
+
+    console.log(`QuoteID ${normalizedQuoteId} found at index ${rows.indexOf(quoteRow)}.`);
+    
+    // Return the data as props
+    return {
+      props: {
+        quote: {
+          quoteData,
+          leadData
+        },
+        error: false
+      }
+    };
+  } catch (error) {
+    console.error('Error in getServerSideProps:', error);
+    return {
+      props: {
+        error: true
+      }
+    };
+  }
 }
 
 const styles = {
@@ -269,22 +374,25 @@ const styles = {
     margin: 0,
     fontSize: '28px'
   },
-  pdfButton: {
-    background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '12px 24px',
-    fontSize: '16px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    boxShadow: '0 4px 15px rgba(40, 167, 69, 0.3)'
-  },
   content: {
     backgroundColor: 'white',
     borderRadius: '8px',
     padding: '30px',
     boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+  },
+  companyHeader: {
+    textAlign: 'center',
+    marginBottom: '30px'
+  },
+  companyName: {
+    color: '#667eea',
+    fontSize: '24px',
+    marginBottom: '5px'
+  },
+  tagline: {
+    color: '#666',
+    fontSize: '14px',
+    marginBottom: '20px'
   },
   section: {
     marginBottom: '30px',
@@ -297,11 +405,6 @@ const styles = {
     marginBottom: '15px',
     textTransform: 'uppercase',
     letterSpacing: '1px'
-  },
-  tagline: {
-    color: '#666',
-    fontSize: '14px',
-    marginBottom: '20px'
   },
   infoGrid: {
     display: 'grid',
@@ -387,11 +490,36 @@ const styles = {
     color: '#666',
     lineHeight: '1.5'
   },
-  loading: {
-    textAlign: 'center',
-    fontSize: '18px',
-    color: '#666',
-    padding: '50px'
+  decisionButtons: {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '20px',
+    marginTop: '40px'
+  },
+  button: { 
+    textDecoration: 'none', 
+    color: 'white', 
+    padding: '12px 25px', 
+    borderRadius: '5px', 
+    fontWeight: 'bold',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: '16px',
+    transition: 'all 0.3s ease',
+    display: 'inline-block',
+    textAlign: 'center'
+  },
+  acceptButton: { 
+    backgroundColor: '#4caf50',
+    '&:hover': {
+      backgroundColor: '#3d8b40'
+    }
+  },
+  declineButton: { 
+    backgroundColor: '#f44336',
+    '&:hover': {
+      backgroundColor: '#d32f2f'
+    }
   },
   error: {
     textAlign: 'center',

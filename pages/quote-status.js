@@ -4,42 +4,44 @@ import Layout from '../components/Layout';
 
 const QuoteStatusPage = () => {
   const router = useRouter();
-  const { status, message } = router.query;
+  const { status, message, decision, timestamp } = router.query;
   const [displayMessage, setDisplayMessage] = useState('');
   const [statusType, setStatusType] = useState('');
-  const [timestamp, setTimestamp] = useState('');
+  const [displayTimestamp, setDisplayTimestamp] = useState('');
+  const [additionalMessage, setAdditionalMessage] = useState('');
 
   useEffect(() => {
     if (!status) return;
     
     setStatusType(status);
+    setDisplayTimestamp(timestamp || '');
     
     switch(status) {
       case 'accepted':
-        setDisplayMessage('You\'ve accepted the quote.');
+        setDisplayMessage('You have accepted this quote.');
+        setAdditionalMessage('Please await our next contact. We will be in touch shortly to discuss the next steps.');
         break;
       case 'declined':
-        setDisplayMessage('You\'ve declined the quote.');
+        setDisplayMessage('You have declined this quote.');
+        setAdditionalMessage('If this was a mistake, please contact the tradesperson or admin for assistance.');
         break;
       case 'expired':
         setDisplayMessage('This quote has expired. Request a new quote.');
         break;
       case 'locked':
-        setDisplayMessage('A decision was already recorded for this quote. No changes allowed.');
+        const formattedDecision = decision ? decision.charAt(0).toUpperCase() + decision.slice(1).toLowerCase() : 'Processed';
+        setDisplayMessage(`Decision Already Made`);
+        setAdditionalMessage(`This quote was ${formattedDecision} on ${timestamp} NZST.`);
         break;
       case 'error':
-        setDisplayMessage(message || 'Something went wrong, please contact support.');
+        setDisplayMessage('Error');
+        setAdditionalMessage(message || 'Something went wrong. Please check your email link or contact support.');
         break;
       default:
-        setDisplayMessage('Quote status updated.');
+        setDisplayMessage('Quote Status');
+        setAdditionalMessage('The status of your quote has been updated.');
     }
-    
-    // Set timestamp if available
-    if (message && message.includes('timestamp:')) {
-      const timestampPart = message.split('timestamp:')[1].trim();
-      setTimestamp(timestampPart);
-    }
-  }, [status, message]);
+  }, [status, message, decision, timestamp]);
 
   const getStatusIcon = () => {
     switch(statusType) {
@@ -47,7 +49,7 @@ const QuoteStatusPage = () => {
       case 'declined': return '❌';
       case 'expired': return '⏳';
       case 'locked': return '🔒';
-      case 'error': return '⚠️';
+      case 'error': return '🚨';
       default: return '📄';
     }
   };
@@ -86,8 +88,8 @@ const QuoteStatusPage = () => {
           </h1>
           <p style={styles.message}>{displayMessage}</p>
           
-          {timestamp && (
-            <div style={styles.timestamp}>on {timestamp}</div>
+          {additionalMessage && (
+            <p style={styles.additionalMessage}>{additionalMessage}</p>
           )}
           
           {statusType === 'expired' && (
@@ -115,8 +117,9 @@ const styles = {
     card: { background: 'white', padding: '40px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', textAlign: 'center', maxWidth: '500px', width: '100%' },
     successHeader: { color: '#4caf50' },
     errorHeader: { color: '#f44336' },
-    message: { fontSize: '1.1em', color: '#555', margin: '20px 0' },
-    button: { background: '#667eea', color: 'white', border: 'none', padding: '12px 20px', borderRadius: '5px', fontSize: '1em', cursor: 'pointer' },
+    message: { fontSize: '1.2em', fontWeight: 'bold', color: '#333', margin: '20px 0 10px' },
+    additionalMessage: { fontSize: '1.1em', color: '#555', margin: '0 0 20px' },
+    button: { background: '#667eea', color: 'white', border: 'none', padding: '12px 20px', borderRadius: '5px', fontSize: '1em', cursor: 'pointer', marginTop: '20px' },
     contactInfo: { 
         background: '#f8f9fa', 
         border: '1px solid #e9ecef', 
@@ -145,19 +148,19 @@ const styles = {
         textDecoration: 'none' 
     },
     statusIcon: {
-      width: '60px',
-      height: '60px',
+      width: '70px',
+      height: '70px',
       borderRadius: '50%',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       margin: '0 auto 20px',
-      fontSize: '24px',
+      fontSize: '32px',
       color: 'white'
     },
     header: {
       margin: '0 0 20px 0',
-      fontSize: '24px'
+      fontSize: '26px'
     },
     timestamp: {
       fontSize: '0.9em',

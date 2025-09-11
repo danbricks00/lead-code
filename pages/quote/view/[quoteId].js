@@ -360,7 +360,7 @@ export async function getServerSideProps(context) {
     // Create structured quote object from row data
     const quote = { 
       quoteId: foundRow[1] || "", 
-      leadId: foundRow[2] || "", 
+      leadId: (foundRow[2] || "").toString().trim() || " ",    
       tradePersonName: foundRow[3] || "", 
       tradePersonEmail: foundRow[4] || "", 
       tradePersonPhone: foundRow[5] || "", 

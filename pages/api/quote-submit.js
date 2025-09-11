@@ -92,13 +92,43 @@ export default async function handler(req, res) {
         
         // Create a new quote row
         const mode = isDraft ? 'draft' : 'submitted';
+        
+        // Calculate line totals
+        const labourRate = parseFloat(req.body.labourRate) || 0;
+        const labourHours = parseFloat(req.body.labourHours) || 0;
+        const labourTotal = labourRate * labourHours;
+        
+        const materialsCost = parseFloat(req.body.materialsCost) || 0;
+        const materialsQty = parseFloat(req.body.materialsQuantity) || 1;
+        const materialsTotal = materialsCost * materialsQty;
+        
+        const travelCost = parseFloat(req.body.travelCost) || 0;
+        const travelDistance = parseFloat(req.body.travelDistance) || 0;
+        const travelTotal = travelCost * travelDistance;
+        
+        const installationCost = parseFloat(req.body.installationCost) || 0;
+        
+        // Calculate subtotal, GST, and total
+        const subtotal = labourTotal + materialsTotal + travelTotal + installationCost;
+        const gst = subtotal * 0.15; // 15% GST
+        const totalQuote = subtotal + gst;
+        
+        // Create quote row with calculated values
         const quoteRow = buildQuoteRow({
           lead,
           quoteId,
           tradePersonName: req.body.tradespersonName,
           tradePersonEmail: req.body.tradespersonEmail,
           tradePersonPhone: req.body.tradespersonPhone,
-          body: req.body,
+          body: {
+            ...req.body,
+            labourTotal: labourTotal.toFixed(2),
+            materialsTotal: materialsTotal.toFixed(2),
+            travelTotal: travelTotal.toFixed(2),
+            subtotal: subtotal.toFixed(2),
+            gst: gst.toFixed(2),
+            totalQuote: totalQuote.toFixed(2)
+          },
           mode
         });
         
@@ -202,7 +232,12 @@ export default async function handler(req, res) {
     const installationCost = row[headers.indexOf('InstallationCost')] || '0';
     const subtotal         = row[headers.indexOf('Subtotal')] || '0';
     const gst              = row[headers.indexOf('GST')] || '0';
-
+    
+    // Get tradesperson details
+    const tradePersonName = row[headers.indexOf('TradePersonName')] || 'Your Tradesperson';
+    const tradePersonEmail = row[headers.indexOf('TradePersonEmail')] || '';
+    const tradePersonPhone = row[headers.indexOf('TradePersonPhone')] || '';
+    
     // Create HTML content as a separate variable
     const htmlContent = `
       <h2>Dear ${customerName},</h2>
@@ -225,6 +260,13 @@ export default async function handler(req, res) {
             <td style="padding:6px; font-size:16px; font-weight:bold; text-align:right; border-top:2px solid #000;">$${totalQuote}</td></tr>
       </table>
 
+      <h3>Your Tradesperson:</h3>
+      <p>
+        <strong>Name:</strong> ${tradePersonName}<br>
+        <strong>Email:</strong> ${tradePersonEmail}<br>
+        <strong>Phone:</strong> ${tradePersonPhone}
+      </p>
+
       <p>You can now respond to this quote:</p>
       <p>
         <a href="${acceptLink}" style="background:#28a745;color:white;padding:10px 20px;text-decoration:none;border-radius:4px;">✅ Accept Quote</a>
@@ -234,10 +276,14 @@ export default async function handler(req, res) {
       <p>A detailed PDF is also attached.</p>
     `;
 
+    // Get admin email from environment variables
+    const adminEmail = process.env.ADMIN_EMAIL || '';
+    
     // Now send the email with the HTML content
     await transporter.sendMail({
       from: `"Kiwi Trade" <${GMAIL_USER}>`,
       to: customerEmail,
+      cc: [tradePersonEmail, adminEmail].filter(Boolean).join(','), // Filter out empty emails
       subject: `📄 Your Kiwi Trade Quote #${quoteId} - ${serviceType}`,
       html: htmlContent,
       attachments: [
@@ -248,8 +294,8 @@ export default async function handler(req, res) {
         }
       ]
     });
-
-    console.log(`✅ Customer email with PDF sent to ${customerEmail}`);
+    
+    console.log(`✅ Quote email sent to customer: ${customerEmail}, CC: ${tradePersonEmail}, ${adminEmail}`);
     return res.status(200).json({ success: true, message: 'Quote sent to customer' });
 
   } catch (err) {

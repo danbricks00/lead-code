@@ -11,7 +11,17 @@ const QuoteStatusPage = () => {
   const [additionalMessage, setAdditionalMessage] = useState('');
 
   useEffect(() => {
-    if (!status) return;
+    // Log all query parameters for debugging
+    console.log("[QUOTE-STATUS] Params:", router.query);
+    
+    if (!router.isReady) return;
+    
+    // Handle missing status parameter
+    if (!status) {
+      setStatusType('error');
+      setDisplayMessage('Missing status parameter.');
+      return;
+    }
     
     setStatusType(status);
     setDisplayTimestamp(timestamp || '');
@@ -30,18 +40,19 @@ const QuoteStatusPage = () => {
         break;
       case 'locked':
         const formattedDecision = decision ? decision.charAt(0).toUpperCase() + decision.slice(1).toLowerCase() : 'Processed';
-        setDisplayMessage(`Decision already made.`);
-        setAdditionalMessage(`This quote was ${formattedDecision} on ${timestamp} NZST.`);
+        setDisplayMessage('Decision Already Made');
+        setAdditionalMessage(`${formattedDecision} on ${timestamp || 'Unknown date'} NZST`);
         break;
       case 'error':
         setDisplayMessage('Error');
-        setAdditionalMessage(message || 'Something went wrong. Please check your email link or contact support.');
+        setAdditionalMessage(message || 'Failed to update quote status.');
         break;
       default:
-        setDisplayMessage('Quote Status');
-        setAdditionalMessage('The status of your quote has been updated.');
+        setStatusType('error');
+        setDisplayMessage('Unknown status response.');
+        setAdditionalMessage('Please check your email link or contact support.');
     }
-  }, [status, message, decision, timestamp]);
+  }, [router.isReady, router.query, status, message, decision, timestamp]);
 
   const getStatusIcon = () => {
     switch(statusType) {

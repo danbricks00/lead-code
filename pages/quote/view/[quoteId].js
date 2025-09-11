@@ -143,15 +143,20 @@ const CustomerQuoteView = ({ initialQuoteInfo, initialError }) => {
             
             {/* Customer/Tradesperson Details */}
             <div style={styles.detailsGrid}>
-                <div><h2>For:</h2>{leadData['Customer Name']}<br />{leadData['Customer Email']}</div>
-                <div><h2>From:</h2>{quoteData['Tradesperson Name']}<br />{quoteData['Tradesperson Email']}</div>
+                <div><h2>For:</h2>{leadData['CustomerName']}<br />{leadData['CustomerEmail']}<br />{leadData['CustomerPhone']}</div>
+                <div><h2>From:</h2>{quoteData['TradePersonName']}<br />{quoteData['TradePersonEmail']}<br />{quoteData['TradePersonPhone']}</div>
             </div>
             
             {/* Cost Breakdown */}
             <h2>Cost Breakdown</h2>
             <table style={styles.itemsTable}>
-                <thead style={{backgroundColor: '#f9f9f9'}}>
-                    <tr><th>Description</th><th>Rate</th><th>Unit(s)</th><th>Subtotal</th></tr>
+                <thead>
+                    <tr>
+                        <th style={{textAlign: 'left', padding: '8px'}}>Description</th>
+                        <th style={{textAlign: 'left', padding: '8px'}}>Rate</th>
+                        <th style={{textAlign: 'left', padding: '8px'}}>Unit(s)</th>
+                        <th style={{textAlign: 'left', padding: '8px'}}>Subtotal</th>
+                    </tr>
                 </thead>
                 <tbody>
                     <tr><td>Labour</td><td>${labourCost.toFixed(2)} / hr</td><td>{labourHours}</td><td>${labourSubtotal.toFixed(2)}</td></tr>

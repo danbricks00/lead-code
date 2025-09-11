@@ -275,17 +275,19 @@ export async function getServerSideProps(context) {
       };
     }
     const leadIdRaw = foundRow[2];
-       console.log(`[DEBUG] Raw Lead ID cell value: "${leadIdRaw}"`);
-
-      const leadIdTrimmed = (leadIdRaw || "").toString().trim();
-       console.log(`[DEBUG] Processed Lead ID after trim: "${leadId}"`);
-
-      if (!leadIdTrimmed) {
-       console.log(`[ERROR] Lead ID missing or empty after trim for quote ID: ${quoteId}`);
-}      else {
-     console.log(`[INFO] Lead ID found: ${leadId}`);
-}
-
+    console.log(`[DEBUG] Raw Lead ID cell value: "${leadIdRaw}"`);
+    
+    const leadId = (leadIdRaw || "").toString().trim(); // Changed variable name from leadIdTrimmed to leadId
+    console.log(`[DEBUG] Processed Lead ID after trim: "${leadId}"`);
+    
+    if (!leadId) {
+      console.log(`[ERROR] Lead ID missing or empty after trim for quote ID: ${quoteId}`);
+    } else {
+      console.log(`[INFO] Lead ID found: ${leadId}`);
+    }
+    
+    // The rest of the code will now work correctly since leadId is defined
+    
     // Check for existing decision in Column Z (index 25)
     const existingDecision = (foundRow[25] || "").trim().toLowerCase();
     const existingTimestamp = foundRow[26] || "";

@@ -259,16 +259,14 @@ export default async function handler(req, res) {
         // Update the quote with decline decision - ONLY update Z and AA columns
         try {
             // Calculate the row index (1-indexed for Google Sheets)
-            const rowIndex = foundIndex + 1;
-            // Create properly formatted range
             const range = `Quotes!Z${rowIndex}:AA${rowIndex}`;
             
             // Log the range being updated
             console.log(`[DECISION-API] Writing to range:`, range);
             
             // Check if customer has already made a decision (double-check)
-            const existingDecision = (rows[foundIndex][25] || "").trim().toLowerCase();
-            const existingTimestamp = rows[foundIndex][26] || "";
+            const existingDecision = (rows[rowIndex - 1][25] || "").trim().toLowerCase();
+            const existingTimestamp = rows[rowIndex - 1][26] || "";
             
             if (existingDecision === "accepted" || existingDecision === "declined") {
                 console.log(`[DECISION-API] Guard - Quote already decided: ${existingDecision} at ${existingTimestamp}`);

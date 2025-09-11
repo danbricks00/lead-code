@@ -124,11 +124,13 @@ const CustomerQuoteView = ({ initialQuoteInfo, initialError }) => {
       const travelCost = parseFloatValue(quoteData['TravelCost']);
       const travelDistance = parseFloatValue(quoteData['TravelDistance']);
       const installationCost = parseFloatValue(quoteData['InstallationCost']);
-      const totalQuote = parseFloatValue(quoteData['TotalQuote']);
 
       const labourSubtotal = labourCost * labourHours;
       const materialsSubtotal = materialsCost * materialsQuantity;
       const travelSubtotal = travelCost * travelDistance;
+      const itemsTotal = labourSubtotal + materialsSubtotal + travelSubtotal + installationCost;
+      const gstAmount = itemsTotal * 0.15;
+      const finalTotal = itemsTotal + gstAmount;
       
       return (
         <div style={styles.invoiceBox}>
@@ -163,14 +165,15 @@ const CustomerQuoteView = ({ initialQuoteInfo, initialError }) => {
                     <tr><td>Materials</td><td>${materialsCost.toFixed(2)} / m²</td><td>{materialsQuantity}</td><td>${materialsSubtotal.toFixed(2)}</td></tr>
                     <tr><td>Travel</td><td>${travelCost.toFixed(2)} / km</td><td>{travelDistance}</td><td>${travelSubtotal.toFixed(2)}</td></tr>
                     <tr><td>Installation</td><td></td><td></td><td>${installationCost.toFixed(2)}</td></tr>
+                    {/* Separator */}
+                    <tr><td colSpan="4" style={{borderTop: '1px solid #ccc', margin: '10px 0'}}></td></tr>
+                    {/* Totals */}
+                    <tr><td colSpan="3" style={{textAlign: 'right', fontWeight: 'bold', padding: '8px'}}>Subtotal</td><td style={{fontWeight: 'bold'}}>${itemsTotal.toFixed(2)}</td></tr>
+                    <tr><td colSpan="3" style={{textAlign: 'right', fontWeight: 'bold', padding: '8px'}}>GST (15%)</td><td style={{fontWeight: 'bold'}}>${gstAmount.toFixed(2)}</td></tr>
+                    <tr style={{borderTop: '1px solid #ccc'}}><td colSpan="3" style={{textAlign: 'right', fontWeight: 'bold', fontSize: '1.2em', padding: '8px'}}>Total</td><td style={{fontWeight: 'bold', fontSize: '1.2em'}}>${finalTotal.toFixed(2)}</td></tr>
                 </tbody>
             </table>
             
-            {/* Total */}
-            <div style={styles.totalSection}>
-                <div style={{fontWeight: 'bold', fontSize: '1.2em'}}>Total: ${totalQuote.toFixed(2)}</div>
-            </div>
-
             {/* Decision Buttons */}
             {quoteData.Decision || decisionMade ? (
                 <div style={styles.decisionMade}>

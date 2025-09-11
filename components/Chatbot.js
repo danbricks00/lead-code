@@ -93,7 +93,7 @@ function validateEmailFrontend(email) {
   const trimmedEmail = email.trim().toLowerCase();
   
   // Basic format check
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+  const emailRegex = /^[^\s@]{2,}@[^\s@]+\.[a-zA-Z]{2,}$/;
   if (!emailRegex.test(trimmedEmail)) {
     return { valid: false, error: "Please enter a valid email address with a proper domain" };
   }

@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
+import {sendEmail} from '../../lib/emailHelper.js';
 
 // Environment variables
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
@@ -174,8 +175,26 @@ export default async function handler(req, res) {
                 normalizedQuoteId
             }, requestId);
             
-            // Redirect to locked status page instead of custom HTML
-            return res.redirect('/quote-status?status=locked');
+            // Parse and format the timestamp in Pacific/Auckland timezone
+            let formattedTimestamp;
+            try {
+                // Try to parse the timestamp (handle different formats)
+                const timestamp = new Date(decisionTime.replace(' NZT', ''));
+                formattedTimestamp = timestamp.toLocaleString('en-NZ', {
+                    timeZone: 'Pacific/Auckland',
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }).replace(/\//g, '-');
+            } catch (error) {
+                console.error(`[DECISION-API] Error parsing timestamp:`, error);
+                formattedTimestamp = 'Unknown';
+            }
+            
+            // Redirect to locked status page with decision and timestamp
+            return res.redirect(`/quote-status?status=locked&decision=${currentDecision}&timestamp=${formattedTimestamp}`);
         }
 
         // Check if quote is still valid
@@ -244,7 +263,7 @@ export default async function handler(req, res) {
             return res.redirect('/quote-status?status=expired');
         }
 
-        // Record the acceptance decision
+        // Record the acceptance decision - format timestamp as DD-MM-YYYY HH:mm
         const nzTimestamp = new Date().toLocaleString('en-NZ', {
             timeZone: 'Pacific/Auckland',
             day: '2-digit',
@@ -252,8 +271,8 @@ export default async function handler(req, res) {
             year: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
-        }) + " NZT";
-
+        }).replace(/\//g, '-');
+        
         // Update the quote with acceptance decision
         try {
             await sheets.spreadsheets.values.update({
@@ -271,12 +290,63 @@ export default async function handler(req, res) {
                 timestamp: nzTimestamp,
                 rowIndex
             });
-
+        
             quoteLogger.info('Quote accepted successfully', {
                 normalizedQuoteId,
                 decision: 'Accepted',
                 timestamp: nzTimestamp
             }, requestId);
+            
+            // Send email notifications
+            try {
+                // Get customer email (Column 27, index 26)
+                const customerEmail = quoteRow[26]; // Column AA (0-indexed)
+                // Get tradesperson email (Column 5, index 4)
+                const tradesmanEmail = quoteRow[4]; // Column E (0-indexed)
+                // Get admin email from env var
+                const adminEmail = process.env.ADMIN_EMAIL;
+                
+                const quoteId = quoteRow[quoteIdCol];
+                const emailSubject = `Quote Decision: ${quoteId} - ACCEPTED`;
+                const emailBody = `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2>Quote Decision Notification</h2>
+                        <p>A decision has been made on quote ${quoteId}.</p>
+                        <p><strong>Decision:</strong> ACCEPTED</p>
+                        <p><strong>Timestamp:</strong> ${nzTimestamp} (New Zealand Time)</p>
+                    </div>
+                `;
+                
+                // Send emails to all parties
+                if (customerEmail) {
+                    await sendEmail({
+                        to: customerEmail,
+                        subject: emailSubject,
+                        html: emailBody
+                    });
+                }
+                
+                if (tradesmanEmail) {
+                    await sendEmail({
+                        to: tradesmanEmail,
+                        subject: emailSubject,
+                        html: emailBody
+                    });
+                }
+                
+                if (adminEmail) {
+                    await sendEmail({
+                        to: adminEmail,
+                        subject: emailSubject,
+                        html: emailBody
+                    });
+                }
+                
+                console.log(`[DECISION-API] Notification emails sent successfully`);
+            } catch (emailError) {
+                console.error(`[DECISION-API] Error sending notification emails:`, emailError);
+                // Continue with redirect even if emails fail
+            }
             
             // Redirect to accepted status page
             return res.redirect('/quote-status?status=accepted');

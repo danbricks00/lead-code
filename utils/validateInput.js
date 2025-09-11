@@ -4,7 +4,7 @@
 const nzPhoneRegex = /^(?:\+64\d{7,10}|0\d{7,10})$/;
 
 // Email validation
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const emailRegex = /^[^\s@]{2,}@[^\s@]+\.[^\s@]+$/;
 
 // Invalid domain patterns (like .x.x for Outlook)
 const invalidDomainPatterns = [
@@ -62,6 +62,26 @@ export function validateEmail(email) {
   for (const pattern of invalidDomainPatterns) {
     if (pattern.test(domain)) {
       console.log(`❌ Invalid domain pattern detected: ${domain}`);
+      return false;
+    }
+  }
+  
+  // Block specific invalid domains (common typos or incorrect TLDs)
+  const invalidDomainCombinations = [
+    { provider: 'gmail', validTlds: ['com', 'net'], invalidTlds: ['co'] },
+    { provider: 'yahoo', validTlds: ['com', 'co.uk', 'co.nz'], invalidTlds: ['co'] },
+    { provider: 'hotmail', validTlds: ['com', 'co.uk', 'co.nz'], invalidTlds: ['co'] },
+    { provider: 'outlook', validTlds: ['com', 'co.uk', 'co.nz'], invalidTlds: ['co'] }
+  ];
+  
+  // Check for invalid domain combinations
+  const domainParts = domain.split('.');
+  const provider = domainParts[0].toLowerCase();
+  const tld = domainParts.slice(1).join('.');
+  
+  for (const item of invalidDomainCombinations) {
+    if (provider === item.provider && item.invalidTlds.includes(tld)) {
+      console.log(`❌ Invalid domain combination blocked: ${domain} (${provider}.${tld})`);
       return false;
     }
   }

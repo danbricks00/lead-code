@@ -21,7 +21,9 @@ const CustomerQuoteView = () => {
 
       const fetchQuote = async () => {
         try {
-          const response = await fetch(`/api/get-quote-for-customer?quoteId=${quoteId}&ts=${ts}&token=${token}`);
+          // Normalize quoteId before sending to API
+          const normalizedQuoteId = quoteId.trim().toLowerCase();
+          const response = await fetch(`/api/get-quote-for-customer?quoteId=${normalizedQuoteId}&ts=${ts}&token=${token}`);
           const result = await response.json();
 
           if (result.success) {
@@ -34,7 +36,8 @@ const CustomerQuoteView = () => {
             setError(result.error || 'Could not retrieve quote.');
           }
         } catch (err) {
-          setError('An unexpected error occurred.');
+          console.error('Error fetching quote:', err);
+          setError('An unexpected error occurred while retrieving your quote.');
         } finally {
           setIsLoading(false);
         }
@@ -54,7 +57,9 @@ const CustomerQuoteView = () => {
     setIsProcessing(true);
     
     try {
-      const decisionUrl = `/api/quote-decision/${decision}?quoteId=${quoteId}&ts=${ts}&token=${token}`;
+      // Normalize quoteId before sending to API
+      const normalizedQuoteId = quoteId.trim().toLowerCase();
+      const decisionUrl = `/api/quote-decision/${decision}?quoteId=${normalizedQuoteId}&ts=${ts}&token=${token}`;
       
       // Open in new window to prevent double-clicking
       const newWindow = window.open(decisionUrl, '_blank');
@@ -77,12 +82,23 @@ const CustomerQuoteView = () => {
 
   const renderContent = () => {
     if (isLoading) {
-      return <p>Loading quote...</p>;
+      return <div style={styles.loadingContainer}>
+        <div style={styles.loadingSpinner}></div>
+        <p>Loading your quote...</p>
+      </div>;
     }
     if (error) {
-      return <div>
-        <h1>❌ Error</h1>
-        <p>{error}</p>
+      return <div style={styles.errorContainer}>
+        <div style={styles.errorIcon}>❌</div>
+        <h1 style={styles.errorTitle}>Quote Not Available</h1>
+        <p style={styles.errorMessage}>{error}</p>
+        <div style={styles.errorHelp}>
+          <p>If you believe this is a mistake, please:</p>
+          <ul>
+            <li>Check that you've copied the entire link from your email</li>
+            <li>Contact our customer support for assistance</li>
+          </ul>
+        </div>
       </div>;
     }
     if (quoteInfo) {
@@ -228,6 +244,56 @@ const styles = {
         color: '#666',
         marginTop: '5px',
         fontWeight: 'normal'
+    },
+    // New styles for improved error display
+    errorContainer: { 
+        maxWidth: '600px', 
+        margin: '40px auto', 
+        padding: '30px', 
+        backgroundColor: '#fff8f8', 
+        borderRadius: '10px', 
+        border: '2px solid #ffcdd2', 
+        textAlign: 'center',
+        boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+    },
+    errorIcon: { 
+        fontSize: '48px', 
+        color: '#f44336', 
+        marginBottom: '20px' 
+    },
+    errorTitle: { 
+        color: '#d32f2f', 
+        marginBottom: '15px' 
+    },
+    errorMessage: { 
+        fontSize: '18px', 
+        color: '#555', 
+        marginBottom: '25px' 
+    },
+    errorHelp: { 
+        backgroundColor: '#fff', 
+        padding: '15px', 
+        borderRadius: '5px', 
+        textAlign: 'left' 
+    },
+    loadingContainer: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px',
+        backgroundColor: 'white',
+        borderRadius: '10px',
+        boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)'
+    },
+    loadingSpinner: {
+        border: '4px solid #f3f3f3',
+        borderTop: '4px solid #3498db',
+        borderRadius: '50%',
+        width: '40px',
+        height: '40px',
+        animation: 'spin 1s linear infinite',
+        marginBottom: '20px'
     }
 };
 

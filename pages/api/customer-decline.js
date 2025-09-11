@@ -13,7 +13,7 @@ const auth = new google.auth.GoogleAuth({
         type: 'service_account',
         project_id: process.env.GOOGLE_PROJECT_ID,
         private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\n/g, '\n'),
         client_email: process.env.GOOGLE_CLIENT_EMAIL,
         client_id: process.env.GOOGLE_CLIENT_ID,
         auth_uri: 'https://accounts.google.com/o/oauth2/auth',
@@ -64,10 +64,14 @@ export default async function handler(req, res) {
     });
 
     try {
-        const { quoteId, leadId } = req.query;
+        // Get QuoteID Parameter and normalize it
+        let { quoteId, leadId } = req.query;
+        
+        // Normalize quoteId with trim and toLowerCase
+        const normalizedQuoteId = quoteId ? quoteId.trim().toLowerCase() : null;
 
-        if (!quoteId || !leadId) {
-            console.log(`[DECISION-API] Missing parameters:`, { quoteId, leadId });
+        if (!normalizedQuoteId || !leadId) {
+            console.log(`[DECISION-API] Missing parameters:`, { normalizedQuoteId, leadId });
             return res.redirect('/quote-status?status=error&message=Missing quote or lead ID.');
         }
 
@@ -75,6 +79,7 @@ export default async function handler(req, res) {
             method: req.method,
             url: req.url,
             query: req.query,
+            normalizedQuoteId,
             headers: {
                 'user-agent': req.headers['user-agent'],
                 'x-forwarded-for': req.headers['x-forwarded-for']
@@ -83,21 +88,31 @@ export default async function handler(req, res) {
 
         // Fetch quote data from Google Sheets
         const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: GOOGLE_SPREADSHEET_ID,
+            spreadsheetId: SPREADSHEET_ID,
             range: 'Quotes!A:AZ'
         });
 
         const rows = response.data.values;
         if (!rows || rows.length === 0) {
             console.log(`[DECISION-API] No quote data found in sheets`);
+            quoteLogger.info('No quote data found', {}, requestId);
             return res.redirect('/quote-status?status=error&message=No quote data found.');
         }
 
         const headers = rows[0];
-        const quoteRow = rows.find(row => row[1] === quoteId); // QuoteID is in column B (index 1)
+        // Find QuoteID column index
+        const quoteIdColIndex = headers.indexOf('QuoteID');
+        const quoteIdCol = quoteIdColIndex !== -1 ? quoteIdColIndex : 1; // Default to column B (index 1) if not found
+        
+        // Find quote row with case-insensitive comparison
+        const quoteRow = rows.find(row => {
+            if (!row[quoteIdCol]) return false;
+            return row[quoteIdCol].trim().toLowerCase() === normalizedQuoteId;
+        });
 
         if (!quoteRow) {
-            console.log(`[DECISION-API] Quote not found:`, { quoteId, totalRows: rows.length });
+            console.log(`[DECISION-API] Quote not found:`, { normalizedQuoteId, totalRows: rows.length });
+            quoteLogger.info('Quote not found', { normalizedQuoteId }, requestId);
             return res.redirect('/quote-status?status=error&message=Quote not found.');
         }
 
@@ -107,68 +122,6 @@ export default async function handler(req, res) {
         const validUntilCol = headers.indexOf('ValidUntil');
         const customerStatusCol = headers.indexOf('CustomerStatus');
 
-        // Check if quote is still valid
-        const validUntil = quoteRow[validUntilCol];
-        const now = new Date();
-        let expiryDate;
-        
-        try {
-            expiryDate = validUntil ? new Date(validUntil) : null;
-            // Check if we got an invalid date
-            if (isNaN(expiryDate) || !expiryDate) {
-                throw new Error('Invalid expiry date');
-            }
-        } catch (error) {
-            console.error(`[DECISION-API] Invalid expiry date format:`, { 
-                quoteId, 
-                validUntil,
-                error: error.message 
-            });
-            // Default to a valid date (not expired) to allow the customer to proceed
-            expiryDate = new Date(now.getTime() + 24 * 60 * 60 * 1000); // Set to tomorrow
-        }
-
-        if (now > expiryDate) {
-            console.log(`[DECISION-API] Quote expired:`, { 
-                quoteId, 
-                validUntil, 
-                now: now.toISOString(),
-                expired: true 
-            });
-            
-            const expiredPage = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Quote Expired</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f7fa; }
-                        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
-                        .error-icon { font-size: 48px; margin-bottom: 20px; }
-                        .error-title { color: #dc3545; font-size: 24px; margin-bottom: 15px; }
-                        .error-message { color: #6c757d; font-size: 16px; margin-bottom: 20px; }
-                        .expiry-info { background: #f8d7da; padding: 20px; border-radius: 8px; border: 1px solid #f5c6cb; margin: 20px 0; }
-                        .expiry-status { color: #721c24; font-weight: bold; font-size: 18px; }
-                        .timestamp { color: #6c757d; font-size: 14px; margin-top: 10px; }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="error-icon">⏰</div>
-                        <h1 class="error-title">Quote Has Expired</h1>
-                        <p class="error-message">This quote expired on ${expiryDate.toLocaleDateString('en-NZ')} and can no longer be declined.</p>
-                        <div class="expiry-info">
-                            <div class="expiry-status">Quote Expired</div>
-                            <div class="timestamp">Expired: ${expiryDate.toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })} NZT</div>
-                        </div>
-                        <p>Please contact us if you need a new quote.</p>
-                    </div>
-                </body>
-                </html>
-            `;
-            return res.status(410).send(expiredPage);
-        }
-
         // Check if customer has already made a decision
         const currentDecision = quoteRow[customerDecisionCol];
         if (currentDecision && currentDecision !== 'none' && currentDecision.trim() !== '') {
@@ -176,75 +129,105 @@ export default async function handler(req, res) {
             console.log(`[DECISION-API] Customer decision already exists:`, { 
                 currentDecision, 
                 decisionTime,
-                quoteId 
+                normalizedQuoteId 
             });
             
-            // Format the decision timestamp in NZT format
-            let formattedDecisionTime;
-            try {
-                // Try to parse the timestamp and format it
-                const decisionDate = new Date(decisionTime);
-                formattedDecisionTime = decisionDate.toLocaleString('en-NZ', { 
-                    timeZone: 'Pacific/Auckland',
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                }) + ' NZT';
-            } catch (error) {
-                // If parsing fails, use the original timestamp
-                formattedDecisionTime = decisionTime;
+            quoteLogger.info('Decision already made', { 
+                currentDecision, 
+                decisionTime,
+                normalizedQuoteId
+            }, requestId);
+            
+            // Redirect to locked status page instead of custom HTML
+            return res.redirect('/quote-status?status=locked');
+        }
+
+        // Check if quote is still valid
+        const validUntil = quoteRow[validUntilCol];
+        const now = new Date();
+        let expiryDate;
+        
+        try {
+            // Try to parse the date in various formats
+            expiryDate = new Date(validUntil);
+            if (isNaN(expiryDate.getTime())) {
+                // If direct parsing fails, try DD/MM/YYYY format
+                const parts = validUntil.split('/');
+                if (parts.length === 3) {
+                    expiryDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                }
             }
             
-            const alreadyDecidedPage = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Decision Already Made</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f7fa; }
-                        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
-                        .error-icon { font-size: 48px; margin-bottom: 20px; }
-                        .error-title { color: #ffc107; font-size: 24px; margin-bottom: 15px; }
-                        .error-message { color: #6c757d; font-size: 16px; margin-bottom: 20px; }
-                        .decision-info { background: #fff3cd; padding: 20px; border-radius: 8px; border: 1px solid #ffeaa7; margin: 20px 0; }
-                        .decision-status { color: #856404; font-weight: bold; font-size: 18px; }
-                        .timestamp { color: #6c757d; font-size: 14px; margin-top: 10px; }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="error-icon">⚠️</div>
-                        <h1 class="error-title">Decision Already Made</h1>
-                        <p class="error-message">You have already made a decision on this quote.</p>
-                        <div class="decision-info">
-                            <div class="decision-status">Previous Decision: ${currentDecision}</div>
-                            <div class="timestamp">Made on: ${formattedDecisionTime}</div>
-                        </div>
-                        <p>If you need to make changes, please contact us directly.</p>
-                    </div>
-                </body>
-                </html>
-            `;
-            return res.status(409).send(alreadyDecidedPage);
+            // If still invalid, set a default future date
+            if (isNaN(expiryDate.getTime())) {
+                console.error('Invalid expiry date format:', validUntil);
+                // Set to 7 days from now as a fallback
+                expiryDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+            }
+        } catch (error) {
+            console.error(`[DECISION-API] Invalid expiry date format:`, { 
+                normalizedQuoteId, 
+                validUntil,
+                error: error.message 
+            });
+            // Set to 7 days from now as a fallback
+            expiryDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        }
+
+        if (now > expiryDate) {
+            console.log(`[DECISION-API] Quote expired:`, { 
+                normalizedQuoteId, 
+                validUntil, 
+                now: now.toISOString(),
+                expired: true 
+            });
+            
+            quoteLogger.info('Quote expired', { 
+                normalizedQuoteId, 
+                validUntil,
+                expiryDate: expiryDate.toISOString() 
+            }, requestId);
+            
+            // Format timestamp for NZ timezone
+            const nzTimestamp = new Date().toLocaleString('en-NZ', {
+                timeZone: 'Pacific/Auckland',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }) + " NZT";
+            
+            const rowIndex = rows.indexOf(quoteRow) + 1; // +1 because Sheets is 1-indexed
+            
+            // Update the quote with expired status
+            await sheets.spreadsheets.values.update({
+                spreadsheetId: SPREADSHEET_ID,
+                range: `Quotes!${String.fromCharCode(65 + customerDecisionCol)}${rowIndex}:${String.fromCharCode(65 + customerStatusCol)}${rowIndex}`,
+                valueInputOption: 'RAW',
+                resource: {
+                    values: [['Expired', nzTimestamp, 'Quote Expired']]
+                }
+            });
+            
+            // Redirect to expired status page
+            return res.redirect('/quote-status?status=expired');
         }
 
         // Record the decline decision
-        // Reuse the existing 'now' variable instead of redeclaring it
-        const nzTimestamp = now.toLocaleString('en-NZ', { 
+        const nzTimestamp = new Date().toLocaleString('en-NZ', { 
             timeZone: 'Pacific/Auckland',
             day: '2-digit',
             month: '2-digit',
             year: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
-        }) + ' NZT';
+        }) + " NZT";
         const rowIndex = rows.indexOf(quoteRow) + 1; // +1 because Sheets is 1-indexed
 
         // Update the quote with decline decision
         await sheets.spreadsheets.values.update({
-            spreadsheetId: GOOGLE_SPREADSHEET_ID,
+            spreadsheetId: SPREADSHEET_ID,
             range: `Quotes!${String.fromCharCode(65 + customerDecisionCol)}${rowIndex}:${String.fromCharCode(65 + customerStatusCol)}${rowIndex}`,
             valueInputOption: 'RAW',
             resource: {
@@ -253,7 +236,7 @@ export default async function handler(req, res) {
         });
 
         console.log(`[DECISION-API] Customer decline recorded successfully:`, {
-            quoteId,
+            normalizedQuoteId,
             leadId,
             decision: 'Declined',
             timestamp: nzTimestamp,
@@ -261,39 +244,14 @@ export default async function handler(req, res) {
         });
 
         quoteLogger.info('Quote declined successfully', {
-            quoteId,
+            normalizedQuoteId,
             leadId,
             decision: 'Declined',
             timestamp: nzTimestamp
         }, requestId);
 
-        // Send confirmation page
-        const confirmationPage = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Quote Declined</title>
-                <style>
-                    body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f7fa; }
-                    .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
-                    .success-icon { font-size: 48px; margin-bottom: 20px; }
-                    .success-title { color: #dc3545; font-size: 24px; margin-bottom: 15px; }
-                    .success-message { color: #6c757d; font-size: 16px; margin-bottom: 20px; }
-                    .timestamp { color: #6c757d; font-size: 14px; margin-top: 20px; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="success-icon">❌</div>
-                    <h1 class="success-title">Quote Declined</h1>
-                    <p class="success-message">Thank you for your response. We have recorded your decision to decline this quote.</p>
-                    <p class="timestamp">Decision recorded: ${nzTimestamp} NZT</p>
-                </div>
-            </body>
-            </html>
-        `;
-
-        return res.status(200).send(confirmationPage);
+        // Redirect to declined status page
+        return res.redirect('/quote-status?status=declined');
 
     } catch (error) {
         console.error(`[DECISION-API] Customer Decline - Uncaught error:`, {

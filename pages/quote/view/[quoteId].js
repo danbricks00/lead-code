@@ -136,8 +136,8 @@ const CustomerQuoteView = ({ initialQuoteInfo, initialError }) => {
             <div style={styles.header}>
                 <div className="company-details"><h1>Kiwi Trade</h1></div>
                 <div style={styles.quoteDetails}>
-                    <strong>Quote #: {quoteData['Quote ID']}</strong><br />
-                    Valid Until: {new Date(quoteData['Quote Valid Until']).toLocaleDateString('en-NZ')}
+                    <strong>Quote #: {quoteData['QuoteID']}</strong><br />
+                    Valid Until: {new Date(quoteData['ValidUntil']).toLocaleDateString('en-NZ')}
                 </div>
             </div>
             
@@ -157,7 +157,7 @@ const CustomerQuoteView = ({ initialQuoteInfo, initialError }) => {
                     <tr><td>Labour</td><td>${labourCost.toFixed(2)} / hr</td><td>{labourHours}</td><td>${labourSubtotal.toFixed(2)}</td></tr>
                     <tr><td>Materials</td><td>${materialsCost.toFixed(2)} / m²</td><td>{materialsQuantity}</td><td>${materialsSubtotal.toFixed(2)}</td></tr>
                     <tr><td>Travel</td><td>${travelCost.toFixed(2)} / km</td><td>{travelDistance}</td><td>${travelSubtotal.toFixed(2)}</td></tr>
-                    <tr><td>Installation</td><td colSpan="2"></td><td>${installationCost.toFixed(2)}</td></tr>
+                    <tr><td>Installation</td><td></td><td></td><td>${installationCost.toFixed(2)}</td></tr>
                 </tbody>
             </table>
             

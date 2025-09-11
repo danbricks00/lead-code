@@ -201,7 +201,7 @@ export async function getServerSideProps(context) {
   const { params } = context;
   const { quoteId } = params;
   
-  console.log("Quote view requested for ID:", quoteId);
+  console.log("[SERVER] Quote view requested for ID:", quoteId);
   
   // If we don't have ts and token, we can't use the get-quote-for-customer API
   // Instead, we'll directly query the Google Sheets
@@ -227,6 +227,7 @@ export async function getServerSideProps(context) {
 
     // Normalize quoteId
     const normalizedQuoteId = quoteId.trim().toLowerCase();
+    console.log("[SERVER] Normalized QuoteID:", normalizedQuoteId);
     
     // Fetch all rows from the "Quotes" sheet
     const quotesResponse = await sheets.spreadsheets.values.get({
@@ -256,24 +257,30 @@ export async function getServerSideProps(context) {
     
     for (let index = 1; index < rows.length; index++) {
       const row = rows[index];
-      console.log("Checking row", index, "QuoteID in sheet:", row[quoteIdCol]);
-      
-      if (row[quoteIdCol] && row[quoteIdCol].trim().toLowerCase() === normalizedQuoteId) {
+      if (row && row[quoteIdCol] && row[quoteIdCol].trim().toLowerCase() === normalizedQuoteId) {
         foundRow = row;
         foundIndex = index;
-        console.log("Quote match FOUND for ID:", normalizedQuoteId, "at row", index);
+        console.log("[SERVER] Quote match FOUND for ID:", normalizedQuoteId, "at row", index + 1);
         break;
       }
     }
     
     if (!foundRow) {
-      console.warn("No matching quote found for ID:", normalizedQuoteId);
+      console.warn("[SERVER] No matching quote found for ID:", normalizedQuoteId);
       return {
         props: {
           initialError: 'Quote not found.',
           initialQuoteInfo: null
         }
       };
+    }
+
+    // Check for existing decision in Column Z (index 25)
+    const existingDecision = (foundRow[25] || "").trim().toLowerCase();
+    const existingTimestamp = foundRow[26] || "";
+    
+    if (existingDecision === "accepted" || existingDecision === "declined") {
+      console.log(`[SERVER] Quote ${normalizedQuoteId} already has decision: ${existingDecision} at ${existingTimestamp}`);
     }
 
     // Convert row to object

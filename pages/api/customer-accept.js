@@ -158,43 +158,22 @@ export default async function handler(req, res) {
         const customerStatusCol = headers.indexOf('CustomerStatus');
         
         console.log(`[DECISION-API] Using columns: Decision=${String.fromCharCode(65 + customerDecisionCol)}, Timestamp=${String.fromCharCode(65 + customerDecisionTimeCol)}`);
-
+        
         // Check if customer has already made a decision
-        const currentDecision = quoteRow[customerDecisionCol];
-        if (currentDecision && currentDecision !== 'none' && currentDecision.trim() !== '') {
-            const decisionTime = quoteRow[customerDecisionTimeCol];
-            console.log(`[DECISION-API] Customer decision already exists:`, { 
-                currentDecision, 
-                decisionTime,
-                normalizedQuoteId
-            });
+        const existingDecision = (quoteRow[customerDecisionCol] || "").trim().toLowerCase();
+        const existingTimestamp = quoteRow[customerDecisionTimeCol] || "";
+        
+        if (existingDecision === "accepted" || existingDecision === "declined") {
+            console.log(`[SERVER] Quote ${normalizedQuoteId} already decided: ${existingDecision} at ${existingTimestamp}`);
             
             quoteLogger.info('Decision already made', { 
-                currentDecision, 
-                decisionTime,
+                existingDecision, 
+                existingTimestamp,
                 normalizedQuoteId
             }, requestId);
             
-            // Parse and format the timestamp in Pacific/Auckland timezone
-            let formattedTimestamp;
-            try {
-                // Try to parse the timestamp (handle different formats)
-                const timestamp = new Date(decisionTime.replace(' NZT', ''));
-                formattedTimestamp = timestamp.toLocaleString('en-NZ', {
-                    timeZone: 'Pacific/Auckland',
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                }).replace(/\//g, '-');
-            } catch (error) {
-                console.error(`[DECISION-API] Error parsing timestamp:`, error);
-                formattedTimestamp = 'Unknown';
-            }
-            
             // Redirect to locked status page with decision and timestamp
-            return res.redirect(`/quote-status?status=locked&decision=${currentDecision}&timestamp=${formattedTimestamp}`);
+            return res.redirect(`/quote-status?status=locked&decision=${existingDecision}&timestamp=${existingTimestamp}`);
         }
 
         // Check if quote is still valid
@@ -247,15 +226,15 @@ export default async function handler(req, res) {
                 year: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit'
-            }) + " NZT";
+            }).replace(/\//g, '-');
             
-            // Update the quote with expired status
+            // Update the quote with expired status - ONLY update Z and AA columns
             await sheets.spreadsheets.values.update({
                 spreadsheetId: SPREADSHEET_ID,
-                range: `Quotes!${String.fromCharCode(65 + customerDecisionCol)}${rowIndex}:${String.fromCharCode(65 + customerStatusCol)}${rowIndex}`,
+                range: `Quotes!${String.fromCharCode(65 + customerDecisionCol)}${rowIndex}:${String.fromCharCode(65 + customerDecisionTimeCol)}${rowIndex}`,
                 valueInputOption: 'RAW',
                 resource: {
-                    values: [['Expired', nzTimestamp, 'Quote Expired']]
+                    values: [['Expired', nzTimestamp]]
                 }
             });
             
@@ -273,23 +252,18 @@ export default async function handler(req, res) {
             minute: '2-digit'
         }).replace(/\//g, '-');
         
-        // Update the quote with acceptance decision
+        // Update the quote with acceptance decision - ONLY update Z and AA columns
         try {
             await sheets.spreadsheets.values.update({
                 spreadsheetId: SPREADSHEET_ID,
-                range: `Quotes!${String.fromCharCode(65 + customerDecisionCol)}${rowIndex}:${String.fromCharCode(65 + customerStatusCol)}${rowIndex}`,
+                range: `Quotes!${String.fromCharCode(65 + customerDecisionCol)}${rowIndex}:${String.fromCharCode(65 + customerDecisionTimeCol)}${rowIndex}`,
                 valueInputOption: 'RAW',
                 resource: {
-                    values: [['Accepted', nzTimestamp, 'Customer Accepted']]
+                    values: [['Accepted', nzTimestamp]]
                 }
             });
             
-            console.log(`[DECISION-API] Customer acceptance recorded successfully:`, {
-                normalizedQuoteId,
-                decision: 'Accepted',
-                timestamp: nzTimestamp,
-                rowIndex
-            });
+            console.log(`[SERVER] Quote ${normalizedQuoteId} recorded as Accepted at ${nzTimestamp}`);
         
             quoteLogger.info('Quote accepted successfully', {
                 normalizedQuoteId,
@@ -299,19 +273,21 @@ export default async function handler(req, res) {
             
             // Send email notifications
             try {
-                // Get customer email (Column 27, index 26)
-                const customerEmail = quoteRow[26]; // Column AA (0-indexed)
+                // Get customer email (Column 29, index 28)
+                const customerEmail = quoteRow[28]; // Column AC (0-indexed)
                 // Get tradesperson email (Column 5, index 4)
                 const tradesmanEmail = quoteRow[4]; // Column E (0-indexed)
                 // Get admin email from env var
                 const adminEmail = process.env.ADMIN_EMAIL;
                 
                 const quoteId = quoteRow[quoteIdCol];
-                const emailSubject = `Quote Decision: ${quoteId} - ACCEPTED`;
+                const customerName = quoteRow[27] || 'Customer'; // Column AB (0-indexed)
+                const emailSubject = `Quote Decision Recorded – Accepted`;
                 const emailBody = `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                         <h2>Quote Decision Notification</h2>
                         <p>A decision has been made on quote ${quoteId}.</p>
+                        <p><strong>Customer:</strong> ${customerName}</p>
                         <p><strong>Decision:</strong> ACCEPTED</p>
                         <p><strong>Timestamp:</strong> ${nzTimestamp} (New Zealand Time)</p>
                     </div>

@@ -329,34 +329,51 @@ export async function readSheetAsObjects(sheetName, sheets, spreadsheetId) {
   }
 }
 
-/**
- * Get lead by ID from the Leads sheet
- * @param {string} leadId - The LeadID to find
- * @returns {object|null} Lead data object or null if not found
- */
+// New function moved from pages/api/get-lead-by-id.js
 export async function getLeadById(leadId) {
-  try {
-    const sheets = getGoogleSheetsClient();
-    const spreadsheetId = getSpreadsheetId();
-    const { headers, rows } = await readSheetAsObjects('Leads', sheets, spreadsheetId);
-    
-    const leadIdColIndex = headers.findIndex(h => h === 'LeadID' || h === 'Lead');
-    if (leadIdColIndex === -1) {
-      console.error('LeadID column not found in Leads sheet');
-      return null;
+    if (!leadId) {
+        console.error('getLeadById: Lead ID is required');
+        return null;
     }
-    
-    for (const row of rows) {
-      if (String(row[headers[leadIdColIndex]] || '').trim() === String(leadId).trim()) {
-        return row;
-      }
+
+    try {
+        const sheets = await getGoogleSheetsClient();
+        const spreadsheetId = getSpreadsheetId();
+
+        const range = 'Leads!A:L';
+        const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
+        const rows = response.data.values;
+        
+        if (!rows || rows.length < 2) {
+            return null;
+        }
+        
+        const header = rows[0];
+        const leadIndex = header.indexOf('Lead');
+        
+        if (leadIndex === -1) {
+            return null;
+        }
+        
+        const dataRow = rows.find(row => row[leadIndex] === leadId);
+        
+        if (!dataRow) {
+            return null;
+        }
+        
+        const lead = {};
+        header.forEach((headerName, index) => {
+            if (headerName && dataRow[index]) {
+                lead[headerName] = dataRow[index];
+            }
+        });
+        
+        return lead;
+
+    } catch (error) {
+        console.error('Error fetching lead data:', error);
+        return null;
     }
-    
-    return null;
-  } catch (error) {
-    console.error(`[SHEETS] Error getting lead ${leadId}:`, error);
-    return null;
-  }
 }
 
 /**

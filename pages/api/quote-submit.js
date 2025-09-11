@@ -60,6 +60,13 @@ export default async function handler(req, res) {
     }
 
     const sheets = await getSheetsClient();
+
+    // Fetch lead data first, as it's always needed
+    const lead = await getLeadById(leadId);
+    if (!lead) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: 'Quotes!A:AZ',
@@ -84,11 +91,7 @@ export default async function handler(req, res) {
       if (!row) {
         console.log(`[DEBUG] quote-submit: Quote not found in spreadsheet. QuoteID=${quoteId}`);
         
-        // Get lead details to create a new row
-        const lead = await getLeadById(leadId);
-        if (!lead) {
-          return res.status(404).json({ error: 'Lead not found' });
-        }
+        // Get lead details to create a new row is already done above
         
         // Create a new quote row
         const mode = isDraft ? 'draft' : 'submitted';
@@ -177,25 +180,25 @@ export default async function handler(req, res) {
 
     // For final submissions, continue with PDF generation and email
     // Create a proper quoteData object from row and headers
-    const quoteData = {};
+    const quoteDataFromSheet = {};
     headers.forEach((header, index) => {
       if (index < row.length) {
-        quoteData[header] = row[index];
+        quoteDataFromSheet[header] = row[index];
       }
     });
 
-    // Make sure quoteId is properly set
-    quoteData.quoteId = quoteId;
-    
+    // Combine lead data and quote data for the PDF
+    const quoteDataForPdf = { ...lead, ...quoteDataFromSheet, quoteId: quoteId };
+
     // Additional validation before PDF generation
-    if (!quoteData.CustomerEmail || !quoteData.TotalQuote) {
+    if (!quoteDataForPdf.CustomerEmail || !quoteDataForPdf.TotalQuote) {
       return res.status(400).json({ 
         error: 'Cannot submit final quote: missing required customer or total fields.' 
       });
     }
 
     // Now pass the properly formatted quoteData object
-    const pdfBuffer = await generateQuotePDF(quoteData);
+    const pdfBuffer = await generateQuotePDF(quoteDataForPdf);
 
     // ⚠️ --- Old Admin Approval Email --- ⚠️
     /*

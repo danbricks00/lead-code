@@ -264,9 +264,20 @@ export default async function handler(req, res) {
             const range = `Quotes!Z${rowIndex}:AA${rowIndex}`;
             
             // Log the range being updated
-            console.log(`[DECISION-API] Updating range:`, range);
+            console.log(`[DECISION-API] Writing to range:`, range);
+            
+            // Check if customer has already made a decision (double-check)
+            const existingDecision = (rows[foundIndex][25] || "").trim().toLowerCase();
+            const existingTimestamp = rows[foundIndex][26] || "";
+            
+            if (existingDecision === "accepted" || existingDecision === "declined") {
+                console.log(`[DECISION-API] Guard - Quote already decided: ${existingDecision} at ${existingTimestamp}`);
+                return res.redirect(`/quote-status?status=locked&decision=${existingDecision}&timestamp=${existingTimestamp}`);
+                // stop execution
+            }
             
             await sheets.spreadsheets.values.update({
+                auth,
                 spreadsheetId: SPREADSHEET_ID,
                 range: range,
                 valueInputOption: 'RAW',
@@ -274,8 +285,8 @@ export default async function handler(req, res) {
                     values: [['Declined', nzTimestamp]]
                 }
             });
-        
-            console.log(`[SERVER] Quote ${normalizedQuoteId} recorded as Declined at ${nzTimestamp}`);
+            
+            console.log(`[DECISION-API] Quote ${normalizedQuoteId} updated -> Declined at ${nzTimestamp}`);
         
             quoteLogger.info('Quote declined successfully', {
                 normalizedQuoteId,
@@ -343,7 +354,8 @@ export default async function handler(req, res) {
                 error: updateError.message,
                 normalizedQuoteId,
                 rowIndex,
-                columns: `${String.fromCharCode(65 + customerDecisionCol)}-${String.fromCharCode(65 + customerStatusCol)}`
+                range: range,  // Use the defined range variable
+                columns: `Z-AA`  // Simplified column reference for clarity
             });
             
             quoteLogger.error('Error updating sheet', updateError, requestId);

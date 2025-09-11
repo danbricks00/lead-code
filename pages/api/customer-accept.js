@@ -260,9 +260,20 @@ export default async function handler(req, res) {
             const range = `Quotes!Z${rowIndex}:AA${rowIndex}`;
             
             // Log the range being updated
-            console.log(`[DECISION-API] Updating range:`, range);
+            console.log(`[DECISION-API] Writing to range:`, range);
+            
+            // Check if customer has already made a decision (double-check)
+            const existingDecision = (rows[foundIndex][25] || "").trim().toLowerCase();
+            const existingTimestamp = rows[foundIndex][26] || "";
+            
+            if (existingDecision === "accepted" || existingDecision === "declined") {
+                console.log(`[DECISION-API] Guard - Quote already decided: ${existingDecision} at ${existingTimestamp}`);
+                return res.redirect(`/quote-status?status=locked&decision=${existingDecision}&timestamp=${existingTimestamp}`);
+                // stop execution
+            }
             
             await sheets.spreadsheets.values.update({
+                auth,
                 spreadsheetId: SPREADSHEET_ID,
                 range: range,
                 valueInputOption: 'RAW',
@@ -271,7 +282,7 @@ export default async function handler(req, res) {
                 }
             });
             
-            console.log(`[SERVER] Quote ${normalizedQuoteId} recorded as Accepted at ${nzTimestamp}`);
+            console.log(`[DECISION-API] Quote ${normalizedQuoteId} updated -> Accepted at ${nzTimestamp}`);
         
             quoteLogger.info('Quote accepted successfully', {
                 normalizedQuoteId,

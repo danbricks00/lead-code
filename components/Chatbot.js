@@ -35,7 +35,31 @@ const commonProviders = {
 const disposableDomains = [
   "mailinator.com", "yopmail.com", "10minutemail.com",
   "guerrillamail.com", "temp-mail.org", "fakemail.net",
-  "trashmail.com", "getnada.com", "dispostable.com", "mintemail.com"
+  "trashmail.com", "getnada.com", "dispostable.com", "mintemail.com",
+  // Additional domains to add
+  "0815.ru", "0clickemail.com", "0wnd.net", "0wnd.org",
+  "20minutemail.com", "2prong.com", "30minutemail.com", "4warding.com",
+  "4warding.net", "4warding.org", "60minutemail.com", "675hosting.com",
+  "675hosting.net", "675hosting.org", "6url.com", "75hosting.com",
+  "75hosting.net", "75hosting.org", "7tags.com", "9ox.net",
+  "a-bc.net", "afrobacon.com", "ajaxapp.net", "amilegit.com",
+  "amiri.net", "amiriindustries.com", "anonbox.net", "anonymbox.com",
+  "antichef.com", "antichef.net", "antispam.de", "beefmilk.com",
+  "binkmail.com", "bio-muesli.net", "bobmail.info", "bofthew.com",
+  "brefmail.com", "broadbandninja.com", "bsnow.net", "bugmenot.com",
+  "bumpymail.com", "casualdx.com", "centermail.com", "centermail.net",
+  "chogmail.com", "choicemail1.com", "cool.fr.nf", "correo.blogos.net",
+  "cosmorph.com", "courriel.fr.nf", "courrieltemporaire.com", "cubiclink.com",
+  "curryworld.de", "cust.in", "dacoolest.com", "dandikmail.com",
+  "dayrep.com", "deadaddress.com", "deadspam.com", "despam.it",
+  "despammed.com", "devnullmail.com", "dfgh.net", "digitalsanctuary.com",
+  "discardmail.com", "discardmail.de", "disposableaddress.com", "disposeamail.com",
+  "disposemail.com", "dodgeit.com", "dodgit.com", "dodgit.org",
+  "donemail.ru", "dontreg.com", "dontsendmespam.de", "dump-email.info",
+  "dumpandjunk.com", "dumpmail.de", "dumpyemail.com", "e4ward.com",
+  "email60.com", "emaildienst.de", "emailias.com", "emailigo.de",
+  "gmailnator.com", "maildrop.cc", "33mail.com", "e4ward.com",
+  "pm.me", "proton.me", "protonmail.ch", "protonmail.com"
 ];
 
 function validateEmailFrontend(email) {

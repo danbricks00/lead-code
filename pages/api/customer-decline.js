@@ -179,6 +179,24 @@ export default async function handler(req, res) {
                 quoteId 
             });
             
+            // Format the decision timestamp in NZT format
+            let formattedDecisionTime;
+            try {
+                // Try to parse the timestamp and format it
+                const decisionDate = new Date(decisionTime);
+                formattedDecisionTime = decisionDate.toLocaleString('en-NZ', { 
+                    timeZone: 'Pacific/Auckland',
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) + ' NZT';
+            } catch (error) {
+                // If parsing fails, use the original timestamp
+                formattedDecisionTime = decisionTime;
+            }
+            
             const alreadyDecidedPage = `
                 <!DOCTYPE html>
                 <html>
@@ -202,7 +220,7 @@ export default async function handler(req, res) {
                         <p class="error-message">You have already made a decision on this quote.</p>
                         <div class="decision-info">
                             <div class="decision-status">Previous Decision: ${currentDecision}</div>
-                            <div class="timestamp">Made on: ${decisionTime}</div>
+                            <div class="timestamp">Made on: ${formattedDecisionTime}</div>
                         </div>
                         <p>If you need to make changes, please contact us directly.</p>
                     </div>

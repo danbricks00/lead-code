@@ -18,10 +18,7 @@ const auth = new google.auth.GoogleAuth({
         client_id: process.env.GOOGLE_CLIENT_ID,
         auth_uri: 'https://accounts.google.com/o/oauth2/auth',
         token_uri: 'https://oauth2.googleapis.com/token',
-        auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
-        client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${process.env.GOOGLE_CLIENT_EMAIL}`
-    },
-    scopes: ['https://www.googleapis.com/auth/spreadsheets']
+        auth_provider_x509_cert_url: 'https://www.googleapis.com/auth/spreadsheets'
 });
 
 const sheets = google.sheets({ version: 'v4', auth });
@@ -141,9 +138,17 @@ export default async function handler(req, res) {
               expiryDate = new Date(parts[2], parts[1] - 1, parts[0]);
             }
           }
+          
+          // If still invalid, set a default future date
+          if (isNaN(expiryDate.getTime())) {
+            console.error('Invalid expiry date format:', validUntil);
+            // Set to 7 days from now as a fallback
+            expiryDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+          }
         } catch (e) {
           console.error('Error parsing expiry date:', e);
-          expiryDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000); // Default to 14 days from now
+          // Set to 7 days from now as a fallback
+          expiryDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
         }
         
         if (now > expiryDate) {
@@ -220,7 +225,22 @@ export default async function handler(req, res) {
                         <p class="error-message">You have already made a decision on this quote.</p>
                         <div class="decision-info">
                             <div class="decision-status">Previous Decision: ${currentDecision}</div>
-                            <div class="timestamp">Made on: ${decisionTime}</div>
+                            <div class="timestamp">Made on: ${(() => {
+                                try {
+                                    const date = new Date(decisionTime);
+                                    if (!isNaN(date.getTime())) {
+                                        return date.toLocaleString('en-NZ', {
+                                            timeZone: 'Pacific/Auckland',
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        }) + " NZT";
+                                    }
+                                } catch (e) {}
+                                return decisionTime; // Fallback to original if parsing fails
+                            })()}</div>
                         </div>
                         <p>If you need to make changes, please contact us directly.</p>
                     </div>
@@ -231,7 +251,14 @@ export default async function handler(req, res) {
         }
 
         // Record the acceptance decision
-        const nzTimestamp = new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' });
+        const nzTimestamp = new Date().toLocaleString('en-NZ', {
+            timeZone: 'Pacific/Auckland',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        }) + " NZT";
         const rowIndex = rows.indexOf(quoteRow) + 1; // +1 because Sheets is 1-indexed
 
         // Update the quote with acceptance decision

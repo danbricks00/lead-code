@@ -258,9 +258,17 @@ export default async function handler(req, res) {
         
         // Update the quote with decline decision - ONLY update Z and AA columns
         try {
+            // Calculate the row index (1-indexed for Google Sheets)
+            const rowIndex = foundIndex + 1;
+            // Create properly formatted range
+            const range = `Quotes!Z${rowIndex}:AA${rowIndex}`;
+            
+            // Log the range being updated
+            console.log(`[DECISION-API] Updating range:`, range);
+            
             await sheets.spreadsheets.values.update({
                 spreadsheetId: SPREADSHEET_ID,
-                range: `Quotes!${String.fromCharCode(65 + customerDecisionCol)}${rowIndex}:${String.fromCharCode(65 + customerDecisionTimeCol)}${rowIndex}`,
+                range: range,
                 valueInputOption: 'RAW',
                 resource: {
                     values: [['Declined', nzTimestamp]]

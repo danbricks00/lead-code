@@ -232,7 +232,7 @@ export async function getServerSideProps(context) {
     // Fetch all rows from the "Quotes" sheet
     const quotesResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'Quotes!A:AJ'
+      range: 'Quotes!A:AL'
     });
 
     const rows = quotesResponse.data.values;
@@ -285,7 +285,7 @@ export async function getServerSideProps(context) {
 
     // Convert row to object
     const quoteData = headers.reduce((obj, key, index) => {
-      obj[key] = foundRow[index] || '';
+      obj[key] = (foundRow[index] || '').toString().trim();
       return obj;
     }, {});
 
@@ -359,47 +359,51 @@ export async function getServerSideProps(context) {
     
     // Create structured quote object from row data
     const quote = { 
-      quoteId: foundRow[1] || "", 
+      quoteId: (foundRow[1] || "").toString().trim(), 
       leadId: (foundRow[2] || "").toString().trim() || " ",    
-      tradePersonName: foundRow[3] || "", 
-      tradePersonEmail: foundRow[4] || "", 
-      tradePersonPhone: foundRow[5] || "", 
-      customerStatus: foundRow[6] || "", 
-      tradePersonStatus: foundRow[7] || "", 
-      adminPersonStatus: foundRow[8] || "", 
-      labourRate: foundRow[9] || "", 
-      labourHours: foundRow[10] || "", 
-      labourTotal: foundRow[11] || "", 
-      materialsCost: foundRow[12] || "", 
-      materialsQuantity: foundRow[13] || "", 
-      materialsTotal: foundRow[14] || "", 
-      travelCost: foundRow[15] || "", 
-      travelDistance: foundRow[16] || "", 
-      travelTotal: foundRow[17] || "", 
-      installationCost: foundRow[18] || "", 
-      subtotal: foundRow[19] || "", 
-      gst: foundRow[20] || "", 
-      totalQuote: foundRow[21] || "", 
-      notes: foundRow[22] || "", 
-      validUntil: foundRow[23] || "", 
-      resubmissionAllowed: foundRow[24] || "", 
-      customerDecision: foundRow[25] || "", 
-      customerDecisionTimeStamp: foundRow[26] || "", 
-      customerName: foundRow[27] || "", 
-      customerEmail: foundRow[28] || "", 
-      customerPhone: foundRow[29] || "", 
-      serviceType: foundRow[30] || "", 
-      location: foundRow[31] || "", 
-      timeline: foundRow[32] || "", 
-      budget: foundRow[33] || "", 
-      rooms: foundRow[34] || "", 
-      breakDown: foundRow[35] || "", 
-      adminDecisionTimeStamp: foundRow[36] || "", 
-      adminDecision: foundRow[37] || "" 
+      tradePersonName: (foundRow[3] || "").toString().trim(), 
+      tradePersonEmail: (foundRow[4] || "").toString().trim(), 
+      tradePersonPhone: (foundRow[5] || "").toString().trim(), 
+      customerStatus: (foundRow[6] || "").toString().trim(), 
+      tradePersonStatus: (foundRow[7] || "").toString().trim(), 
+      adminPersonStatus: (foundRow[8] || "").toString().trim(), 
+      labourRate: (foundRow[9] || "").toString().trim(), 
+      labourHours: (foundRow[10] || "").toString().trim(), 
+      labourTotal: (foundRow[11] || "").toString().trim(), 
+      materialsCost: (foundRow[12] || "").toString().trim(), 
+      materialsQuantity: (foundRow[13] || "").toString().trim(), 
+      materialsTotal: (foundRow[14] || "").toString().trim(), 
+      travelCost: (foundRow[15] || "").toString().trim(), 
+      travelDistance: (foundRow[16] || "").toString().trim(), 
+      travelTotal: (foundRow[17] || "").toString().trim(), 
+      installationCost: (foundRow[18] || "").toString().trim(), 
+      subtotal: (foundRow[19] || "").toString().trim(), 
+      gst: (foundRow[20] || "").toString().trim(), 
+      totalQuote: (foundRow[21] || "").toString().trim(), 
+      notes: (foundRow[22] || "").toString().trim(), 
+      validUntil: (foundRow[23] || "").toString().trim(), 
+      resubmissionAllowed: (foundRow[24] || "").toString().trim(), 
+      customerDecision: (foundRow[25] || "").toString().trim(), 
+      customerDecisionTimeStamp: (foundRow[26] || "").toString().trim(), 
+      customerName: (foundRow[27] || "").toString().trim(), 
+      customerEmail: (foundRow[28] || "").toString().trim(), 
+      customerPhone: (foundRow[29] || "").toString().trim(), 
+      serviceType: (foundRow[30] || "").toString().trim(), 
+      location: (foundRow[31] || "").toString().trim(), 
+      timeline: (foundRow[32] || "").toString().trim(), 
+      budget: (foundRow[33] || "").toString().trim(), 
+      rooms: (foundRow[34] || "").toString().trim(), 
+      breakDown: (foundRow[35] || "").toString().trim(), 
+      adminDecisionTimeStamp: (foundRow[36] || "").toString().trim(), 
+      adminDecision: (foundRow[37] || "").toString().trim() 
     };
+    if (!quote.leadId || quote.leadId === " ") {
+      console.log(`[SERVER] Lead ID missing from quote data for quote ID: ${normalizedQuoteId}`);
+    } else {
+      console.log(`[SERVER] Lead ID found: ${quote.leadId}`);
+    }
     
-    // Add debug logging
-    console.log("[SERVER] Quote object created:", quote.quoteId, quote.leadId);
+   
     
     // Return the data as props
     return {

@@ -34,6 +34,7 @@ export function buildQuoteRow({
     CustomerEmail: lead.CustomerEmail || '',
     CustomerPhone: lead.CustomerPhone || '',
     ServiceType: lead.ServiceType || '',
+    Address: lead.address || '', // Add this line
     Rooms: lead.Rooms || '',
     Sqm: lead.Sqm || '',
     Area: lead.Area || '',

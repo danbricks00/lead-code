@@ -406,6 +406,7 @@ const QuoteSubmitPage = () => {
               <div><strong>Email:</strong> {leadDetails['customerEmail'] || leadDetails['CustomerEmail'] || 'N/A'}</div>
               <div><strong>Phone:</strong> {leadDetails['customerPhone'] || leadDetails['CustomerPhone'] || 'N/A'}</div>
               <div><strong>Service:</strong> {leadDetails['serviceType'] || leadDetails['ServiceType'] || 'Underfloor Heating'}</div>
+              <div><strong>Address:</strong> {leadDetails['address'] || 'N/A'}</div>
               <div><strong>Area:</strong> {leadDetails['area'] || leadDetails['Area'] || 'N/A'}</div>
               <div><strong>Suburb:</strong> {leadDetails['suburb'] || leadDetails['Suburb'] || 'N/A'}</div>
               <div><strong>Timeline:</strong> {leadDetails['timeline'] || leadDetails['Timelline'] || 'N/A'}</div>
@@ -417,6 +418,7 @@ const QuoteSubmitPage = () => {
               <div style={styles.inputGroup}><label>Email</label><input type="email" name="customerEmail" value={leadDetails['customerEmail'] || leadDetails['CustomerEmail'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
               <div style={styles.inputGroup}><label>Phone</label><input type="tel" name="customerPhone" value={leadDetails['customerPhone'] || leadDetails['CustomerPhone'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
               <div style={styles.inputGroup}><label>Service</label><input type="text" name="serviceType" value={leadDetails['serviceType'] || leadDetails['ServiceType'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Address</label><input type="text" name="address" value={leadDetails['address'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
               <div style={styles.inputGroup}><label>Area</label><input type="text" name="area" value={leadDetails['area'] || leadDetails['Area'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
               <div style={styles.inputGroup}><label>Suburb</label><input type="text" name="suburb" value={leadDetails['suburb'] || leadDetails['Suburb'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
               <div style={styles.inputGroup}><label>Timeline</label><input type="text" name="timeline" value={leadDetails['timeline'] || leadDetails['Timelline'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>

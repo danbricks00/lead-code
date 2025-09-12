@@ -38,7 +38,7 @@ export default async function handler(req, res) {
           // Find the quote in the Quotes sheet
           const response = await sheets.spreadsheets.values.get({
             spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-            range: 'Quotes!A:AL',
+            range: 'Quotes!A:AZ',
           });
 
           const rows = response.data.values || [];
@@ -141,7 +141,7 @@ export default async function handler(req, res) {
           // Find the row index and update status
           const response = await sheets.spreadsheets.values.get({
             spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-            range: 'Quotes!A:AL',
+            range: 'Quotes!A:AZ',
           });
 
           const rows = response.data.values || [];

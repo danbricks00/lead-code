@@ -117,31 +117,31 @@ export default async function handler(req, res) {
           tradePersonName: req.body.tradePersonName,
           tradePersonEmail: req.body.tradePersonEmail,
           tradePersonPhone: req.body.tradePersonPhone,
-          body: { ...req.body, totalSqm, rooms: req.body.rooms }, // Pass rooms and totalSqm
+          body: { ...req.body, totalSqm, rooms: req.body.rooms },
           mode: 'submitted',
         });
     
         // Create a separate object for PDF generation to avoid deep nesting issues
         const quoteDataForPdf = {
-          lead,
+          lead: leadData,
           quoteId,
-          tradePersonName: req.body.tradespersonName,
-          tradePersonEmail: req.body.tradespersonEmail,
-          tradePersonPhone: req.body.tradespersonPhone,
+          tradePersonName: req.body.tradePersonName,
+          tradePersonEmail: req.body.tradePersonEmail,
+          tradePersonPhone: req.body.tradePersonPhone,
           body: {
             ...req.body,
-            totalSqm: totalSqm.toFixed(2), // Pass calculated totalSqm
-            rooms: req.body.rooms, // Pass rooms data
-            labourTotal: labourTotal.toFixed(2),
-            materialsTotal: materialsTotal.toFixed(2),
-            travelTotal: travelTotal.toFixed(2),
-            subtotal: subtotal.toFixed(2),
-            gst: gst.toFixed(2),
-            totalQuote: totalQuote.toFixed(2)
+            totalSqm: totalSqm.toFixed(2),
+            rooms: req.body.rooms,
+            labourTotal: (parseFloat(req.body.labourTotal) || 0).toFixed(2),
+            materialsTotal: (parseFloat(req.body.materialsTotal) || 0).toFixed(2),
+            travelTotal: (parseFloat(req.body.travelTotal) || 0).toFixed(2),
+            subtotal: (parseFloat(req.body.subtotal) || 0).toFixed(2),
+            gst: (parseFloat(req.body.gst) || 0).toFixed(2),
+            totalQuote: (parseFloat(req.body.totalQuote) || 0).toFixed(2),
           },
-          mode
-        });
-        
+          mode: 'submitted', // This was the source of the syntax error
+        };
+    
         // Insert the row
         await upsertQuoteRow(quoteId, quoteRow, { req, caller: 'quote-submit' });
         

@@ -324,6 +324,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
             ask_last_name: firstName ? `Thanks ${firstName}! What is your last name?` : "What is your last name?",
             ask_phone: firstName ? `Great ${firstName}! What is your phone number?` : "What is your phone number?",
             ask_suburb: firstName ? `Awesome ${firstName}! What suburb is the job located in? Start typing and select from the list.` : "Great. What suburb is the job located in? Start typing and select from the list.",
+            ask_street_address: firstName ? `Thanks ${firstName}. What is your street address?` : "What is your street address?",
             ask_email: firstName ? `Finally ${firstName}, what is your email address?` : "Finally, what is your email address?",
             review_data: "Please review all your information below. Click on any field to edit it, or click 'Submit Quote Request' if everything looks correct.",
         };
@@ -450,6 +451,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
         case 'ask_suburb':
             // Allow any suburb input - we'll handle unlisted suburbs separately
             return value.trim().length > 0 ? null : "Please enter a suburb name.";
+        case 'ask_street_address':
+            return value.trim().length > 2 ? null : "Please enter a valid street address.";
         case 'ask_email':
             const emailValidation = validateEmailFrontend(value);
             return emailValidation.valid ? null : emailValidation.error;
@@ -572,7 +575,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
                     area: selectedZone.area,
                     isUnlistedSuburb: false
                 }));
-                nextStep('ask_email');
+                nextStep('ask_street_address');
             } else {
                 // Suburb not in our list - proceed as normal lead but mark as unlisted
                 setLeadData(prev => ({ 
@@ -582,8 +585,12 @@ const Chatbot = ({ handleClose, handleReset }) => {
                     isUnlistedSuburb: true,
                     suburbAdditionalInfo: '' // Will be filled during lead submission
                 }));
-                nextStep('ask_email');
+                nextStep('ask_street_address');
             }
+            break;
+        case 'ask_street_address':
+            setLeadData(prev => ({ ...prev, streetAddress: input }));
+            nextStep('ask_email');
             break;
         case 'ask_email':
             // Comprehensive email validation
@@ -704,6 +711,9 @@ const Chatbot = ({ handleClose, handleReset }) => {
         case 'customerEmail':
           updated.customerEmail = newValue;
           break;
+        case 'streetAddress':
+          updated.streetAddress = newValue;
+          break;
         case 'suburb':
           const selectedZone = zoneData.find(zone => zone.suburb.toLowerCase() === newValue.toLowerCase());
           if (selectedZone) {
@@ -752,6 +762,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
       lastName: 'Last Name',
       customerPhone: 'Phone Number',
       customerEmail: 'Email Address',
+      streetAddress: 'Street Address',
       suburb: 'Suburb',
       timeline: 'Timeline',
       budget: 'Budget',
@@ -1061,6 +1072,11 @@ const budgetOptions = useMemo(() => {
               <span style={styles.reviewLabel}>Email:</span>
               <span style={styles.reviewValue}>{leadData.customerEmail}</span>
               <button onClick={() => startEditing('customerEmail')} style={styles.editButton}>Edit</button>
+            </div>
+            <div style={styles.reviewField}>
+              <span style={styles.reviewLabel}>Street Address:</span>
+              <span style={styles.reviewValue}>{leadData.streetAddress}</span>
+              <button onClick={() => startEditing('streetAddress')} style={styles.editButton}>Edit</button>
             </div>
             <div style={styles.reviewField}>
               <span style={styles.reviewLabel}>Location:</span>

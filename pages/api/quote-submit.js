@@ -67,6 +67,21 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Lead not found' });
     }
 
+    // Calculate totalSqm from rooms if available, this should be done for all submissions
+    let totalSqm = 0;
+    if (req.body.rooms && Array.isArray(req.body.rooms)) {
+      totalSqm = req.body.rooms.reduce((acc, room) => {
+        const width = parseFloat(room.width) || 0;
+        const length = parseFloat(room.length) || 0;
+        return acc + width * length;
+      }, 0);
+    }
+
+    // If totalSqm is still 0, try to get it from the body directly
+    if (totalSqm === 0 && req.body.totalSqm) {
+      totalSqm = parseFloat(req.body.totalSqm) || 0;
+    }
+
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: 'Quotes!A:AZ',
@@ -96,21 +111,6 @@ export default async function handler(req, res) {
         // Create a new quote row
         const mode = isDraft ? 'draft' : 'submitted';
         
-        // Calculate totalSqm from rooms if available
-        let totalSqm = 0;
-        if (req.body.rooms && Array.isArray(req.body.rooms)) {
-          totalSqm = req.body.rooms.reduce((acc, room) => {
-            const width = parseFloat(room.width) || 0;
-            const length = parseFloat(room.length) || 0;
-            return acc + width * length;
-          }, 0);
-        }
-    
-        // If totalSqm is still 0, try to get it from the body directly
-        if (totalSqm === 0 && req.body.totalSqm) {
-          totalSqm = parseFloat(req.body.totalSqm) || 0;
-        }
-    
         const quoteRow = buildQuoteRow({
           lead: lead, // Changed from leadData
           quoteId,
@@ -201,7 +201,7 @@ export default async function handler(req, res) {
         ...quoteDataFromSheet, 
         quoteId: quoteId, 
         rooms: req.body.rooms || JSON.parse(quoteDataFromSheet.Rooms || '[]'),
-        totalSqm: quoteDataFromSheet.TotalSqm || totalSqm
+        totalSqm: totalSqm || quoteDataFromSheet.TotalSqm
     };
 
     // Additional validation before PDF generation

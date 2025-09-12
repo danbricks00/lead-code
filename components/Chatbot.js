@@ -89,13 +89,12 @@ function validateEmailFrontend(email) {
   if (!email || typeof email !== 'string') {
     return { valid: false, error: "Please enter an email address" };
   }
-  
   const trimmedEmail = email.trim().toLowerCase();
-  
-  // Basic format check
-  const emailRegex = /^[^\s@]{2,}@[^\s@]+\.[a-zA-Z]{2,}$/;
+
+  // Stricter regex for validation - allows for domains like .co.nz
+  const emailRegex = /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
   if (!emailRegex.test(trimmedEmail)) {
-    return { valid: false, error: "Please enter a valid email address with a proper domain" };
+    return { valid: false, error: "Please enter a valid email. The domain should only contain letters, numbers, and hyphens (e.g., name@example.com or name@example.co.nz)." };
   }
   
   // Check for disposable domains

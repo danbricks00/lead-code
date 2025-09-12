@@ -290,28 +290,27 @@ export default async function handler(req, res) {
             
             // Send email notifications
             try {
-                // Get column indices from headers
-                const customerEmailIndex = headers.indexOf('CustomerEmail'); // Fallback to 28 if needed
-                const customerNameIndex = headers.indexOf('CustomerName'); // Fallback to 27
+                // Get column indices from headers based on GOOGLE_SHEETS_QUOTES_STRUCTURE.md
+                const customerEmailIndex = headers.indexOf('CustomerEmail');
+                const customerNameIndex = headers.indexOf('CustomerName');
                 const customerPhoneIndex = headers.indexOf('CustomerPhone');
-                const addressIndex = headers.indexOf('Address');
+                const addressIndex = headers.indexOf('Location'); // Use 'Location' for the address
 
-                const tradesmanEmailIndex = headers.indexOf('TradesmanEmail'); // Fallback to 4
-                const tradesmanNameIndex = headers.indexOf('TradesmanName');
-                const tradesmanPhoneIndex = headers.indexOf('TradesmanPhone');
-                const tradesmanLicenseIndex = headers.indexOf('TradesmanLicense');
-
-                // Extract data from quoteRow
+                const tradespersonNameIndex = headers.indexOf('TradespersonName');
+                const tradespersonEmailIndex = headers.indexOf('TradespersonEmail');
+                const tradespersonPhoneIndex = headers.indexOf('TradespersonPhone');
+                
+                // Extract data from quoteRow using the correct indices
                 const quoteId = quoteRow[quoteIdCol];
-                const customerEmail = quoteRow[customerEmailIndex] || quoteRow[28];
-                const customerName = quoteRow[customerNameIndex] || quoteRow[27] || 'Valued Customer';
+                const customerEmail = quoteRow[customerEmailIndex];
+                const customerName = quoteRow[customerNameIndex] || 'Valued Customer';
                 const customerPhone = quoteRow[customerPhoneIndex] || 'N/A';
                 const customerAddress = quoteRow[addressIndex] || 'N/A';
 
-                const tradesmanEmail = quoteRow[tradesmanEmailIndex] || quoteRow[4];
-                const tradesmanName = quoteRow[tradesmanNameIndex] || 'Your assigned tradesperson';
-                const tradesmanPhone = quoteRow[tradesmanPhoneIndex] || 'N/A';
-                const tradesmanLicense = quoteRow[tradesmanLicenseIndex] || 'N/A';
+                const tradesmanEmail = quoteRow[tradespersonEmailIndex];
+                const tradesmanName = quoteRow[tradespersonNameIndex] || 'Your assigned tradesperson';
+                const tradesmanPhone = quoteRow[tradespersonPhoneIndex] || 'N/A';
+                const tradesmanLicense = 'N/A'; // As requested, license is not needed.
                 
                 const adminEmail = process.env.ADMIN_EMAIL;
 
@@ -361,7 +360,7 @@ export default async function handler(req, res) {
                     </div>
                 `;
 
-                const internalRecipients = [tradesmanEmail, adminEmail].filter(Boolean); // Filter out any null/undefined emails
+                const internalRecipients = [tradesmanEmail, adminEmail].filter(Boolean);
                 if (internalRecipients.length > 0) {
                     await sendEmail({
                         to: internalRecipients.join(', '),

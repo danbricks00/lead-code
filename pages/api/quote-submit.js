@@ -347,14 +347,10 @@ export default async function handler(req, res) {
       </html>
     `;
 
-    // Get admin email from environment variables
-    const adminEmail = process.env.ADMIN_EMAIL || '';
-    
-    // Now send the email with the HTML content
+    // --- Customer Email ---
     await transporter.sendMail({
       from: `"Kiwi Trade" <${GMAIL_USER}>`,
       to: customerEmail,
-      cc: [tradePersonEmail, adminEmail].filter(Boolean).join(','), // Filter out empty emails
       subject: `📄 Your Kiwi Trade Quote #${quoteId} - ${serviceType}`,
       html: htmlContent,
       attachments: [
@@ -365,8 +361,117 @@ export default async function handler(req, res) {
         }
       ]
     });
+    console.log(`✅ Quote email sent to customer: ${customerEmail}`);
+
+    // --- Internal Team Email (Admin and Tradesperson) ---
+    const internalHtmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Internal - New Quote Sent</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #0275d8; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+          .content { padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px; }
+          .quote-summary { margin-top: 20px; margin-bottom: 20px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+          th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+          th { background-color: #f2f2f2; }
+          .total-row td { font-weight: bold; border-top: 2px solid #000; border-bottom: none; }
+          .notification { background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #0275d8; }
+          .buttons { text-align: center; margin: 25px 0; }
+          .button { display: inline-block; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; margin: 0 10px; }
+          .view { background-color: #0275d8; color: white; }
+          .footer { margin-top: 30px; font-size: 12px; color: #777; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Internal Notification</h1>
+          <p>Quote #${quoteId} Sent to Customer</p>
+        </div>
+        
+        <div class="content">
+          <h2>Hello Team,</h2>
+          <p>The following quote has been sent to ${customerName} for the ${serviceType} project:</p>
+
+          <div class="notification">
+            <p>The quote has been sent to the customer and we are now awaiting their decision. An email will be sent if the quote is accepted. Please follow up accordingly.</p>
+          </div>
+          
+          <div class="quote-summary">
+            <table>
+              <tr>
+                <th>Item</th>
+                <th style="text-align: right;">Amount</th>
+              </tr>
+              <tr>
+                <td>Labour</td>
+                <td style="text-align: right;">$${labourTotal}</td>
+              </tr>
+              <tr>
+                <td>Materials</td>
+                <td style="text-align: right;">$${materialsTotal}</td>
+              </tr>
+              <tr>
+                <td>Travel</td>
+                <td style="text-align: right;">$${travelTotal}</td>
+              </tr>
+              <tr>
+                <td>Installation</td>
+                <td style="text-align: right;">$${installationCost}</td>
+              </tr>
+              <tr>
+                <td style="font-weight: bold;">Subtotal</td>
+                <td style="text-align: right; font-weight: bold;">$${subtotal}</td>
+              </tr>
+              <tr>
+                <td>GST (15%)</td>
+                <td style="text-align: right;">$${gst}</td>
+              </tr>
+              <tr class="total-row">
+                <td style="font-size: 16px;">TOTAL</td>
+                <td style="text-align: right; font-size: 16px;">$${totalQuote}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="buttons">
+            <a href="${viewLink}" class="button view">View Quote Details</a>
+          </div>
+          
+          <p>A detailed PDF of the quote is attached for your records.</p>
+          
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Kiwi Trade. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const adminEmail = process.env.ADMIN_EMAIL || '';
+    const internalRecipients = [tradePersonEmail, adminEmail].filter(Boolean);
+
+    if (internalRecipients.length > 0) {
+      await transporter.sendMail({
+        from: `"Kiwi Trade" <${GMAIL_USER}>`,
+        to: internalRecipients.join(','),
+        subject: `[Internal] Quote #${quoteId} Sent to ${customerName}`,
+        html: internalHtmlContent,
+        attachments: [
+          {
+            filename: `KiwiTrade_Quote_${quoteId}.pdf`,
+            content: pdfBuffer,
+            contentType: 'application/pdf'
+          }
+        ]
+      });
+      console.log(`✅ Internal notification sent to: ${internalRecipients.join(', ')}`);
+    }
     
-    console.log(`✅ Quote email sent to customer: ${customerEmail}, CC: ${tradePersonEmail}, ${adminEmail}`);
     return res.status(200).json({ success: true, message: 'Quote sent to customer' });
 
   } catch (err) {

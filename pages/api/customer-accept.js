@@ -290,52 +290,87 @@ export default async function handler(req, res) {
             
             // Send email notifications
             try {
-                // Get customer email (Column 29, index 28)
-                const customerEmail = quoteRow[28]; // Column AC (0-indexed)
-                // Get tradesperson email (Column 5, index 4)
-                const tradesmanEmail = quoteRow[4]; // Column E (0-indexed)
-                // Get admin email from env var
-                const adminEmail = process.env.ADMIN_EMAIL;
-                
+                // Get column indices from headers
+                const customerEmailIndex = headers.indexOf('CustomerEmail'); // Fallback to 28 if needed
+                const customerNameIndex = headers.indexOf('CustomerName'); // Fallback to 27
+                const customerPhoneIndex = headers.indexOf('CustomerPhone');
+                const addressIndex = headers.indexOf('Address');
+
+                const tradesmanEmailIndex = headers.indexOf('TradesmanEmail'); // Fallback to 4
+                const tradesmanNameIndex = headers.indexOf('TradesmanName');
+                const tradesmanPhoneIndex = headers.indexOf('TradesmanPhone');
+                const tradesmanLicenseIndex = headers.indexOf('TradesmanLicense');
+
+                // Extract data from quoteRow
                 const quoteId = quoteRow[quoteIdCol];
-                const customerName = quoteRow[27] || 'Customer'; // Column AB (0-indexed)
-                const emailSubject = `Quote Decision Recorded – Accepted`;
-                const emailBody = `
+                const customerEmail = quoteRow[customerEmailIndex] || quoteRow[28];
+                const customerName = quoteRow[customerNameIndex] || quoteRow[27] || 'Valued Customer';
+                const customerPhone = quoteRow[customerPhoneIndex] || 'N/A';
+                const customerAddress = quoteRow[addressIndex] || 'N/A';
+
+                const tradesmanEmail = quoteRow[tradesmanEmailIndex] || quoteRow[4];
+                const tradesmanName = quoteRow[tradesmanNameIndex] || 'Your assigned tradesperson';
+                const tradesmanPhone = quoteRow[tradesmanPhoneIndex] || 'N/A';
+                const tradesmanLicense = quoteRow[tradesmanLicenseIndex] || 'N/A';
+                
+                const adminEmail = process.env.ADMIN_EMAIL;
+
+                // --- 1. Customer Confirmation Email ---
+                const customerSubject = `Quote Accepted — [Quote #${quoteId}] — Confirmation`;
+                const customerBody = `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                        <h2>Quote Decision Notification</h2>
-                        <p>A decision has been made on quote ${quoteId}.</p>
-                        <p><strong>Customer:</strong> ${customerName}</p>
-                        <p><strong>Decision:</strong> ACCEPTED</p>
-                        <p><strong>Timestamp:</strong> ${nzTimestamp} (New Zealand Time)</p>
+                        <h2>Thank You! Your Quote has been Accepted.</h2>
+                        <p><strong>Quote ID:</strong> ${quoteId}</p>
+                        <p>We have received your acceptance and will proceed with the next steps. You can view the accepted quote online <a href="${process.env.BASE_URL}/quote/view/${quoteId}">here</a>.</p>
+                        <hr>
+                        <h3>Your Tradesperson's Details:</h3>
+                        <p>
+                            <strong>Name:</strong> ${tradesmanName}<br>
+                            <strong>Email:</strong> ${tradesmanEmail}<br>
+                            <strong>Phone:</strong> ${tradesmanPhone}<br>
+                            <strong>License:</strong> ${tradesmanLicense}
+                        </p>
+                        <p>Your tradesperson will be in touch shortly to coordinate the work. Please note, we will contact you if anything else is required.</p>
                     </div>
                 `;
-                
-                // Send emails to all parties
+
                 if (customerEmail) {
                     await sendEmail({
                         to: customerEmail,
-                        subject: emailSubject,
-                        html: emailBody
+                        subject: customerSubject,
+                        html: customerBody
                     });
                 }
-                
-                if (tradesmanEmail) {
+
+                // --- 2. Tradesman / Admin Notification Email ---
+                const internalSubject = `Customer Accepted Quote — [Quote #${quoteId}] — Please Follow Up`;
+                const internalBody = `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2>Action Required: Customer has Accepted a Quote</h2>
+                        <p><strong>Quote ID:</strong> ${quoteId}</p>
+                        <p style="font-size: 1.2em; color: #D23F3F;"><strong>Please follow up on the job.</strong></p>
+                        <hr>
+                        <h3>Customer Details:</h3>
+                        <p>
+                            <strong>Name:</strong> ${customerName}<br>
+                            <strong>Email:</strong> ${customerEmail}<br>
+                            <strong>Phone:</strong> ${customerPhone}<br>
+                            <strong>Address:</strong> ${customerAddress}
+                        </p>
+                        <p>The full quote details can be viewed online <a href="${process.env.BASE_URL}/quote/view/${quoteId}">here</a>.</p>
+                    </div>
+                `;
+
+                const internalRecipients = [tradesmanEmail, adminEmail].filter(Boolean); // Filter out any null/undefined emails
+                if (internalRecipients.length > 0) {
                     await sendEmail({
-                        to: tradesmanEmail,
-                        subject: emailSubject,
-                        html: emailBody
+                        to: internalRecipients.join(', '),
+                        subject: internalSubject,
+                        html: internalBody
                     });
                 }
                 
-                if (adminEmail) {
-                    await sendEmail({
-                        to: adminEmail,
-                        subject: emailSubject,
-                        html: emailBody
-                    });
-                }
-                
-                console.log(`[DECISION-API] Notification emails sent successfully`);
+                console.log(`[DECISION-API] Notification emails sent successfully for Quote #${quoteId}`);
             } catch (emailError) {
                 console.error(`[DECISION-API] Error sending notification emails:`, emailError);
                 // Continue with redirect even if emails fail

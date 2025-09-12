@@ -86,10 +86,10 @@ export default async function handler(req, res) {
       serviceType: lead.ServiceType || '',
       rooms: parsedRooms,
       sqm: lead.Sqm || '',
-      address: lead.address || '',
+      address: lead.Address || '', // Use the full address from the sheet
       area: lead.Area || '',
       suburb: lead.Suburb || '',
-      location: lead.address || `${lead.Suburb}, ${lead.Area}`.trim() || '',
+      location: lead.Address || `${lead.Suburb}, ${lead.Area}`.trim() || '', // Use full address for location
       budget: lead.Budget || '',
       timeline: lead.Timelline || '',
       details: lead['Specfic Details'] || '',

@@ -32,7 +32,7 @@ export async function getQuoteRowByQuoteId(quoteId) {
     const sheets = await getGoogleSheetsClient();
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-      range: 'Quotes!A:AL',
+      range: 'Quotes!A:AZ',
     });
 
     const rows = response.data.values || [];
@@ -340,7 +340,7 @@ export async function getLeadById(leadId) {
         const sheets = await getGoogleSheetsClient();
         const spreadsheetId = getSpreadsheetId();
 
-        const range = 'Leads!A:L';
+        const range = 'Leads!A:P';
         const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
         const rows = response.data.values;
         
@@ -416,7 +416,7 @@ export async function getQuotesByLeadId(leadId) {
     const sheets = getGoogleSheetsClient();
     const spreadsheetId = getSpreadsheetId();
     
-    const range = 'Quotes!A:AL';
+    const range = 'Quotes!A:AZ';
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
     const rows = response.data.values || [];
     

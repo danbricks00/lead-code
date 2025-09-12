@@ -46,7 +46,7 @@ export default async function handler(req, res) {
     const {
       customerName, customerEmail, customerPhone, serviceType, rooms, 
       area, suburb, timeline, budget, specificDetails, projectDetails,
-      isUnlistedSuburb, suburbAdditionalInfo
+      isUnlistedSuburb, suburbAdditionalInfo, streetAddress
     } = req.body;
 
     console.log('[LEAD-INTAKE] Received rooms data:', rooms);
@@ -78,20 +78,23 @@ export default async function handler(req, res) {
     const leadId = crypto.randomBytes(6).toString("hex");
     const sheets = getGoogleSheetsClient();
     
+    // Construct the full address from street, suburb, and area (zone)
+    const fullAddress = [streetAddress, suburb, area].filter(Boolean).join(', ');
+
     // Exact Leads schema mapping - single append operation
     const leadRow = [
-      leadId,                                    // Lead
-      customerName,                              // CustomerName
-      finalCustomerEmail,                        // CustomerEmail (corrected)
-      customerPhone || "",                       // CustomerPhone
-      serviceType || "Underfloor Heating",       // ServiceType
-      JSON.stringify(rooms || []),               // Rooms
-      area || "",                                // Area
-      suburb || "",                              // Suburb
-      budget || "",                              // Budget
-      timeline || "",                            // Timelline (note exact spelling)
-      specificDetails || projectDetails || "",   // Specfic Details (note exact spelling)
-      new Date().toLocaleString('en-NZ', {
+      leadId,                                    // A: Lead ID
+      customerName,                              // B: CustomerName
+      finalCustomerEmail,                        // C: CustomerEmail (corrected)
+      customerPhone || "",                       // D: CustomerPhone
+      serviceType || "Underfloor Heating",       // E: ServiceType
+      JSON.stringify(rooms || []),               // F: Rooms
+      area || "",                                // G: Area (Zone)
+      suburb || "",                              // H: Suburb
+      budget || "",                              // I: Budget
+      timeline || "",                            // J: Timeline
+      specificDetails || projectDetails || "",   // K: Specific Details
+      new Date().toLocaleString('en-NZ', {       // L: Time
         timeZone: 'Pacific/Auckland',
         day: '2-digit',
         month: '2-digit',
@@ -99,9 +102,11 @@ export default async function handler(req, res) {
         hour: '2-digit',
         minute: '2-digit',
         hour12: true
-      }),                                        // Time
-      "",                                        // (Column M - empty)
-      "New Lead",                                // status
+      }),
+      "",                                        // M: (Empty)
+      "New Lead",                                // N: Status
+      streetAddress || "",                       // O: Street Address
+      fullAddress,                               // P: Address
     ];
 
     // Single write operation - Leads tab only

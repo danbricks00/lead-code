@@ -574,8 +574,8 @@ async function handleQuoteGeneration(req, res) {
  async function sendQuoteEmail(quoteData, req) {
   try {
     // Use fallback credentials like the contact form
-    const gmailUser = process.env.GMAIL_USER || 'danbricks18@gmail.com';
-    const gmailPass = process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom';
+    const gmailUser = process.env.GMAIL_USER;
+    const gmailPass = process.env.GMAIL_APP_PASSWORD;
 
     console.log('📧 Using Gmail credentials for quote email:', { user: gmailUser, pass: gmailPass ? '***' : 'missing' });
 
@@ -646,8 +646,8 @@ async function handleQuoteGeneration(req, res) {
 async function sendAdminQuoteEmail(quoteData, req) {
   try {
     // Use fallback credentials like the contact form
-    const gmailUser = process.env.GMAIL_USER || 'danbricks18@gmail.com';
-    const gmailPass = process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom';
+    const gmailUser = process.env.GMAIL_USER;
+    const gmailPass = process.env.GMAIL_APP_PASSWORD;
 
     console.log('📧 Using Gmail credentials for admin quote email:', { user: gmailUser, pass: gmailPass ? '***' : 'missing' });
 
@@ -937,4 +937,4 @@ function formatDate(dateString) {
     month: 'short',
     year: 'numeric'
   });
-} 
+}

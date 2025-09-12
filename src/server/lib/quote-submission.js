@@ -668,8 +668,8 @@ export default async function handler(req, res) {
       }
 
       // Email configuration
-      const tradesmanEmail = 'quangbui0600@gmail.com';
-      const adminEmail = 'danbricks18@gmail.com';
+      const tradesmanEmail = process.env.TRADESMAN_EMAIL;
+      const adminEmail = process.env.ADMIN_EMAIL;
       const customerEmail = quoteData.customerEmail;
       
       console.log('📧 Email recipients configured:');

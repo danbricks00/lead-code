@@ -91,7 +91,7 @@ For security, set these in Vercel:
    - `GOOGLE_API_KEY`
    - `SPREADSHEET_ID`
    - `GMAIL_USER`
-   - `GMAIL_PASS`
+   - `GMAIL_APP_PASSWORD`
 
 ## Troubleshooting
 

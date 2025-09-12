@@ -111,7 +111,7 @@ export default async function handler(req, res) {
 
       const mailOptions = {
         from: process.env.GMAIL_USER,
-        to: process.env.ADMIN_EMAIL || 'danbricks18@gmail.com',
+        to: process.env.ADMIN_EMAIL,
         subject: `🚨 UNLISTED SUBURB: ${suburbName} - Lead from ${customerName}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

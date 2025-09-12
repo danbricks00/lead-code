@@ -16,7 +16,7 @@ Your Vercel deployment is showing a 500 error because the server is trying to re
 GOOGLE_API_KEY = AIzaSyBIrLJFnsSiub7Ixio_v2S9gDT8mxkRuwM
 SPREADSHEET_ID = your-google-sheet-id
 GMAIL_USER = danbricks18@gmail.com
-GMAIL_PASS = ptmcojqgthvjbqom
+GMAIL_APP_PASSWORD = ptmcojqgthvjbqom
 SESSION_SECRET = your-secret-key-here
 ```
 
@@ -51,7 +51,7 @@ SESSION_SECRET = your-secret-key-here
 - `GOOGLE_API_KEY`: Your Google API key for Sheets access
 - `SPREADSHEET_ID`: Your Google Sheet ID (get this from your sheet URL)
 - `GMAIL_USER`: Your Gmail address for sending emails
-- `GMAIL_PASS`: Your Gmail app password
+- `GMAIL_APP_PASSWORD`: Your Gmail app password
 - `SESSION_SECRET`: A random string for session security
 
 ## Get Your Spreadsheet ID

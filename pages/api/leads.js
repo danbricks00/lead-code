@@ -151,7 +151,7 @@ async function handleLeadCreate(req, res) {
   // Environment checks
   console.log("🔧 Environment variables check:", {
     GMAIL_USER: process.env.GMAIL_USER || "MISSING",
-    GMAIL_PASS: process.env.GMAIL_PASS ? "SET" : "MISSING",
+    GMAIL_APP_PASSWORD: process.env.GMAIL_APP_PASSWORD ? "SET" : "MISSING",
     ADMIN_EMAIL: process.env.ADMIN_EMAIL || "MISSING",
     TEAM_EMAIL: process.env.TEAM_EMAIL || "MISSING"
   });
@@ -166,7 +166,7 @@ async function handleLeadCreate(req, res) {
       secure: true,
       auth: {
         user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS
+        pass: process.env.GMAIL_APP_PASSWORD
       }
     });
 
@@ -304,7 +304,7 @@ async function handleSubmitQuote(req, res) {
     
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: 'Quotes!A:AL',
+      range: 'Quotes!A:AZ',
     });
 
     const rows = response.data.values || [];
@@ -407,7 +407,7 @@ async function handleSubmitQuote(req, res) {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
-      range: 'Quotes!A:AL',
+      range: 'Quotes!A:AZ',
       valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       requestBody: {
@@ -430,7 +430,7 @@ async function handleSubmitQuote(req, res) {
   // Environment checks
   console.log("🔧 Environment variables check:", {
     GMAIL_USER: process.env.GMAIL_USER || "MISSING",
-    GMAIL_PASS: process.env.GMAIL_PASS ? "SET" : "MISSING",
+    GMAIL_APP_PASSWORD: process.env.GMAIL_APP_PASSWORD ? "SET" : "MISSING",
     ADMIN_EMAIL: process.env.ADMIN_EMAIL || "MISSING",
     CUSTOMER_EMAIL: customerEmail || "MISSING",
     TRADESPERSON_EMAIL: tradesmanEmail || "MISSING"
@@ -611,7 +611,7 @@ async function handleDecision(req, res) {
     // Fetch quote data
     const quoteResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: "Quotes!A:AL"
+      range: "Quotes!A:AZ"
     });
     
     const quoteRows = quoteResponse.data.values || [];
@@ -660,7 +660,7 @@ async function handleDecision(req, res) {
   // Environment checks
   console.log("🔧 Environment variables check:", {
     GMAIL_USER: process.env.GMAIL_USER || "MISSING",
-    GMAIL_PASS: process.env.GMAIL_PASS ? "SET" : "MISSING",
+    GMAIL_APP_PASSWORD: process.env.GMAIL_APP_PASSWORD ? "SET" : "MISSING",
     ADMIN_EMAIL: process.env.ADMIN_EMAIL || "MISSING",
     CUSTOMER_EMAIL: leadData?.customerEmail || "MISSING",
     TRADESPERSON_EMAIL: fullQuoteData?.tradesmanEmail || "MISSING"

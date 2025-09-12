@@ -87,7 +87,7 @@ export default async function handler(req, res) {
         // Find the lead in the Leads sheet
         const leadsResponse = await sheets.spreadsheets.values.get({
           spreadsheetId,
-          range: 'Leads!A:L',
+          range: 'Leads!A:P',
         });
 
         const leadRows = leadsResponse.data.values || [];
@@ -131,7 +131,7 @@ export default async function handler(req, res) {
           
           const quotesResponse = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: 'Quotes!A:AL',
+            range: 'Quotes!A:AZ',
           });
 
           const quoteRows = quotesResponse.data.values || [];

@@ -36,8 +36,8 @@ async function testStep1EmailFlow() {
       console.log('🎉 Step 1 Email Flow completed successfully!');
       console.log('📧 All emails sent to:');
       console.log('   - Customer:', dummyLead.customerEmail);
-      console.log('   - Tradesman: quangbui0600@gmail.com');
-      console.log('   - Admin: danbricks18@gmail.com');
+      console.log('   - Tradesman:', process.env.TRADESPERSON_EMAIL);
+      console.log('   - Admin:', process.env.ADMIN_EMAIL);
     } else {
       console.log('⚠️ Step 1 Email Flow partially failed');
       console.log('📧 Check individual email results for details');

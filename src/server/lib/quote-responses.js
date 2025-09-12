@@ -497,7 +497,7 @@ async function trackCommission(quote) {
     // Find and update the quote row in the spreadsheet
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-      range: 'Quotes!A:AL',
+      range: 'Quotes!A:AZ',
     });
 
     const rows = response.data.values;
@@ -639,7 +639,7 @@ async function updateRelatedQuotes(acceptedQuote) {
     // Get all quotes from the spreadsheet
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-      range: 'Quotes!A:AL',
+      range: 'Quotes!A:AZ',
     });
 
     const rows = response.data.values;

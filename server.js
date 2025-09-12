@@ -151,13 +151,13 @@ async function sendEmail(to, subject, body) {
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: 'danbricks18@gmail.com', // Your Gmail address
-                pass: 'ptmcojqgthvjbqom' // You'll need to generate an app password
+                user: process.env.GMAIL_USER, 
+                pass: process.env.GMAIL_APP_PASSWORD
             }
         });
 
         const mailOptions = {
-            from: '"LeadBot" <danbricks18@gmail.com>',
+            from: `"LeadBot" <${process.env.GMAIL_USER}>`,
             to: to,
             subject: subject,
             html: body
@@ -293,6 +293,13 @@ async function sendQuoteEmail(quoteData, req) {
     }
 }
 
+async function notifyAdmin(subject, body) {
+    const adminEmail = process.env.ADMIN_EMAIL; // Your admin email
+    if (adminEmail) {
+        await sendEmail(adminEmail, subject, body);
+    }
+}
+
 // Function to send admin quote email
 async function sendAdminQuoteEmail(quoteData, req) {
     try {
@@ -388,7 +395,7 @@ async function sendAdminQuoteEmail(quoteData, req) {
             </div>
         `;
 
-        const adminEmail = 'danbricks18@gmail.com'; // Your admin email
+        const adminEmail = process.env.ADMIN_EMAIL; // Your admin email
         const success = await sendEmail(adminEmail, `📊 New Quote Generated - ${quoteData.quoteNumber} - $${quoteData.total}`, emailContent);
         
         if (success) {

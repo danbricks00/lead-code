@@ -6,7 +6,7 @@ import { buildQuoteRow } from '../../utils/quotes.js';
 import { getLeadById } from '../../utils/sheets.js';
 
 const GMAIL_USER = process.env.GMAIL_USER;
-const GMAIL_PASS = process.env.GMAIL_PASS;
+const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
 // Fix this line to use the correct environment variable name
 const GOOGLE_CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
@@ -227,7 +227,7 @@ export default async function handler(req, res) {
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',
-      auth: { user: GMAIL_USER, pass: GMAIL_PASS },
+      auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
     });
 
     // Extract all needed values before creating the HTML content

@@ -5,7 +5,7 @@ import crypto from 'crypto';
 // Environment variables
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
 const GMAIL_USER = process.env.GMAIL_USER;
-const GMAIL_PASS = process.env.GMAIL_PASS;
+const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
 
 // Initialize Google Sheets
 const auth = new google.auth.GoogleAuth({
@@ -31,7 +31,7 @@ const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: GMAIL_USER,
-        pass: GMAIL_PASS
+        pass: GMAIL_APP_PASSWORD
     }
 });
 

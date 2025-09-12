@@ -38,7 +38,7 @@ export default async function handler(req, res) {
           // Find the quote in the Quotes sheet
           const response = await sheets.spreadsheets.values.get({
             spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-            range: 'Quotes!A:AL',
+            range: 'Quotes!A:AZ',
           });
 
           const rows = response.data.values || [];
@@ -141,7 +141,7 @@ export default async function handler(req, res) {
           // Find the row index and update status
           const response = await sheets.spreadsheets.values.get({
             spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-            range: 'Quotes!A:AL',
+            range: 'Quotes!A:AZ',
           });
 
           const rows = response.data.values || [];
@@ -168,13 +168,13 @@ export default async function handler(req, res) {
           const transporter = nodemailer.default.createTransport({
             service: 'gmail',
             auth: {
-              user: 'danbricks18@gmail.com',
-              pass: 'ptmcojqgthvjbqom'
+              user: process.env.GMAIL_USER,
+              pass: process.env.GMAIL_APP_PASSWORD
             }
           });
 
           const tradesmanMailOptions = {
-            from: 'Kiwi Trade <danbricks18@gmail.com>',
+            from: `Kiwi Trade <${process.env.GMAIL_USER}>`,
             to: quoteData.tradesmanEmail,
             subject: `📋 Quote ${quoteNumber} DECLINED by Customer`,
             html: `

@@ -264,7 +264,7 @@ export async function getServerSideProps(context) {
     // Fetch all rows from the "Quotes" sheet
     const quotesResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'Quotes!A:AL'
+      range: 'Quotes!A:AZ'
     });
 
     const rows = quotesResponse.data.values;

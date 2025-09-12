@@ -26,12 +26,12 @@ async function getGmailService() {
 }
 
 // Send email via Gmail API with optional attachment
-async function sendEmailViaGmailAPI(to, subject, htmlContent, attachment = null, from = 'danbricks18@gmail.com') {
+async function sendEmailViaGmailAPI(to, subject, htmlContent, attachment = null) {
   try {
     console.log(`📧 Attempting to send email via Gmail API...`);
     console.log(`📧 To: ${to}`);
     console.log(`📧 Subject: ${subject}`);
-    console.log(`📧 From: ${from}`);
+    console.log(`📧 From: ${process.env.GMAIL_USER}`);
     console.log(`📧 Has Attachment: ${attachment ? 'Yes' : 'No'}`);
 
     const gmail = await getGmailService();
@@ -43,7 +43,7 @@ async function sendEmailViaGmailAPI(to, subject, htmlContent, attachment = null,
       const boundary = 'boundary_' + Math.random().toString(36).substr(2, 9);
       
       message = [
-        `From: Kiwi Trade <${from}>`,
+        `From: Kiwi Trade <${process.env.GMAIL_USER}>`,
         `To: ${to}`,
         `Subject: ${subject}`,
         'MIME-Version: 1.0',
@@ -66,7 +66,7 @@ async function sendEmailViaGmailAPI(to, subject, htmlContent, attachment = null,
     } else {
       // Create simple HTML message
       message = [
-        `From: Kiwi Trade <${from}>`,
+        `From: Kiwi Trade <${process.env.GMAIL_USER}>`,
         `To: ${to}`,
         `Subject: ${subject}`,
         'MIME-Version: 1.0',
@@ -198,24 +198,21 @@ async function sendStep1Emails(lead) {
   
   // Enhanced safe fallback values for all placeholders
   const safeLead = {
+    ...lead,
     customerName: lead.customerName || 'Valued Customer',
-    customerEmail: lead.customerEmail || 'customer@example.com',
-    customerPhone: lead.customerPhone || 'Not provided',
-    serviceType: lead.selectedService || lead.serviceType || 'General Service',
-    projectDetails: lead.projectDetails || 'Project details not provided',
-    projectSize: lead.projectSize || 'Not specified',
-    location: lead.location || 'Auckland',
-    quoteLink: lead.quoteLink || '#',
-    budget: lead.budget || 'Not specified',
-    timeline: lead.timeline || 'Not specified',
-    specificDetails: lead.specificDetails || ''
+    customerEmail: lead.customerEmail || process.env.ADMIN_EMAIL, // Fallback to admin
+    tradesmanName: lead.tradesmanName || 'Our Team',
+    quoteNumber: lead.quoteNumber || 'N/A',
+    totalAmount: lead.totalAmount || 'N/A',
+    serviceType: lead.serviceType || 'your project',
+    location: lead.location || 'your area',
   };
-  
-  // Email configuration
-  const tradesmanEmail = 'quangbui0600@gmail.com';
-  const adminEmail = 'danbricks18@gmail.com';
-  const customerEmail = safeLead.customerEmail;
-  
+
+  const tradesmanEmail = process.env.TRADESPERSON_EMAIL;
+  const adminEmail = process.env.ADMIN_EMAIL;
+
+  // Log emails being used
+  console.log('📧 Step 1 Email Recipients:');
   console.log('📧 Email recipients configured:');
   console.log(`📧 Tradesman: ${tradesmanEmail}`);
   console.log(`📧 Admin: ${adminEmail}`);
@@ -418,7 +415,7 @@ async function sendStep1Emails(lead) {
         
         <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3 style="color: #1976d2; margin-top: 0;">Status:</h3>
-          <p><strong>Assigned Tradesman:</strong> quangbui0600@gmail.com</p>
+          <p><strong>Assigned Tradesman:</strong> ${process.env.TRADESPERSON_EMAIL}</p>
           <p><strong>Status:</strong> Quote request sent - awaiting response</p>
         </div>
         

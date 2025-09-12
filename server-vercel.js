@@ -68,7 +68,7 @@ async function sendEmail(to, subject, body) {
             service: 'gmail',
             auth: {
                 user: process.env.GMAIL_USER,
-                pass: process.env.GMAIL_PASS
+                pass: process.env.GMAIL_APP_PASSWORD
             }
         });
 
@@ -286,4 +286,4 @@ if (process.env.NODE_ENV !== 'production') {
     });
 }
 
-module.exports = app; 
+module.exports = app;

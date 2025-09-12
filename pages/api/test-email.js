@@ -2,27 +2,20 @@
 import { sendEmail } from '../../lib/emailHelper.js';
 
 export default async function handler(req, res) {
-  console.log("✅ Loaded API test-email.js");
-  
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST']);
-    return res.status(405).json({ 
-      success: false, 
-      error: `Method ${req.method} Not Allowed. Use POST method.` 
-    });
-  }
+    const { GMAIL_USER, GMAIL_APP_PASSWORD, ADMIN_EMAIL } = process.env;
 
-  try {
-    console.log("📧 Starting test email...");
-    
-    // Environment checks
-    console.log("🔧 Environment variables check:", {
-      GMAIL_USER: process.env.GMAIL_USER || "MISSING",
-      GMAIL_PASS: process.env.GMAIL_PASS ? "SET" : "MISSING",
-      ADMIN_EMAIL: process.env.ADMIN_EMAIL || "MISSING"
-    });
+    if (req.method === 'POST') {
+        try {
+            console.log("📧 Starting test email...");
+            
+            // Environment checks
+            console.log("🔧 Environment variables check:", {
+                GMAIL_USER: GMAIL_USER || "MISSING",
+                GMAIL_APP_PASSWORD: GMAIL_APP_PASSWORD ? "SET" : "MISSING",
+                ADMIN_EMAIL: ADMIN_EMAIL || "MISSING"
+            });
 
-    if (!process.env.ADMIN_EMAIL) {
+            if (!ADMIN_EMAIL) {
       console.error("❌ ADMIN_EMAIL not configured");
       return res.status(500).json({
         success: false,
@@ -69,11 +62,11 @@ export default async function handler(req, res) {
     }
 
   } catch (error) {
-    console.error('❌ Test email API error:', error.message);
-    return res.status(500).json({
-      success: false,
-      error: 'Test email failed',
-      message: error.message
-    });
+    console.error('Failed to send test email:', error);
+    res.status(500).json({ success: false, error: 'Failed to send email' });
   }
+} else {
+    res.setHeader('Allow', ['POST']);
+    res.status(405).end(`Method ${req.method} Not Allowed`);
+}
 }

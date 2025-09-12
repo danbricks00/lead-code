@@ -38,8 +38,8 @@ export default async function handler(req, res) {
         transporter = nodemailer.default.createTransport({
           service: 'gmail',
           auth: {
-            user: 'danbricks18@gmail.com',
-            pass: 'ptmcojqgthvjbqom'
+            user: process.env.GMAIL_USER,
+            pass: process.env.GMAIL_APP_PASSWORD
           }
         });
         console.log('✅ Transporter created successfully');
@@ -69,8 +69,8 @@ export default async function handler(req, res) {
       // Test 4: Send test email
       console.log('📤 Sending test email...');
       const testMailOptions = {
-        from: 'Kiwi Underfloor Heating <danbricks18@gmail.com>',
-        to: testEmail || 'danbricks18@gmail.com',
+        from: `Kiwi Underfloor Heating <${process.env.GMAIL_USER}>`,
+        to: testEmail || process.env.ADMIN_EMAIL,
         subject: 'Test Email - Chatbot System',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

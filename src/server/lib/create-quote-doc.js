@@ -85,7 +85,7 @@ export default async function handler(req, res) {
         // Tradesman details
         '{{TRADESMAN_NAME}}': quoteData.tradesmanName || 'Kiwi Trade',
         '{{TRADESMAN_PHONE}}': quoteData.tradesmanPhone || 'Not specified',
-        '{{TRADESMAN_EMAIL}}': quoteData.tradesmanEmail || 'info@kiwitrade.co.nz',
+        '{{TRADESMAN_EMAIL}}': quoteData.tradesmanEmail || process.env.TRADESMAN_EMAIL || 'info@kiwitrade.co.nz',
         
         // Pricing details
         '{{TOTAL_AMOUNT}}': quoteData.totalAmount || '0.00',
@@ -176,14 +176,14 @@ export default async function handler(req, res) {
         const transporter = nodemailer.default.createTransport({
           service: 'gmail',
           auth: {
-            user: process.env.GMAIL_USER || 'danbricks18@gmail.com',
-            pass: process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom'
+            user: process.env.GMAIL_USER,
+            pass: process.env.GMAIL_APP_PASSWORD
           }
         });
 
         const adminMailOptions = {
-          from: `Kiwi Trade <${process.env.GMAIL_USER || 'danbricks18@gmail.com'}>`,
-          to: 'danbricks18@gmail.com',
+          from: `Kiwi Trade <${process.env.GMAIL_USER}>`,
+          to: process.env.ADMIN_EMAIL,
           subject: `Quote ${quoteData.quoteNumber} Document Created - ${quoteData.tradesmanName}`,
           html: `
             <h2>Quote Document Created Successfully!</h2>

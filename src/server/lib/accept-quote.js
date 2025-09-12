@@ -168,13 +168,13 @@ export default async function handler(req, res) {
           const transporter = nodemailer.default.createTransport({
             service: 'gmail',
             auth: {
-              user: 'danbricks18@gmail.com',
-              pass: 'ptmcojqgthvjbqom'
+              user: process.env.GMAIL_USER,
+              pass: process.env.GMAIL_APP_PASSWORD
             }
           });
 
           const tradesmanMailOptions = {
-            from: 'Kiwi Trade <danbricks18@gmail.com>',
+            from: `Kiwi Trade <${process.env.GMAIL_USER}>`,
             to: quoteData.tradesmanEmail,
             subject: `🎉 Quote ${quoteNumber} ACCEPTED by Customer!`,
             html: `

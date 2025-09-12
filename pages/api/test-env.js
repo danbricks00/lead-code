@@ -15,7 +15,7 @@ export default async function handler(req, res) {
 
     const envVars = {
       GMAIL_USER: process.env.GMAIL_USER || "NOT_SET",
-      GMAIL_PASS: process.env.GMAIL_PASS ? "SET" : "NOT_SET",
+      GMAIL_APP_PASSWORD: process.env.GMAIL_APP_PASSWORD ? "SET" : "NOT_SET",
       ADMIN_EMAIL: process.env.ADMIN_EMAIL || "NOT_SET",
       TEAM_EMAIL: process.env.TEAM_EMAIL || "NOT_SET",
       GOOGLE_CLIENT_EMAIL: process.env.GOOGLE_CLIENT_EMAIL || "NOT_SET",

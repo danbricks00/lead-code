@@ -61,8 +61,8 @@ export async function sendToSheets(leadData) {
     const transporter = nodemailer.default.createTransport({
       service: 'gmail',
       auth: {
-        user: 'danbricks18@gmail.com',
-        pass: 'ptmcojqgthvjbqom'
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD
       }
     });
 
@@ -78,8 +78,8 @@ export async function sendToSheets(leadData) {
 
     console.log('📧 Creating tradesman email options...');
     const tradesmanMailOptions = {
-      from: 'Kiwi Trade <danbricks18@gmail.com>',
-      to: 'quangbui0600@gmail.com',
+      from: `Kiwi Trade <${process.env.GMAIL_USER}>`,
+      to: process.env.TRADESPERSON_EMAIL,
       subject: 'New Lead - Underfloor Heating Project',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -130,14 +130,14 @@ export async function sendToSheets(leadData) {
     const transporter = nodemailer.default.createTransport({
       service: 'gmail',
       auth: {
-        user: 'danbricks18@gmail.com',
-        pass: 'ptmcojqgthvjbqom'
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD
       }
     });
 
     const adminMailOptions = {
-      from: 'Kiwi Trade <danbricks18@gmail.com>',
-      to: 'danbricks18@gmail.com',
+      from: `Kiwi Trade <${process.env.GMAIL_USER}>`,
+      to: process.env.ADMIN_EMAIL,
       subject: '🎯 New Lead Captured - Admin Dashboard',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -332,4 +332,4 @@ export async function sendToSheets(leadData) {
       timestamp: timestamp
     }
   };
-} 
+}

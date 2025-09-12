@@ -204,7 +204,7 @@ export default async function handler(req, res) {
     try {
       await transporter.sendMail({
         from: `"Kiwi Trade Leads" <${process.env.GMAIL_USER}>`,
-        to: "quangbui0600@gmail.com",
+        to: process.env.TRADESPERSON_EMAIL,
         subject: `${unlistedPrefix}🔔 New Underfloor Heating Lead: ${suburb || area}`,
         html: `<h1>New Lead Logged (#${leadId})</h1>${leadDetailsHtml}<p>A quote link has been sent to the waiting for your submission.</p><p>Quote Link: ${quoteLink}</p>`,
       });
@@ -218,7 +218,7 @@ export default async function handler(req, res) {
     try {
       await transporter.sendMail({
         from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
-        to: "danbricks18@gmail.com",
+        to: process.env.ADMIN_EMAIL,
         subject: `${unlistedPrefix}New Lead Logged: ${customerName} in ${suburb || area}`,
         html: `<h1>New Lead Logged (#${leadId})</h1>${leadDetailsHtml}<p>A quote link has been sent to the tradesperson.</p><p>Quote Link: ${quoteLink}</p>`,
       });

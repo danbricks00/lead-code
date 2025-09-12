@@ -422,7 +422,7 @@ export default async function handler(req, res) {
           // Check the Quotes sheet for existing quotes from this tradesman for this lead
           const response = await sheets.spreadsheets.values.get({
             spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-            range: 'Quotes!A:AL',
+            range: 'Quotes!A:AZ',
           });
 
           const rows = response.data.values || [];
@@ -653,8 +653,8 @@ export default async function handler(req, res) {
 
           await sheets.spreadsheets.values.append({
             spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-            range: 'Quotes!A:AL',
-            range: 'Quotes!A:AL',
+            range: 'Quotes!A:AZ',
+            range: 'Quotes!A:AZ',
             valueInputOption: 'RAW',
             insertDataOption: 'INSERT_ROWS',
             resource: { values }

@@ -140,8 +140,8 @@ export default async function handler(req, res) {
       const transporter = nodemailer.default.createTransport({
         service: 'gmail',
         auth: {
-          user: 'danbricks18@gmail.com',
-          pass: 'ptmcojqgthvjbqom'
+          user: process.env.GMAIL_USER,
+          pass: process.env.GMAIL_APP_PASSWORD
         }
       });
 
@@ -149,8 +149,8 @@ export default async function handler(req, res) {
 
       // Send to customer
       const customerMailOptions = {
-        from: 'Kiwi Trade <danbricks18@gmail.com>',
-        to: quoteData.customerEmail || 'danbricks18@gmail.com',
+        from: `Kiwi Trade <${process.env.GMAIL_USER}>`,
+        to: quoteData.customerEmail, // Fallback removed to avoid sending to wrong email
         subject: `Quote ${quoteData.quoteNumber} - ${quoteData.serviceType || 'Your Project'}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -194,7 +194,7 @@ export default async function handler(req, res) {
 
       // Send to tradesman
       const tradesmanMailOptions = {
-        from: 'Kiwi Trade <danbricks18@gmail.com>',
+        from: `Kiwi Trade <${process.env.GMAIL_USER}>`,
         to: quoteData.tradesmanEmail,
         subject: `Quote ${quoteData.quoteNumber} - Copy for ${quoteData.customerName}`,
         html: `
@@ -228,8 +228,8 @@ export default async function handler(req, res) {
 
       // Send to admin
       const adminMailOptions = {
-        from: 'Kiwi Trade <danbricks18@gmail.com>',
-        to: 'danbricks18@gmail.com',
+        from: `Kiwi Trade <${process.env.GMAIL_USER}>`,
+        to: process.env.ADMIN_EMAIL,
         subject: `Quote ${quoteData.quoteNumber} - Admin Copy`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

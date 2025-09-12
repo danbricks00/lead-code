@@ -201,7 +201,11 @@ export default async function handler(req, res) {
         ...quoteDataFromSheet, 
         quoteId: quoteId, 
         rooms: req.body.rooms || JSON.parse(quoteDataFromSheet.Rooms || '[]'),
-        totalSqm: totalSqm || quoteDataFromSheet.TotalSqm
+        totalSqm: totalSqm || quoteDataFromSheet.TotalSqm,
+        // Ensure tradesperson details from the form are prioritized
+        TradePersonName: req.body.tradePersonName || quoteDataFromSheet.TradePersonName,
+        TradePersonEmail: req.body.tradePersonEmail || quoteDataFromSheet.TradePersonEmail,
+        TradePersonPhone: req.body.tradePersonPhone || quoteDataFromSheet.TradePersonPhone,
     };
 
     // Additional validation before PDF generation

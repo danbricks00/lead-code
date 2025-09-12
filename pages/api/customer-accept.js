@@ -299,6 +299,7 @@ export default async function handler(req, res) {
                 const tradespersonNameIndex = headers.indexOf('TradespersonName');
                 const tradespersonEmailIndex = headers.indexOf('TradespersonEmail');
                 const tradespersonPhoneIndex = headers.indexOf('TradespersonPhone');
+                const roomsIndex = headers.indexOf('Rooms'); // Get index for Rooms data
                 
                 // Extract data from quoteRow using the correct indices
                 const quoteId = quoteRow[quoteIdCol];
@@ -311,6 +312,23 @@ export default async function handler(req, res) {
                 const tradesmanName = quoteRow[tradespersonNameIndex] || 'Your assigned tradesperson';
                 const tradesmanPhone = quoteRow[tradespersonPhoneIndex] || 'N/A';
                 const tradesmanLicense = 'N/A'; // As requested, license is not needed.
+
+                const roomsData = quoteRow[roomsIndex];
+                let roomsHtml = '';
+                if (roomsData) {
+                    try {
+                        const rooms = JSON.parse(roomsData);
+                        if (Array.isArray(rooms) && rooms.length > 0) {
+                            roomsHtml = '<h3>Room Details:</h3><ul>';
+                            rooms.forEach(room => {
+                                roomsHtml += `<li>${room.name || 'Unnamed Room'}: ${room.dimensions || 'No dimensions provided'}</li>`;
+                            });
+                            roomsHtml += '</ul>';
+                        }
+                    } catch (e) {
+                        console.error('Error parsing rooms data:', e);
+                    }
+                }
                 
                 const adminEmail = process.env.ADMIN_EMAIL;
 
@@ -321,6 +339,9 @@ export default async function handler(req, res) {
                         <h2>Thank You! Your Quote has been Accepted.</h2>
                         <p><strong>Quote ID:</strong> ${quoteId}</p>
                         <p>We have received your acceptance and will proceed with the next steps. You can view the accepted quote online <a href="${process.env.BASE_URL}/quote/view/${quoteId}">here</a>.</p>
+                        <p><strong>Quote ID:</strong> ${quoteId}</p>
+                        <p>We have received your acceptance and will proceed with the next steps. You can view the accepted quote online <a href="${process.env.BASE_URL}/quote/view/${quoteId}">here</a>.</p>
+                        ${roomsHtml} // Add formatted room details here
                         <hr>
                         <h3>Your Tradesperson's Details:</h3>
                         <p>
@@ -356,6 +377,7 @@ export default async function handler(req, res) {
                             <strong>Phone:</strong> ${customerPhone}<br>
                             <strong>Address:</strong> ${customerAddress}
                         </p>
+                        ${roomsHtml} // And also here
                         <p>The full quote details can be viewed online <a href="${process.env.BASE_URL}/quote/view/${quoteId}">here</a>.</p>
                     </div>
                 `;

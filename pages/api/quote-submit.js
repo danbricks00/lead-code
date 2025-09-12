@@ -398,7 +398,7 @@ export default async function handler(req, res) {
           <p>The following quote has been sent to ${customerName} for the ${serviceType} project:</p>
 
           <div class="notification">
-            <p>The quote has been sent to the customer and we are now awaiting their decision. An email will be sent if the quote is accepted. Please follow up accordingly.</p>
+            <p>The quote has been sent to the customer and we are now awaiting their decision. An email will be sent if the when a decison is made. Please follow up accordingly.</p>
           </div>
           
           <div class="quote-summary">

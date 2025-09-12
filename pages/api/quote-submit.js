@@ -96,28 +96,33 @@ export default async function handler(req, res) {
         // Create a new quote row
         const mode = isDraft ? 'draft' : 'submitted';
         
-        // Calculate line totals
-        const labourRate = parseFloat(req.body.labourRate) || 0;
-        const labourHours = parseFloat(req.body.labourHours) || 0;
-        const labourTotal = labourRate * labourHours;
-        
-        const materialsCost = parseFloat(req.body.materialsCost) || 0;
-        const materialsQty = parseFloat(req.body.materialsQuantity) || 1;
-        const materialsTotal = materialsCost * materialsQty;
-        
-        const travelCost = parseFloat(req.body.travelCost) || 0;
-        const travelDistance = parseFloat(req.body.travelDistance) || 0;
-        const travelTotal = travelCost * travelDistance;
-        
-        const installationCost = parseFloat(req.body.installationCost) || 0;
-        
-        // Calculate subtotal, GST, and total
-        const subtotal = labourTotal + materialsTotal + travelTotal + installationCost;
-        const gst = subtotal * 0.15; // 15% GST
-        const totalQuote = subtotal + gst;
-        
-        // Create quote row with calculated values
+        // Calculate totalSqm from rooms if available
+        let totalSqm = 0;
+        if (req.body.rooms && Array.isArray(req.body.rooms)) {
+          totalSqm = req.body.rooms.reduce((acc, room) => {
+            const width = parseFloat(room.width) || 0;
+            const length = parseFloat(room.length) || 0;
+            return acc + width * length;
+          }, 0);
+        }
+    
+        // If totalSqm is still 0, try to get it from the body directly
+        if (totalSqm === 0 && req.body.totalSqm) {
+          totalSqm = parseFloat(req.body.totalSqm) || 0;
+        }
+    
         const quoteRow = buildQuoteRow({
+          lead: leadData,
+          quoteId,
+          tradePersonName: req.body.tradePersonName,
+          tradePersonEmail: req.body.tradePersonEmail,
+          tradePersonPhone: req.body.tradePersonPhone,
+          body: { ...req.body, totalSqm, rooms: req.body.rooms }, // Pass rooms and totalSqm
+          mode: 'submitted',
+        });
+    
+        // Create a separate object for PDF generation to avoid deep nesting issues
+        const quoteDataForPdf = {
           lead,
           quoteId,
           tradePersonName: req.body.tradespersonName,
@@ -125,6 +130,8 @@ export default async function handler(req, res) {
           tradePersonPhone: req.body.tradespersonPhone,
           body: {
             ...req.body,
+            totalSqm: totalSqm.toFixed(2), // Pass calculated totalSqm
+            rooms: req.body.rooms, // Pass rooms data
             labourTotal: labourTotal.toFixed(2),
             materialsTotal: materialsTotal.toFixed(2),
             travelTotal: travelTotal.toFixed(2),
@@ -188,7 +195,14 @@ export default async function handler(req, res) {
     });
 
     // Combine lead data and quote data for the PDF
-    const quoteDataForPdf = { ...lead, ...quoteDataFromSheet, quoteId: quoteId };
+    // Ensure the most recent rooms data from the form is used for the PDF
+    const quoteDataForPdf = { 
+        ...lead, 
+        ...quoteDataFromSheet, 
+        quoteId: quoteId, 
+        rooms: req.body.rooms || JSON.parse(quoteDataFromSheet.Rooms || '[]'),
+        totalSqm: quoteDataFromSheet.TotalSqm || totalSqm
+    };
 
     // Additional validation before PDF generation
     if (!quoteDataForPdf.CustomerEmail || !quoteDataForPdf.TotalQuote) {

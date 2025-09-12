@@ -35,8 +35,8 @@ export function buildQuoteRow({
     CustomerPhone: lead.CustomerPhone || '',
     ServiceType: lead.ServiceType || '',
     Address: lead.address || '', // Add this line
-    Rooms: lead.Rooms || '',
-    Sqm: lead.Sqm || '',
+    Rooms: body.rooms ? JSON.stringify(body.rooms) : lead.Rooms || '', // Use submitted rooms
+    Sqm: body.totalSqm ? body.totalSqm.toFixed(2) : lead.Sqm || '', // Use calculated totalSqm
     Area: lead.Area || '',
     Suburb: lead.Suburb || '',
     Budget: lead.Budget || '',

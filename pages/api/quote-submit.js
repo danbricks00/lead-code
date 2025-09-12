@@ -112,7 +112,7 @@ export default async function handler(req, res) {
         }
     
         const quoteRow = buildQuoteRow({
-          lead: leadData,
+          lead: lead, // Changed from leadData
           quoteId,
           tradePersonName: req.body.tradePersonName,
           tradePersonEmail: req.body.tradePersonEmail,
@@ -123,7 +123,7 @@ export default async function handler(req, res) {
     
         // Create a separate object for PDF generation to avoid deep nesting issues
         const quoteDataForPdf = {
-          lead: leadData,
+          lead: lead, // Changed from leadData
           quoteId,
           tradePersonName: req.body.tradePersonName,
           tradePersonEmail: req.body.tradePersonEmail,

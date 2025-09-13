@@ -42,7 +42,7 @@ export default async function handler(req, res) {
       leadId: body.leadId,
       isDraft: body.isDraft || false,
       // Normalize tradesperson fields
-      tradePersonName: body.tradePersonName || body.tradespersonName || body.trade_name,
+      TradePersonName: body.TradePersonName || body.TradePersonName || body.trade_name,
       tradePersonEmail: body.tradePersonEmail || body.tradespersonEmail || body.trade_email,
       tradePersonPhone: body.tradePersonPhone || body.tradespersonPhone || body.trade_phone,
       // Normalize and coerce numbers
@@ -166,7 +166,7 @@ export default async function handler(req, res) {
       customerName: normalizedData.customerName || lead.customerName,
       customerEmail: normalizedData.customerEmail || lead.customerEmail,
       customerPhone: normalizedData.customerPhone || lead.customerPhone,
-      tradePersonName: normalizedData.tradePersonName,
+      TradePersonName: normalizedData.TradePersonName,
       tradePersonEmail: normalizedData.tradePersonEmail,
       tradePersonPhone: normalizedData.tradePersonPhone,
 
@@ -182,7 +182,7 @@ export default async function handler(req, res) {
           address: fullAddress,
         },
         tradesperson: {
-          name: normalizedData.tradePersonName || 'N/A',
+          name: normalizedData.TradePersonName || 'N/A',
           email: normalizedData.tradePersonEmail || 'N/A',
           phone: normalizedData.tradePersonPhone || 'N/A',
           license: 'N/A',
@@ -221,6 +221,17 @@ export default async function handler(req, res) {
     if (process.env.STAGING === 'true') {
       console.log('quoteRow to write:', quoteRow);
     }
+    
+    // Debug: Log the financial data being written to Google Sheets
+    console.log('💰 Financial data being written to Google Sheets:', {
+      labourTotal: quoteRow.LabourTotal,
+      materialsTotal: quoteRow.MaterialsTotal,
+      travelTotal: quoteRow.TravelTotal,
+      installationCost: quoteRow.InstallationCost,
+      subtotal: quoteRow.Subtotal,
+      gst: quoteRow.GST,
+      totalQuote: quoteRow.TotalQuote
+    });
 
     // --- 4. Persist quote number and data before PDF/email ---
     await upsertQuoteRow(quoteId, quoteRow, { req, caller: 'quote-submit-update' });
@@ -236,7 +247,7 @@ export default async function handler(req, res) {
     // Get variables for email content from our single source of truth
     const {
         customerEmail, customerName, serviceType,
-        tradePersonName, tradePersonEmail, tradePersonPhone
+        TradePersonName, tradePersonEmail, tradePersonPhone
     } = finalQuoteData;
 
     const acceptLink  = `${normalizedBaseUrl}/api/customer-accept?quoteId=${quoteId}`;
@@ -293,7 +304,7 @@ export default async function handler(req, res) {
           <div class="tradesperson">
             <h4>Your Tradesperson:</h4>
             <p>
-              <strong>Name:</strong> ${tradePersonName}<br>
+              <strong>Name:</strong> ${TradePersonName}<br>
               <strong>Email:</strong> ${tradePersonEmail}<br>
               <strong>Phone:</strong> ${tradePersonPhone}
             </p>

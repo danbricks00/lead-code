@@ -21,10 +21,10 @@ export function buildQuoteRow({
   };
   const nztFormattedDate = new Intl.DateTimeFormat('en-NZ', options).format(now);
 
-  // Normalize tradesperson fields from various possible keys
-  const tradePersonName = body.tradePersonName || body.tradespersonName || body.trade_name || lead.TradePersonName || '';
-  const tradePersonEmail = body.tradePersonEmail || body.tradespersonEmail || body.trade_email || lead.TradePersonEmail || '';
-  const tradePersonPhone = body.tradePersonPhone || body.tradespersonPhone || body.trade_phone || lead.TradePersonPhone || '';
+  // Normalize tradesperson fields from various possible keys - using consistent TradePerson format
+  const TradePersonName = body.TradePersonName || body.tradePersonName || body.trade_name || lead.TradePersonName || '';
+  const TradePersonEmail = body.TradePersonEmail || body.tradePersonEmail || body.tradespersonEmail || body.trade_email || lead.TradePersonEmail || '';
+  const TradePersonPhone = body.TradePersonPhone || body.tradePersonPhone || body.tradespersonPhone || body.trade_phone || lead.TradePersonPhone || '';
 
   const row = {
     Timestamp: nztFormattedDate, // Corrected from TimeStamp
@@ -43,10 +43,10 @@ export function buildQuoteRow({
     Timeline: lead.Timeline || '',  // Note: exact spelling with typo
     Budget: lead.Budget || '',
 
-    // Tradesperson info (now normalized)
-    TradePersonName: body.tradePersonName || tradePersonName,
-    TradePersonEmail: body.tradePersonEmail || tradePersonEmail,
-    TradePersonPhone: body.tradePersonPhone || tradePersonPhone,
+    // Tradesperson info (now normalized) - Using consistent TradePerson format as per Google Sheet
+    TradePersonName: body.TradePersonName || TradePersonName,
+    TradePersonEmail: body.TradePersonEmail || TradePersonEmail,
+    TradePersonPhone: body.TradePersonPhone || TradePersonPhone,
 
     // Financials (blank in draft; filled on submit)
     LabourRate: body.labourRate || '',
@@ -65,38 +65,38 @@ export function buildQuoteRow({
     Notes: body.notes || '',
     ValidUntil: body.validUntil || '',
 
-    // Decision fields
-    Decison: '',  // Note: exact spelling with typo
-    DecisonTimeStamp: '',  // Note: exact spelling with typo
+    // Decision fields - Fixed column names to match Google Sheets structure
+    Decision: '',  // Fixed typo from 'Decison'
+    DecisionTimestamp: '',  // Fixed typo from 'DecisonTimeStamp'
     AdminDecisionTimeStamp: body.adminDecisionTimestamp || '',
     AdminDecision: body.adminDecision || '',
 
-    // Default workflow states
-    TradePersonStatus: 'Draft',
+    // Default workflow states - Using camelCase format as per Google Sheet
+    TradePersonStatus: 'Draft',  // camelCase format
     CustomerStatus: 'Pending',
-    AdminPersonStatus: 'Pending',
+    AdminPersonStatus: 'Pending',  // camelCase format
   };
 
   if (mode === 'submitted') {
-    row.TradePersonStatus = 'Pending';
+    row.TradePersonStatus = 'Pending';  // camelCase format
     row.CustomerStatus = 'Submitted';
-    row.AdminPersonStatus = 'Pending';
+    row.AdminPersonStatus = 'Pending';  // camelCase format
   }
 
   if (mode === 'accepted') {
-    row.TradePersonStatus = 'Accepted';
+    row.TradePersonStatus = 'Accepted';  // camelCase format
     row.CustomerStatus = 'Approved';
-    row.AdminPersonStatus = 'Closed';
-    row.Decison = 'Accepted';
-    row.DecisonTimeStamp = nzTimestamp;
+    row.AdminPersonStatus = 'Closed';  // camelCase format
+    row.Decision = 'Accepted';  // Fixed typo
+    row.DecisionTimestamp = nztFormattedDate;  // Fixed typo and variable name
   }
 
   if (mode === 'rejected') {
-    row.TradePersonStatus = 'Declined';
+    row.TradePersonStatus = 'Declined';  // camelCase format
     row.CustomerStatus = 'Not Sent';
-    row.AdminPersonStatus = 'Closed';
-    row.Decison = 'Rejected';
-    row.DecisonTimeStamp = nzTimestamp;
+    row.AdminPersonStatus = 'Closed';  // camelCase format
+    row.Decision = 'Rejected';  // Fixed typo
+    row.DecisionTimestamp = nztFormattedDate;  // Fixed typo and variable name
   }
 
   return row;

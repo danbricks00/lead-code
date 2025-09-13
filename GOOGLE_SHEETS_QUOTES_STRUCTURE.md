@@ -11,9 +11,9 @@
 | A | `Timestamp` | When the quote was created | 2025-09-07T01:38:29.470Z |
 | B | `QuoteID` | Unique quote identifier | b6af8633b6de |
 | C | `LeadID` | Reference to the lead | 6309501a6537 |
-| D | `TradespersonName` | Full name of tradesperson | John Smith |
-| E | `TradespersonEmail` | Email of tradesperson | john@example.com |
-| F | `TradespersonPhone` | Phone number of tradesperson | 0211234567 |
+| D | `TradePersonName` | Full name of tradesperson | John Smith |
+| E | `TradePersonEmail` | Email of tradesperson | john@example.com |
+| F | `TradePersonPhone` | Phone number of tradesperson | 0211234567 |
 | G | `CustomerStatus` | Status for customer | submitted |
 | H | `TradespersonStatus` | Status for tradesperson | submitted |
 | I | `AdminStatus` | Admin approval status | Not Required |
@@ -84,7 +84,7 @@ https://your-domain.com/api/debug-sheets-structure
 - `Total Quote` (should be `TotalQuote`)
 
 ### ✅ CORRECT Column Names:
-- `TradespersonName`
+- `TradePersonName`
 - `TradespersonEmail`
 - `LabourRate`
 - `MaterialsQuantity`

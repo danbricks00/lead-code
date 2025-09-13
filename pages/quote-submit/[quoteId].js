@@ -136,10 +136,10 @@ const QuoteSubmitPage = () => {
               setValidUntil(result.existingQuote.validUntil || '');
               
               // Set tradesperson details if available
-              if (result.existingQuote.tradePersonName) {
+              if (result.existingQuote.TradePersonName) {
                 setTradespersonDetails(prev => ({
                   ...prev,
-                  name: result.existingQuote.tradePersonName,
+                  name: result.existingQuote.TradePersonName,
                   email: result.existingQuote.tradePersonEmail,
                   phone: result.existingQuote.tradePersonPhone
                 }));
@@ -312,7 +312,7 @@ const QuoteSubmitPage = () => {
       subtotal: totals.subtotal,
       gst: totals.gst,
       totalQuote: totals.final,
-      tradespersonName: tradesperson.name,
+      TradePersonName: tradesperson.name,
       tradespersonEmail: tradesperson.email,
       tradespersonPhone: tradesperson.phone,
       validUntil, // Add expiry date to submitted data

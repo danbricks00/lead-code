@@ -113,7 +113,7 @@ export default async function handler(req, res) {
       customerPhone: leadData.CustomerPhone || 'N/A',
       customerAddress: leadData.Location || 'N/A',
       serviceType: leadData.ServiceType || 'Underfloor Heating',
-      tradespersonName: quoteData.TradespersonName || 'N/A',
+      TradePersonName: quoteData.TradePersonName || 'N/A',
       tradespersonEmail: quoteData.TradespersonEmail || 'N/A',
       tradespersonPhone: quoteData.TradespersonPhone || 'N/A',
       tradespersonLicense: 'Licensed Tradesperson',

@@ -156,7 +156,7 @@ export default async function handler(req, res) {
         const customerDecisionTimeCol = 26; // Column AA (0-indexed)
         const validUntilCol = headers.indexOf('ValidUntil');
         const customerStatusCol = headers.indexOf('CustomerStatus');
-        const tradePersonNameCol = headers.indexOf('TradePersonName');
+        const TradePersonNameCol = headers.indexOf('TradePersonName');
         const tradePersonEmailCol = headers.indexOf('TradePersonEmail');
         const customerNameCol = headers.indexOf('CustomerName');
         const customerEmailCol = headers.indexOf('CustomerEmail');
@@ -300,7 +300,7 @@ export default async function handler(req, res) {
                 const customerPhoneIndex = headers.indexOf('CustomerPhone');
                 const addressIndex = headers.indexOf('Location'); // Use 'Location' for the address
 
-                const tradespersonNameIndex = headers.indexOf('TradespersonName');
+                const TradePersonNameIndex = headers.indexOf('TradePersonName');
                 const tradespersonEmailIndex = headers.indexOf('TradespersonEmail');
                 const tradespersonPhoneIndex = headers.indexOf('TradespersonPhone');
                 const roomsIndex = headers.indexOf('Rooms'); // Get index for Rooms data
@@ -313,7 +313,7 @@ export default async function handler(req, res) {
                 const customerAddress = quoteRow[addressIndex] || 'N/A';
 
                 const tradesmanEmail = quoteRow[tradespersonEmailIndex];
-                const tradesmanName = quoteRow[tradespersonNameIndex] || 'Your assigned tradesperson';
+                const tradesmanName = quoteRow[TradePersonNameIndex] || 'Your assigned tradesperson';
                 const tradesmanPhone = quoteRow[tradespersonPhoneIndex] || 'N/A';
                 const tradesmanLicense = 'N/A'; // As requested, license is not needed.
 

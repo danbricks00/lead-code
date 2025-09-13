@@ -404,7 +404,7 @@ export async function getServerSideProps(context) {
     const quote = { 
       quoteId: (foundRow[1] || "").toString().trim(), 
       leadId: (foundRow[2] || "").toString().trim() || " ",    
-      tradePersonName: (foundRow[3] || "").toString().trim(), 
+      TradePersonName: (foundRow[3] || "").toString().trim(), 
       tradePersonEmail: (foundRow[4] || "").toString().trim(), 
       tradePersonPhone: (foundRow[5] || "").toString().trim(), 
       customerStatus: (foundRow[6] || "").toString().trim(), 

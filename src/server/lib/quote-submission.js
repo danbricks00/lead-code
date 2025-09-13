@@ -582,7 +582,7 @@ export default async function handler(req, res) {
               new Date().toISOString(), // A: Timestamp
               quoteData.quoteId, // B: QuoteID
               quoteData.leadId, // C: LeadID
-              quoteData.tradesmanName, // D: TradespersonName
+              quoteData.tradesmanName, // D: TradePersonName
               quoteData.tradesmanEmail, // E: TradespersonEmail
               quoteData.tradesmanPhone, // F: TradespersonPhone
               'submitted', // G: CustomerStatus

@@ -73,12 +73,12 @@ export default async function handler(req, res) {
     }
 
     // Extract tradesperson details (handle both field name variations)
-    const tradespersonName = body.tradespersonName || body.tradePersonName || '';
+    const TradePersonName = body.TradePersonName || body.TradePersonName || '';
     const tradespersonEmail = body.tradespersonEmail || body.tradePersonEmail || '';
     const tradespersonPhone = body.tradespersonPhone || body.tradePersonPhone || '';
 
     console.log('[QUOTE-SUBMIT] Tradesperson details:', {
-      name: tradespersonName,
+      name: TradePersonName,
       email: tradespersonEmail,
       phone: tradespersonPhone
     });
@@ -87,7 +87,7 @@ export default async function handler(req, res) {
     const fullRow = buildQuoteRow({
       lead,
       quoteId,
-      tradePersonName: tradespersonName,
+      TradePersonName: TradePersonName,
       tradePersonEmail: tradespersonEmail,
       tradePersonPhone: tradespersonPhone,
       body,

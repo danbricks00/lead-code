@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { leadId, tradePersonName = '', tradePersonEmail = '', tradePersonPhone = '' } = req.query || {};
+  const { leadId, TradePersonName = '', tradePersonEmail = '', tradePersonPhone = '' } = req.query || {};
   if (!leadId) return res.status(400).json({ error: 'leadId is required' });
 
   try {
@@ -60,7 +60,7 @@ export default async function handler(req, res) {
     const draftRow = buildQuoteRow({
       lead,
       quoteId: versionedQuoteId,
-      tradePersonName,
+      TradePersonName,
       tradePersonEmail,
       tradePersonPhone,
       mode: 'draft',
@@ -121,7 +121,7 @@ export default async function handler(req, res) {
           installationCost: mostRecentRejected.InstallationCost || '',
           notes: mostRecentRejected.Notes || '',
           validUntil: mostRecentRejected.ValidUntil || '',
-          tradePersonName: mostRecentRejected.TradePersonName || '',
+          TradePersonName: mostRecentRejected.TradePersonName || '',
           tradePersonEmail: mostRecentRejected.TradePersonEmail || '',
           tradePersonPhone: mostRecentRejected.TradePersonPhone || ''
         };

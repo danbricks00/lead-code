@@ -298,11 +298,11 @@ export default async function handler(req, res) {
                 const customerEmailIndex = headers.indexOf('CustomerEmail');
                 const customerNameIndex = headers.indexOf('CustomerName');
                 const customerPhoneIndex = headers.indexOf('CustomerPhone');
-                const addressIndex = headers.indexOf('Location'); // Use 'Location' for the address
+                const addressIndex = headers.indexOf('Address'); // Use 'Address' for the address
 
                 const TradePersonNameIndex = headers.indexOf('TradePersonName');
-                const tradespersonEmailIndex = headers.indexOf('TradespersonEmail');
-                const tradespersonPhoneIndex = headers.indexOf('TradespersonPhone');
+                const tradespersonEmailIndex = headers.indexOf('TradePersonEmail'); // Fixed: use TradePersonEmail (no 's')
+                const tradespersonPhoneIndex = headers.indexOf('TradePersonPhone'); // Fixed: use TradePersonPhone (no 's')
                 const roomsIndex = headers.indexOf('Rooms'); // Get index for Rooms data
                 
                 // Extract data from quoteRow using the correct indices

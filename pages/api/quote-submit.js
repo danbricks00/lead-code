@@ -299,7 +299,7 @@ export default async function handler(req, res) {
     }
 
     // --- 5. Generate PDF and send emails ---
-    const pdfBuffer = await generateQuotePDF(finalQuoteData.pdfData);
+    const pdfBuffer = await generateQuotePDF(finalQuoteData);
 
     // Get variables for email content from our single source of truth
     const {

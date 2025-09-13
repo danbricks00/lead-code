@@ -226,6 +226,14 @@ export default async function handler(req, res) {
       TradePersonName: normalizedData.TradePersonName,
       tradePersonEmail: normalizedData.tradePersonEmail,
       tradePersonPhone: normalizedData.tradePersonPhone,
+      
+      // Pass rate and hour data for PDF line item calculations
+      labourRate: toNum(body.labourRate) || 25.00,
+      labourHours: toNum(body.labourHours) || 8,
+      materialRate: toNum(body.materialRate) || 0.00,
+      materialSQM: toNum(body.materialSQM) || toNum(body.materialQuantity) || 1,
+      travelCost: toNum(body.travelCost) || toNum(body.travelRate) || 0.00,
+      travelDistance: toNum(body.travelDistance) || 10,
 
       // --- Data for PDF (nested structure) ---
       pdfData: {

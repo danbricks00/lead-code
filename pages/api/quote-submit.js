@@ -136,8 +136,8 @@ export default async function handler(req, res) {
       }
       
       if (materialsTotal === 0) {
-        const materialRate = toNum(body.materialRate) || 0;
-        const materialQuantity = toNum(body.materialSQM) || toNum(body.materialQuantity) || 0;
+        const materialRate = toNum(body.materialRate) || toNum(body.materialsCost) || toNum(body.MaterialsCost) || 0;
+        const materialQuantity = toNum(body.materialSQM) || toNum(body.materialQuantity) || toNum(body.materialsQuantity) || toNum(body.MaterialsQuantity) || 0;
         materialsTotal = materialRate * materialQuantity;
         console.log(`🔢 Calculated materials: ${materialRate} × ${materialQuantity} = ${materialsTotal}`);
       }

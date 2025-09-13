@@ -222,6 +222,7 @@ export default async function handler(req, res) {
       customerName: normalizedData.customerName || lead.customerName,
       customerEmail: normalizedData.customerEmail || lead.customerEmail,
       customerPhone: normalizedData.customerPhone || lead.customerPhone,
+      customerAddress: fullAddress, // Add customer address for PDF
       TradePersonName: normalizedData.TradePersonName,
       tradePersonEmail: normalizedData.tradePersonEmail,
       tradePersonPhone: normalizedData.tradePersonPhone,

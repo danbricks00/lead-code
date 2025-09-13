@@ -6,9 +6,6 @@
 export function buildQuoteRow({
   lead,
   quoteId,
-  tradePersonName = '',
-  tradePersonEmail = '',
-  tradePersonPhone = '',
   body = {},          // financials + notes on submit
   mode = 'draft'      // 'draft' | 'submitted' | 'accepted' | 'rejected'
 }) {
@@ -24,6 +21,11 @@ export function buildQuoteRow({
   };
   const nztFormattedDate = new Intl.DateTimeFormat('en-NZ', options).format(now);
 
+  // Normalize tradesperson fields from various possible keys
+  const tradePersonName = body.tradePersonName || body.tradespersonName || body.trade_name || lead.TradePersonName || '';
+  const tradePersonEmail = body.tradePersonEmail || body.tradespersonEmail || body.trade_email || lead.TradePersonEmail || '';
+  const tradePersonPhone = body.tradePersonPhone || body.tradespersonPhone || body.trade_phone || lead.TradePersonPhone || '';
+
   const row = {
     TimeStamp: nztFormattedDate,
     QuoteID: quoteId,
@@ -34,7 +36,7 @@ export function buildQuoteRow({
     CustomerEmail: lead.CustomerEmail || '',
     CustomerPhone: lead.CustomerPhone || '',
     ServiceType: lead.ServiceType || '',
-    Address: body.address || lead.address || '',
+    Address: body.address || lead.Address || '', // Prefer submitted address
     Rooms: body.rooms ? JSON.stringify(body.rooms) : lead.Rooms || '', // Use submitted rooms
     Sqm: body.totalSqm ? parseFloat(body.totalSqm).toFixed(2) : (lead.Sqm || ''), // Use calculated totalSqm
     Area: lead.Area || '',
@@ -43,10 +45,10 @@ export function buildQuoteRow({
     Timelline: lead.Timelline || '',  // Note: exact spelling with typo
     'Specfic Details': lead['Specfic Details'] || '',  // Note: exact spelling with typo
 
-    // Tradesperson info
-    TradePersonName: tradePersonName || '',
-    TradePersonEmail: tradePersonEmail || '',
-    TradePersonPhone: tradePersonPhone || '',
+    // Tradesperson info (now normalized)
+    TradePersonName: tradePersonName,
+    TradePersonEmail: tradePersonEmail,
+    TradePersonPhone: tradePersonPhone,
 
     // Financials (blank in draft; filled on submit)
     LabourRate: body.labourRate || '',
@@ -68,8 +70,8 @@ export function buildQuoteRow({
     // Decision fields
     Decison: '',  // Note: exact spelling with typo
     DecisonTimeStamp: '',  // Note: exact spelling with typo
-    AdminDecisionTimeStamp: body.AdminDecisionTimeStamp || '',
-    AdminDecision: body.AdminDecision || '',
+    AdminDecisionTimeStamp: body.adminDecisionTimestamp || '',
+    AdminDecision: body.adminDecision || '',
 
     // Default workflow states
     TradePersonStatus: 'Draft',

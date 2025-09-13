@@ -156,6 +156,10 @@ export default async function handler(req, res) {
         const customerDecisionTimeCol = 26; // Column AA (0-indexed)
         const validUntilCol = headers.indexOf('ValidUntil');
         const customerStatusCol = headers.indexOf('CustomerStatus');
+        const tradePersonNameCol = headers.indexOf('TradePersonName');
+        const tradePersonEmailCol = headers.indexOf('TradePersonEmail');
+        const customerNameCol = headers.indexOf('CustomerName');
+        const customerEmailCol = headers.indexOf('CustomerEmail');
         
         console.log(`[DECISION-API] Using columns: Decision=${String.fromCharCode(65 + customerDecisionCol)}, Timestamp=${String.fromCharCode(65 + customerDecisionTimeCol)}`);
         

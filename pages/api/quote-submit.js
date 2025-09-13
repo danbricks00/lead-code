@@ -1,10 +1,9 @@
 import { google } from 'googleapis';
 import nodemailer from 'nodemailer';
-import { generateQuotePDF } from '../../lib/pdfGenerator';
-import { upsertQuoteRow } from '../../utils/sheets.js';
+ import { generateQuotePDF } from '../../lib/pdfGenerator';
+import { upsertQuoteRow, getLeadById } from '../../utils/sheets.js';
 import { buildQuoteRow } from '../../utils/quotes.js';
-import { getLeadById } from '../../utils/sheets.js';
-import { safeParseRooms, sumRoomsSqm } from '../../utils/quoteHelpers.js';
+import { safeParseRooms, sumRoomsSqm, toNum, computeLineTotals } from '../../utils/quoteHelpers.js';
 
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
@@ -30,9 +29,33 @@ async function getSheetsClient() {
 }
 
 export default async function handler(req, res) {
+  if (process.env.STAGING === 'true') {
+    console.log('quote-submit req.body:', req.body);
+  }
+
   try {
-    const { quoteId, leadId, isDraft = false } = req.body;
-    console.log(`[DEBUG] quote-submit: Received quoteId=${quoteId}, leadId=${leadId}, isDraft=${isDraft}`);
+    // --- 1. Normalize incoming data ---
+    const body = req.body;
+    const normalizedData = {
+      ...body,
+      quoteId: body.quoteId,
+      leadId: body.leadId,
+      isDraft: body.isDraft || false,
+      // Normalize tradesperson fields
+      tradePersonName: body.tradePersonName || body.tradespersonName || body.trade_name,
+      tradePersonEmail: body.tradePersonEmail || body.tradespersonEmail || body.trade_email,
+      tradePersonPhone: body.tradePersonPhone || body.tradespersonPhone || body.trade_phone,
+      // Normalize and coerce numbers
+      labourTotal: toNum(body.labourTotal),
+      materialsTotal: toNum(body.materialsTotal),
+      travelTotal: toNum(body.travelTotal),
+      installationCost: toNum(body.installationCost),
+      subtotal: toNum(body.subtotal),
+      gst: toNum(body.gst),
+      totalQuote: toNum(body.totalQuote),
+    };
+
+    const { quoteId, leadId, isDraft } = normalizedData;
 
     if (!quoteId || !leadId) {
       return res.status(400).json({ error: 'Missing quoteId or leadId' });
@@ -54,31 +77,38 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Lead not found' });
     }
 
-    const rooms = safeParseRooms(req.body.rooms);
-    const totalSqm = sumRoomsSqm(rooms);
+    // --- 2. Parse rooms and compute totals ---
+    const rooms = safeParseRooms(body.rooms);
+    const { itemsWithTotals, grandTotal } = computeLineTotals(rooms);
+    const totalSqmFromForm = toNum(body.totalSqm);
+    const totalSqmFromRooms = sumRoomsSqm(rooms);
+    const finalTotalSqm = totalSqmFromForm > 0 ? totalSqmFromForm : totalSqmFromRooms;
 
-    // This is the authoritative data for this submission, combining lead info and form data.
+    if (process.env.STAGING === 'true') {
+      console.log('parsedRooms:', itemsWithTotals);
+    }
+
+    // --- 3. Construct Address and Authoritative Data ---    
+    const addressParts = [
+      body.address, 
+      body.street, 
+      body.suburb, 
+      body.city, 
+      body.region, 
+      body.postcode
+    ].filter(Boolean);
+    const fullAddress = addressParts.length > 0 ? addressParts.join(', ') : lead.address;
+
     const quoteDataForSubmission = {
       ...lead,
-      ...req.body,
-      quoteId: quoteId,
-      leadId: leadId,
-      totalSqm: totalSqm.toFixed(2),
-      address: req.body.address || lead.address,
-      // Ensure tradesperson details from the form are included
-      tradePersonName: req.body.tradePersonName,
-      tradePersonEmail: req.body.tradePersonEmail,
-      tradePersonPhone: req.body.tradePersonPhone,
-      // Ensure totals are formatted
-      labourTotal: (parseFloat(req.body.labourTotal) || 0).toFixed(2),
-      materialsTotal: (parseFloat(req.body.materialsTotal) || 0).toFixed(2),
-      travelTotal: (parseFloat(req.body.travelTotal) || 0).toFixed(2),
-      subtotal: (parseFloat(req.body.subtotal) || 0).toFixed(2),
-      gst: (parseFloat(req.body.gst) || 0).toFixed(2),
-      totalQuote: (parseFloat(req.body.totalQuote) || 0).toFixed(2),
+      ...normalizedData,
+      rooms: itemsWithTotals, // Use rooms with calculated totals
+      grandTotal: grandTotal.toFixed(2),
+      totalSqm: finalTotalSqm.toFixed(2),
+      address: fullAddress,
+      // Ensure final totals are strings for PDF/email
+      totalQuote: (normalizedData.totalQuote > 0 ? normalizedData.totalQuote : grandTotal).toFixed(2),
     };
-
-    console.log('Constructed quoteDataForSubmission:', quoteDataForSubmission);
 
     const quoteRow = buildQuoteRow({
       lead: lead,
@@ -87,7 +117,11 @@ export default async function handler(req, res) {
       mode: isDraft ? 'draft' : 'submitted',
     });
 
-    // Always update the sheet for final submissions to persist the latest data.
+    if (process.env.STAGING === 'true') {
+      console.log('quoteRow to write:', quoteRow);
+    }
+
+    // --- 4. Persist quote number and data before PDF/email ---
     await upsertQuoteRow(quoteId, quoteRow, { req, caller: 'quote-submit-update' });
 
     if (isDraft) {
@@ -95,13 +129,12 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, message: 'Quote saved as draft' });
     }
 
-    // For final submissions, generate PDF and send emails using the authoritative data.
+    // --- 5. Generate PDF and send emails ---
     const pdfBuffer = await generateQuotePDF(quoteDataForSubmission);
 
     const { 
         customerEmail, customerName, serviceType, totalQuote,
-        labourTotal, materialsTotal, travelTotal, installationCost, 
-        subtotal, gst, tradePersonName, tradePersonEmail, tradePersonPhone 
+        tradePersonName, tradePersonEmail, tradePersonPhone 
     } = quoteDataForSubmission;
 
     const acceptLink  = `${normalizedBaseUrl}/api/customer-accept?quoteId=${quoteId}`;
@@ -113,7 +146,7 @@ export default async function handler(req, res) {
       auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
     });
 
-    // --- Customer Email ---
+    // --- Customer Email (No CC) ---
     const customerHtmlContent = `
       <!DOCTYPE html>
       <html>
@@ -165,7 +198,7 @@ export default async function handler(req, res) {
 
     await transporter.sendMail({
       from: `"Kiwi Trade" <${GMAIL_USER}>`,
-      to: customerEmail,
+      to: customerEmail, // Send only to customer
       subject: `📄 Your Kiwi Trade Quote #${quoteId} - ${serviceType}`,
       html: customerHtmlContent,
       attachments: [{
@@ -176,7 +209,7 @@ export default async function handler(req, res) {
     });
     console.log(`✅ Quote email sent to customer: ${customerEmail}`);
 
-    // --- Internal Team Email ---
+    // --- Internal Team Email (No decision buttons, new text) ---
     const internalHtmlContent = `
       <!DOCTYPE html><html><head><title>Internal - New Quote Sent</title></head>
       <body>
@@ -190,7 +223,7 @@ export default async function handler(req, res) {
       </body></html>`;
 
     const adminEmail = process.env.ADMIN_EMAIL || '';
-    const internalRecipients = [tradePersonEmail, adminEmail].filter(Boolean);
+    const internalRecipients = [tradePersonEmail, adminEmail].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
 
     if (internalRecipients.length > 0) {
       await transporter.sendMail({

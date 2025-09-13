@@ -78,15 +78,42 @@ export function sumRoomsSqm(rooms) {
 /**
  * Converts a value to a number, stripping currency symbols and commas.
  * @param {string|number} value The value to convert.
- * @returns {number} The numeric value, or 0 if conversion fails.
+ * @param {number} [def=0] The default value to return if conversion is not possible.
+ * @returns {number} The numeric value.
  */
-export function toNum(value) {
-  if (typeof value === 'number') {
-    return value;
+export function toNum(v, def = 0) {
+  if (v === null || v === undefined) return def;
+  if (typeof v === 'number') return v;
+  const s = ('' + v).replace(/[$,\s]/g, '');
+  if (s === '') return def;
+  const n = Number(s);
+  return Number.isNaN(n) ? def : n;
+}
+
+/**
+ * Computes line totals and a grand total from a rooms/items array.
+ * @param {Array<object>} items - Array of items with qty, price/unitPrice.
+ * @returns {{itemsWithTotals: Array<object>, grandTotal: number}} - The items with totals and the grand total.
+ */
+export function computeLineTotals(items) {
+  if (!Array.isArray(items)) {
+    return { itemsWithTotals: [], grandTotal: 0 };
   }
-  if (typeof value === 'string') {
-    const num = parseFloat(value.replace(/[^\d.-]/g, ''));
-    return isNaN(num) ? 0 : num;
-  }
-  return 0;
+
+  let grandTotal = 0;
+  const itemsWithTotals = items.map(item => {
+    const qty = toNum(item.qty, 1);
+    const unitPrice = toNum(item.unitPrice || item.price, 0);
+    const lineTotal = qty * unitPrice;
+    grandTotal += lineTotal;
+
+    return {
+      ...item,
+      qty,
+      unitPrice,
+      lineTotal: lineTotal.toFixed(2),
+    };
+  });
+
+  return { itemsWithTotals, grandTotal };
 }

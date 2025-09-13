@@ -43,8 +43,16 @@
 | AG | `Timeline` | Project timeline | October 18 |
 | AH | `Budget` | Customer budget | (empty) |
 | AI | `Rooms` | Room data as JSON | [{"name":"Kitchen","dimensions":"4m x 4m"}] |
-| AJ | `Breakdown` | Detailed breakdown | (empty) |
+| AJ | `Breakdown`         | String (JSON) | Optional      | JSON string representing the detailed breakdown of the quote. |
+| AK | `AdminDecisionTimeStamp` | String (Timestamp) | Optional | Timestamp of the admin's decision. |
+| AL | `AdminDecision`          | String        | Optional      | The decision made by the admin (e.g., 'Approved', 'Rejected'). |
+| AM | `Address`                | String        | Optional      | The full address of the property. |
+| AN | `(Reserved)`             | -             | -             | Reserved for future use. |
+| AO | `(Reserved)`             | -             | -             | Reserved for future use. |
+| AP | `(Reserved)`             | -             | -             | Reserved for future use. |
+| AQ | `TotalSQM`               | Number        | Optional      | The total square meters for the job. |
 
+### Important Notes
 ## Setup Instructions
 
 ### 1. Create the Header Row

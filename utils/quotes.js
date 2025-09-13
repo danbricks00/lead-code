@@ -34,9 +34,9 @@ export function buildQuoteRow({
     CustomerEmail: lead.CustomerEmail || '',
     CustomerPhone: lead.CustomerPhone || '',
     ServiceType: lead.ServiceType || '',
-    Address: lead.address || '',
+    Address: body.address || lead.address || '',
     Rooms: body.rooms ? JSON.stringify(body.rooms) : lead.Rooms || '', // Use submitted rooms
-    Sqm: body.totalSqm ? body.totalSqm.toFixed(2) : lead.Sqm || '', // Use calculated totalSqm
+    Sqm: body.totalSqm ? parseFloat(body.totalSqm).toFixed(2) : (lead.Sqm || ''), // Use calculated totalSqm
     Area: lead.Area || '',
     Suburb: lead.Suburb || '',
     Budget: lead.Budget || '',
@@ -68,6 +68,8 @@ export function buildQuoteRow({
     // Decision fields
     Decison: '',  // Note: exact spelling with typo
     DecisonTimeStamp: '',  // Note: exact spelling with typo
+    AdminDecisionTimeStamp: body.AdminDecisionTimeStamp || '',
+    AdminDecision: body.AdminDecision || '',
 
     // Default workflow states
     TradePersonStatus: 'Draft',

@@ -4,6 +4,7 @@ import { generateQuotePDF } from '../../lib/pdfGenerator';
 import { upsertQuoteRow } from '../../utils/sheets.js';
 import { buildQuoteRow } from '../../utils/quotes.js';
 import { getLeadById } from '../../utils/sheets.js';
+import { safeParseRooms, sumRoomsSqm } from '../../utils/quoteHelpers.js';
 
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
@@ -53,18 +54,8 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Lead not found' });
     }
 
-    let totalSqm = 0;
-    if (req.body.rooms && Array.isArray(req.body.rooms)) {
-      totalSqm = req.body.rooms.reduce((acc, room) => {
-        const width = parseFloat(room.width) || 0;
-        const length = parseFloat(room.length) || 0;
-        return acc + width * length;
-      }, 0);
-    }
-
-    if (totalSqm === 0 && req.body.totalSqm) {
-      totalSqm = parseFloat(req.body.totalSqm) || 0;
-    }
+    const rooms = safeParseRooms(req.body.rooms);
+    const totalSqm = sumRoomsSqm(rooms);
 
     // This is the authoritative data for this submission, combining lead info and form data.
     const quoteDataForSubmission = {
@@ -73,6 +64,7 @@ export default async function handler(req, res) {
       quoteId: quoteId,
       leadId: leadId,
       totalSqm: totalSqm.toFixed(2),
+      address: req.body.address || lead.address,
       // Ensure tradesperson details from the form are included
       tradePersonName: req.body.tradePersonName,
       tradePersonEmail: req.body.tradePersonEmail,

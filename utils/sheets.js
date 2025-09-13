@@ -131,13 +131,22 @@ export async function updateQuoteRow(rowIndex, data) {
 
 // Quotes tab headers (exact order from your schema)
 const QUOTES_HEADERS = [
-  'TimeStamp', 'QuoteID', 'LeadID', 'TradePersonName', 'TradePersonEmail', 'TradePersonPhone',
+  'Timestamp',
+  'QuoteID',
+  'LeadID', 'TradePersonName', 'TradePersonEmail', 'TradePersonPhone',
   'CustomerStatus', 'TradePersonStatus', 'AdminPersonStatus',
   'LabourRate', 'LabourHours', 'LabourTotal', 'MaterialsCost', 'MaterialsQuantity', 'MaterialsTotal',
   'TravelCost', 'TravelDistance', 'TravelTotal', 'InstallationCost',
   'Subtotal', 'GST', 'TotalQuote', 'Notes', 'ValidUntil', 'ResubmissionAllowed',
   'Decision', 'DecisionTimestamp',
-  'CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Location', 'Timeline', 'Budget', 'Rooms', 'BreakDown'
+  'CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Location', 'Timeline', 'Budget', 'Rooms', 'Breakdown',
+  'AdminDecisionTimeStamp', // AK
+  'AdminDecision', // AL
+  'Address', // AM
+  '', // AN
+  '', // AO
+  '', // AP
+  'TotalSQM', // AQ
 ];
 
 /**

@@ -102,16 +102,72 @@ export default async function handler(req, res) {
     // --- 3. Create a single source of truth for all quote data ---
     console.log('🔍 Items with totals:', JSON.stringify(itemsWithTotals, null, 2));
     
-    const getLineTotal = (itemName) => {
-      const item = itemsWithTotals.find(it => it.name.toLowerCase().includes(itemName.toLowerCase()));
-      console.log(`🔍 Looking for "${itemName}", found:`, item ? `${item.name}: ${item.lineTotal}` : 'Not found');
-      return item ? toNum(item.lineTotal) : 0;
-    };
+    // Check if we have items from rooms computation, otherwise use form data directly
+    let labourTotal, materialsTotal, travelTotal, installationCost;
+    
+    if (itemsWithTotals && itemsWithTotals.length > 0) {
+      // Use computed totals from rooms
+      const getLineTotal = (itemName) => {
+        const item = itemsWithTotals.find(it => it.name.toLowerCase().includes(itemName.toLowerCase()));
+        console.log(`🔍 Looking for "${itemName}", found:`, item ? `${item.name}: ${item.lineTotal}` : 'Not found');
+        return item ? toNum(item.lineTotal) : 0;
+      };
 
-    const labourTotal = getLineTotal('labour');
-    const materialsTotal = getLineTotal('materials');
-    const travelTotal = getLineTotal('travel');
-    const installationCost = getLineTotal('setup') || getLineTotal('installation');
+      labourTotal = getLineTotal('labour');
+      materialsTotal = getLineTotal('materials');
+      travelTotal = getLineTotal('travel');
+      installationCost = getLineTotal('setup') || getLineTotal('installation');
+    } else {
+      // Use form data directly (from quote form)
+      console.log('🔍 No items from rooms computation, using form data directly');
+      
+      // First try to use pre-calculated subtotals
+      labourTotal = toNum(body.labourSubtotal) || toNum(body.labourTotal) || 0;
+      materialsTotal = toNum(body.materialSubtotal) || toNum(body.materialsTotal) || 0;
+      travelTotal = toNum(body.travelSubtotal) || toNum(body.travelTotal) || 0;
+      installationCost = toNum(body.installationSubtotal) || toNum(body.installationCost) || 0;
+      
+      // If subtotals are 0, calculate from individual components
+      if (labourTotal === 0) {
+        const labourRate = toNum(body.labourRate) || 0;
+        const labourHours = toNum(body.labourHours) || 0;
+        labourTotal = labourRate * labourHours;
+        console.log(`🔢 Calculated labour: ${labourRate} × ${labourHours} = ${labourTotal}`);
+      }
+      
+      if (materialsTotal === 0) {
+        const materialRate = toNum(body.materialRate) || 0;
+        const materialQuantity = toNum(body.materialSQM) || toNum(body.materialQuantity) || 0;
+        materialsTotal = materialRate * materialQuantity;
+        console.log(`🔢 Calculated materials: ${materialRate} × ${materialQuantity} = ${materialsTotal}`);
+      }
+      
+      if (travelTotal === 0) {
+        const travelRate = toNum(body.travelCost) || toNum(body.travelRate) || 0;
+        const travelDistance = toNum(body.travelDistance) || 0;
+        travelTotal = travelRate * travelDistance;
+        console.log(`🔢 Calculated travel: ${travelRate} × ${travelDistance} = ${travelTotal}`);
+      }
+      
+      if (installationCost === 0) {
+        installationCost = toNum(body.installationAmount) || toNum(body.installationCost) || 0;
+        console.log(`🔢 Installation cost: ${installationCost}`);
+      }
+      
+      console.log('🔍 Using form data:', {
+        labourSubtotal: body.labourSubtotal,
+        materialSubtotal: body.materialSubtotal,
+        travelSubtotal: body.travelSubtotal,
+        installationSubtotal: body.installationSubtotal,
+        labourRate: body.labourRate,
+        labourHours: body.labourHours,
+        materialRate: body.materialRate,
+        materialSQM: body.materialSQM,
+        travelCost: body.travelCost,
+        travelDistance: body.travelDistance,
+        installationAmount: body.installationAmount
+      });
+    }
     
     console.log('💰 Calculated totals:', {
       labourTotal,

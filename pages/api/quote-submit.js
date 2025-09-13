@@ -99,12 +99,20 @@ export default async function handler(req, res) {
     ].filter(Boolean);
     const fullAddress = addressParts.length > 0 ? addressParts.join(', ') : lead.address;
 
+    const validUntil = new Date();
+    validUntil.setDate(validUntil.getDate() + 14);
+
     const quoteDataForSubmission = {
       ...lead,
       ...normalizedData,
-      rooms: itemsWithTotals, // Use rooms with calculated totals
+       // Correctly map tradesperson details for PDF generator
+      tradespersonName: normalizedData.tradePersonName,
+      tradespersonEmail: normalizedData.tradePersonEmail,
+      tradespersonPhone: normalizedData.tradePersonPhone,
+      rooms: itemsWithTotals.map(item => ({ ...item, sqm: item.sqm || item.qty, dimensions: item.dimensions || 'N/A' })), // Ensure rooms have sqm and dimensions for PDF
       grandTotal: grandTotal.toFixed(2),
       totalSqm: finalTotalSqm.toFixed(2),
+      validUntil: validUntil.toLocaleDateString('en-NZ'), // Add valid until date
       address: fullAddress,
       // Pass explicit totals for sheet and PDF
       labourTotal: normalizedData.labourTotal,

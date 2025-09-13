@@ -50,15 +50,15 @@ export function safeParseRooms(cellValue) {
  * @param {any} fallback The value to return on error.
  * @returns {any} The parsed object or the fallback value.
  */
-export function safeParseRooms(jsonString, fallback = []) {
+export function safeJsonParse(jsonString, fallback = []) {
   if (typeof jsonString !== 'string' || !jsonString.trim()) {
     return fallback;
   }
+
   try {
-    const parsed = JSON.parse(jsonString);
-    return Array.isArray(parsed) ? parsed : fallback;
-  } catch (error) {
-    console.error('Failed to parse rooms JSON:', error);
+    return JSON.parse(jsonString);
+  } catch (e) {
+    console.error('Failed to parse JSON string:', e);
     return fallback;
   }
 }

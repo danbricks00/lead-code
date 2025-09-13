@@ -29,13 +29,13 @@ export function buildQuoteRow({
   const row = {
     Timestamp: nztFormattedDate, // Corrected from TimeStamp
     QuoteID: quoteId,
-    LeadID: lead.LeadID || '', // Corrected from lead.Lead
+    LeadID: body.leadId || lead.LeadID || '', // Corrected from lead.Lead
 
     // Customer / lead info
-    CustomerName: lead.CustomerName || '',
-    CustomerEmail: lead.CustomerEmail || '',
-    CustomerPhone: lead.CustomerPhone || '',
-    ServiceType: lead.ServiceType || '',
+    CustomerName: body.customerName || lead.CustomerName || '',
+    CustomerEmail: body.customerEmail || lead.CustomerEmail || '',
+    CustomerPhone: body.customerPhone || lead.CustomerPhone || '',
+    ServiceType: body.serviceType || lead.ServiceType || '',
     Address: body.address || lead.Address || '', // Prefer submitted address
     Rooms: body.rooms || lead.Rooms || '', // Use submitted rooms
     TotalSQM: body.totalSqm ? parseFloat(body.totalSqm).toFixed(2) : (lead.TotalSQM || ''), // Use calculated totalSqm
@@ -44,9 +44,9 @@ export function buildQuoteRow({
     Budget: lead.Budget || '',
 
     // Tradesperson info (now normalized)
-    TradePersonName: tradePersonName,
-    TradePersonEmail: tradePersonEmail,
-    TradePersonPhone: tradePersonPhone,
+    TradePersonName: body.tradePersonName || tradePersonName,
+    TradePersonEmail: body.tradePersonEmail || tradePersonEmail,
+    TradePersonPhone: body.tradePersonPhone || tradePersonPhone,
 
     // Financials (blank in draft; filled on submit)
     LabourRate: body.labourRate || '',

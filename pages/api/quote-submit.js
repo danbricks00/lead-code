@@ -124,6 +124,7 @@ export default async function handler(req, res) {
 
       // --- Data for Google Sheets (flat structure) ---
       quoteId: quoteId,
+      leadId: leadId, // Ensure leadId is explicitly passed
       address: fullAddress,
       rooms: JSON.stringify(itemsWithTotals.map(item => ({ name: item.name, sqm: item.sqm || item.qty, dimensions: item.dimensions || 'N/A' }))),
       totalSqm: finalTotalSqm.toFixed(2),
@@ -136,15 +137,23 @@ export default async function handler(req, res) {
       totalQuote: totalQuote.toFixed(2),
       validUntil: validUntilStr,
 
+      // Pass customer and tradesperson details for PDF
+      customerName: normalizedData.customerName || lead.customerName,
+      customerEmail: normalizedData.customerEmail || lead.customerEmail,
+      customerPhone: normalizedData.customerPhone || lead.customerPhone,
+      tradePersonName: normalizedData.tradePersonName,
+      tradePersonEmail: normalizedData.tradePersonEmail,
+      tradePersonPhone: normalizedData.tradePersonPhone,
+
       // --- Data for PDF (nested structure) ---
       pdfData: {
         quoteId: quoteId,
         date: new Date().toLocaleDateString('en-NZ'),
         validUntil: validUntilStr,
         customer: {
-          name: normalizedData.customerName,
-          email: normalizedData.customerEmail,
-          phone: normalizedData.customerPhone,
+          name: normalizedData.customerName || lead.customerName,
+          email: normalizedData.customerEmail || lead.customerEmail,
+          phone: normalizedData.customerPhone || lead.customerPhone,
           address: fullAddress,
         },
         tradesperson: {

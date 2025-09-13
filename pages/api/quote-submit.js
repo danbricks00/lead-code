@@ -1,9 +1,9 @@
 import { google } from 'googleapis';
 import nodemailer from 'nodemailer';
- import { generateQuotePDF } from '../../lib/pdfGenerator';
+import { generateQuotePDF } from '../../lib/pdfGenerator';
 import { upsertQuoteRow, getLeadById } from '../../utils/sheets.js';
 import { buildQuoteRow } from '../../utils/quotes.js';
-import { safeParseRooms, sumRoomsSqm, toNum, computeLineTotals } from '../../utils/quoteHelpers.js';
+import { safeParseRooms, sumRoomsSqm, toNum, computeLineTotals, generateLineItemsHtml } from '../../utils/quoteHelpers.js';
 
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
@@ -106,6 +106,13 @@ export default async function handler(req, res) {
       grandTotal: grandTotal.toFixed(2),
       totalSqm: finalTotalSqm.toFixed(2),
       address: fullAddress,
+      // Pass explicit totals for sheet and PDF
+      labourTotal: normalizedData.labourTotal,
+      materialsTotal: normalizedData.materialsTotal,
+      travelTotal: normalizedData.travelTotal,
+      installationCost: normalizedData.installationCost,
+      subtotal: normalizedData.subtotal,
+      gst: normalizedData.gst,
       // Ensure final totals are strings for PDF/email
       totalQuote: (normalizedData.totalQuote > 0 ? normalizedData.totalQuote : grandTotal).toFixed(2),
     };
@@ -134,7 +141,8 @@ export default async function handler(req, res) {
 
     const { 
         customerEmail, customerName, serviceType, totalQuote,
-        tradePersonName, tradePersonEmail, tradePersonPhone 
+        tradePersonName, tradePersonEmail, tradePersonPhone,
+        labourTotal, materialsTotal, travelTotal, installationCost, subtotal, gst
     } = quoteDataForSubmission;
 
     const acceptLink  = `${normalizedBaseUrl}/api/customer-accept?quoteId=${quoteId}`;
@@ -147,6 +155,14 @@ export default async function handler(req, res) {
     });
 
     // --- Customer Email (No CC) ---
+    const lineItems = [
+      { label: 'Labour', value: labourTotal },
+      { label: 'Materials', value: materialsTotal },
+      { label: 'Travel', value: travelTotal },
+      { label: 'Installation', value: installationCost },
+    ];
+    const lineItemsHtml = generateLineItemsHtml(lineItems);
+
     const customerHtmlContent = `
       <!DOCTYPE html>
       <html>
@@ -174,13 +190,10 @@ export default async function handler(req, res) {
           <p>Thank you for choosing Kiwi Trade. Here is your quote for the ${serviceType} project:</p>
           <table>
             <tr><th>Item</th><th style="text-align: right;">Amount</th></tr>
-            <tr><td>Labour</td><td style="text-align: right;">$${labourTotal || '0.00'}</td></tr>
-            <tr><td>Materials</td><td style="text-align: right;">$${materialsTotal || '0.00'}</td></tr>
-            <tr><td>Travel</td><td style="text-align: right;">$${travelTotal || '0.00'}</td></tr>
-            <tr><td>Installation</td><td style="text-align: right;">$${installationCost || '0.00'}</td></tr>
-            <tr><td style="font-weight: bold;">Subtotal</td><td style="text-align: right; font-weight: bold;">$${subtotal || '0.00'}</td></tr>
-            <tr><td>GST (15%)</td><td style="text-align: right;">$${gst || '0.00'}</td></tr>
-            <tr class="total-row"><td style="font-size: 16px;">TOTAL</td><td style="text-align: right; font-size: 16px;">$${totalQuote || '0.00'}</td></tr>
+            ${lineItemsHtml}
+            <tr><td style="font-weight: bold;">Subtotal</td><td style="text-align: right; font-weight: bold;">$${toNum(subtotal).toFixed(2)}</td></tr>
+            <tr><td>GST (15%)</td><td style="text-align: right;">$${toNum(gst).toFixed(2)}</td></tr>
+            <tr class="total-row"><td style="font-size: 16px;">TOTAL</td><td style="text-align: right; font-size: 16px;">$${toNum(totalQuote).toFixed(2)}</td></tr>
           </table>
           <div class="tradesperson">
             <h3>Your Tradesperson:</h3>

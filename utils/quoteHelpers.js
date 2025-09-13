@@ -117,3 +117,18 @@ export function computeLineTotals(items) {
 
   return { itemsWithTotals, grandTotal };
 }
+
+/**
+ * Generates HTML table rows for quote line items, hiding rows with zero value
+ * unless all items are zero.
+ * @param {Array<object>} lineItems - Array of line items with `label` and `value`.
+ * @returns {string} HTML string of table rows.
+ */
+export function generateLineItemsHtml(lineItems) {
+  const nonZeroItems = lineItems.filter(item => toNum(item.value) > 0);
+  const itemsToRender = nonZeroItems.length > 0 ? nonZeroItems : lineItems;
+
+  return itemsToRender
+    .map(item => `<tr><td>${item.label}</td><td style="text-align: right;">$${toNum(item.value).toFixed(2)}</td></tr>`)
+    .join('');
+}

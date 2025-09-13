@@ -100,8 +100,11 @@ export default async function handler(req, res) {
     const fullAddress = addressParts.length > 0 ? addressParts.join(', ') : lead.address;
 
     // --- 3. Create a single source of truth for all quote data ---
+    console.log('🔍 Items with totals:', JSON.stringify(itemsWithTotals, null, 2));
+    
     const getLineTotal = (itemName) => {
       const item = itemsWithTotals.find(it => it.name.toLowerCase().includes(itemName.toLowerCase()));
+      console.log(`🔍 Looking for "${itemName}", found:`, item ? `${item.name}: ${item.lineTotal}` : 'Not found');
       return item ? toNum(item.lineTotal) : 0;
     };
 
@@ -109,14 +112,35 @@ export default async function handler(req, res) {
     const materialsTotal = getLineTotal('materials');
     const travelTotal = getLineTotal('travel');
     const installationCost = getLineTotal('setup') || getLineTotal('installation');
+    
+    console.log('💰 Calculated totals:', {
+      labourTotal,
+      materialsTotal,
+      travelTotal,
+      installationCost
+    });
 
     const subtotal = labourTotal + materialsTotal + travelTotal + installationCost;
     const gst = subtotal * 0.15;
     const totalQuote = subtotal * 1.15;
 
-    const validUntil = new Date();
-    validUntil.setDate(validUntil.getDate() + 14);
-    const validUntilStr = validUntil.toLocaleDateString('en-NZ');
+    // Use validUntil from request body (set by tradesman in Google Sheet form)
+    // If not provided, default to 14 days from now
+    let validUntilDate;
+    let validUntilStr;
+    
+    if (body.validUntil) {
+      // Parse the date from the form (usually in YYYY-MM-DD format)
+      validUntilDate = new Date(body.validUntil);
+      validUntilStr = validUntilDate.toLocaleDateString('en-NZ');
+      console.log('📅 Using tradesman-set valid until date:', validUntilStr);
+    } else {
+      // Fallback to 14 days if not provided
+      validUntilDate = new Date();
+      validUntilDate.setDate(validUntilDate.getDate() + 14);
+      validUntilStr = validUntilDate.toLocaleDateString('en-NZ');
+      console.log('📅 Using default valid until date (14 days):', validUntilStr);
+    }
 
     const finalQuoteData = {
       ...lead,

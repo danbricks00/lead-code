@@ -128,6 +128,7 @@ export default async function handler(req, res) {
       address: fullAddress,
       rooms: JSON.stringify(itemsWithTotals.map(item => ({ name: item.name, sqm: item.sqm || item.qty, dimensions: item.dimensions || 'N/A' }))),
       totalSqm: finalTotalSqm.toFixed(2),
+      TotalSQM: finalTotalSqm.toFixed(2), // Ensure TotalSQM is also present for buildQuoteRow
       labourTotal: labourTotal.toFixed(2),
       materialsTotal: materialsTotal.toFixed(2),
       travelTotal: travelTotal.toFixed(2),
@@ -169,6 +170,7 @@ export default async function handler(req, res) {
             sqm: (item.sqm || item.qty || 0).toString(),
           })),
           totalSqm: finalTotalSqm.toFixed(2),
+          TOTAL_SQM: finalTotalSqm.toFixed(2), // For PDF placeholder
         },
         cost: {
           breakdown: itemsWithTotals.map(item => ({

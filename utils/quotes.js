@@ -38,7 +38,7 @@ export function buildQuoteRow({
     ServiceType: body.serviceType || lead.ServiceType || '',
     Address: body.address || lead.Address || '', // Prefer submitted address
     Rooms: body.rooms || lead.Rooms || '', // Use submitted rooms
-    TotalSQM: body.totalSqm ? parseFloat(body.totalSqm).toFixed(2) : (lead.TotalSQM || ''), // Use calculated totalSqm
+    TotalSQM: body.TotalSQM || body.totalSqm ? parseFloat(body.TotalSQM || body.totalSqm).toFixed(2) : (lead.TotalSQM || ''), // Use calculated totalSqm
     Location: lead.Location || '',
     Timeline: lead.Timeline || '',  // Note: exact spelling with typo
     Budget: lead.Budget || '',

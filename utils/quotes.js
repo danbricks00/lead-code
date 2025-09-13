@@ -27,9 +27,9 @@ export function buildQuoteRow({
   const tradePersonPhone = body.tradePersonPhone || body.tradespersonPhone || body.trade_phone || lead.TradePersonPhone || '';
 
   const row = {
-    TimeStamp: nztFormattedDate,
+    Timestamp: nztFormattedDate, // Corrected from TimeStamp
     QuoteID: quoteId,
-    LeadID: lead.Lead || '',
+    LeadID: lead.LeadID || '', // Corrected from lead.Lead
 
     // Customer / lead info
     CustomerName: lead.CustomerName || '',
@@ -37,13 +37,11 @@ export function buildQuoteRow({
     CustomerPhone: lead.CustomerPhone || '',
     ServiceType: lead.ServiceType || '',
     Address: body.address || lead.Address || '', // Prefer submitted address
-    Rooms: body.rooms ? JSON.stringify(body.rooms) : lead.Rooms || '', // Use submitted rooms
-    Sqm: body.totalSqm ? parseFloat(body.totalSqm).toFixed(2) : (lead.Sqm || ''), // Use calculated totalSqm
-    Area: lead.Area || '',
-    Suburb: lead.Suburb || '',
+    Rooms: body.rooms || lead.Rooms || '', // Use submitted rooms
+    TotalSQM: body.totalSqm ? parseFloat(body.totalSqm).toFixed(2) : (lead.TotalSQM || ''), // Use calculated totalSqm
+    Location: lead.Location || '',
+    Timeline: lead.Timeline || '',  // Note: exact spelling with typo
     Budget: lead.Budget || '',
-    Timelline: lead.Timelline || '',  // Note: exact spelling with typo
-    'Specfic Details': lead['Specfic Details'] || '',  // Note: exact spelling with typo
 
     // Tradesperson info (now normalized)
     TradePersonName: tradePersonName,

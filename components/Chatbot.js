@@ -1058,9 +1058,14 @@ const budgetOptions = useMemo(() => {
           <div style={styles.reviewSection}>
             <h3 style={styles.reviewSectionTitle}>👤 Your Contact Details</h3>
             <div style={styles.reviewField}>
-              <span style={styles.reviewLabel}>Name:</span>
-              <span style={styles.reviewValue}>{leadData.customerName}</span>
+              <span style={styles.reviewLabel}>First Name:</span>
+              <span style={styles.reviewValue}>{leadData.firstName}</span>
               <button onClick={() => startEditing('firstName')} style={styles.editButton}>Edit</button>
+            </div>
+            <div style={styles.reviewField}>
+              <span style={styles.reviewLabel}>Last Name:</span>
+              <span style={styles.reviewValue}>{leadData.lastName}</span>
+              <button onClick={() => startEditing('lastName')} style={styles.editButton}>Edit</button>
             </div>
             <div style={styles.reviewField}>
               <span style={styles.reviewLabel}>Phone:</span>

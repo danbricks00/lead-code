@@ -110,7 +110,7 @@ export default async function handler(req, res) {
     const travelTotal = getLineTotal('travel');
     const installationCost = getLineTotal('setup') || getLineTotal('installation');
 
-    const subtotal = grandTotal;
+    const subtotal = labourTotal + materialsTotal + travelTotal + installationCost;
     const gst = subtotal * 0.15;
     const totalQuote = subtotal * 1.15;
 
@@ -125,7 +125,7 @@ export default async function handler(req, res) {
       // --- Data for Google Sheets (flat structure) ---
       quoteId: quoteId,
       address: fullAddress,
-      rooms: itemsWithTotals.map(item => ({ name: item.name, sqm: item.sqm || item.qty, dimensions: item.dimensions || 'N/A' })),
+      rooms: JSON.stringify(itemsWithTotals.map(item => ({ name: item.name, sqm: item.sqm || item.qty, dimensions: item.dimensions || 'N/A' }))),
       totalSqm: finalTotalSqm.toFixed(2),
       labourTotal: labourTotal.toFixed(2),
       materialsTotal: materialsTotal.toFixed(2),

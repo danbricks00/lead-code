@@ -99,36 +99,87 @@ export default async function handler(req, res) {
     ].filter(Boolean);
     const fullAddress = addressParts.length > 0 ? addressParts.join(', ') : lead.address;
 
+    // --- 3. Create a single source of truth for all quote data ---
+    const getLineTotal = (itemName) => {
+      const item = itemsWithTotals.find(it => it.name.toLowerCase().includes(itemName.toLowerCase()));
+      return item ? toNum(item.lineTotal) : 0;
+    };
+
+    const labourTotal = getLineTotal('labour');
+    const materialsTotal = getLineTotal('materials');
+    const travelTotal = getLineTotal('travel');
+    const installationCost = getLineTotal('setup') || getLineTotal('installation');
+
+    const subtotal = grandTotal;
+    const gst = subtotal * 0.15;
+    const totalQuote = subtotal * 1.15;
+
     const validUntil = new Date();
     validUntil.setDate(validUntil.getDate() + 14);
+    const validUntilStr = validUntil.toLocaleDateString('en-NZ');
 
-    const quoteDataForSubmission = {
+    const finalQuoteData = {
       ...lead,
       ...normalizedData,
-       // Correctly map tradesperson details for PDF generator
-      tradespersonName: normalizedData.tradePersonName,
-      tradespersonEmail: normalizedData.tradePersonEmail,
-      tradespersonPhone: normalizedData.tradePersonPhone,
-      rooms: itemsWithTotals.map(item => ({ ...item, sqm: item.sqm || item.qty, dimensions: item.dimensions || 'N/A' })), // Ensure rooms have sqm and dimensions for PDF
-      grandTotal: grandTotal.toFixed(2),
-      totalSqm: finalTotalSqm.toFixed(2),
-      validUntil: validUntil.toLocaleDateString('en-NZ'), // Add valid until date
+
+      // --- Data for Google Sheets (flat structure) ---
+      quoteId: quoteId,
       address: fullAddress,
-      // Pass explicit totals for sheet and PDF
-      labourTotal: normalizedData.labourTotal,
-      materialsTotal: normalizedData.materialsTotal,
-      travelTotal: normalizedData.travelTotal,
-      installationCost: normalizedData.installationCost,
-      subtotal: normalizedData.subtotal,
-      gst: normalizedData.gst,
-      // Ensure final totals are strings for PDF/email
-      totalQuote: (normalizedData.totalQuote > 0 ? normalizedData.totalQuote : grandTotal).toFixed(2),
+      rooms: itemsWithTotals.map(item => ({ name: item.name, sqm: item.sqm || item.qty, dimensions: item.dimensions || 'N/A' })),
+      totalSqm: finalTotalSqm.toFixed(2),
+      labourTotal: labourTotal.toFixed(2),
+      materialsTotal: materialsTotal.toFixed(2),
+      travelTotal: travelTotal.toFixed(2),
+      installationCost: installationCost.toFixed(2),
+      subtotal: subtotal.toFixed(2),
+      gst: gst.toFixed(2),
+      totalQuote: totalQuote.toFixed(2),
+      validUntil: validUntilStr,
+
+      // --- Data for PDF (nested structure) ---
+      pdfData: {
+        quoteId: quoteId,
+        date: new Date().toLocaleDateString('en-NZ'),
+        validUntil: validUntilStr,
+        customer: {
+          name: normalizedData.customerName,
+          email: normalizedData.customerEmail,
+          phone: normalizedData.customerPhone,
+          address: fullAddress,
+        },
+        tradesperson: {
+          name: normalizedData.tradePersonName || 'N/A',
+          email: normalizedData.tradePersonEmail || 'N/A',
+          phone: normalizedData.tradePersonPhone || 'N/A',
+          license: 'N/A',
+        },
+        project: {
+          details: itemsWithTotals.map(item => ({
+            name: item.name,
+            dimensions: item.dimensions || 'N/A',
+            sqm: (item.sqm || item.qty || 0).toString(),
+          })),
+          totalSqm: finalTotalSqm.toFixed(2),
+        },
+        cost: {
+          breakdown: itemsWithTotals.map(item => ({
+            service: item.name,
+            rate: toNum(item.unitPrice).toFixed(2),
+            quantity: item.qty,
+            calculation: `${toNum(item.unitPrice).toFixed(2)} × ${item.qty}`,
+            total: toNum(item.lineTotal).toFixed(2),
+          })),
+          subtotal: subtotal.toFixed(2),
+          gst: gst.toFixed(2),
+          total: totalQuote.toFixed(2),
+        },
+      },
     };
 
     const quoteRow = buildQuoteRow({
       lead: lead,
       quoteId: quoteId,
-      body: quoteDataForSubmission,
+      body: finalQuoteData, // Use the new unified data object
       mode: isDraft ? 'draft' : 'submitted',
     });
 
@@ -145,13 +196,13 @@ export default async function handler(req, res) {
     }
 
     // --- 5. Generate PDF and send emails ---
-    const pdfBuffer = await generateQuotePDF(quoteDataForSubmission);
+    const pdfBuffer = await generateQuotePDF(finalQuoteData.pdfData);
 
-    const { 
-        customerEmail, customerName, serviceType, totalQuote,
-        tradePersonName, tradePersonEmail, tradePersonPhone,
-        labourTotal, materialsTotal, travelTotal, installationCost, subtotal, gst
-    } = quoteDataForSubmission;
+    // Get variables for email content from our single source of truth
+    const {
+        customerEmail, customerName, serviceType,
+        tradePersonName, tradePersonEmail, tradePersonPhone
+    } = finalQuoteData;
 
     const acceptLink  = `${normalizedBaseUrl}/api/customer-accept?quoteId=${quoteId}`;
     const declineLink = `${normalizedBaseUrl}/api/customer-decline?quoteId=${quoteId}`;
@@ -199,14 +250,20 @@ export default async function handler(req, res) {
           <table>
             <tr><th>Item</th><th style="text-align: right;">Amount</th></tr>
             ${lineItemsHtml}
-            <tr><td style="font-weight: bold;">Subtotal</td><td style="text-align: right; font-weight: bold;">$${toNum(subtotal).toFixed(2)}</td></tr>
-            <tr><td>GST (15%)</td><td style="text-align: right;">$${toNum(gst).toFixed(2)}</td></tr>
-            <tr class="total-row"><td style="font-size: 16px;">TOTAL</td><td style="text-align: right; font-size: 16px;">$${toNum(totalQuote).toFixed(2)}</td></tr>
+            <tr class="total-row"><td>Subtotal (excl. GST)</td><td style="text-align: right;">$${subtotal.toFixed(2)}</td></tr>
+            <tr><td>GST (15%)</td><td style="text-align: right;">$${gst.toFixed(2)}</td></tr>
+            <tr class="total-row"><td><strong>TOTAL (incl. GST)</strong></td><td style="text-align: right;"><strong>$${totalQuote.toFixed(2)}</strong></td></tr>
           </table>
+          
           <div class="tradesperson">
-            <h3>Your Tradesperson:</h3>
-            <p><strong>Name:</strong> ${tradePersonName || 'N/A'}<br><strong>Email:</strong> ${tradePersonEmail || 'N/A'}<br><strong>Phone:</strong> ${tradePersonPhone || 'N/A'}</p>
+            <h4>Your Tradesperson:</h4>
+            <p>
+              <strong>Name:</strong> ${tradePersonName}<br>
+              <strong>Email:</strong> ${tradePersonEmail}<br>
+              <strong>Phone:</strong> ${tradePersonPhone}
+            </p>
           </div>
+          
           <div class="buttons">
             <a href="${viewLink}" class="button view">View Quote Details</a>
             <a href="${acceptLink}" class="button accept">Accept Quote</a>

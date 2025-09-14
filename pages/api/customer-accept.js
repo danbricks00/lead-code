@@ -310,7 +310,12 @@ export default async function handler(req, res) {
                 const customerEmail = quoteRow[customerEmailIndex];
                 const customerName = quoteRow[customerNameIndex] || 'Valued Customer';
                 const customerPhone = quoteRow[customerPhoneIndex] || 'N/A';
-                const customerAddress = quoteRow[addressIndex] || 'N/A';
+                const fullAddress = quoteRow[addressIndex] || 'N/A';
+                // Show only suburb and area, not full street address
+                const addressParts = fullAddress.split(',');
+                const customerAddress = addressParts.length >= 2 ? 
+                  `${addressParts[addressParts.length - 2]?.trim()}, ${addressParts[addressParts.length - 1]?.trim()}` : 
+                  fullAddress;
 
                 const tradesmanEmail = quoteRow[tradespersonEmailIndex];
                 const tradesmanName = quoteRow[TradePersonNameIndex] || 'Your assigned tradesperson';
@@ -345,7 +350,6 @@ export default async function handler(req, res) {
                         <p>We have received your acceptance and will proceed with the next steps. You can view the accepted quote online <a href="${process.env.BASE_URL}/quote/view/${quoteId}">here</a>.</p>
                         <p><strong>Quote ID:</strong> ${quoteId}</p>
                         <p>We have received your acceptance and will proceed with the next steps. You can view the accepted quote online <a href="${process.env.BASE_URL}/quote/view/${quoteId}">here</a>.</p>
-                       
                         <hr>
                         <h3>Your Tradesperson's Details:</h3>
                         <p>

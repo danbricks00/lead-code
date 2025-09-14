@@ -48,7 +48,7 @@ const Layout = ({ children }) => {
     <>
       <Head>
         <title>Kiwi Trade - Connect with Qualified Tradesmen</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
       </Head>
       <header style={styles.header}>
         <nav style={styles.nav}>
@@ -251,7 +251,7 @@ const styles = {
     background: '#f8f9fa',
     borderTop: '1px solid #eee',
   },
-  // Chatbot styles moved from index.js
+  // Chatbot styles moved from index.js - Mobile optimized
   chatbotContainer: { 
     position: 'fixed', 
     bottom: '20px', 
@@ -259,7 +259,24 @@ const styles = {
     zIndex: 10001, 
     width: '400px', 
     height: '600px', 
-    boxShadow: '0 10px 30px rgba(0,0,0,0.3)' 
+    boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+    // Mobile responsive
+    '@media (max-width: 768px)': {
+      width: 'calc(100vw - 40px)',
+      height: 'calc(100vh - 40px)',
+      bottom: '20px',
+      right: '20px',
+      left: '20px',
+      maxHeight: 'calc(100vh - 40px)',
+    },
+    '@media (max-width: 480px)': {
+      width: 'calc(100vw - 20px)',
+      height: 'calc(100vh - 20px)',
+      bottom: '10px',
+      right: '10px',
+      left: '10px',
+      maxHeight: 'calc(100vh - 20px)',
+    }
   },
   chatBubble: { 
     position: 'fixed', 

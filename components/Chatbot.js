@@ -137,10 +137,26 @@ function autocorrectEmail(email) {
   return email;
 }
 
-const ProgressBar = ({ steps, currentStep, isCompleted }) => {
-    const progressPercentage = isCompleted ? 100 : (currentStep / (steps.length - 1)) * 100;
+const ProgressBar = ({ steps, currentStep, isCompleted, totalQuestions = 10, answered = 0 }) => {
+    const progressPercentage = isCompleted ? 100 : Math.round((answered / totalQuestions) * 100);
     return (
       <div style={styles.progressBarContainer}>
+        <div style={styles.progressBarOuter}>
+          <div 
+            id="progressInner" 
+            style={{
+              ...styles.progressBarInner, 
+              width: `${progressPercentage}%`
+            }} 
+            role="progressbar" 
+            aria-valuemin="0" 
+            aria-valuemax="100" 
+            aria-valuenow={progressPercentage}
+          ></div>
+        </div>
+        <div style={styles.progressLabel} id="progressLabel">
+          {progressPercentage}% complete
+        </div>
         <div style={styles.progressBarSteps}>
           {steps.map((step, index) => (
             <div key={index} style={{
@@ -150,9 +166,6 @@ const ProgressBar = ({ steps, currentStep, isCompleted }) => {
               {isCompleted || index < currentStep ? '✔' : '●'} {step}
             </div>
           ))}
-        </div>
-        <div style={styles.progressBar}>
-          <div style={{...styles.progress, width: `${progressPercentage}%`}}></div>
         </div>
       </div>
     );
@@ -174,6 +187,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
 
   const progressSteps = ["Project Details", "Your Details", "Review & Submit"];
   const [progressStep, setProgressStep] = useState(0);
+  const [answeredQuestions, setAnsweredQuestions] = useState(0);
+  const totalQuestions = 10; // Total number of questions in the flow
 
   // Initial welcome message
   useEffect(() => {
@@ -213,6 +228,11 @@ const Chatbot = ({ handleClose, handleReset }) => {
   };
 
   useEffect(scrollToBottom, [messages, isLoading]);
+
+  // Function to update progress after each question
+  const updateProgress = () => {
+    setAnsweredQuestions(prev => Math.min(totalQuestions, prev + 1));
+  };
 
   const addMessage = (content, isUser = false) => {
     setMessages(prev => [...prev, { id: Date.now(), content, isUser }]);
@@ -474,6 +494,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
     switch (step) {
         case 'ask_room_count':
             setLeadData(prev => ({ ...prev, roomCount: parseInt(input, 10) }));
+            updateProgress();
             nextStep('ask_room_name');
             break;
         case 'ask_room_name':
@@ -481,6 +502,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
                 ...prev,
                 rooms: [...prev.rooms, { name: input, dimensions: '' }]
             }));
+            updateProgress();
             nextStep('ask_room_dimensions', 1200, { roomName: input });
             // Show help message after a short delay
             setTimeout(() => {
@@ -520,11 +542,13 @@ const Chatbot = ({ handleClose, handleReset }) => {
             if (updatedRooms.length < leadData.roomCount) {
                 nextStep('ask_room_name');
             } else {
+                updateProgress();
                 nextStep('ask_timeline');
             }
             break;
         case 'ask_timeline':
             setLeadData(prev => ({ ...prev, timeline: input }));
+            updateProgress();
             if (input === 'In a couple of months' || input === 'Other') {
                 nextStep('ask_timeline_details');
             } else {
@@ -537,11 +561,13 @@ const Chatbot = ({ handleClose, handleReset }) => {
             break;
         case 'ask_budget':
             setLeadData(prev => ({ ...prev, budget: input }));
+            updateProgress();
             setProgressStep(1);
             nextStep('pre_contact_details');
             break;
         case 'ask_first_name':
             setLeadData(prev => ({ ...prev, firstName: input, name: input }));
+            updateProgress();
             nextStep('ask_last_name', 1200, { firstName: input });
             break;
         case 'ask_last_name':
@@ -551,10 +577,12 @@ const Chatbot = ({ handleClose, handleReset }) => {
                 customerName: `${prev.firstName} ${input}`,
                 name: prev.firstName // Keep first name for personalization
             }));
+            updateProgress();
             nextStep('ask_phone');
             break;
         case 'ask_phone':
             setLeadData(prev => ({ ...prev, customerPhone: input }));
+            updateProgress();
             if (zoneData.length > 0) {
                 nextStep('ask_suburb');
             } else {
@@ -574,6 +602,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
                     area: selectedZone.area,
                     isUnlistedSuburb: false
                 }));
+                updateProgress();
                 nextStep('ask_street_address');
             } else {
                 // Suburb not in our list - proceed as normal lead but mark as unlisted
@@ -584,11 +613,13 @@ const Chatbot = ({ handleClose, handleReset }) => {
                     isUnlistedSuburb: true,
                     suburbAdditionalInfo: '' // Will be filled during lead submission
                 }));
+                updateProgress();
                 nextStep('ask_street_address');
             }
             break;
         case 'ask_street_address':
             setLeadData(prev => ({ ...prev, streetAddress: input }));
+            updateProgress();
             nextStep('ask_email');
             break;
         case 'ask_email':
@@ -618,6 +649,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
                 // Ensure budget field is included (fallback to empty string if missing)
                 budget: prev.budget || '',
             }));
+            updateProgress();
             setProgressStep(2);
             nextStep('review_data');
             break;
@@ -909,7 +941,13 @@ const budgetOptions = useMemo(() => {
       <div style={styles.chatbotHeader}>
         <div style={styles.headerContent}>
           <h3>Kiwi Trade Chatbot</h3>
-          <ProgressBar steps={progressSteps} currentStep={progressStep} isCompleted={isCompleted} />
+          <ProgressBar 
+            steps={progressSteps} 
+            currentStep={progressStep} 
+            isCompleted={isCompleted}
+            totalQuestions={totalQuestions}
+            answered={answeredQuestions}
+          />
         </div>
         <div style={styles.headerButtons}>
             <button onClick={handleClose} style={styles.headerBtn}>—</button>
@@ -1129,25 +1167,100 @@ const budgetOptions = useMemo(() => {
 
 // --- STYLES ---
 const styles = {
-  chatbotContainer: { width: '100%', maxWidth: '400px', height: '100%', border: '1px solid #ddd', borderRadius: '10px', display: 'flex', flexDirection: 'column', background: 'white', fontFamily: 'Arial, sans-serif' },
+  chatbotContainer: { 
+    width: '100%', 
+    maxWidth: '400px', 
+    height: '100%', 
+    border: '1px solid #ddd', 
+    borderRadius: '10px', 
+    display: 'flex', 
+    flexDirection: 'column', 
+    background: 'white', 
+    fontFamily: 'Arial, sans-serif',
+    // Mobile optimizations
+    minHeight: '400px',
+    maxHeight: '100vh',
+    overflow: 'hidden'
+  },
   chatbotHeader: { background: '#333', color: 'white', padding: '10px 15px', borderRadius: '10px 10px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   headerContent: { flex: 1, textAlign: 'center', paddingLeft: '40px' /* Offset for buttons */ },
   headerButtons: { display: 'flex', gap: '5px' },
   headerBtn: { background: 'none', border: 'none', color: 'white', fontSize: '18px', cursor: 'pointer' },
   chatbotMessages: { flex: 1, overflowY: 'auto', padding: '15px', display: 'flex', flexDirection: 'column', backgroundColor: '#f9f9f9' },
-  chatbotInput: { display: 'flex', padding: '15px', gap: '10px', borderTop: '1px solid #eee' },
-  inputField: { flex: 1, padding: '10px', border: '1px solid #ddd', borderRadius: '20px', outline: 'none', fontSize: '14px' },
-  sendButton: { width: '35px', height: '35px', border: 'none', background: '#333', color: 'white', borderRadius: '50%', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  chatbotInput: { 
+    display: 'flex', 
+    padding: '15px', 
+    gap: '10px', 
+    borderTop: '1px solid #eee',
+    // Mobile touch targets
+    minHeight: '44px'
+  },
+  inputField: { 
+    flex: 1, 
+    padding: '10px', 
+    border: '1px solid #ddd', 
+    borderRadius: '20px', 
+    outline: 'none', 
+    fontSize: '15px',
+    // Mobile touch targets
+    minHeight: '44px'
+  },
+  sendButton: { 
+    width: '44px', 
+    height: '44px', 
+    border: 'none', 
+    background: '#333', 
+    color: 'white', 
+    borderRadius: '50%', 
+    cursor: 'pointer', 
+    fontSize: '16px', 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    // Mobile touch targets
+    minHeight: '44px',
+    minWidth: '44px'
+  },
   optionsContainer: { padding: '10px', borderTop: '1px solid #eee', maxHeight: '150px', overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' },
-  optionButton: { background: '#f0f0f0', border: '1px solid #ddd', borderRadius: '15px', padding: '8px 12px', cursor: 'pointer', fontSize: '14px', '&:hover': { background: '#e0e0e0' } },
+  optionButton: { 
+    background: '#f0f0f0', 
+    border: '1px solid #ddd', 
+    borderRadius: '15px', 
+    padding: '12px 16px', 
+    cursor: 'pointer', 
+    fontSize: '15px', 
+    minHeight: '44px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    '&:hover': { background: '#e0e0e0' } 
+  },
   suburbSearchContainer: { padding: '15px', borderTop: '1px solid #eee', position: 'relative' },
   suggestionsContainer: { position: 'absolute', bottom: '100%', left: '15px', right: '15px', background: 'white', border: '1px solid #ddd', borderRadius: '8px', zIndex: 10, maxHeight: '150px', overflowY: 'auto', boxShadow: '0 -2px 10px rgba(0,0,0,0.1)' },
   suggestionItem: { padding: '10px', cursor: 'pointer', borderBottom: '1px solid #eee' },
   progressBarContainer: { marginTop: '10px' },
+  progressBarOuter: {
+    width: '100%',
+    height: '16px',
+    background: '#eee',
+    borderRadius: '8px',
+    overflow: 'hidden',
+    margin: '10px 0'
+  },
+  progressBarInner: {
+    height: '100%',
+    width: '0%',
+    background: 'linear-gradient(90deg, #4CAF50, #2E8BFF)',
+    transition: 'width 260ms ease'
+  },
+  progressLabel: {
+    fontSize: '13px',
+    marginTop: '4px',
+    color: '#333',
+    textAlign: 'center'
+  },
   progressBarSteps: { display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '5px', color: '#ccc' },
   progressStep: { transition: 'color 0.4s ease' },
-  progressBar: { width: '100%', backgroundColor: '#555', borderRadius: '5px', height: '8px' },
-  progress: { height: '100%', backgroundColor: '#4caf50', borderRadius: '5px', transition: 'width 0.4s ease-in-out' },
   reviewContainer: { padding: '15px', borderTop: '1px solid #eee', backgroundColor: '#f9f9f9', maxHeight: '400px', overflowY: 'auto' },
   editingIndicator: { padding: '10px', borderRadius: '5px', marginBottom: '15px', fontSize: '14px', fontWeight: 'bold', textAlign: 'center' },
   reviewSection: { marginBottom: '20px', backgroundColor: 'white', borderRadius: '8px', padding: '15px', border: '1px solid #ddd' },

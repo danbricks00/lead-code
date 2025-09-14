@@ -1,20 +1,84 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
 
 const ContactPage = () => {
+  const router = useRouter();
   const [formType, setFormType] = useState('general'); // 'general', 'quote', 'manual-quote'
+  const [showManualQuote, setShowManualQuote] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
+  const [showLoginForm, setShowLoginForm] = useState(false);
+  const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [formData, setFormData] = useState({ 
     name: '', 
     email: '', 
     message: '',
     phone: '',
-    projectType: '',
+    projectType: 'Underfloor Heating',
     roomCount: '',
     timeline: '',
     budget: '',
     location: ''
   });
   const [status, setStatus] = useState({ submitted: false, message: '', isError: false });
+
+  // Check if user should see manual quote option (admin/tradesman access)
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/check');
+        const data = await response.json();
+        
+        if (data.success && data.authenticated && data.userType === 'tradesman') {
+          setShowManualQuote(true);
+          setIsAuthenticated(true);
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loginData),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setIsAuthenticated(true);
+        setUser(result.user);
+        setShowManualQuote(true);
+        setShowLoginForm(false);
+        setLoginData({ email: '', password: '' });
+      } else {
+        setStatus({ submitted: true, message: `❌ Login failed: ${result.error}`, isError: true });
+      }
+    } catch (error) {
+      setStatus({ submitted: true, message: `❌ Login error: ${error.message}`, isError: true });
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setIsAuthenticated(false);
+      setUser(null);
+      setShowManualQuote(false);
+      setFormType('general');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -73,6 +137,20 @@ const ContactPage = () => {
       <div style={styles.container}>
         <div style={styles.card}>
           <h1 style={styles.header}>Contact Us</h1>
+          
+          {/* Authentication Status */}
+          {isAuthenticated && user && (
+            <div style={styles.authStatus}>
+              <p style={styles.authText}>
+                🔧 Logged in as: <strong>{user.name}</strong> ({user.email})
+                {user.businessName && ` - ${user.businessName}`}
+              </p>
+              <button onClick={handleLogout} style={styles.logoutButton}>
+                Logout
+              </button>
+            </div>
+          )}
+          
           <p style={styles.paragraph}>
             Choose the type of enquiry below, and our team will get back to you as soon as possible.
           </p>
@@ -99,16 +177,31 @@ const ContactPage = () => {
             >
               Quote Enquiry (20+ Rooms)
             </button>
-            <button 
-              type="button"
-              onClick={() => setFormType('manual-quote')}
-              style={{
-                ...styles.formTypeButton,
-                ...(formType === 'manual-quote' ? styles.formTypeButtonActive : {})
-              }}
-            >
-              Manual Quote Submission
-            </button>
+            {showManualQuote && (
+              <button 
+                type="button"
+                onClick={() => setFormType('manual-quote')}
+                style={{
+                  ...styles.formTypeButton,
+                  ...(formType === 'manual-quote' ? styles.formTypeButtonActive : {})
+                }}
+              >
+                Manual Quote Submission
+              </button>
+            )}
+            {!isAuthenticated && (
+              <button 
+                type="button"
+                onClick={() => setShowLoginForm(true)}
+                style={{
+                  ...styles.formTypeButton,
+                  backgroundColor: '#28a745',
+                  color: 'white'
+                }}
+              >
+                🔧 Tradesman Login
+              </button>
+            )}
           </div>
 
           {/* Form Description */}
@@ -119,7 +212,7 @@ const ContactPage = () => {
             {formType === 'quote' && (
               <p>For projects with 20 or more rooms, please provide your project details below for a detailed quote.</p>
             )}
-            {formType === 'manual-quote' && (
+            {formType === 'manual-quote' && showManualQuote && (
               <p>Admin/Tradesmen: Submit a manual quote for a customer. This will create a quote entry in the system.</p>
             )}
           </div>
@@ -140,17 +233,18 @@ const ContactPage = () => {
             </div>
 
             {/* Quote Enquiry Specific Fields */}
-            {(formType === 'quote' || formType === 'manual-quote') && (
+            {(formType === 'quote' || (formType === 'manual-quote' && showManualQuote)) && (
               <>
                 <div style={styles.inputGroup}>
-                  <label htmlFor="projectType">Project Type *</label>
-                  <select id="projectType" name="projectType" value={formData.projectType} onChange={handleChange} style={styles.input} required>
-                    <option value="">Select project type</option>
-                    <option value="Underfloor Heating">Underfloor Heating</option>
-                    <option value="Heat Pump Installation">Heat Pump Installation</option>
-                    <option value="Insulation">Insulation</option>
-                    <option value="Other">Other</option>
-                  </select>
+                  <label htmlFor="projectType">Project Type</label>
+                  <input 
+                    type="text" 
+                    id="projectType" 
+                    name="projectType" 
+                    value="Underfloor Heating" 
+                    style={{...styles.input, backgroundColor: '#f5f5f5', cursor: 'not-allowed'}} 
+                    readOnly 
+                  />
                 </div>
                 <div style={styles.inputGroup}>
                   <label htmlFor="roomCount">Number of Rooms/Areas *</label>
@@ -221,6 +315,64 @@ const ContactPage = () => {
           </form>
         </div>
       </div>
+
+      {/* Login Form Modal */}
+      {showLoginForm && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modalContent}>
+            <h2 style={styles.modalTitle}>Tradesman Login</h2>
+            <p style={styles.modalDescription}>
+              Enter your email and password to access manual quote submission.
+            </p>
+            
+            <form onSubmit={handleLogin} style={styles.loginForm}>
+              <div style={styles.inputGroup}>
+                <label htmlFor="loginEmail">Email *</label>
+                <input 
+                  type="email" 
+                  id="loginEmail" 
+                  name="email" 
+                  value={loginData.email} 
+                  onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))} 
+                  style={styles.input} 
+                  required 
+                />
+              </div>
+              
+              <div style={styles.inputGroup}>
+                <label htmlFor="loginPassword">Password *</label>
+                <input 
+                  type="password" 
+                  id="loginPassword" 
+                  name="password" 
+                  value={loginData.password} 
+                  onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))} 
+                  style={styles.input} 
+                  required 
+                />
+              </div>
+              
+              <div style={styles.modalButtons}>
+                <button type="submit" style={styles.submitButton}>
+                  Login
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setShowLoginForm(false)} 
+                  style={styles.cancelButton}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+            
+            <div style={styles.loginHelp}>
+              <p><strong>Default Password:</strong> tradesman123</p>
+              <p><small>Your email must be registered in the Tradesmen database to login.</small></p>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };
@@ -260,6 +412,88 @@ const styles = {
     borderRadius: '6px',
     marginBottom: '25px',
     borderLeft: '4px solid #667eea'
+  },
+  authStatus: {
+    marginBottom: '20px',
+    padding: '15px',
+    backgroundColor: '#e8f5e8',
+    borderRadius: '5px',
+    borderLeft: '4px solid #28a745',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  authText: {
+    margin: 0,
+    fontSize: '14px',
+    color: '#155724'
+  },
+  logoutButton: {
+    background: '#dc3545',
+    color: 'white',
+    border: 'none',
+    padding: '8px 16px',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '12px'
+  },
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000
+  },
+  modalContent: {
+    background: 'white',
+    padding: '30px',
+    borderRadius: '8px',
+    maxWidth: '400px',
+    width: '90%',
+    maxHeight: '90vh',
+    overflow: 'auto'
+  },
+  modalTitle: {
+    fontSize: '1.5rem',
+    color: '#333',
+    marginBottom: '10px',
+    textAlign: 'center'
+  },
+  modalDescription: {
+    fontSize: '14px',
+    color: '#666',
+    marginBottom: '20px',
+    textAlign: 'center'
+  },
+  loginForm: {
+    marginBottom: '20px'
+  },
+  modalButtons: {
+    display: 'flex',
+    gap: '10px',
+    justifyContent: 'center'
+  },
+  cancelButton: {
+    background: '#6c757d',
+    color: 'white',
+    border: 'none',
+    padding: '12px 24px',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '16px'
+  },
+  loginHelp: {
+    padding: '15px',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '5px',
+    borderLeft: '4px solid #17a2b8',
+    fontSize: '12px',
+    color: '#666'
   },
   form: { display: 'flex', flexDirection: 'column', gap: '20px' },
   inputGroup: { display: 'flex', flexDirection: 'column' },

@@ -245,7 +245,8 @@ export default async function handler(req, res) {
         html: `
           <h1>New Quote Enquiry Received (#${leadId})</h1>
           ${leadDetailsHtml}
-          <p><strong>Quote Link:</strong> <a href="${quoteLink}">Submit Your Quote Now</a></p>
+          <p><strong>Quote Submission Link:</strong> <a href="${quoteLink}">Submit Your Quote Now</a></p>
+          <p><strong>Manual Quote Link:</strong> <a href="${baseUrl}/contact?access=tradesman">Access Manual Quote Form</a></p>
           <p>This is a large project with ${roomCount} rooms. Please prepare a detailed quote for this customer.</p>
         `,
       });

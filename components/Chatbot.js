@@ -497,7 +497,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
             setLeadData(prev => ({ ...prev, roomCount }));
             
             if (roomCount >= 20) {
-                addMessage("For projects with 20 or more rooms, please contact us directly for a detailed quote. You can reach us at support@kiwitrade.co.nz or call us at +64 9 123 4567. Thank you for considering Kiwi Trade!");
+                addMessage("For projects with 20 or more rooms, please use our Contact Us page to submit a detailed quote enquiry. This will ensure we can provide you with a comprehensive quote for your large project. Visit our Contact Us page or email us at support@kiwitrade.co.nz. Thank you for considering Kiwi Trade!");
                 setIsCompleted(true);
                 return;
             }

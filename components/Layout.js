@@ -49,6 +49,64 @@ const Layout = ({ children }) => {
       <Head>
         <title>Kiwi Trade - Connect with Qualified Tradesmen</title>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+        <style jsx global>{`
+          /* Mobile chatbot positioning fixes */
+          @media (max-width: 768px) {
+            .chatbot-container {
+              width: calc(100vw - 40px) !important;
+              height: calc(100vh - 40px) !important;
+              bottom: 20px !important;
+              right: 20px !important;
+              left: 20px !important;
+              max-width: calc(100vw - 40px) !important;
+              max-height: calc(100vh - 40px) !important;
+            }
+          }
+          
+          @media (max-width: 480px) {
+            .chatbot-container {
+              width: calc(100vw - 20px) !important;
+              height: calc(100vh - 20px) !important;
+              bottom: 10px !important;
+              right: 10px !important;
+              left: 10px !important;
+              max-width: calc(100vw - 20px) !important;
+              max-height: calc(100vh - 20px) !important;
+            }
+          }
+          
+          /* Ensure chatbot doesn't overflow on very small screens */
+          @media (max-width: 360px) {
+            .chatbot-container {
+              width: calc(100vw - 10px) !important;
+              height: calc(100vh - 10px) !important;
+              bottom: 5px !important;
+              right: 5px !important;
+              left: 5px !important;
+              max-width: calc(100vw - 10px) !important;
+              max-height: calc(100vh - 10px) !important;
+            }
+          }
+          
+          /* Additional mobile fixes for content overflow */
+          @media (max-width: 480px) {
+            .chatbot-container * {
+              box-sizing: border-box !important;
+            }
+            
+            .chatbot-container .chatbot-messages {
+              padding: 10px !important;
+            }
+            
+            .chatbot-container .chatbot-input {
+              padding: 10px !important;
+            }
+            
+            .chatbot-container .progress-bar-container {
+              margin-top: 5px !important;
+            }
+          }
+        `}</style>
       </Head>
       <header style={styles.header}>
         <nav style={styles.nav}>
@@ -103,11 +161,14 @@ const Layout = ({ children }) => {
         The Chatbot is now always rendered to preserve its state.
         We use CSS transforms to show/hide it.
       */}
-      <div style={{
-        ...styles.chatbotContainer,
-        transform: isChatOpen ? 'translateY(0)' : 'translateY(calc(100% + 20px))',
-        transition: 'transform 0.3s ease-in-out',
-      }}>
+      <div 
+        className="chatbot-container"
+        style={{
+          ...styles.chatbotContainer,
+          transform: isChatOpen ? 'translateY(0)' : 'translateY(calc(100% + 20px))',
+          transition: 'transform 0.3s ease-in-out',
+        }}
+      >
         <Chatbot key={chatKey} handleClose={handleClose} handleReset={handleResetAndClose} />
       </div>
       
@@ -260,23 +321,9 @@ const styles = {
     width: '400px', 
     height: '600px', 
     boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-    // Mobile responsive
-    '@media (max-width: 768px)': {
-      width: 'calc(100vw - 40px)',
-      height: 'calc(100vh - 40px)',
-      bottom: '20px',
-      right: '20px',
-      left: '20px',
-      maxHeight: 'calc(100vh - 40px)',
-    },
-    '@media (max-width: 480px)': {
-      width: 'calc(100vw - 20px)',
-      height: 'calc(100vh - 20px)',
-      bottom: '10px',
-      right: '10px',
-      left: '10px',
-      maxHeight: 'calc(100vh - 20px)',
-    }
+    // Ensure proper positioning for small screens
+    maxWidth: 'calc(100vw - 40px)',
+    maxHeight: 'calc(100vh - 40px)',
   },
   chatBubble: { 
     position: 'fixed', 

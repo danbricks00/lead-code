@@ -1180,7 +1180,9 @@ const styles = {
     // Mobile optimizations
     minHeight: '400px',
     maxHeight: '100vh',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    // Ensure proper sizing on mobile
+    boxSizing: 'border-box'
   },
   chatbotHeader: { background: '#333', color: 'white', padding: '10px 15px', borderRadius: '10px 10px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   headerContent: { flex: 1, textAlign: 'center', paddingLeft: '40px' /* Offset for buttons */ },

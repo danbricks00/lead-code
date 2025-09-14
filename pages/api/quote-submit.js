@@ -326,10 +326,10 @@ export default async function handler(req, res) {
 
     // --- Customer Email (No CC) ---
     const lineItems = [
-      { label: 'Labour', value: labourTotal },
-      { label: 'Materials', value: materialsTotal },
-      { label: 'Travel', value: travelTotal },
-      { label: 'Installation', value: installationCost },
+      { label: 'Labour', value: parseFloat(labourTotal.toFixed(2)) },
+      { label: 'Materials', value: parseFloat(materialsTotal.toFixed(2)) },
+      { label: 'Travel', value: parseFloat(travelTotal.toFixed(2)) },
+      { label: 'Installation', value: parseFloat(installationCost.toFixed(2)) },
     ];
     const lineItemsHtml = generateLineItemsHtml(lineItems);
 
@@ -406,7 +406,7 @@ export default async function handler(req, res) {
           <h1>Internal Notification: Quote #${quoteId} Sent</h1>
           <p>The following quote has been sent to ${customerName} for the ${serviceType} project:</p>
           <p><strong>The quote has been sent to the customer and we are now awaiting their decision. An email will be sent if the quote is accepted. Please follow up accordingly.</strong></p>
-          <p><strong>Total:</strong> $${totalQuote}</p>
+          <p><strong>Total:</strong> $${totalQuote.toFixed(2)}</p>
           <a href="${viewLink}">View Quote Details Online</a>
         </div>
       </body></html>`;

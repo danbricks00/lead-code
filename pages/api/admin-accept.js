@@ -73,15 +73,15 @@ export default async function handler(req, res) {
         }
 
         quoteLogger.info('Admin approval request received', {
-            method: req.method,
-            url: req.url,
-            query: req.query,
-            headers: {
-                'user-agent': req.headers['user-agent'],
-                'x-forwarded-for': req.headers['x-forwarded-for']
+        method: req.method,
+        url: req.url,
+        query: req.query,
+        headers: {
+            'user-agent': req.headers['user-agent'],
+            'x-forwarded-for': req.headers['x-forwarded-for']
             }
         }, requestId);
-
+        
         // Fetch quote data from Google Sheets
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
@@ -140,8 +140,8 @@ export default async function handler(req, res) {
         });
 
         console.log(`[DECISION-API] Admin approval recorded successfully:`, {
-            quoteId,
-            leadId,
+                quoteId,
+                leadId,
             decision: 'Approved',
             timestamp: nzTimestamp,
             rowIndex

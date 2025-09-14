@@ -46,7 +46,7 @@ export default async function handler(req, res) {
     const {
       customerName, customerEmail, customerPhone, serviceType, rooms, 
       area, suburb, timeline, budget, specificDetails, projectDetails,
-      isUnlistedSuburb, suburbAdditionalInfo, streetAddress
+      isUnlistedSuburb, suburbAdditionalInfo
     } = req.body;
 
     console.log('[LEAD-INTAKE] Received rooms data:', rooms);
@@ -78,8 +78,8 @@ export default async function handler(req, res) {
     const leadId = crypto.randomBytes(6).toString("hex");
     const sheets = getGoogleSheetsClient();
     
-    // Construct the full address from street, suburb, and area (zone)
-    const fullAddress = [streetAddress, suburb, area].filter(Boolean).join(', ');
+    // Construct the full address from suburb and area (zone) - no street address
+    const fullAddress = [suburb, area].filter(Boolean).join(', ');
 
     // Exact Leads schema mapping - single append operation
     const leadRow = [
@@ -91,7 +91,7 @@ export default async function handler(req, res) {
       JSON.stringify(rooms || []),               // F: Rooms
       area || "",                                // G: Area (Zone)
       suburb || "",                              // H: Suburb
-      budget || "",                              // I: Budget
+      "0",                                       // I: Budget (removed from chatbot, always 0)
       timeline || "",                            // J: Timeline
       specificDetails || projectDetails || "",   // K: Specific Details
       new Date().toLocaleString('en-NZ', {       // L: Time
@@ -105,7 +105,7 @@ export default async function handler(req, res) {
       }),
       "",                                        // M: (Empty)
       "New Lead",                                // N: Status
-      streetAddress || "",                       // O: Street Address
+      "",                                        // O: Street Address (removed from chatbot)
       fullAddress,                               // P: Address
     ];
 
@@ -162,7 +162,6 @@ export default async function handler(req, res) {
         <li><b>Phone:</b> ${customerPhone || "Not provided"}</li>
         <li><b>Service:</b> ${serviceType || "Underfloor Heating"}</li>
         <li><b>Location:</b> ${suburb}, ${area}</li>
-        <li><b>Budget:</b> ${budget || "Not specified"}</li>
         <li><b>Timeline:</b> ${timeline || "Not specified"}</li>
         ${roomsHtml}
         ${isUnlistedSuburb ? `<li><b>⚠️ Unlisted Suburb:</b> ${suburb} (not in service list)</li>` : ''}

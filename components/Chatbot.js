@@ -188,19 +188,19 @@ const Chatbot = ({ handleClose, handleReset }) => {
   const progressSteps = ["Project Details", "Your Details", "Review & Submit"];
   const [progressStep, setProgressStep] = useState(0);
   const [answeredQuestions, setAnsweredQuestions] = useState(0);
-  const totalQuestions = 10; // Total number of questions in the flow
+  const totalQuestions = 8; // Total number of questions in the flow (removed budget and street address questions)
 
   // Initial welcome message
   useEffect(() => {
     // This effect runs only once on component mount
     const startConversation = () => {
-        addMessage("👋 Welcome to Kiwi Trade! We'll ask a couple of quick questions to prepare your underfloor heating quote.");
+        addMessage("👋 Welcome to Kiwi Trade! We'll ask a couple of questions to prepare your underfloor heating quote.");
         
         setIsLoading(true);
         setTimeout(() => {
             setIsLoading(false);
-            nextStep('start_questions');
-        }, 1200); // Wait a moment after the welcome message
+            nextStep('ask_room_count');
+        }, 2000);
     };
 
     startConversation();
@@ -330,14 +330,11 @@ const Chatbot = ({ handleClose, handleReset }) => {
         
         // Trigger the question for the new step
         const questions = {
-            start_questions: "Let's get started with a few details about your project.",
-            ask_room_count: "How many areas are you planning to install underfloor heating in? max 20 rooms allowed",
+            ask_room_count: "How many areas are you planning to install underfloor heating in?",
             ask_room_name: `What is the name of room ${leadData.rooms.length + 1}? (e.g., Kitchen, Lounge)`,
-            ask_room_dimensions: `What are the dimensions of the ${context.roomName || leadData.rooms[leadData.rooms.length - 1]?.name}?`,
-            ask_room_dimensions_help: `Dimensions options:\n• Square meters: 25 (for 25m²)\n• Dimensions: 10 x 5 (for 50m²)\n• Metric dimensions: 7m x 7m (for 49m²)\n• Decimals welcome: 7.5 x 6.2, 25.01 x 1.02 (for precise measurements)\n• Maximum size: 50m x 50m (1000m²)\n• Only use: numbers, decimal points, 'x', 'm', and spaces`,
+            ask_room_dimensions: `What are the dimensions of the ${context.roomName || leadData.rooms[leadData.rooms.length - 1]?.name} in square meters?`,
             ask_timeline: "What is your desired timeline for this project?",
             ask_timeline_details: "Could you please be more specific about your timeline?",
-            ask_budget: "What is your budget range for this underfloor heating project?",
             pre_contact_details: "Great, that's all the project information we need. Now, let's get some contact details so we can send you the quote.",
             ask_first_name: "Perfect. What is your first name?",
             ask_last_name: firstName ? `Thanks ${firstName}! What is your last name?` : "What is your last name?",
@@ -385,7 +382,6 @@ const Chatbot = ({ handleClose, handleReset }) => {
               serviceType: 'Underfloor Heating',
               rooms: finalData.rooms,
               area: finalData.area,
-              budget: finalData.budget,
               timeline: finalData.timeline
             }),
           });
@@ -433,7 +429,13 @@ const Chatbot = ({ handleClose, handleReset }) => {
         case 'ask_room_count':
         case 'roomCount':
             const count = parseInt(value, 10);
-            return !isNaN(count) && count > 0 && count < 20 ? null : "Please enter a valid number between 1 and 20.";
+            if (isNaN(count) || count <= 0) {
+                return "Please enter a valid number.";
+            }
+            if (count >= 20) {
+                return null; // Allow 20+ but will be handled in processing
+            }
+            return null;
         case 'ask_room_name':
             // Only allow predefined room names
             if (!ALLOWED_ROOMS.includes(value)) {
@@ -470,8 +472,6 @@ const Chatbot = ({ handleClose, handleReset }) => {
         case 'ask_suburb':
             // Allow any suburb input - we'll handle unlisted suburbs separately
             return value.trim().length > 0 ? null : "Please enter a suburb name.";
-        case 'ask_street_address':
-            return value.trim().length > 2 ? null : "Please enter a valid street address.";
         case 'ask_email':
             const emailValidation = validateEmailFrontend(value);
             return emailValidation.valid ? null : emailValidation.error;
@@ -493,7 +493,15 @@ const Chatbot = ({ handleClose, handleReset }) => {
 
     switch (step) {
         case 'ask_room_count':
-            setLeadData(prev => ({ ...prev, roomCount: parseInt(input, 10) }));
+            const roomCount = parseInt(input, 10);
+            setLeadData(prev => ({ ...prev, roomCount }));
+            
+            if (roomCount >= 20) {
+                addMessage("For projects with 20 or more rooms, please contact us directly for a detailed quote. You can reach us at support@kiwitrade.co.nz or call us at +64 9 123 4567. Thank you for considering Kiwi Trade!");
+                setIsCompleted(true);
+                return;
+            }
+            
             updateProgress();
             nextStep('ask_room_name');
             break;
@@ -552,17 +560,11 @@ const Chatbot = ({ handleClose, handleReset }) => {
             if (input === 'In a couple of months' || input === 'Other') {
                 nextStep('ask_timeline_details');
             } else {
-                nextStep('ask_budget');
+                nextStep('pre_contact_details');
             }
             break;
         case 'ask_timeline_details':
             setLeadData(prev => ({ ...prev, timeline: input })); // Overwrite with specific details
-            nextStep('ask_budget');
-            break;
-        case 'ask_budget':
-            setLeadData(prev => ({ ...prev, budget: input }));
-            updateProgress();
-            setProgressStep(1);
             nextStep('pre_contact_details');
             break;
         case 'ask_first_name':
@@ -603,7 +605,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
                     isUnlistedSuburb: false
                 }));
                 updateProgress();
-                nextStep('ask_street_address');
+                nextStep('ask_email');
             } else {
                 // Suburb not in our list - proceed as normal lead but mark as unlisted
                 setLeadData(prev => ({ 
@@ -614,13 +616,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
                     suburbAdditionalInfo: '' // Will be filled during lead submission
                 }));
                 updateProgress();
-                nextStep('ask_street_address');
+                nextStep('ask_email');
             }
-            break;
-        case 'ask_street_address':
-            setLeadData(prev => ({ ...prev, streetAddress: input }));
-            updateProgress();
-            nextStep('ask_email');
             break;
         case 'ask_email':
             // Comprehensive email validation
@@ -646,8 +643,6 @@ const Chatbot = ({ handleClose, handleReset }) => {
                 ...prev,
                 customerEmail: input,
                 serviceType: 'Underfloor Heating',
-                // Ensure budget field is included (fallback to empty string if missing)
-                budget: prev.budget || '',
             }));
             updateProgress();
             setProgressStep(2);
@@ -660,7 +655,6 @@ const Chatbot = ({ handleClose, handleReset }) => {
                     ...prev,
                     customerEmail: emailCorrection.corrected,
                     serviceType: 'Underfloor Heating',
-                    budget: prev.budget || '',
                 }));
                 addMessage(`Great! Using ${emailCorrection.corrected}`, false);
                 setEmailCorrection(null);
@@ -672,7 +666,6 @@ const Chatbot = ({ handleClose, handleReset }) => {
                     ...prev,
                     customerEmail: emailCorrection.original,
                     serviceType: 'Underfloor Heating',
-                    budget: prev.budget || '',
                 }));
                 addMessage(`No problem! Using ${emailCorrection.original}`, false);
                 setEmailCorrection(null);
@@ -742,9 +735,6 @@ const Chatbot = ({ handleClose, handleReset }) => {
         case 'customerEmail':
           updated.customerEmail = newValue;
           break;
-        case 'streetAddress':
-          updated.streetAddress = newValue;
-          break;
         case 'suburb':
           const selectedZone = zoneData.find(zone => zone.suburb.toLowerCase() === newValue.toLowerCase());
           if (selectedZone) {
@@ -754,9 +744,6 @@ const Chatbot = ({ handleClose, handleReset }) => {
           break;
         case 'timeline':
           updated.timeline = newValue;
-          break;
-        case 'budget':
-          updated.budget = newValue;
           break;
         default:
           // Handle room fields
@@ -793,10 +780,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
       lastName: 'Last Name',
       customerPhone: 'Phone Number',
       customerEmail: 'Email Address',
-      streetAddress: 'Street Address',
       suburb: 'Suburb',
       timeline: 'Timeline',
-      budget: 'Budget',
       room_name: 'Room Name',
       room_dimensions: 'Room Dimensions'
     };
@@ -853,7 +838,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
         setSuburbSearch(selectedValue.suburb);
         setSuburbSuggestions([]);
         processUserInput(selectedValue.suburb); // Pass just the suburb string
-    } else { // Handle timeline and budget options
+    } else { // Handle timeline options
         addMessage(selectedValue, true);
         processUserInput(selectedValue);
     }
@@ -885,10 +870,10 @@ const Chatbot = ({ handleClose, handleReset }) => {
   };
 
   const isChatEnded = isCompleted || step === 'completed';
-  // Show text input for all steps except suburb search, timeline options, budget options, room name, and review data
+  // Show text input for all steps except suburb search, timeline options, room name, and review data
   // BUT show it when editing a field in review mode
   const showTextInput = !isChatEnded && 
-    !['ask_suburb', 'ask_timeline', 'ask_budget', 'ask_room_name', 'review_data'].includes(step) || 
+    !['ask_suburb', 'ask_timeline', 'ask_room_name', 'review_data'].includes(step) || 
     editingField;
 
   const timelineOptions = ["Immediately", "In a week", "In a couple of months", "Other"];
@@ -918,23 +903,6 @@ const Chatbot = ({ handleClose, handleReset }) => {
   "Cold Room", "Freezer Room"
 ];
 
-// Calculate reasonable budget options based on room data (memoized for performance)
-const budgetOptions = useMemo(() => {
-    const totalSqm = leadData.rooms.reduce((sum, room) => {
-      const sqm = parseFloat(room.sqm) || 0;
-      return sum + sqm;
-    }, 0);
-    
-    return [
-      `Under $5,000`,
-      `$5,000 - $10,000`,
-      `$10,000 - $20,000`,
-      `$20,000 - $30,000`,
-      `$30,000 - $50,000`,
-      `Over $50,000`,
-      `I'd like a quote first`
-    ];
-  }, [leadData.rooms]);
 
   return (
     <div style={styles.chatbotContainer}>
@@ -1001,15 +969,6 @@ const budgetOptions = useMemo(() => {
         </div>
       )}
       
-      {step === 'ask_budget' && !isLoading && (
-        <div style={styles.optionsContainer}>
-            {budgetOptions.map(option => (
-                <button key={option} onClick={() => handleOptionSelect(option)} style={styles.optionButton}>
-                    {option}
-                </button>
-            ))}
-        </div>
-      )}
       
       {step === 'ask_suburb' && !isLoading && (
         <div style={styles.suburbSearchContainer}>
@@ -1086,11 +1045,6 @@ const budgetOptions = useMemo(() => {
               <span style={styles.reviewValue}>{leadData.timeline}</span>
               <button onClick={() => startEditing('timeline')} style={styles.editButton}>Edit</button>
             </div>
-            <div style={styles.reviewField}>
-              <span style={styles.reviewLabel}>Budget:</span>
-              <span style={styles.reviewValue}>{leadData.budget}</span>
-              <button onClick={() => startEditing('budget')} style={styles.editButton}>Edit</button>
-            </div>
           </div>
 
           <div style={styles.reviewSection}>
@@ -1114,11 +1068,6 @@ const budgetOptions = useMemo(() => {
               <span style={styles.reviewLabel}>Email:</span>
               <span style={styles.reviewValue}>{leadData.customerEmail}</span>
               <button onClick={() => startEditing('customerEmail')} style={styles.editButton}>Edit</button>
-            </div>
-            <div style={styles.reviewField}>
-              <span style={styles.reviewLabel}>Street Address:</span>
-              <span style={styles.reviewValue}>{leadData.streetAddress}</span>
-              <button onClick={() => startEditing('streetAddress')} style={styles.editButton}>Edit</button>
             </div>
             <div style={styles.reviewField}>
               <span style={styles.reviewLabel}>Location:</span>

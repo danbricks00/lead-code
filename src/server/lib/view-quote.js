@@ -1,21 +1,30 @@
 import { google } from 'googleapis';
 
 // Function to safely format dates
-function formatDate(dateString) {
+function formatDate(dateInput) {
   try {
-    if (!dateString) {
-      console.log('🔍 No date string provided');
+    if (!dateInput) {
+      console.log('🔍 No date input provided');
       return null;
     }
     
-    console.log('🔍 Formatting date:', dateString, 'Type:', typeof dateString, 'Length:', dateString.length);
+    console.log('🔍 Formatting date:', dateInput, 'Type:', typeof dateInput);
     
     let date;
     
-    // Handle different date formats
-    if (typeof dateString === 'string') {
+    // Handle different input types
+    if (typeof dateInput === 'number') {
+      // Handle Excel serial date (days since 1900-01-01)
+      if (dateInput > 25569) { // Excel date (after 1970)
+        date = new Date((dateInput - 25569) * 86400 * 1000);
+      } else {
+        // Google Sheets serial date (days since 1899-12-30)
+        date = new Date((dateInput - 2) * 86400 * 1000);
+      }
+      console.log('🔍 Parsed as serial date:', dateInput, '->', date);
+    } else if (typeof dateInput === 'string') {
       // Trim whitespace
-      const trimmedDate = dateString.trim();
+      const trimmedDate = dateInput.trim();
       
       // Handle empty or whitespace-only strings
       if (!trimmedDate) {
@@ -50,15 +59,15 @@ function formatDate(dateString) {
         // Try direct parsing
         date = new Date(trimmedDate);
       }
-    } else if (dateString instanceof Date) {
-      date = dateString;
+    } else if (dateInput instanceof Date) {
+      date = dateInput;
     } else {
-      date = new Date(dateString);
+      date = new Date(dateInput);
     }
     
     // Check if date is valid
     if (isNaN(date.getTime())) {
-      console.log('❌ Invalid date after parsing:', dateString);
+      console.log('❌ Invalid date after parsing:', dateInput);
       return null; // Return null instead of 'Invalid Date' to trigger fallback
     }
     
@@ -68,10 +77,10 @@ function formatDate(dateString) {
       year: 'numeric'
     });
     
-    console.log('✅ Date formatted successfully:', dateString, '->', formatted);
+    console.log('✅ Date formatted successfully:', dateInput, '->', formatted);
     return formatted;
   } catch (error) {
-    console.error('Date formatting error:', error, 'Input:', dateString);
+    console.error('Date formatting error:', error, 'Input:', dateInput);
     return null; // Return null instead of 'Invalid Date' to trigger fallback
   }
 }

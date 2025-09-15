@@ -193,9 +193,10 @@ const Chatbot = ({ handleClose, handleReset }) => {
   const calculateTotalQuestions = () => {
     if (!leadData.roomCount) return 8; // Default if no room count yet
     
-    const baseQuestions = 6; // ask_room_count, ask_timeline, ask_first_name, ask_last_name, ask_phone, ask_suburb, ask_email
+    const baseQuestions = 7; // ask_room_count, ask_timeline, ask_first_name, ask_last_name, ask_phone, ask_suburb, ask_email
     const roomQuestions = leadData.roomCount * 2; // ask_room_name + ask_room_dimensions for each room
-    return baseQuestions + roomQuestions;
+    const finalSteps = 2; // review_data + submit (these don't call updateProgress but are part of the total flow)
+    return baseQuestions + roomQuestions + finalSteps;
   };
   
   const totalQuestions = calculateTotalQuestions();
@@ -565,10 +566,11 @@ const Chatbot = ({ handleClose, handleReset }) => {
                 addMessage(`✅ ${currentRoom.name}: ${parsed.dimensions.width}m x ${parsed.dimensions.length}m = ${parsed.sqm} square meters`);
             }
 
+            updateProgress(); // Call updateProgress for every room dimensions
+            
             if (updatedRooms.length < leadData.roomCount) {
                 nextStep('ask_room_name');
             } else {
-                updateProgress();
                 nextStep('ask_timeline');
             }
             break;

@@ -16,34 +16,83 @@ const QuoteViewPage = () => {
   // Function to safely format dates
   const formatDate = (dateInput) => {
     try {
-      if (!dateInput) return 'Not specified';
+      console.log('🔍 formatDate input:', dateInput, 'Type:', typeof dateInput);
+      
+      if (!dateInput) {
+        console.log('🔍 No date input, using fallback');
+        // Return 2 weeks from now as fallback
+        const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+        return fallbackDate.toLocaleDateString('en-NZ', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        });
+      }
       
       let date;
-      if (dateInput instanceof Date) {
-        date = dateInput;
+      
+      // Handle different input types
+      if (typeof dateInput === 'number') {
+        // Handle Excel serial date (days since 1900-01-01)
+        if (dateInput > 25569) { // Excel date (after 1970)
+          date = new Date((dateInput - 25569) * 86400 * 1000);
+        } else {
+          // Google Sheets serial date (days since 1899-12-30)
+          date = new Date((dateInput - 2) * 86400 * 1000);
+        }
+        console.log('🔍 Parsed as serial date:', dateInput, '->', date);
       } else if (typeof dateInput === 'string') {
-        // Handle various date formats
-        date = new Date(dateInput);
-      } else if (typeof dateInput === 'number') {
-        date = new Date(dateInput);
+        // Handle string dates
+        const trimmed = dateInput.trim();
+        if (trimmed.includes('/')) {
+          // Handle DD/MM/YYYY format
+          const parts = trimmed.split('/');
+          if (parts.length === 3) {
+            date = new Date(parts[2], parts[1] - 1, parts[0]);
+          } else {
+            date = new Date(trimmed);
+          }
+        } else {
+          date = new Date(trimmed);
+        }
+        console.log('🔍 Parsed as string date:', dateInput, '->', date);
+      } else if (dateInput instanceof Date) {
+        date = dateInput;
+        console.log('🔍 Already a Date object:', date);
       } else {
-        return 'Not specified';
+        date = new Date(dateInput);
+        console.log('🔍 Parsed as generic:', dateInput, '->', date);
       }
       
       // Check if date is valid
       if (isNaN(date.getTime())) {
-        return 'Not specified';
+        console.log('❌ Invalid date after parsing:', dateInput);
+        // Return 2 weeks from now as fallback
+        const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+        return fallbackDate.toLocaleDateString('en-NZ', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        });
       }
       
-      // Format as DD/MM/YYYY
-      return date.toLocaleDateString('en-GB', {
+      const formatted = date.toLocaleDateString('en-NZ', {
         day: '2-digit',
-        month: '2-digit',
+        month: 'short',
         year: 'numeric'
       });
+      
+      console.log('✅ Date formatted successfully:', dateInput, '->', formatted);
+      return formatted;
     } catch (error) {
-      console.error('Date formatting error:', error);
-      return 'Not specified';
+      console.error('Date formatting error:', error, 'Input:', dateInput);
+      // Return 2 weeks from now as fallback
+      const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+      return fallbackDate.toLocaleDateString('en-NZ', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
     }
   };
 

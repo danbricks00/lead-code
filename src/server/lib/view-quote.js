@@ -165,7 +165,21 @@ export default async function handler(req, res) {
             console.log('🔍 Raw quoteRow data:', quoteRow);
             if (validUntilIndex !== -1) {
               console.log('🔍 ValidUntil cell value:', quoteRow[validUntilIndex], 'Length:', quoteRow[validUntilIndex]?.length);
+              console.log('🔍 ValidUntil cell value details:', {
+                value: quoteRow[validUntilIndex],
+                type: typeof quoteRow[validUntilIndex],
+                isNull: quoteRow[validUntilIndex] === null,
+                isUndefined: quoteRow[validUntilIndex] === undefined,
+                isEmpty: quoteRow[validUntilIndex] === '',
+                stringValue: String(quoteRow[validUntilIndex]),
+                jsonValue: JSON.stringify(quoteRow[validUntilIndex])
+              });
             }
+            
+            // Test the formatDate function with the actual value
+            console.log('🧪 Testing formatDate function with ValidUntil value...');
+            const testResult = formatDate(quoteData.validUntil);
+            console.log('🧪 formatDate result:', testResult);
           }
         } catch (sheetsError) {
           console.error('❌ Google Sheets error:', sheetsError.message);
@@ -537,7 +551,18 @@ export default async function handler(req, res) {
             <div class="quote-info">
               <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
               <p><strong>Date:</strong> ${new Date().toLocaleDateString('en-GB')}</p>
-              <p><strong>Valid Until:</strong> ${formatDate(quoteData.validUntil) || formatDate(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000))}</p>
+              <p><strong>Valid Until:</strong> ${(() => {
+                const formattedDate = formatDate(quoteData.validUntil);
+                const fallbackDate = formatDate(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000));
+                const finalDate = formattedDate || fallbackDate;
+                console.log('🎯 Final ValidUntil display:', {
+                  originalValue: quoteData.validUntil,
+                  formattedDate: formattedDate,
+                  fallbackDate: fallbackDate,
+                  finalDate: finalDate
+                });
+                return finalDate;
+              })()}</p>
             </div>
           </div>
 

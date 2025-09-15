@@ -23,6 +23,13 @@ function formatNZTTime(timestamp) {
 
 // Generate mobile-friendly HTML quote
 function generateHtmlQuote(quoteData) {
+  console.log('🚀 generateHtmlQuote called with data:', {
+    quoteNumber: quoteData.quoteNumber,
+    validUntil: quoteData.validUntil,
+    validUntilType: typeof quoteData.validUntil,
+    validUntilString: String(quoteData.validUntil),
+    validUntilJSON: JSON.stringify(quoteData.validUntil)
+  });
   const formatDate = (dateInput) => {
     try {
       console.log('🔍 formatDate input:', dateInput, 'Type:', typeof dateInput);
@@ -278,7 +285,15 @@ function generateHtmlQuote(quoteData) {
                 </div>
                 <div class="info-item">
                     <div class="info-label">Valid Until</div>
-                    <div class="info-value">${formatDate(quoteData.validUntil)}</div>
+                    <div class="info-value">${(() => {
+                      const formattedDate = formatDate(quoteData.validUntil);
+                      console.log('🎯 Quote-submission ValidUntil display:', {
+                        originalValue: quoteData.validUntil,
+                        formattedDate: formattedDate,
+                        quoteNumber: quoteData.quoteNumber
+                      });
+                      return formattedDate;
+                    })()}</div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Tradesman</div>

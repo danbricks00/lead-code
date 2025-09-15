@@ -5,21 +5,51 @@ function formatDate(dateString) {
   try {
     if (!dateString) return null;
     
-    const date = new Date(dateString);
+    console.log('🔍 Formatting date:', dateString, 'Type:', typeof dateString);
+    
+    let date;
+    
+    // Handle different date formats
+    if (typeof dateString === 'string') {
+      // Try different date formats
+      if (dateString.includes('/')) {
+        // Handle DD/MM/YYYY format
+        const parts = dateString.split('/');
+        if (parts.length === 3) {
+          date = new Date(parts[2], parts[1] - 1, parts[0]);
+        } else {
+          date = new Date(dateString);
+        }
+      } else if (dateString.includes('-')) {
+        // Handle YYYY-MM-DD or DD-MM-YYYY format
+        date = new Date(dateString);
+      } else {
+        // Try direct parsing
+        date = new Date(dateString);
+      }
+    } else if (dateString instanceof Date) {
+      date = dateString;
+    } else {
+      date = new Date(dateString);
+    }
     
     // Check if date is valid
     if (isNaN(date.getTime())) {
-      return null;
+      console.log('❌ Invalid date after parsing:', dateString);
+      return 'Invalid Date';
     }
     
-    return date.toLocaleDateString('en-GB', {
+    const formatted = date.toLocaleDateString('en-GB', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
     });
+    
+    console.log('✅ Date formatted successfully:', dateString, '->', formatted);
+    return formatted;
   } catch (error) {
-    console.error('Date formatting error:', error);
-    return null;
+    console.error('Date formatting error:', error, 'Input:', dateString);
+    return 'Invalid Date';
   }
 }
 
@@ -69,6 +99,12 @@ export default async function handler(req, res) {
           );
 
           if (quoteRow) {
+            // Get headers to find the correct column for ValidUntil
+            const headers = rows[0] || [];
+            const validUntilIndex = headers.indexOf('ValidUntil');
+            console.log('🔍 Headers found:', headers);
+            console.log('🔍 ValidUntil column index:', validUntilIndex);
+            
             quoteData = {
               quoteId: quoteRow[1],
               quoteNumber: quoteRow[2],
@@ -77,7 +113,7 @@ export default async function handler(req, res) {
               tradesmanPhone: quoteRow[5],
               totalAmount: quoteRow[6],
               itemBreakdown: quoteRow[7],
-              validUntil: quoteRow[8],
+              validUntil: validUntilIndex !== -1 ? quoteRow[validUntilIndex] : quoteRow[8], // Use correct column or fallback
               additionalNotes: quoteRow[9],
               status: quoteRow[10],
               customerName: quoteRow[11],
@@ -91,6 +127,8 @@ export default async function handler(req, res) {
               timeline: quoteRow[19]
             };
             console.log('✅ Found quote data:', quoteData);
+            console.log('🔍 ValidUntil raw value:', quoteData.validUntil, 'Type:', typeof quoteData.validUntil);
+            console.log('🔍 ValidUntil from column:', validUntilIndex !== -1 ? `Column ${String.fromCharCode(65 + validUntilIndex)}` : 'Column I (fallback)');
           }
         } catch (sheetsError) {
           console.error('❌ Google Sheets error:', sheetsError.message);
@@ -462,7 +500,7 @@ export default async function handler(req, res) {
             <div class="quote-info">
               <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
               <p><strong>Date:</strong> ${new Date().toLocaleDateString('en-GB')}</p>
-              <p><strong>Valid Until:</strong> ${formatDate(quoteData.validUntil) || '30 days from date'}</p>
+              <p><strong>Valid Until:</strong> ${formatDate(quoteData.validUntil) || formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))}</p>
             </div>
           </div>
 

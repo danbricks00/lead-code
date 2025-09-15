@@ -897,7 +897,7 @@ async function findQuoteInSpreadsheet(quoteId) {
         console.log('✅ Found quote in spreadsheet at row:', i + 1);
         
         // Convert spreadsheet row to quote object
-        return {
+        const quoteData = {
           quoteId: row[1],
           quoteNumber: row[2],
           customerName: row[3],
@@ -918,6 +918,16 @@ async function findQuoteInSpreadsheet(quoteId) {
           status: row[18],
           items: row[22] ? JSON.parse(row[22]) : []
         };
+        
+        console.log('🔍 Found quote data from spreadsheet:', {
+          quoteId: quoteData.quoteId,
+          expiryDate: quoteData.expiryDate,
+          expiryDateType: typeof quoteData.expiryDate,
+          expiryDateString: String(quoteData.expiryDate),
+          expiryDateJSON: JSON.stringify(quoteData.expiryDate)
+        });
+        
+        return quoteData;
       }
     }
 
@@ -930,24 +940,84 @@ async function findQuoteInSpreadsheet(quoteId) {
   }
 }
 
-function formatDate(dateString) {
+function formatDate(dateInput) {
   try {
-    if (!dateString) return 'N/A';
+    console.log('🔍 generate-quote.js formatDate input:', dateInput, 'Type:', typeof dateInput);
     
-    const date = new Date(dateString);
+    if (!dateInput) {
+      console.log('🔍 No date input, using fallback');
+      // Return 2 weeks from now as fallback
+      const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+      return fallbackDate.toLocaleDateString('en-NZ', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    }
+    
+    let date;
+    
+    // Handle different input types
+    if (typeof dateInput === 'number') {
+      // Handle Excel serial date (days since 1900-01-01)
+      if (dateInput > 25569) { // Excel date (after 1970)
+        date = new Date((dateInput - 25569) * 86400 * 1000);
+      } else {
+        // Google Sheets serial date (days since 1899-12-30)
+        date = new Date((dateInput - 2) * 86400 * 1000);
+      }
+      console.log('🔍 Parsed as serial date:', dateInput, '->', date);
+    } else if (typeof dateInput === 'string') {
+      // Handle string dates
+      const trimmed = dateInput.trim();
+      if (trimmed.includes('/')) {
+        // Handle DD/MM/YYYY format
+        const parts = trimmed.split('/');
+        if (parts.length === 3) {
+          date = new Date(parts[2], parts[1] - 1, parts[0]);
+        } else {
+          date = new Date(trimmed);
+        }
+      } else {
+        date = new Date(trimmed);
+      }
+      console.log('🔍 Parsed as string date:', dateInput, '->', date);
+    } else if (dateInput instanceof Date) {
+      date = dateInput;
+      console.log('🔍 Already a Date object:', date);
+    } else {
+      date = new Date(dateInput);
+      console.log('🔍 Parsed as generic:', dateInput, '->', date);
+    }
     
     // Check if date is valid
     if (isNaN(date.getTime())) {
-      return 'N/A';
+      console.log('❌ Invalid date after parsing:', dateInput);
+      // Return 2 weeks from now as fallback
+      const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+      return fallbackDate.toLocaleDateString('en-NZ', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
     }
     
-    return date.toLocaleDateString('en-NZ', {
+    const formatted = date.toLocaleDateString('en-NZ', {
       day: '2-digit',
       month: 'short',
       year: 'numeric'
     });
+    
+    console.log('✅ Date formatted successfully:', dateInput, '->', formatted);
+    return formatted;
   } catch (error) {
-    console.error('Date formatting error:', error);
-    return 'N/A';
+    console.error('Date formatting error in generate-quote.js:', error, 'Input:', dateInput);
+    // Return 2 weeks from now as fallback
+    const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+    return fallbackDate.toLocaleDateString('en-NZ', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
   }
 }

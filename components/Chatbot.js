@@ -183,6 +183,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
   const [isCompleted, setIsCompleted] = useState(false);
   const [editingField, setEditingField] = useState(null); // Track which field is being edited
   const [emailCorrection, setEmailCorrection] = useState(null); // Track email correction suggestion
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 }); // Track window size for responsive styles
   const messagesEndRef = useRef(null);
 
   const progressSteps = ["Project Details", "Your Details", "Review & Submit"];
@@ -209,8 +210,39 @@ const Chatbot = ({ handleClose, handleReset }) => {
     // Don't update answeredQuestions here, just let the component re-render with new total
   }, [leadData.roomCount]);
 
-  // Initial welcome message
+  // Initial welcome message and window resize listener
   useEffect(() => {
+    // Ensure proper viewport meta tag for mobile
+    const ensureViewportMeta = () => {
+      let viewportMeta = document.querySelector('meta[name="viewport"]');
+      if (!viewportMeta) {
+        viewportMeta = document.createElement('meta');
+        viewportMeta.name = 'viewport';
+        document.head.appendChild(viewportMeta);
+      }
+      viewportMeta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+    };
+    
+    ensureViewportMeta();
+    
+    // Set initial window size
+    const updateWindowSize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    
+    updateWindowSize();
+    window.addEventListener('resize', updateWindowSize);
+    
+    // Handle keyboard open/close on mobile
+    const handleKeyboardToggle = () => {
+      // Small delay to allow viewport to adjust
+      setTimeout(updateWindowSize, 100);
+    };
+    
+    // Listen for viewport changes (keyboard open/close)
+    window.addEventListener('resize', handleKeyboardToggle);
+    window.addEventListener('orientationchange', handleKeyboardToggle);
+    
     // This effect runs only once on component mount
     const startConversation = () => {
         addMessage("👋 Welcome to Kiwi Trade! We'll ask a couple of questions to prepare your underfloor heating quote.");
@@ -240,6 +272,13 @@ const Chatbot = ({ handleClose, handleReset }) => {
       };
   
       fetchZones();
+      
+      // Cleanup listeners
+      return () => {
+        window.removeEventListener('resize', updateWindowSize);
+        window.removeEventListener('resize', handleKeyboardToggle);
+        window.removeEventListener('orientationchange', handleKeyboardToggle);
+      };
   }, []);
   
   const scrollToBottom = () => {
@@ -924,10 +963,13 @@ const Chatbot = ({ handleClose, handleReset }) => {
 ];
 
 
+  // Get current responsive styles
+  const currentStyles = getCurrentStyles(windowSize);
+
   return (
-    <div style={styles.chatbotContainer}>
-      <div style={styles.chatbotHeader}>
-        <div style={styles.headerContent}>
+    <div style={currentStyles.chatbotContainer}>
+      <div style={currentStyles.chatbotHeader}>
+        <div style={currentStyles.headerContent}>
           <h3>Kiwi Trade Chatbot</h3>
           <ProgressBar 
             steps={progressSteps} 
@@ -937,13 +979,13 @@ const Chatbot = ({ handleClose, handleReset }) => {
             answered={answeredQuestions}
           />
         </div>
-        <div style={styles.headerButtons}>
-            <button onClick={handleClose} style={styles.headerBtn}>—</button>
-            <button onClick={handleReset} style={styles.headerBtn}>✕</button>
+        <div style={currentStyles.headerButtons}>
+            <button onClick={handleClose} style={currentStyles.headerBtn}>—</button>
+            <button onClick={handleReset} style={currentStyles.headerBtn}>✕</button>
         </div>
       </div>
       
-      <div style={styles.chatbotMessages}>
+      <div style={currentStyles.chatbotMessages}>
         {messages.map((msg) => (
           <ChatMessage key={msg.id} message={msg.content} isUser={msg.isUser} />
         ))}
@@ -952,9 +994,9 @@ const Chatbot = ({ handleClose, handleReset }) => {
       </div>
       
       {step === 'ask_timeline' && !isLoading && (
-        <div style={styles.optionsContainer}>
+        <div style={currentStyles.optionsContainer}>
             {timelineOptions.map(option => (
-                <button key={option} onClick={() => handleOptionSelect(option)} style={styles.optionButton}>
+                <button key={option} onClick={() => handleOptionSelect(option)} style={currentStyles.optionButton}>
                     {option}
                 </button>
             ))}
@@ -962,9 +1004,9 @@ const Chatbot = ({ handleClose, handleReset }) => {
       )}
       
       {step === 'ask_room_name' && !isLoading && (
-        <div style={{...styles.optionsContainer, maxHeight: '200px', overflowY: 'auto'}}>
+        <div style={{...currentStyles.optionsContainer, maxHeight: '200px', overflowY: 'auto'}}>
           {ALLOWED_ROOMS.map(option => (
-            <button key={option} onClick={() => handleOptionSelect(option)} style={styles.optionButton}>
+            <button key={option} onClick={() => handleOptionSelect(option)} style={currentStyles.optionButton}>
               {option}
             </button>
           ))}
@@ -972,7 +1014,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
       )}
       
       {step === 'edit_room_name' && !isLoading && (
-        <div style={{...styles.optionsContainer, maxHeight: '200px', overflowY: 'auto'}}>
+        <div style={{...currentStyles.optionsContainer, maxHeight: '200px', overflowY: 'auto'}}>
           {ALLOWED_ROOMS.map(option => (
             <button 
               key={option} 
@@ -981,7 +1023,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
                 setEditingField(null);
                 setStep('review_data');
               }} 
-              style={styles.optionButton}
+              style={currentStyles.optionButton}
             >
               {option}
             </button>
@@ -991,7 +1033,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
       
       
       {step === 'ask_suburb' && !isLoading && (
-        <div style={styles.suburbSearchContainer}>
+        <div style={currentStyles.suburbSearchContainer}>
             <div style={{marginBottom: '10px', fontSize: '14px', color: '#666'}}>
                 💡 Start typing to see suggestions, or type any suburb name if not listed
             </div>
@@ -1000,14 +1042,14 @@ const Chatbot = ({ handleClose, handleReset }) => {
                     type="text"
                     value={suburbSearch}
                     onChange={handleSuburbSearchChange}
-                    style={styles.inputField}
+                    style={currentStyles.inputField}
                     placeholder="Type your suburb..."
                     autoFocus
                 />
                 <button 
                     type="submit" 
                     style={{
-                        ...styles.submitButton,
+                        ...currentStyles.submitButton,
                         padding: '10px 15px',
                         fontSize: '14px'
                     }}
@@ -1017,12 +1059,12 @@ const Chatbot = ({ handleClose, handleReset }) => {
                 </button>
             </form>
             {suburbSuggestions.length > 0 && (
-                <div style={styles.suggestionsContainer}>
+                <div style={currentStyles.suggestionsContainer}>
                     {suburbSuggestions.map(zone => (
                         <div 
                             key={`${zone.suburb}-${zone.area}`} 
                             onClick={() => handleOptionSelect(zone)} 
-                            style={styles.suggestionItem}
+                            style={currentStyles.suggestionItem}
                         >
                             {zone.suburb} <span style={{color: '#888'}}>({zone.area})</span>
                         </div>
@@ -1033,71 +1075,71 @@ const Chatbot = ({ handleClose, handleReset }) => {
       )}
 
       {step === 'review_data' && !isLoading && (
-        <div style={styles.reviewContainer}>
+        <div style={currentStyles.reviewContainer}>
           {editingField && (
-            <div style={{...styles.editingIndicator, backgroundColor: '#fff3cd', border: '1px solid #ffeaa7', color: '#856404'}}>
+            <div style={{...currentStyles.editingIndicator, backgroundColor: '#fff3cd', border: '1px solid #ffeaa7', color: '#856404'}}>
               ✏️ Editing: {getFieldDisplayName(editingField)} - Type your new value below and press Enter, or click ✕ to cancel
             </div>
           )}
-          <div style={styles.reviewSection}>
-            <h3 style={styles.reviewSectionTitle}>📋 Project Details</h3>
-            <div style={styles.reviewField}>
-              <span style={styles.reviewLabel}>Number of Rooms:</span>
-              <span style={styles.reviewValue}>{leadData.roomCount}</span>
-              <button onClick={() => startEditing('roomCount')} style={styles.editButton}>Edit</button>
+          <div style={currentStyles.reviewSection}>
+            <h3 style={currentStyles.reviewSectionTitle}>📋 Project Details</h3>
+            <div style={currentStyles.reviewField}>
+              <span style={currentStyles.reviewLabel}>Number of Rooms:</span>
+              <span style={currentStyles.reviewValue}>{leadData.roomCount}</span>
+              <button onClick={() => startEditing('roomCount')} style={currentStyles.editButton}>Edit</button>
             </div>
             {leadData.rooms.map((room, index) => (
-              <div key={index} style={styles.roomReview}>
-                <div style={styles.reviewField}>
-                  <span style={styles.reviewLabel}>Room {index + 1} Name:</span>
-                  <span style={styles.reviewValue}>{room.name}</span>
-                  <button onClick={() => startEditing(`room_${index}_name`)} style={styles.editButton}>Edit</button>
+              <div key={index} style={currentStyles.roomReview}>
+                <div style={currentStyles.reviewField}>
+                  <span style={currentStyles.reviewLabel}>Room {index + 1} Name:</span>
+                  <span style={currentStyles.reviewValue}>{room.name}</span>
+                  <button onClick={() => startEditing(`room_${index}_name`)} style={currentStyles.editButton}>Edit</button>
                 </div>
-                <div style={styles.reviewField}>
-                  <span style={styles.reviewLabel}>Dimensions:</span>
-                  <span style={styles.reviewValue}>{room.dimensions} ({room.sqm}m²)</span>
-                  <button onClick={() => startEditing(`room_${index}_dimensions`)} style={styles.editButton}>Edit</button>
+                <div style={currentStyles.reviewField}>
+                  <span style={currentStyles.reviewLabel}>Dimensions:</span>
+                  <span style={currentStyles.reviewValue}>{room.dimensions} ({room.sqm}m²)</span>
+                  <button onClick={() => startEditing(`room_${index}_dimensions`)} style={currentStyles.editButton}>Edit</button>
                 </div>
               </div>
             ))}
-            <div style={styles.reviewField}>
-              <span style={styles.reviewLabel}>Timeline:</span>
-              <span style={styles.reviewValue}>{leadData.timeline}</span>
-              <button onClick={() => startEditing('timeline')} style={styles.editButton}>Edit</button>
+            <div style={currentStyles.reviewField}>
+              <span style={currentStyles.reviewLabel}>Timeline:</span>
+              <span style={currentStyles.reviewValue}>{leadData.timeline}</span>
+              <button onClick={() => startEditing('timeline')} style={currentStyles.editButton}>Edit</button>
             </div>
           </div>
 
-          <div style={styles.reviewSection}>
-            <h3 style={styles.reviewSectionTitle}>👤 Your Contact Details</h3>
-            <div style={styles.reviewField}>
-              <span style={styles.reviewLabel}>First Name:</span>
-              <span style={styles.reviewValue}>{leadData.firstName}</span>
-              <button onClick={() => startEditing('firstName')} style={styles.editButton}>Edit</button>
+          <div style={currentStyles.reviewSection}>
+            <h3 style={currentStyles.reviewSectionTitle}>👤 Your Contact Details</h3>
+            <div style={currentStyles.reviewField}>
+              <span style={currentStyles.reviewLabel}>First Name:</span>
+              <span style={currentStyles.reviewValue}>{leadData.firstName}</span>
+              <button onClick={() => startEditing('firstName')} style={currentStyles.editButton}>Edit</button>
             </div>
-            <div style={styles.reviewField}>
-              <span style={styles.reviewLabel}>Last Name:</span>
-              <span style={styles.reviewValue}>{leadData.lastName}</span>
-              <button onClick={() => startEditing('lastName')} style={styles.editButton}>Edit</button>
+            <div style={currentStyles.reviewField}>
+              <span style={currentStyles.reviewLabel}>Last Name:</span>
+              <span style={currentStyles.reviewValue}>{leadData.lastName}</span>
+              <button onClick={() => startEditing('lastName')} style={currentStyles.editButton}>Edit</button>
             </div>
-            <div style={styles.reviewField}>
-              <span style={styles.reviewLabel}>Phone:</span>
-              <span style={styles.reviewValue}>{leadData.customerPhone}</span>
-              <button onClick={() => startEditing('customerPhone')} style={styles.editButton}>Edit</button>
+            <div style={currentStyles.reviewField}>
+              <span style={currentStyles.reviewLabel}>Phone:</span>
+              <span style={currentStyles.reviewValue}>{leadData.customerPhone}</span>
+              <button onClick={() => startEditing('customerPhone')} style={currentStyles.editButton}>Edit</button>
             </div>
-            <div style={styles.reviewField}>
-              <span style={styles.reviewLabel}>Email:</span>
-              <span style={styles.reviewValue}>{leadData.customerEmail}</span>
-              <button onClick={() => startEditing('customerEmail')} style={styles.editButton}>Edit</button>
+            <div style={currentStyles.reviewField}>
+              <span style={currentStyles.reviewLabel}>Email:</span>
+              <span style={currentStyles.reviewValue}>{leadData.customerEmail}</span>
+              <button onClick={() => startEditing('customerEmail')} style={currentStyles.editButton}>Edit</button>
             </div>
-            <div style={styles.reviewField}>
-              <span style={styles.reviewLabel}>Location:</span>
-              <span style={styles.reviewValue}>{leadData.suburb}, {leadData.area}</span>
-              <button onClick={() => startEditing('suburb')} style={styles.editButton}>Edit</button>
+            <div style={currentStyles.reviewField}>
+              <span style={currentStyles.reviewLabel}>Location:</span>
+              <span style={currentStyles.reviewValue}>{leadData.suburb}, {leadData.area}</span>
+              <button onClick={() => startEditing('suburb')} style={currentStyles.editButton}>Edit</button>
             </div>
           </div>
 
-          <div style={styles.reviewActions}>
-            <button onClick={submitLeadData} style={styles.submitButton}>
+          <div style={currentStyles.reviewActions}>
+            <button onClick={submitLeadData} style={currentStyles.submitButton}>
               ✅ Submit Quote Request
             </button>
           </div>
@@ -1105,12 +1147,12 @@ const Chatbot = ({ handleClose, handleReset }) => {
       )}
 
       {showTextInput && (
-        <form onSubmit={handleSubmit} style={styles.chatbotInput}>
+        <form onSubmit={handleSubmit} style={currentStyles.chatbotInput}>
           <input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            style={styles.inputField}
+            style={currentStyles.inputField}
             placeholder={editingField ? `Enter new ${getFieldDisplayName(editingField).toLowerCase()}...` : "Type your message..."}
             disabled={isLoading}
             autoFocus={editingField}
@@ -1119,13 +1161,13 @@ const Chatbot = ({ handleClose, handleReset }) => {
             <button 
               type="button" 
               onClick={cancelEditing}
-              style={{...styles.sendButton, background: '#dc3545', marginRight: '5px'}}
+              style={{...currentStyles.sendButton, background: '#dc3545', marginRight: '5px'}}
               title="Cancel editing"
             >
               ✕
             </button>
           )}
-          <button type="submit" style={styles.sendButton} disabled={isLoading || !inputValue.trim()}>
+          <button type="submit" style={currentStyles.sendButton} disabled={isLoading || !inputValue.trim()}>
             ➤
           </button>
         </form>
@@ -1135,78 +1177,118 @@ const Chatbot = ({ handleClose, handleReset }) => {
 };
 
 // --- STYLES ---
-const styles = {
-  chatbotContainer: { 
-    width: '100%', 
-    maxWidth: '400px', 
-    height: '100%', 
-    border: '1px solid #ddd', 
-    borderRadius: '10px', 
-    display: 'flex', 
-    flexDirection: 'column', 
-    background: 'white', 
-    fontFamily: 'Arial, sans-serif',
-    // Mobile optimizations
-    minHeight: '400px',
-    maxHeight: '100vh',
-    overflow: 'hidden',
-    // Ensure proper sizing on mobile
-    boxSizing: 'border-box'
-  },
+// Helper function to get responsive styles based on viewport
+const getResponsiveStyles = (windowSize) => {
+  const isSmallMobile = windowSize.width <= 375 && windowSize.height <= 667;
+  
+  return {
+    chatbotContainer: { 
+      width: '100%', 
+      maxWidth: '400px', 
+      height: isSmallMobile ? '60vh' : '100%', 
+      border: '1px solid #ddd', 
+      borderRadius: '10px', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      background: 'white', 
+      fontFamily: 'Arial, sans-serif',
+      // Mobile optimizations
+      minHeight: isSmallMobile ? '300px' : '400px',
+      maxHeight: isSmallMobile ? '60vh' : '100vh',
+      overflow: 'hidden',
+      // Ensure proper sizing on mobile
+      boxSizing: 'border-box',
+      // Prevent zoom on input focus (iOS)
+      fontSize: isSmallMobile ? '16px' : '14px'
+    },
+    chatbotMessages: { 
+      flex: 1, 
+      overflowY: 'auto', 
+      padding: isSmallMobile ? '8px 12px' : '15px', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      backgroundColor: '#f9f9f9',
+      fontSize: isSmallMobile ? '14px' : '15px'
+    },
+    chatbotInput: { 
+      display: 'flex', 
+      padding: isSmallMobile ? '6px 8px' : '15px', 
+      gap: '10px', 
+      borderTop: '1px solid #eee',
+      // Mobile touch targets
+      minHeight: '44px'
+    },
+    inputField: { 
+      flex: 1, 
+      padding: isSmallMobile ? '8px 12px' : '10px', 
+      border: '1px solid #ddd', 
+      borderRadius: '20px', 
+      outline: 'none', 
+      fontSize: isSmallMobile ? '14px' : '15px',
+      // Mobile touch targets
+      minHeight: isSmallMobile ? '40px' : '44px'
+    },
+    sendButton: { 
+      width: isSmallMobile ? '40px' : '44px', 
+      height: isSmallMobile ? '40px' : '44px', 
+      border: 'none', 
+      background: '#333', 
+      color: 'white', 
+      borderRadius: '50%', 
+      cursor: 'pointer', 
+      fontSize: '16px', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      // Mobile touch targets
+      minHeight: isSmallMobile ? '40px' : '44px',
+      minWidth: isSmallMobile ? '40px' : '44px'
+    },
+    optionsContainer: { 
+      padding: isSmallMobile ? '6px 8px' : '10px', 
+      borderTop: '1px solid #eee', 
+      maxHeight: '150px', 
+      overflowY: 'auto', 
+      display: 'flex', 
+      flexWrap: 'wrap', 
+      gap: '8px', 
+      justifyContent: 'center' 
+    },
+    optionButton: { 
+      background: '#f0f0f0', 
+      border: '1px solid #ddd', 
+      borderRadius: '15px', 
+      padding: isSmallMobile ? '8px 12px' : '12px 16px', 
+      cursor: 'pointer', 
+      fontSize: isSmallMobile ? '14px' : '15px', 
+      minHeight: isSmallMobile ? '40px' : '44px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      '&:hover': { background: '#e0e0e0' } 
+    },
+    suburbSearchContainer: { 
+      padding: isSmallMobile ? '8px 12px' : '15px', 
+      borderTop: '1px solid #eee', 
+      position: 'relative' 
+    },
+    reviewContainer: { 
+      padding: isSmallMobile ? '8px 12px' : '15px', 
+      borderTop: '1px solid #eee', 
+      backgroundColor: '#f9f9f9', 
+      maxHeight: isSmallMobile ? '300px' : '400px', 
+      overflowY: 'auto' 
+    }
+  };
+};
+
+// Get responsive styles based on current window size
+const getCurrentStyles = (windowSize) => ({
+  ...getResponsiveStyles(windowSize),
   chatbotHeader: { background: '#333', color: 'white', padding: '10px 15px', borderRadius: '10px 10px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   headerContent: { flex: 1, textAlign: 'center', paddingLeft: '40px' /* Offset for buttons */ },
   headerButtons: { display: 'flex', gap: '5px' },
   headerBtn: { background: 'none', border: 'none', color: 'white', fontSize: '18px', cursor: 'pointer' },
-  chatbotMessages: { flex: 1, overflowY: 'auto', padding: '15px', display: 'flex', flexDirection: 'column', backgroundColor: '#f9f9f9' },
-  chatbotInput: { 
-    display: 'flex', 
-    padding: '15px', 
-    gap: '10px', 
-    borderTop: '1px solid #eee',
-    // Mobile touch targets
-    minHeight: '44px'
-  },
-  inputField: { 
-    flex: 1, 
-    padding: '10px', 
-    border: '1px solid #ddd', 
-    borderRadius: '20px', 
-    outline: 'none', 
-    fontSize: '15px',
-    // Mobile touch targets
-    minHeight: '44px'
-  },
-  sendButton: { 
-    width: '44px', 
-    height: '44px', 
-    border: 'none', 
-    background: '#333', 
-    color: 'white', 
-    borderRadius: '50%', 
-    cursor: 'pointer', 
-    fontSize: '16px', 
-    display: 'flex', 
-    alignItems: 'center', 
-    justifyContent: 'center',
-    // Mobile touch targets
-    minHeight: '44px',
-    minWidth: '44px'
-  },
-  optionsContainer: { padding: '10px', borderTop: '1px solid #eee', maxHeight: '150px', overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' },
-  optionButton: { 
-    background: '#f0f0f0', 
-    border: '1px solid #ddd', 
-    borderRadius: '15px', 
-    padding: '12px 16px', 
-    cursor: 'pointer', 
-    fontSize: '15px', 
-    minHeight: '44px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    '&:hover': { background: '#e0e0e0' } 
-  },
-  suburbSearchContainer: { padding: '15px', borderTop: '1px solid #eee', position: 'relative' },
   suggestionsContainer: { position: 'absolute', bottom: '100%', left: '15px', right: '15px', background: 'white', border: '1px solid #ddd', borderRadius: '8px', zIndex: 10, maxHeight: '150px', overflowY: 'auto', boxShadow: '0 -2px 10px rgba(0,0,0,0.1)' },
   suggestionItem: { padding: '10px', cursor: 'pointer', borderBottom: '1px solid #eee' },
   progressBarContainer: { marginTop: '10px' },
@@ -1232,7 +1314,6 @@ const styles = {
   },
   progressBarSteps: { display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '5px', color: '#ccc' },
   progressStep: { transition: 'color 0.4s ease' },
-  reviewContainer: { padding: '15px', borderTop: '1px solid #eee', backgroundColor: '#f9f9f9', maxHeight: '400px', overflowY: 'auto' },
   editingIndicator: { padding: '10px', borderRadius: '5px', marginBottom: '15px', fontSize: '14px', fontWeight: 'bold', textAlign: 'center' },
   reviewSection: { marginBottom: '20px', backgroundColor: 'white', borderRadius: '8px', padding: '15px', border: '1px solid #ddd' },
   reviewSectionTitle: { margin: '0 0 15px 0', fontSize: '16px', fontWeight: 'bold', color: '#333', borderBottom: '2px solid #4caf50', paddingBottom: '5px' },

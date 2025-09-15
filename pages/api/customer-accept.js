@@ -354,8 +354,6 @@ export default async function handler(req, res) {
                         <h2>Thank You! Your Quote has been Accepted.</h2>
                         <p><strong>Quote ID:</strong> ${quoteId}</p>
                         <p>We have received your acceptance and will proceed with the next steps. You can view the accepted quote online <a href="${process.env.BASE_URL}/quote/view/${quoteId}">here</a>.</p>
-                        <p><strong>Quote ID:</strong> ${quoteId}</p>
-                        <p>We have received your acceptance and will proceed with the next steps. You can view the accepted quote online <a href="${process.env.BASE_URL}/quote/view/${quoteId}">here</a>.</p>
                         <hr>
                         <h3>Your Tradesperson's Details:</h3>
                         <p>

@@ -204,6 +204,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
   useEffect(() => {
     // Recalculate total questions when room count changes
     const newTotal = calculateTotalQuestions();
+    console.log(`🔄 Room count changed to ${leadData.roomCount}, new total questions: ${newTotal}`);
     // Don't update answeredQuestions here, just let the component re-render with new total
   }, [leadData.roomCount]);
 
@@ -248,7 +249,11 @@ const Chatbot = ({ handleClose, handleReset }) => {
 
   // Function to update progress after each question
   const updateProgress = () => {
-    setAnsweredQuestions(prev => Math.min(totalQuestions, prev + 1));
+    setAnsweredQuestions(prev => {
+      const newCount = Math.min(totalQuestions, prev + 1);
+      console.log(`📊 Progress update: ${prev} → ${newCount} / ${totalQuestions} (${Math.round((newCount / totalQuestions) * 100)}%)`);
+      return newCount;
+    });
   };
 
   const addMessage = (content, isUser = false) => {

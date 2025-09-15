@@ -139,7 +139,66 @@ const CustomerQuoteView = ({ initialQuoteInfo, initialError }) => {
                 <div className="company-details"><h1>Kiwi Trade</h1></div>
                 <div style={styles.quoteDetails}>
                     <strong>Quote #: {quoteData['QuoteID']}</strong><br />
-                    Valid Until: {new Date(quoteData['ValidUntil']).toLocaleDateString('en-NZ')}
+                    Valid Until: {(() => {
+                      try {
+                        const validUntilValue = quoteData['ValidUntil'];
+                        console.log('🔍 ValidUntil value:', validUntilValue, 'Type:', typeof validUntilValue);
+                        
+                        if (!validUntilValue) {
+                          console.log('🔍 No ValidUntil value, using fallback');
+                          const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+                          return fallbackDate.toLocaleDateString('en-NZ');
+                        }
+                        
+                        let date;
+                        
+                        // Handle different input types
+                        if (typeof validUntilValue === 'number') {
+                          // Handle Excel serial date (days since 1900-01-01)
+                          if (validUntilValue > 25569) { // Excel date (after 1970)
+                            date = new Date((validUntilValue - 25569) * 86400 * 1000);
+                          } else {
+                            // Google Sheets serial date (days since 1899-12-30)
+                            date = new Date((validUntilValue - 2) * 86400 * 1000);
+                          }
+                          console.log('🔍 Parsed as serial date:', validUntilValue, '->', date);
+                        } else if (typeof validUntilValue === 'string') {
+                          // Handle string dates
+                          const trimmed = validUntilValue.trim();
+                          if (trimmed.includes('/')) {
+                            // Handle DD/MM/YYYY format
+                            const parts = trimmed.split('/');
+                            if (parts.length === 3) {
+                              date = new Date(parts[2], parts[1] - 1, parts[0]);
+                            } else {
+                              date = new Date(trimmed);
+                            }
+                          } else {
+                            date = new Date(trimmed);
+                          }
+                          console.log('🔍 Parsed as string date:', validUntilValue, '->', date);
+                        } else {
+                          date = new Date(validUntilValue);
+                        }
+                        
+                        // Check if date is valid
+                        if (isNaN(date.getTime())) {
+                          console.log('❌ Invalid date after parsing:', validUntilValue);
+                          // Return 2 weeks from now as fallback
+                          const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+                          return fallbackDate.toLocaleDateString('en-NZ');
+                        }
+                        
+                        const formatted = date.toLocaleDateString('en-NZ');
+                        console.log('✅ Date formatted successfully:', validUntilValue, '->', formatted);
+                        return formatted;
+                      } catch (error) {
+                        console.error('Date formatting error:', error, 'Input:', quoteData['ValidUntil']);
+                        // Return 2 weeks from now as fallback
+                        const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+                        return fallbackDate.toLocaleDateString('en-NZ');
+                      }
+                    })()}
                 </div>
             </div>
             

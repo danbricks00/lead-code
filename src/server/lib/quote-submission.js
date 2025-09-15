@@ -24,12 +24,46 @@ function formatNZTTime(timestamp) {
 // Generate mobile-friendly HTML quote
 function generateHtmlQuote(quoteData) {
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-NZ', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
+    try {
+      if (!dateString) {
+        // Return 2 weeks from now as fallback
+        const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+        return fallbackDate.toLocaleDateString('en-NZ', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+      }
+      
+      const date = new Date(dateString);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.log('❌ Invalid date in quote-submission.js:', dateString);
+        // Return 2 weeks from now as fallback
+        const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+        return fallbackDate.toLocaleDateString('en-NZ', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+      }
+      
+      return date.toLocaleDateString('en-NZ', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    } catch (error) {
+      console.error('Date formatting error in quote-submission.js:', error);
+      // Return 2 weeks from now as fallback
+      const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+      return fallbackDate.toLocaleDateString('en-NZ', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    }
   };
 
   const html = `

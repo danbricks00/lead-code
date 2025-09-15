@@ -1,5 +1,28 @@
 import { google } from 'googleapis';
 
+// Function to safely format dates
+function formatDate(dateString) {
+  try {
+    if (!dateString) return null;
+    
+    const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return null;
+    }
+    
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  } catch (error) {
+    console.error('Date formatting error:', error);
+    return null;
+  }
+}
+
 export default async function handler(req, res) {
   console.log('🔍 View quote API called:', req.method, req.url);
   
@@ -439,7 +462,7 @@ export default async function handler(req, res) {
             <div class="quote-info">
               <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
               <p><strong>Date:</strong> ${new Date().toLocaleDateString('en-GB')}</p>
-              <p><strong>Valid Until:</strong> ${quoteData.validUntil ? new Date(quoteData.validUntil).toLocaleDateString('en-GB') : '30 days from date'}</p>
+              <p><strong>Valid Until:</strong> ${formatDate(quoteData.validUntil) || '30 days from date'}</p>
             </div>
           </div>
 

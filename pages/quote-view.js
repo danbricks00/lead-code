@@ -13,6 +13,40 @@ const QuoteViewPage = () => {
   const [error, setError] = useState(null);
   const [decisionMade, setDecisionMade] = useState(false);
 
+  // Function to safely format dates
+  const formatDate = (dateInput) => {
+    try {
+      if (!dateInput) return 'Not specified';
+      
+      let date;
+      if (dateInput instanceof Date) {
+        date = dateInput;
+      } else if (typeof dateInput === 'string') {
+        // Handle various date formats
+        date = new Date(dateInput);
+      } else if (typeof dateInput === 'number') {
+        date = new Date(dateInput);
+      } else {
+        return 'Not specified';
+      }
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return 'Not specified';
+      }
+      
+      // Format as DD/MM/YYYY
+      return date.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return 'Not specified';
+    }
+  };
+
   // Verify token function (same as in backend)
   const verifyToken = (id, timestamp) => {
     const hmac = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET || 'default-secret');
@@ -126,6 +160,10 @@ const QuoteViewPage = () => {
           <h1 style={styles.header}>📋 Your Quote</h1>
           <p style={styles.subHeader}>Professional quote for {leadData.ServiceType}</p>
           <p style={styles.quoteId}>Quote ID: {quoteId}</p>
+          <div style={styles.dateInfo}>
+            <p><strong>Quote Date:</strong> {formatDate(quoteData.QuoteDate || quoteData.quoteDate || new Date())}</p>
+            <p><strong>Valid Until:</strong> {formatDate(quoteData.ValidUntil || quoteData.validUntil || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000))}</p>
+          </div>
         </div>
 
         {/* Customer Details */}
@@ -289,6 +327,13 @@ const styles = {
     margin: '0',
     fontSize: '1em',
     fontWeight: 'bold'
+  },
+  dateInfo: {
+    marginTop: '15px',
+    padding: '10px',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '4px',
+    border: '1px solid #dee2e6'
   },
   section: {
     marginBottom: '30px',

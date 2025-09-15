@@ -1,5 +1,35 @@
 import { getGoogleSheetsClient, getSpreadsheetId } from '../../lib/googleSheets.js';
 
+// Function to safely format dates for API response
+function formatDateForAPI(dateInput) {
+  try {
+    if (!dateInput) return null;
+    
+    let date;
+    if (dateInput instanceof Date) {
+      date = dateInput;
+    } else if (typeof dateInput === 'string') {
+      // Handle various date formats
+      date = new Date(dateInput);
+    } else if (typeof dateInput === 'number') {
+      date = new Date(dateInput);
+    } else {
+      return null;
+    }
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return null;
+    }
+    
+    // Return ISO string for API consistency
+    return date.toISOString();
+  } catch (error) {
+    console.error('Date formatting error in API:', error);
+    return null;
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ success: false, error: 'Method Not Allowed' });
@@ -103,11 +133,11 @@ export default async function handler(req, res) {
     const gst = subtotal * 0.15;
     const finalTotal = subtotal + gst;
 
-    // Prepare response data
+    // Prepare response data with proper date formatting
     const responseData = {
       quoteId: quoteData.QuoteId || quoteId,
-      quoteDate: quoteData.QuoteDate || new Date().toISOString(),
-      validUntil: quoteData.ValidUntil || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      quoteDate: formatDateForAPI(quoteData.QuoteDate) || new Date().toISOString(),
+      validUntil: formatDateForAPI(quoteData.ValidUntil) || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
       customerName: leadData.CustomerName || 'N/A',
       customerEmail: leadData.CustomerEmail || 'N/A',
       customerPhone: leadData.CustomerPhone || 'N/A',

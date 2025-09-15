@@ -931,10 +931,23 @@ async function findQuoteInSpreadsheet(quoteId) {
 }
 
 function formatDate(dateString) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-NZ', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  });
+  try {
+    if (!dateString) return 'N/A';
+    
+    const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'N/A';
+    }
+    
+    return date.toLocaleDateString('en-NZ', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  } catch (error) {
+    console.error('Date formatting error:', error);
+    return 'N/A';
+  }
 }

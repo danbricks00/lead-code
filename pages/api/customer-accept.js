@@ -330,7 +330,13 @@ export default async function handler(req, res) {
                         if (Array.isArray(rooms) && rooms.length > 0) {
                             roomsHtml = '<h3>Room Details:</h3><ul>';
                             rooms.forEach(room => {
-                                roomsHtml += `<li>${room.name || 'Unnamed Room'}: ${room.dimensions || 'No dimensions provided'}</li>`;
+                                const dimensions = room.dimensions || 'No dimensions provided';
+                                const sqm = room.sqm || 'N/A';
+                                if (dimensions === 'No dimensions provided' || sqm === 'N/A') {
+                                    roomsHtml += `<li>${room.name || 'Unnamed Room'}: ${dimensions}</li>`;
+                                } else {
+                                    roomsHtml += `<li>${room.name || 'Unnamed Room'}: ${dimensions} (${sqm} square meters)</li>`;
+                                }
                             });
                             roomsHtml += '</ul>';
                         }

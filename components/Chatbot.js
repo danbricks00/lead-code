@@ -188,7 +188,24 @@ const Chatbot = ({ handleClose, handleReset }) => {
   const progressSteps = ["Project Details", "Your Details", "Review & Submit"];
   const [progressStep, setProgressStep] = useState(0);
   const [answeredQuestions, setAnsweredQuestions] = useState(0);
-  const totalQuestions = 8; // Total number of questions in the flow (removed budget and street address questions)
+  
+  // Calculate total questions dynamically based on room count
+  const calculateTotalQuestions = () => {
+    if (!leadData.roomCount) return 8; // Default if no room count yet
+    
+    const baseQuestions = 6; // ask_room_count, ask_timeline, ask_first_name, ask_last_name, ask_phone, ask_suburb, ask_email
+    const roomQuestions = leadData.roomCount * 2; // ask_room_name + ask_room_dimensions for each room
+    return baseQuestions + roomQuestions;
+  };
+  
+  const totalQuestions = calculateTotalQuestions();
+
+  // Update progress when room count changes
+  useEffect(() => {
+    // Recalculate total questions when room count changes
+    const newTotal = calculateTotalQuestions();
+    // Don't update answeredQuestions here, just let the component re-render with new total
+  }, [leadData.roomCount]);
 
   // Initial welcome message
   useEffect(() => {
@@ -332,7 +349,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
         const questions = {
             ask_room_count: "How many areas are you planning to install underfloor heating in?",
             ask_room_name: `What is the name of room ${leadData.rooms.length + 1}? (e.g., Kitchen, Lounge)`,
-            ask_room_dimensions: `What are the dimensions of the ${context.roomName || leadData.rooms[leadData.rooms.length - 1]?.name} in square meters?`,
+            ask_room_dimensions: `What are the dimensions of the ${context.roomName || leadData.rooms[leadData.rooms.length - 1]?.name} in square meters? Please enter as square meters (e.g., 25) or dimensions (e.g., 10 x 5).`,
             ask_timeline: "What is your desired timeline for this project?",
             ask_timeline_details: "Could you please be more specific about your timeline?",
             pre_contact_details: "Great, that's all the project information we need. Now, let's get some contact details so we can send you the quote.",
@@ -512,10 +529,6 @@ const Chatbot = ({ handleClose, handleReset }) => {
             }));
             updateProgress();
             nextStep('ask_room_dimensions', 1200, { roomName: input });
-            // Show help message after a short delay
-            setTimeout(() => {
-                addMessage(`Dimensions options:\n• Square meters: 25 (for 25m²)\n• Dimensions: 10 x 5 (for 50m²)\n• Metric dimensions: 7m x 7m (for 49m²)\n• Decimals welcome: 7.5 x 6.2, 25.01 x 1.02 (for precise measurements)\n• Maximum size: 50m x 50m (1000m²)\n• Only use: numbers, decimal points, 'x', 'm', and spaces`);
-            }, 1500);
             break;
         case 'ask_room_dimensions':
             // Parse room dimensions intelligently

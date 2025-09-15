@@ -132,7 +132,14 @@ export default async function handler(req, res) {
 
     // Format rooms for email display
     const roomsHtml = (rooms && rooms.length > 0)
-      ? `<li><b>Room Details:</b><ul>${rooms.map(room => `<li>${room.name || 'Unnamed'}: ${room.dimensions || 'N/A'}</li>`).join('')}</ul></li>`
+      ? `<li><b>Room Details:</b><ul>${rooms.map(room => {
+          const dimensions = room.dimensions || 'N/A';
+          const sqm = room.sqm || 'N/A';
+          if (dimensions === 'N/A' || sqm === 'N/A') {
+            return `<li>${room.name || 'Unnamed'}: ${dimensions}</li>`;
+          }
+          return `<li>${room.name || 'Unnamed'}: ${dimensions} (${sqm} square meters)</li>`;
+        }).join('')}</ul></li>`
       : '';
 
     // Unlisted suburb warning

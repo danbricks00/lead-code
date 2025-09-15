@@ -3,29 +3,52 @@ import { google } from 'googleapis';
 // Function to safely format dates
 function formatDate(dateString) {
   try {
-    if (!dateString) return null;
+    if (!dateString) {
+      console.log('🔍 No date string provided');
+      return null;
+    }
     
-    console.log('🔍 Formatting date:', dateString, 'Type:', typeof dateString);
+    console.log('🔍 Formatting date:', dateString, 'Type:', typeof dateString, 'Length:', dateString.length);
     
     let date;
     
     // Handle different date formats
     if (typeof dateString === 'string') {
+      // Trim whitespace
+      const trimmedDate = dateString.trim();
+      
+      // Handle empty or whitespace-only strings
+      if (!trimmedDate) {
+        console.log('🔍 Empty date string after trimming');
+        return null;
+      }
+      
       // Try different date formats
-      if (dateString.includes('/')) {
+      if (trimmedDate.includes('/')) {
         // Handle DD/MM/YYYY format
-        const parts = dateString.split('/');
+        const parts = trimmedDate.split('/');
         if (parts.length === 3) {
-          date = new Date(parts[2], parts[1] - 1, parts[0]);
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+          const year = parseInt(parts[2], 10);
+          date = new Date(year, month, day);
+          console.log('🔍 Parsed DD/MM/YYYY:', { day, month: month + 1, year });
         } else {
-          date = new Date(dateString);
+          date = new Date(trimmedDate);
         }
-      } else if (dateString.includes('-')) {
+      } else if (trimmedDate.includes('-')) {
         // Handle YYYY-MM-DD or DD-MM-YYYY format
-        date = new Date(dateString);
+        date = new Date(trimmedDate);
+      } else if (trimmedDate.match(/^\d{8}$/)) {
+        // Handle YYYYMMDD format
+        const year = trimmedDate.substring(0, 4);
+        const month = trimmedDate.substring(4, 6);
+        const day = trimmedDate.substring(6, 8);
+        date = new Date(year, month - 1, day);
+        console.log('🔍 Parsed YYYYMMDD:', { year, month, day });
       } else {
         // Try direct parsing
-        date = new Date(dateString);
+        date = new Date(trimmedDate);
       }
     } else if (dateString instanceof Date) {
       date = dateString;
@@ -36,7 +59,7 @@ function formatDate(dateString) {
     // Check if date is valid
     if (isNaN(date.getTime())) {
       console.log('❌ Invalid date after parsing:', dateString);
-      return 'Invalid Date';
+      return null; // Return null instead of 'Invalid Date' to trigger fallback
     }
     
     const formatted = date.toLocaleDateString('en-GB', {
@@ -49,7 +72,7 @@ function formatDate(dateString) {
     return formatted;
   } catch (error) {
     console.error('Date formatting error:', error, 'Input:', dateString);
-    return 'Invalid Date';
+    return null; // Return null instead of 'Invalid Date' to trigger fallback
   }
 }
 
@@ -104,6 +127,7 @@ export default async function handler(req, res) {
             const validUntilIndex = headers.indexOf('ValidUntil');
             console.log('🔍 Headers found:', headers);
             console.log('🔍 ValidUntil column index:', validUntilIndex);
+            console.log('🔍 All column names:', headers.map((h, i) => `${String.fromCharCode(65 + i)}: ${h}`).join(', '));
             
             quoteData = {
               quoteId: quoteRow[1],
@@ -129,6 +153,10 @@ export default async function handler(req, res) {
             console.log('✅ Found quote data:', quoteData);
             console.log('🔍 ValidUntil raw value:', quoteData.validUntil, 'Type:', typeof quoteData.validUntil);
             console.log('🔍 ValidUntil from column:', validUntilIndex !== -1 ? `Column ${String.fromCharCode(65 + validUntilIndex)}` : 'Column I (fallback)');
+            console.log('🔍 Raw quoteRow data:', quoteRow);
+            if (validUntilIndex !== -1) {
+              console.log('🔍 ValidUntil cell value:', quoteRow[validUntilIndex], 'Length:', quoteRow[validUntilIndex]?.length);
+            }
           }
         } catch (sheetsError) {
           console.error('❌ Google Sheets error:', sheetsError.message);
@@ -500,7 +528,7 @@ export default async function handler(req, res) {
             <div class="quote-info">
               <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
               <p><strong>Date:</strong> ${new Date().toLocaleDateString('en-GB')}</p>
-              <p><strong>Valid Until:</strong> ${formatDate(quoteData.validUntil) || formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))}</p>
+              <p><strong>Valid Until:</strong> ${formatDate(quoteData.validUntil) || formatDate(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000))}</p>
             </div>
           </div>
 

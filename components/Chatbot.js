@@ -137,7 +137,7 @@ function autocorrectEmail(email) {
   return email;
 }
 
-const ProgressBar = ({ steps, currentStep, isCompleted, totalQuestions = 10, answered = 0 }) => {
+const ProgressBar = ({ steps, currentStep, isCompleted, totalQuestions = 10, answered = 0, styles }) => {
     const progressPercentage = isCompleted ? 100 : Math.round((answered / totalQuestions) * 100);
     return (
       <div style={styles.progressBarContainer}>
@@ -977,6 +977,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
             isCompleted={isCompleted}
             totalQuestions={totalQuestions}
             answered={answeredQuestions}
+            styles={currentStyles}
           />
         </div>
         <div style={currentStyles.headerButtons}>
@@ -1324,6 +1325,6 @@ const getCurrentStyles = (windowSize) => ({
   roomReview: { marginBottom: '15px', padding: '10px', backgroundColor: '#f1f3f4', borderRadius: '5px', border: '1px solid #dee2e6' },
   reviewActions: { textAlign: 'center', marginTop: '20px', paddingTop: '15px', borderTop: '2px solid #4caf50' },
   submitButton: { background: '#28a745', color: 'white', border: 'none', borderRadius: '8px', padding: '12px 24px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', '&:hover': { background: '#218838' } }
-};
+});
 
 export default Chatbot;

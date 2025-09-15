@@ -120,6 +120,7 @@ const QuoteViewPage = () => {
 
   const fetchQuoteData = async () => {
     try {
+      console.log("🚀 [DEBUG] Using pages/quote-view.js - Client-side rendering path");
       const response = await fetch(`/api/get-quote-details?quoteId=${quoteId}`);
       const result = await response.json();
       

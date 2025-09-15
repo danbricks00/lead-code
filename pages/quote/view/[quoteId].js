@@ -293,6 +293,7 @@ export async function getServerSideProps(context) {
   const { quoteId } = params;
   
   console.log("[SERVER] Quote view requested for ID:", quoteId);
+  console.log("🚀 [DEBUG] Using pages/quote/view/[quoteId].js - Server-side rendering path");
   
   // If we don't have ts and token, we can't use the get-quote-for-customer API
   // Instead, we'll directly query the Google Sheets
@@ -392,6 +393,14 @@ export async function getServerSideProps(context) {
       obj[key] = (foundRow[index] || '').toString().trim();
       return obj;
     }, {});
+    
+    // Debug: Log the ValidUntil field specifically
+    console.log("🔍 [DEBUG] ValidUntil field from Google Sheets:");
+    console.log("  - Raw value:", foundRow[23]);
+    console.log("  - Type:", typeof foundRow[23]);
+    console.log("  - String value:", String(foundRow[23]));
+    console.log("  - JSON value:", JSON.stringify(foundRow[23]));
+    console.log("  - quoteData.ValidUntil:", quoteData.ValidUntil);
 
     // Get Lead ID from quote data
     if (!leadId) {

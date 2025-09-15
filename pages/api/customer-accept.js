@@ -353,7 +353,7 @@ export default async function handler(req, res) {
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                         <h2>Thank You! Your Quote has been Accepted.</h2>
                         <p><strong>Quote ID:</strong> ${quoteId}</p>
-                        <p>We have received your acceptance and will proceed with the next steps. You can view the accepted quote online <a href="${process.env.BASE_URL}/quote/view/${quoteId}">here</a>.</p>
+                        <p>We have received your acceptance and will proceed with the next steps.</p>
                         <hr>
                         <h3>Your Tradesperson's Details:</h3>
                         <p>
@@ -389,8 +389,7 @@ export default async function handler(req, res) {
                             <strong>Phone:</strong> ${customerPhone}<br>
                             <strong>Address:</strong> ${customerAddress}
                         </p>
-                        ${roomsHtml} // And also here
-                        <p>The full quote details can be viewed online <a href="${process.env.BASE_URL}/quote/view/${quoteId}">here</a>.</p>
+                        ${roomsHtml}
                     </div>
                 `;
 

@@ -18,7 +18,6 @@ const ContactPage = () => {
     projectType: 'Underfloor Heating',
     roomCount: '',
     timeline: '',
-    budget: '',
     location: ''
   });
   const [status, setStatus] = useState({ submitted: false, message: '', isError: false });
@@ -121,10 +120,9 @@ const ContactPage = () => {
         email: '', 
         message: '',
         phone: '',
-        projectType: '',
+        projectType: 'Underfloor Heating',
         roomCount: '',
         timeline: '',
-        budget: '',
         location: ''
       }); // Clear form
     } catch (error) {
@@ -262,18 +260,6 @@ const ContactPage = () => {
                     <option value="In a week">In a week</option>
                     <option value="In a couple of months">In a couple of months</option>
                     <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div style={styles.inputGroup}>
-                  <label htmlFor="budget">Budget Range</label>
-                  <select id="budget" name="budget" value={formData.budget} onChange={handleChange} style={styles.input}>
-                    <option value="">Select budget range</option>
-                    <option value="Under $10,000">Under $10,000</option>
-                    <option value="$10,000 - $20,000">$10,000 - $20,000</option>
-                    <option value="$20,000 - $50,000">$20,000 - $50,000</option>
-                    <option value="$50,000 - $100,000">$50,000 - $100,000</option>
-                    <option value="Over $100,000">Over $100,000</option>
-                    <option value="I'd like a quote first">I'd like a quote first</option>
                   </select>
                 </div>
               </>

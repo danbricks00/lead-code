@@ -52,7 +52,6 @@ export default async function handler(req, res) {
       roomCount,
       location,
       timeline,
-      budget,
       message
     } = req.body;
 
@@ -213,7 +212,6 @@ export default async function handler(req, res) {
         <li><b>Service:</b> ${projectType}</li>
         <li><b>Location:</b> ${location}</li>
         <li><b>Timeline:</b> ${timeline || "Not specified"}</li>
-        <li><b>Budget:</b> ${budget || "Not specified"}</li>
         ${roomsHtml}
         <li><b>Source:</b> Contact Page Quote Enquiry</li>
       </ul>

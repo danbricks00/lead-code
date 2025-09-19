@@ -6,8 +6,10 @@ export default function AdminDeclineForm() {
   const router = useRouter();
   const { quoteId, ts, token } = router.query;
   const [reason, setReason] = useState('');
+  const [decisionDate, setDecisionDate] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [dateError, setDateError] = useState('');
 
   // Generate token for API call
   function generateToken(id, ts) {
@@ -16,6 +18,42 @@ export default function AdminDeclineForm() {
     return hmac.digest("hex");
   }
 
+  // Date validation and URL blocking functions
+  const urlRegex = /https?:\/\/|www\.|\S+\.\S+\/\S+/i;
+
+  const handleDatePaste = (e) => {
+    const clip = (e.clipboardData || window.clipboardData).getData('text') || '';
+    if (urlRegex.test(clip)) {
+      e.preventDefault();
+      setDateError('Pasting links is blocked. Type the date as DD/MM/YYYY.');
+      return;
+    }
+    const m = clip.match(/(\d{1,2})\D+(\d{1,2})\D+(\d{2,4})/);
+    if (m) {
+      e.preventDefault();
+      let dd = m[1].padStart(2,'0'), mm = m[2].padStart(2,'0'), yyyy = m[3];
+      if (yyyy.length === 2) yyyy = (parseInt(yyyy,10) >= 70 ? '19' : '20') + yyyy;
+      setDecisionDate(`${dd}/${mm}/${yyyy}`);
+      setDateError('');
+    } else {
+      e.preventDefault();
+      setDateError('Paste must be a date in DD/MM/YYYY (e.g. 19/09/2025).');
+    }
+  };
+
+  const parseDDMMYYYY = (input) => {
+    if (!input) return null;
+    const s = String(input).trim();
+    const m = s.match(/^(\d{1,2})[\/\-\.\s](\d{1,2})[\/\-\.\s](\d{2,4})$/);
+    if (!m) return null;
+    let day = parseInt(m[1],10), month = parseInt(m[2],10), year = parseInt(m[3],10);
+    if (year < 100) year += (year >= 70 ? 1900 : 2000);
+    const daysInMonth = [31, ((year%4===0 && (year%100!==0 || year%400===0))?29:28),
+                         31,30,31,30,31,31,30,31,30,31];
+    if (month < 1 || month > 12 || day < 1 || day > daysInMonth[month-1]) return null;
+    return new Date(Date.UTC(year, month-1, day));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!reason.trim()) {
@@ -23,11 +61,23 @@ export default function AdminDeclineForm() {
       return;
     }
 
+    // Validate decision date
+    if (!decisionDate.trim()) {
+      setDateError('Please provide the decision date');
+      return;
+    }
+
+    const parsedDate = parseDDMMYYYY(decisionDate);
+    if (!parsedDate) {
+      setDateError('Invalid date format. Use DD/MM/YYYY (e.g. 19/09/2025)');
+      return;
+    }
+
     setIsSubmitting(true);
     setError('');
 
     try {
-      const response = await fetch(`/api/admin-decline?quoteId=${quoteId}&ts=${ts}&token=${token}&reason=${encodeURIComponent(reason)}`, {
+      const response = await fetch(`/api/admin-decline?quoteId=${quoteId}&ts=${ts}&token=${token}&reason=${encodeURIComponent(reason)}&decisionDate=${encodeURIComponent(decisionDate)}`, {
         method: 'GET',
       });
 
@@ -68,6 +118,46 @@ export default function AdminDeclineForm() {
         </div>
 
         <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '8px', 
+              fontWeight: 'bold', 
+              color: '#495057' 
+            }}>
+              Decision Date:
+            </label>
+            <input
+              id="decisionDate"
+              name="decisionDate"
+              type="text"
+              value={decisionDate}
+              onChange={(e) => {
+                setDecisionDate(e.target.value);
+                setDateError('');
+              }}
+              onPaste={handleDatePaste}
+              placeholder="Decision date — DD/MM/YYYY (e.g. 19/09/2025) — do NOT paste links"
+              aria-label="Decision date (DD/MM/YYYY). Example: 19/09/2025. Pasting links is blocked."
+              inputMode="numeric"
+              autoComplete="off"
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: dateError ? '2px solid #e74c3c' : '2px solid #e9ecef',
+                borderRadius: '5px',
+                fontSize: '14px',
+                fontFamily: 'Arial, sans-serif'
+              }}
+              required
+            />
+            {dateError && (
+              <div id="date-error" role="alert" style={{ color: '#e74c3c', fontSize: '12px', marginTop: '5px' }}>
+                {dateError}
+              </div>
+            )}
+          </div>
+
           <div style={{ marginBottom: '20px' }}>
             <label style={{ 
               display: 'block', 

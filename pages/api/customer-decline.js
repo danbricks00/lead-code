@@ -106,7 +106,7 @@ export default async function handler(req, res) {
                 'x-forwarded-for': req.headers['x-forwarded-for']
             }
         }, requestId);
-
+        
         // Fetch quote data from Google Sheets
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
@@ -292,51 +292,130 @@ export default async function handler(req, res) {
                 decision: 'Declined',
                 timestamp: nzTimestamp
             }, requestId);
-        
+            
             // Send email notifications
             try {
-                // Get customer email (Column 29, index 28)
-                const customerEmail = quoteRow[28]; // Column AC (0-indexed)
-                // Get tradesperson email (Column 5, index 4)
-                const tradesmanEmail = quoteRow[4]; // Column E (0-indexed)
+                // Get column indices from headers (consistent with customer-accept.js)
+                const customerEmailIndex = headers.indexOf('CustomerEmail');
+                const customerNameIndex = headers.indexOf('CustomerName');
+                const customerPhoneIndex = headers.indexOf('CustomerPhone');
+                const addressIndex = headers.indexOf('Address');
+                const TradePersonNameIndex = headers.indexOf('TradePersonName');
+                const tradespersonEmailIndex = headers.indexOf('TradePersonEmail');
+                const tradespersonPhoneIndex = headers.indexOf('TradePersonPhone');
+                const roomsIndex = headers.indexOf('Rooms');
+                
+                // Validate required columns exist
+                if (customerEmailIndex === -1) {
+                    console.error('[DECISION-API] CustomerEmail column not found in headers');
+                }
+                if (tradespersonEmailIndex === -1) {
+                    console.error('[DECISION-API] TradePersonEmail column not found in headers');
+                }
+                
+                // Extract data from quoteRow using the correct indices
+                const quoteId = quoteRow[quoteIdCol];
+                const customerEmail = quoteRow[customerEmailIndex];
+                const customerName = quoteRow[customerNameIndex] || 'Valued Customer';
+                const customerPhone = quoteRow[customerPhoneIndex] || 'N/A';
+                const fullAddress = quoteRow[addressIndex] || 'N/A';
+                // Show only suburb and area, not full street address
+                const addressParts = fullAddress.split(',');
+                const customerAddress = addressParts.length >= 2 ? 
+                  `${addressParts[addressParts.length - 2]?.trim()}, ${addressParts[addressParts.length - 1]?.trim()}` : 
+                  fullAddress;
+
+                const tradesmanEmail = quoteRow[tradespersonEmailIndex];
+                const tradesmanName = quoteRow[TradePersonNameIndex] || 'Your assigned tradesperson';
+                const tradesmanPhone = quoteRow[tradespersonPhoneIndex] || 'N/A';
+                
                 // Get admin email from env var
                 const adminEmail = process.env.ADMIN_EMAIL;
-                
-                const quoteId = quoteRow[quoteIdCol];
-                const customerName = quoteRow[27] || 'Customer'; // Column AB (0-indexed)
-                const emailSubject = `Quote Decision Recorded – Declined`;
-                const emailBody = `
+                // Generate rooms HTML for email
+                const roomsData = quoteRow[roomsIndex];
+                let roomsHtml = '';
+                if (roomsData) {
+                    try {
+                        const rooms = JSON.parse(roomsData);
+                        if (Array.isArray(rooms) && rooms.length > 0) {
+                            roomsHtml = '<h3>Room Details:</h3><ul>';
+                            rooms.forEach(room => {
+                                const dimensions = room.dimensions || 'No dimensions provided';
+                                const sqm = room.sqm || 'N/A';
+                                if (dimensions === 'No dimensions provided' || sqm === 'N/A') {
+                                    roomsHtml += `<li>${room.name || 'Unnamed Room'}: ${dimensions}</li>`;
+                                } else {
+                                    roomsHtml += `<li>${room.name || 'Unnamed Room'}: ${dimensions} (${sqm} square meters)</li>`;
+                                }
+                            });
+                            roomsHtml += '</ul>';
+                        }
+                    } catch (e) {
+                        console.error('Error parsing rooms data:', e);
+                    }
+                }
+
+                // --- 1. Customer Confirmation Email ---
+                const customerSubject = `Quote Declined — [Quote #${quoteId}] — Confirmation`;
+                const customerBody = `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2>Quote Decision Recorded</h2>
+                        <p><strong>Quote ID:</strong> ${quoteId}</p>
+                        <p>We have received your decision to decline this quote.</p>
+                        <p>Thank you for considering our services. If you have any questions or would like to discuss alternative options, please don't hesitate to contact us.</p>
+                        <hr>
+                        <h3>Quote Details:</h3>
+                        <p>
+                            <strong>Customer:</strong> ${customerName}<br>
+                            <strong>Address:</strong> ${customerAddress}<br>
+                            <strong>Decision:</strong> Declined<br>
+                            <strong>Timestamp:</strong> ${nzTimestamp} NZT
+                        </p>
+                        ${roomsHtml}
+                    </div>
+                `;
+
+                // --- 2. Tradesman / Admin Notification Email ---
+                const internalSubject = `Customer Declined Quote — [Quote #${quoteId}] — Follow Up Required`;
+                const internalBody = `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                         <h2>Quote Decision Notification</h2>
-                        <p>A decision has been made on quote ${quoteId}.</p>
-                        <p><strong>Customer:</strong> ${customerName}</p>
-                        <p><strong>Decision:</strong> DECLINED</p>
-                        <p><strong>Timestamp:</strong> ${nzTimestamp} (New Zealand Time)</p>
+                        <p><strong>Quote ID:</strong> ${quoteId}</p>
+                        <p style="font-size: 1.2em; color: #D23F3F;"><strong>Customer has declined this quote.</strong></p>
+                        <hr>
+                        <h3>Customer Details:</h3>
+                        <p>
+                            <strong>Name:</strong> ${customerName}<br>
+                            <strong>Email:</strong> ${customerEmail}<br>
+                            <strong>Phone:</strong> ${customerPhone}<br>
+                            <strong>Address:</strong> ${customerAddress}
+                        </p>
+                        <h3>Decision Details:</h3>
+                        <p>
+                            <strong>Decision:</strong> Declined<br>
+                            <strong>Timestamp:</strong> ${nzTimestamp} NZT
+                        </p>
+                        ${roomsHtml}
+                        <p><em>Consider following up with the customer to understand their decision and explore potential improvements for future quotes.</em></p>
                     </div>
                 `;
                 
-                // Send emails to all parties
+                // Send customer confirmation email
                 if (customerEmail) {
                     await sendEmail({
                         to: customerEmail,
-                        subject: emailSubject,
-                        html: emailBody
+                        subject: customerSubject,
+                        html: customerBody
                     });
                 }
-                
-                if (tradesmanEmail) {
+
+                // Send internal notification email to tradesman and admin
+                const internalRecipients = [tradesmanEmail, adminEmail].filter(Boolean);
+                if (internalRecipients.length > 0) {
                     await sendEmail({
-                        to: tradesmanEmail,
-                        subject: emailSubject,
-                        html: emailBody
-                    });
-                }
-                
-                if (adminEmail) {
-                    await sendEmail({
-                        to: adminEmail,
-                        subject: emailSubject,
-                        html: emailBody
+                        to: internalRecipients.join(', '),
+                        subject: internalSubject,
+                        html: internalBody
                     });
                 }
                 

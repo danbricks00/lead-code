@@ -26,6 +26,20 @@ const auth = new google.auth.GoogleAuth({
 
 const sheets = google.sheets({ version: 'v4', auth });
 
+// Date parsing function
+function parseDDMMYYYY(input) {
+    if (!input) return null;
+    const s = String(input).trim();
+    const m = s.match(/^(\d{1,2})[\/\-\.\s](\d{1,2})[\/\-\.\s](\d{2,4})$/);
+    if (!m) return null;
+    let day = parseInt(m[1],10), month = parseInt(m[2],10), year = parseInt(m[3],10);
+    if (year < 100) year += (year >= 70 ? 1900 : 2000);
+    const daysInMonth = [31, ((year%4===0 && (year%100!==0 || year%400===0))?29:28),
+                         31,30,31,30,31,31,30,31,30,31];
+    if (month < 1 || month > 12 || day < 1 || day > daysInMonth[month-1]) return null;
+    return new Date(Date.UTC(year, month-1, day));
+}
+
 // Email transporter
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -65,11 +79,20 @@ export default async function handler(req, res) {
     });
 
     try {
-        const { quoteId, leadId } = req.query;
+        const { quoteId, leadId, reason, decisionDate } = req.query;
 
         if (!quoteId || !leadId) {
             console.log(`[DECISION-API] Missing parameters:`, { quoteId, leadId });
             return res.redirect('/quote-status?status=error&message=Missing quote or lead ID.');
+        }
+
+        // Validate decision date if provided
+        if (decisionDate) {
+            const parsedDate = parseDDMMYYYY(decisionDate);
+            if (!parsedDate) {
+                console.log(`[DECISION-API] Invalid decision date format:`, { decisionDate });
+                return res.redirect('/quote-status?status=error&message=Invalid decision date format. Use DD/MM/YYYY.');
+            }
         }
 
         quoteLogger.info('Admin decline request received', {

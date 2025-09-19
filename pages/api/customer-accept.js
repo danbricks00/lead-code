@@ -306,6 +306,14 @@ export default async function handler(req, res) {
                 const tradespersonPhoneIndex = headers.indexOf('TradePersonPhone'); // Fixed: use TradePersonPhone (no 's')
                 const roomsIndex = headers.indexOf('Rooms'); // Get index for Rooms data
                 
+                // Validate required columns exist
+                if (customerEmailIndex === -1) {
+                    console.error('[DECISION-API] CustomerEmail column not found in headers');
+                }
+                if (tradespersonEmailIndex === -1) {
+                    console.error('[DECISION-API] TradePersonEmail column not found in headers');
+                }
+                
                 // Extract data from quoteRow using the correct indices
                 const quoteId = quoteRow[quoteIdCol];
                 const customerEmail = quoteRow[customerEmailIndex];

@@ -183,30 +183,39 @@ export default async function handler(req, res) {
         let expiryDate;
         
         try {
-            // Try to parse the date in various formats
-            expiryDate = new Date(validUntil);
-            if (isNaN(expiryDate.getTime())) {
-                // If direct parsing fails, try DD/MM/YYYY format
-                const parts = validUntil.split('/');
-                if (parts.length === 3) {
-                    expiryDate = new Date(parts[2], parts[1] - 1, parts[0]);
+            // Parse date with DD/MM/YYYY format priority (New Zealand format)
+            const parts = validUntil.split('/');
+            if (parts.length === 3) {
+                // Try DD/MM/YYYY format first (New Zealand standard)
+                const day = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10);
+                const year = parseInt(parts[2], 10);
+                
+                // Validate date components
+                if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 2020) {
+                    expiryDate = new Date(year, month - 1, day); // month is 0-indexed in Date constructor
+                    console.log(`[DECISION-API] Parsed DD/MM/YYYY: ${validUntil} -> ${expiryDate.toISOString()}`);
+                } else {
+                    throw new Error('Invalid date components');
                 }
+            } else {
+                // Try other formats as fallback
+                expiryDate = new Date(validUntil);
+                if (isNaN(expiryDate.getTime())) {
+                    throw new Error('Unable to parse date');
+                }
+                console.log(`[DECISION-API] Parsed other format: ${validUntil} -> ${expiryDate.toISOString()}`);
             }
             
-            // If still invalid, set a default future date
+            // Final validation
             if (isNaN(expiryDate.getTime())) {
-                console.error('Invalid expiry date format:', validUntil);
-                // Set to 7 days from now as a fallback
-                expiryDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                throw new Error('Invalid date result');
             }
         } catch (error) {
-            console.error(`[DECISION-API] Invalid expiry date format:`, { 
-                normalizedQuoteId, 
-                validUntil,
-                error: error.message 
-            });
+            console.error(`[DECISION-API] Error parsing expiry date: ${validUntil}`, error.message);
             // Set to 7 days from now as a fallback
             expiryDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+            console.log(`[DECISION-API] Using fallback date: ${expiryDate.toISOString()}`);
         }
 
         if (now > expiryDate) {

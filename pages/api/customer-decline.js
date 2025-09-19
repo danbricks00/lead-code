@@ -242,13 +242,13 @@ export default async function handler(req, res) {
                 minute: '2-digit'
             }) + " NZT";
             
-            // Update the quote with expired status
+            // Update the quote with expired status - ONLY update Z and AA columns
             await sheets.spreadsheets.values.update({
                 spreadsheetId: SPREADSHEET_ID,
-                range: `Quotes!${String.fromCharCode(65 + customerDecisionCol)}${rowIndex}:${String.fromCharCode(65 + customerStatusCol)}${rowIndex}`,
+                range: `Quotes!Z${rowIndex}:AA${rowIndex}`,
                 valueInputOption: 'RAW',
                 resource: {
-                    values: [['Expired', nzTimestamp, 'Quote Expired']]
+                    values: [['Expired', nzTimestamp]]
                 }
             });
             

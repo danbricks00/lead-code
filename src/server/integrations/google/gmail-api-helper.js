@@ -43,7 +43,7 @@ async function sendEmailViaGmailAPI(to, subject, htmlContent, attachment = null)
       const boundary = 'boundary_' + Math.random().toString(36).substr(2, 9);
       
       message = [
-        `From: Kiwi Trade <${process.env.GMAIL_USER}>`,
+        `From: Heat.nz <${process.env.GMAIL_USER}>`,
         `To: ${to}`,
         `Subject: ${subject}`,
         'MIME-Version: 1.0',
@@ -66,7 +66,7 @@ async function sendEmailViaGmailAPI(to, subject, htmlContent, attachment = null)
     } else {
       // Create simple HTML message
       message = [
-        `From: Kiwi Trade <${process.env.GMAIL_USER}>`,
+        `From: Heat.nz <${process.env.GMAIL_USER}>`,
         `To: ${to}`,
         `Subject: ${subject}`,
         'MIME-Version: 1.0',
@@ -238,7 +238,7 @@ async function sendStep1Emails(lead) {
   // 1. Send email to customer (unchanged flow)
   console.log('📧 Step 1.1: Sending customer confirmation...');
   try {
-    const customerSubject = `Thank you for your inquiry - Kiwi Trade`;
+    const customerSubject = `Thank you for your inquiry - Heat.nz`;
     const customerHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #2c3e50;">Thank you for your inquiry!</h2>
@@ -266,7 +266,7 @@ async function sendStep1Emails(lead) {
         
         <p>If you have any questions, please don't hesitate to contact us.</p>
         
-        <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade Team</strong></p>
+        <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz Team</strong></p>
       </div>
     `;
     
@@ -345,7 +345,7 @@ async function sendStep1Emails(lead) {
         <p>Click the button above to submit a quote. The form will be pre-filled with the customer's information.</p>
         
         <p style="margin-top: 30px; color: #6c757d; font-size: 14px;">
-          This lead was generated from the Kiwi Trade website.
+          This lead was generated from the Heat.nz website.
         </p>
       </div>
     `;
@@ -429,7 +429,7 @@ async function sendStep1Emails(lead) {
           </ul>
         </div>
         
-        <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+        <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz System</strong></p>
       </div>
     `;
     

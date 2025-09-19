@@ -597,7 +597,7 @@ async function sendCommissionNotification(quote, commissionAmount) {
           <p>• The tradesman will be notified to proceed with the work</p>
         </div>
 
-        <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+        <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz System</strong></p>
       </div>
     `;
 
@@ -769,7 +769,7 @@ async function sendJobAwardedNotifications(relatedQuotes, acceptedQuote) {
               <p>If you have any questions, please don't hesitate to contact us.</p>
             </div>
 
-            <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade Team</strong></p>
+            <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz Team</strong></p>
           </div>
         `;
 

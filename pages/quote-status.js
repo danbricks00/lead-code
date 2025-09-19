@@ -112,7 +112,7 @@ const QuoteStatusPage = () => {
               <p style={styles.contactTitle}>Need a new quote?</p>
               <p style={styles.contactText}>Contact us to request a fresh quote:</p>
               <div style={styles.contactMethods}>
-                <p><strong>📧 Email:</strong> <a href="mailto:info@kiwitrade.co.nz" style={styles.link}>info@kiwitrade.co.nz</a></p>
+                <p><strong>📧 Email:</strong> <a href="mailto:info@heat.nz" style={styles.link}>info@heat.nz</a></p>
                 <p><strong>📞 Phone:</strong> <a href="tel:+6421234567" style={styles.link}>+64 21 234 567</a></p>
               </div>
             </div>

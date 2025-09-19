@@ -23,13 +23,13 @@ export default async function handler(req, res) {
       });
     }
 
-    const testSubject = "🧪 Test Email - Kiwi Trade System";
+    const testSubject = "🧪 Test Email - Heat.nz System";
     const testHtml = `
       <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333; margin: 20px 0;">Test Email from Kiwi Trade System</h2>
+        <h2 style="color: #333; margin: 20px 0;">Test Email from Heat.nz System</h2>
         <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
           <p><strong>Test Time:</strong> ${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}</p>
-          <p><strong>System:</strong> Kiwi Trade Lead Management</p>
+          <p><strong>System:</strong> Heat.nz Lead Management</p>
           <p><strong>Status:</strong> Email system is working correctly</p>
           <p>If you receive this email, the Gmail SMTP configuration is working properly.</p>
         </div>

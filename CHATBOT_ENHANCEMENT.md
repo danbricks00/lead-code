@@ -1,7 +1,7 @@
-# Kiwi Trade Chatbot Enhancement
+# Heat.nz Chatbot Enhancement
 
 ## Overview
-The Kiwi Trade chatbot has been enhanced with progress tracking and checklist features to provide a better user experience. The chatbot now includes a visual progress bar and step-by-step checklist that updates dynamically as users complete the quote process.
+The Heat.nz chatbot has been enhanced with progress tracking and checklist features to provide a better user experience. The chatbot now includes a visual progress bar and step-by-step checklist that updates dynamically as users complete the quote process.
 
 ## New Features
 
@@ -204,4 +204,4 @@ Visit `public/chatbot-demo.html` to test the enhanced chatbot features:
 
 ## Conclusion
 
-The enhanced Kiwi Trade chatbot provides a more engaging and informative user experience while maintaining all existing functionality. The progress bar and checklist features help users understand where they are in the quote process and what steps remain, leading to higher completion rates and better user satisfaction.
+The enhanced Heat.nz chatbot provides a more engaging and informative user experience while maintaining all existing functionality. The progress bar and checklist features help users understand where they are in the quote process and what steps remain, leading to higher completion rates and better user satisfaction.

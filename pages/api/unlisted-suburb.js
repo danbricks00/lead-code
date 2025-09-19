@@ -155,7 +155,7 @@ export default async function handler(req, res) {
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6;">
               <p style="color: #6c757d; font-size: 12px;">
                 Timestamp: ${nzTimestamp}<br>
-                This is an automated notification from the Kiwi Trade lead system.
+                This is an automated notification from the Heat.nz lead system.
               </p>
             </div>
           </div>

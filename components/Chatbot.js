@@ -245,7 +245,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
     
     // This effect runs only once on component mount
     const startConversation = () => {
-        addMessage("👋 Welcome to Kiwi Trade! We'll ask a couple of questions to prepare your underfloor heating quote.");
+        addMessage("👋 Welcome to Heat.nz! We'll ask a couple of questions to prepare your underfloor heating quote.");
         
         setIsLoading(true);
         setTimeout(() => {
@@ -559,7 +559,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
             setLeadData(prev => ({ ...prev, roomCount }));
             
             if (roomCount >= 20) {
-                addMessage("For projects with 20 or more rooms, please use our Contact Us page to submit a detailed quote enquiry. This will ensure we can provide you with a comprehensive quote for your large project. Visit our Contact Us page or email us at support@kiwitrade.co.nz. Thank you for considering Kiwi Trade!");
+                addMessage("For projects with 20 or more rooms, please use our Contact Us page to submit a detailed quote enquiry. This will ensure we can provide you with a comprehensive quote for your large project. Visit our Contact Us page or email us at support@heat.nz. Thank you for considering Heat.nz!");
                 setIsCompleted(true);
                 return;
             }
@@ -970,7 +970,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
     <div style={currentStyles.chatbotContainer}>
       <div style={currentStyles.chatbotHeader}>
         <div style={currentStyles.headerContent}>
-          <h3>Kiwi Trade Chatbot</h3>
+          <h3>Heat.nz Chatbot</h3>
           <ProgressBar 
             steps={progressSteps} 
             currentStep={progressStep} 

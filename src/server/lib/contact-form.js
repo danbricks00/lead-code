@@ -82,13 +82,13 @@ export default async function handler(req, res) {
                 ${message.replace(/\n/g, '<br>')}
             </div>
             <hr>
-            <p><em>This message was sent from the Kiwi Trade contact form.</em></p>
+            <p><em>This message was sent from the Heat.nz contact form.</em></p>
         `;
 
         // Send email to admin
         const adminEmail = gmailUser;
         const mailOptions = {
-            from: process.env.MAIL_FROM || `Kiwi Trade <${gmailUser}>`,
+            from: process.env.MAIL_FROM || `Heat.nz <${gmailUser}>`,
             to: adminEmail,
             replyTo: email, // Set reply-to as the customer's email
             subject: emailSubject,
@@ -101,9 +101,9 @@ export default async function handler(req, res) {
 
         // Send confirmation email to customer
         const customerConfirmation = {
-            from: process.env.MAIL_FROM || `Kiwi Trade <${gmailUser}>`,
+            from: process.env.MAIL_FROM || `Heat.nz <${gmailUser}>`,
             to: email,
-            subject: 'Thank you for contacting Kiwi Trade',
+            subject: 'Thank you for contacting Heat.nz',
             html: `
                 <h2>Thank you for your message!</h2>
                 <p>Hi ${name},</p>
@@ -115,9 +115,9 @@ export default async function handler(req, res) {
                 <p>If you have any urgent questions, you can also reach us at:</p>
                 <ul>
                     <li>Phone: +64 9 123 4567</li>
-                    <li>Email: ${process.env.SUPPORT_EMAIL || 'support@kiwiunderfloor.com'}</li>
+                    <li>Email: ${process.env.SUPPORT_EMAIL || 'support@heat.nz'}</li>
                 </ul>
-                <p>Best regards,<br>The Kiwi Trade Team</p>
+                <p>Best regards,<br>The Heat.nz Team</p>
             `
         };
 
@@ -162,15 +162,15 @@ const adminMailOptions = {
         <p>If you have any urgent questions, you can also reach us at:</p>
         <ul>
             <li>Phone: +64 9 123 4567</li>
-            <li>Email: ${process.env.SUPPORT_EMAIL || 'support@kiwiunderfloor.com'}</li>
+            <li>Email: ${process.env.SUPPORT_EMAIL || 'support@heat.nz'}</li>
         </ul>
-        <p>Best regards,<br>The Kiwi Trade Team</p>
+        <p>Best regards,<br>The Heat.nz Team</p>
     `
 };
 
 // Send customer confirmation
 const customerMailOptions = {
-    from: `"Kiwi Underfloor" <${process.env.SUPPORT_EMAIL}>`,
+    from: `"Heat.nz" <${process.env.SUPPORT_EMAIL}>`,
     to: email,
     subject: 'Thank you for your enquiry',
     text: `Thank you for contacting us. We will get back to you shortly. You can also reach us at ${process.env.SUPPORT_PHONE}.`,

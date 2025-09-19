@@ -245,7 +245,7 @@ function generateHtmlQuote(quoteData) {
 <body>
     <div class="quote-container">
         <div class="header">
-            <div class="company-name">Kiwi Trade</div>
+            <div class="company-name">Heat.nz</div>
             <div class="quote-title">Professional Quote</div>
             <div class="quote-number">${quoteData.quoteNumber}</div>
         </div>
@@ -336,7 +336,7 @@ function generateHtmlQuote(quoteData) {
         ` : ''}
 
         <div class="footer">
-            <p><strong>Thank you for choosing Kiwi Trade!</strong></p>
+            <p><strong>Thank you for choosing Heat.nz!</strong></p>
             <p>This quote is valid until ${formatDate(quoteData.validUntil)}</p>
             <p>For questions or to accept this quote, please contact us.</p>
         </div>
@@ -851,7 +851,7 @@ export default async function handler(req, res) {
               </ul>
             </div>
 
-            <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+            <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz System</strong></p>
           </div>
         `;
 
@@ -906,7 +906,7 @@ export default async function handler(req, res) {
               </ul>
             </div>
             
-            <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+            <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz System</strong></p>
           </div>
         `;
 
@@ -925,7 +925,7 @@ export default async function handler(req, res) {
       try {
         const currentUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
-        const customerSubject = `Your Quote - ${quoteData.quoteNumber} - Kiwi Trade`;
+        const customerSubject = `Your Quote - ${quoteData.quoteNumber} - Heat.nz`;
         const customerHtml = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #2c3e50;">Your Quote is Ready!</h2>
@@ -984,7 +984,7 @@ export default async function handler(req, res) {
             <p><strong>Reference:</strong> ${quoteData.quoteNumber}</p>
             <p>If you have any questions, please don't hesitate to contact us.</p>
             
-            <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade Team</strong></p>
+            <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz Team</strong></p>
           </div>
         `;
 

@@ -174,7 +174,7 @@ export default async function handler(req, res) {
           });
 
           const tradesmanMailOptions = {
-            from: `Kiwi Trade <${process.env.GMAIL_USER}>`,
+            from: `Heat.nz <${process.env.GMAIL_USER}>`,
             to: quoteData.tradesmanEmail,
             subject: `🎉 Quote ${quoteNumber} ACCEPTED by Customer!`,
             html: `
@@ -203,7 +203,7 @@ export default async function handler(req, res) {
                   </ul>
                 </div>
 
-                <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+                <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz System</strong></p>
               </div>
             `
           };

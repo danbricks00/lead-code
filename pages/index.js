@@ -59,7 +59,7 @@ const HomePage = ({ openChat }) => { // Receive openChat prop from Layout
             </div>
             <div style={styles.serviceCard}>
               <div style={styles.stars}>⭐⭐⭐⭐⭐</div>
-              <p>"The whole process was simple! Kiwi Trade found us a reliable installer who finished on time and within budget."</p>
+              <p>"The whole process was simple! Heat.nz found us a reliable installer who finished on time and within budget."</p>
               <p><strong>– James R.</strong></p>
             </div>
             <div style={styles.serviceCard}>

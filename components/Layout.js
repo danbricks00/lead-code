@@ -47,7 +47,7 @@ const Layout = ({ children }) => {
   return (
     <>
       <Head>
-        <title>Kiwi Trade - Connect with Qualified Tradesmen</title>
+        <title>Heat.nz - Connect with Qualified Tradesmen</title>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
         <style jsx global>{`
           /* Mobile chatbot positioning fixes */
@@ -112,7 +112,7 @@ const Layout = ({ children }) => {
         <nav style={styles.nav}>
           <div style={styles.logo}>
             <span role="img" aria-label="tool emoji">🔧</span>
-            <Link href="/" style={styles.logoLink}>Kiwi Trade</Link>
+            <Link href="/" style={styles.logoLink}>Heat.nz</Link>
           </div>
           
           {/* Desktop Navigation */}
@@ -153,7 +153,7 @@ const Layout = ({ children }) => {
         {childrenWithProps}
       </main>
       <footer style={styles.footer}>
-        <p>&copy; {new Date().getFullYear()} Kiwi Trade. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Heat.nz. All rights reserved.</p>
       </footer>
 
       {/* --- Chatbot Integration --- */}

@@ -136,7 +136,7 @@ const CustomerQuoteView = ({ initialQuoteInfo, initialError }) => {
         <div style={styles.invoiceBox}>
             {/* Header */}
             <div style={styles.header}>
-                <div className="company-details"><h1>Kiwi Trade</h1></div>
+                <div className="company-details"><h1>Heat.nz</h1></div>
                 <div style={styles.quoteDetails}>
                     <strong>Quote #: {quoteData['QuoteID']}</strong><br />
                     Valid Until: {(() => {

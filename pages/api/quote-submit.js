@@ -337,7 +337,7 @@ export default async function handler(req, res) {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Your Kiwi Trade Quote</title>
+        <title>Your Heat.nz Quote</title>
         <style>
           body { font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; }
           .header { background-color: #0275d8; color: white; padding: 20px; text-align: center; }
@@ -354,10 +354,10 @@ export default async function handler(req, res) {
         </style>
       </head>
       <body>
-        <div class="header"><h1>Kiwi Trade Quote #${quoteId}</h1></div>
+        <div class="header"><h1>Heat.nz Quote #${quoteId}</h1></div>
         <div class="content">
           <h2>Dear ${customerName},</h2>
-          <p>Thank you for choosing Kiwi Trade. Here is your quote for the ${serviceType} project:</p>
+          <p>Thank you for choosing Heat.nz. Here is your quote for the ${serviceType} project:</p>
           <table>
             <tr><th>Item</th><th style="text-align: right;">Amount</th></tr>
             ${lineItemsHtml}
@@ -386,12 +386,12 @@ export default async function handler(req, res) {
       </html>`;
 
     await transporter.sendMail({
-      from: `"Kiwi Trade" <${GMAIL_USER}>`,
+      from: `"Heat.nz" <${GMAIL_USER}>`,
       to: customerEmail, // Send only to customer
-      subject: `📄 Your Kiwi Trade Quote #${quoteId} - ${serviceType}`,
+      subject: `📄 Your Heat.nz Quote #${quoteId} - ${serviceType}`,
       html: customerHtmlContent,
       attachments: [{
-        filename: `KiwiTrade_Quote_${quoteId}.pdf`,
+        filename: `_Quote_${quoteId}.pdf`,
         content: pdfBuffer,
         contentType: 'application/pdf'
       }]
@@ -416,12 +416,12 @@ export default async function handler(req, res) {
 
     if (internalRecipients.length > 0) {
       await transporter.sendMail({
-        from: `"Kiwi Trade" <${GMAIL_USER}>`,
+        from: `"Heat.nz" <${GMAIL_USER}>`,
         to: internalRecipients.join(','),
         subject: `[Internal] Quote #${quoteId} Sent to ${customerName}`,
         html: internalHtmlContent,
         attachments: [{
-          filename: `KiwiTrade_Quote_${quoteId}.pdf`,
+          filename: `heat-nz_Quote_${quoteId}.pdf`,
           content: pdfBuffer,
           contentType: 'application/pdf'
         }]

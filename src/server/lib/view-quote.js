@@ -546,7 +546,7 @@ export default async function handler(req, res) {
           </div>
 
           <div class="header">
-            <h1 class="company-name">KIWI TRADE</h1>
+            <h1 class="company-name">HEAT.NZ</h1>
             <h2 class="quote-title">QUOTE</h2>
             <div class="quote-info">
               <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
@@ -615,10 +615,10 @@ export default async function handler(req, res) {
           ` : ''}
 
           <div class="footer">
-            <p><strong>Kiwi Trade</strong></p>
+            <p><strong>Heat.nz</strong></p>
             <p>Professional underfloor heating solutions for your home</p>
             <p>This quote was generated using our automated system</p>
-            <p>Thank you for choosing Kiwi Trade!</p>
+            <p>Thank you for choosing Heat.nz!</p>
           </div>
 
           <div class="actions">

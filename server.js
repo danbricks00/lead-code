@@ -390,7 +390,7 @@ async function sendAdminQuoteEmail(quoteData, req) {
                         <p>You'll receive another notification when the customer accepts or declines the quote.</p>
                     </div>
 
-                    <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+                    <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz System</strong></p>
                 </div>
             </div>
         `;
@@ -555,7 +555,7 @@ app.post('/api/generate-quote', async (req, res) => {
             tradesmanName,
             tradesmanEmail,
             tradesmanPhone,
-            companyName = 'Kiwi Trade ',
+            companyName = 'Heat.nz ',
             companyAddress = 'Auckland, New Zealand',
             gstNumber = '120-681-729',
             items = []
@@ -665,7 +665,7 @@ app.get('/api/generate-quote', async (req, res) => {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Quote ${quoteId} - Kiwi Trade</title>
+            <title>Quote ${quoteId} - Heat.nz</title>
             <style>
                 body { font-family: Arial, sans-serif; margin: 40px; }
                 .actions { text-align: center; margin-bottom: 40px; padding: 20px; background: #f8f9fa; }
@@ -905,7 +905,7 @@ app.post('/api/send-to-sheets', async (req, res) => {
                     
                     <p style="margin-top: 30px;">If you have any questions, please don't hesitate to contact the admin team.</p>
                     
-                    <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade Team</strong></p>
+                    <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz Team</strong></p>
                 </div>
                 
                 <script>
@@ -1205,7 +1205,7 @@ app.post('/api/update-tradesman-progress', async (req, res) => {
 
         // If quote was sent, send notification to admin
         if (step === 'quote_sent' && status === 'completed') {
-            const adminEmail = process.env.ADMIN_EMAIL || 'admin@kiwitrade.co.nz';
+            const adminEmail = process.env.ADMIN_EMAIL || 'admin@heat.nz';
             const adminSubject = `📋 Quote Sent: ${service} Project`;
             const adminBody = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -1225,7 +1225,7 @@ app.post('/api/update-tradesman-progress', async (req, res) => {
                     
                     <p style="margin-top: 30px;">The customer will now review the quote and make their decision.</p>
                     
-                    <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+                    <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz System</strong></p>
                 </div>
             </div>
             `;
@@ -1235,7 +1235,7 @@ app.post('/api/update-tradesman-progress', async (req, res) => {
 
         // If quote decision was made, send notification to admin
         if (step === 'quote_decision') {
-            const adminEmail = process.env.ADMIN_EMAIL || 'admin@kiwitrade.co.nz';
+            const adminEmail = process.env.ADMIN_EMAIL || 'admin@heat.nz';
             const decisionText = status === 'accepted' ? 'Accepted' : 'Declined';
             const adminSubject = `🎯 Quote Decision: ${decisionText} - ${service} Project`;
             const adminBody = `
@@ -1259,7 +1259,7 @@ app.post('/api/update-tradesman-progress', async (req, res) => {
                         '<p style="margin-top: 20px;"><strong>📝 The project was not accepted. Consider following up with the customer for feedback.</strong></p>'
                     }
                     
-                    <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+                    <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz System</strong></p>
                 </div>
             </div>
             `;

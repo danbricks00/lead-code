@@ -221,7 +221,7 @@ export default async function handler(req, res) {
     try {
       // Customer confirmation email
       await transporter.sendMail({
-        from: `"Kiwi Trade" <${process.env.GMAIL_USER}>`,
+        from: `"Heat.nz" <${process.env.GMAIL_USER}>`,
         to: finalEmail,
         subject: "✅ We've Received Your Quote Enquiry!",
         html: `
@@ -231,13 +231,13 @@ export default async function handler(req, res) {
           <p>For your records, here are the details you provided:</p>
           ${leadDetailsHtml}
           <p>If you have any questions, please don't hesitate to contact us.</p>
-          <p>Best regards,<br>Kiwi Trade Team</p>
+          <p>Best regards,<br>Heat.nz Team</p>
         `,
       });
 
       // Tradesman notification email
       await transporter.sendMail({
-        from: `"Kiwi Trade Leads" <${process.env.GMAIL_USER}>`,
+        from: `"Heat.nz Leads" <${process.env.GMAIL_USER}>`,
         to: process.env.TRADESPERSON_EMAIL,
         subject: `🏠 New Quote Enquiry (${roomCount} Rooms): ${location}`,
         html: `
@@ -251,7 +251,7 @@ export default async function handler(req, res) {
 
       // Admin notification email
       await transporter.sendMail({
-        from: `"Kiwi Trade Alerts" <${process.env.GMAIL_USER}>`,
+        from: `"Heat.nz Alerts" <${process.env.GMAIL_USER}>`,
         to: process.env.ADMIN_EMAIL,
         subject: `New Quote Enquiry: ${name} in ${location}`,
         html: `

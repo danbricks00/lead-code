@@ -78,7 +78,7 @@ export async function sendToSheets(leadData) {
 
     console.log('📧 Creating tradesman email options...');
     const tradesmanMailOptions = {
-      from: `Kiwi Trade <${process.env.GMAIL_USER}>`,
+      from: `Heat.nz <${process.env.GMAIL_USER}>`,
       to: process.env.TRADESPERSON_EMAIL,
       subject: 'New Lead - Underfloor Heating Project',
       html: `
@@ -136,7 +136,7 @@ export async function sendToSheets(leadData) {
     });
 
     const adminMailOptions = {
-      from: `Kiwi Trade <${process.env.GMAIL_USER}>`,
+      from: `Heat.nz <${process.env.GMAIL_USER}>`,
       to: process.env.ADMIN_EMAIL,
       subject: '🎯 New Lead Captured - Admin Dashboard',
       html: `
@@ -214,7 +214,7 @@ export async function sendToSheets(leadData) {
               <p style="margin-top: 15px;"><em>No immediate action required - the system is handling the lead automatically.</em></p>
             </div>
             
-            <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+            <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz System</strong></p>
           </div>
         </div>
       `

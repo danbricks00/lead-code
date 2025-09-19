@@ -1,6 +1,6 @@
-# Kiwi Trade - Git Push Script
+# Heat.nz - Git Push Script
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "    Kiwi Trade - Git Push Script" -ForegroundColor Cyan
+Write-Host "    Heat.nz - Git Push Script" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 

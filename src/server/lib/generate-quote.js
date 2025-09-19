@@ -85,7 +85,7 @@ async function handleQuoteGeneration(req, res) {
       tradesmanName,
       tradesmanEmail,
       tradesmanPhone,
-      companyName = 'Kiwi Underfloor Heating',
+      companyName = 'Heat.nz',
       companyAddress = 'Auckland, New Zealand',
       gstNumber = '120-681-729',
       items = []
@@ -454,7 +454,7 @@ async function handleQuoteGeneration(req, res) {
                         <span class="info-label">${quote.tradesmanPhone || '+64 9 123 4567'}</span>
                     </div>
                     <div class="info-item">
-                        <span class="info-label">${quote.tradesmanEmail || 'info@kiwiunderfloor.com'}</span>
+                        <span class="info-label">${quote.tradesmanEmail || 'info@heat.nz'}</span>
                     </div>
                 </div>
             </div>
@@ -497,7 +497,7 @@ async function handleQuoteGeneration(req, res) {
              
              <div class="footer">
                 <p>This quote is valid until ${formatDate(quote.expiryDate)}</p>
-                <p>For any questions, please contact us at ${quote.tradesmanEmail || 'info@kiwiunderfloor.com'}</p>
+                <p>For any questions, please contact us at ${quote.tradesmanEmail || 'info@heat.nz'}</p>
             </div>
         </div>
     </body>
@@ -718,7 +718,7 @@ async function sendAdminQuoteEmail(quoteData, req) {
 
         <p style="margin-top: 30px;">This quote has been automatically tracked in the system for commission purposes.</p>
         
-        <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Underfloor Heating System</strong></p>
+        <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz System</strong></p>
       </div>
     `;
 

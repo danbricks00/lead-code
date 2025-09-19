@@ -29,7 +29,7 @@ export async function sendToSheets(leadData) {
     }
 
     // Send gamified welcome email
-    const welcomeEmailResponse = await fetch(`${process.env.BASE_URL || 'http://localhost:3000'}/api/send-gamified-email`, {
+    const welcomeEmailResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL || 'http://localhost:3000'}/api/send-gamified-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

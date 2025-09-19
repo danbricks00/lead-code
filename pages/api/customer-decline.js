@@ -7,6 +7,7 @@ import { sendEmail} from '../../lib/emailHelper.js';
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL || 'http://localhost:3000';
 
 // Initialize Google Sheets
 const auth = new google.auth.GoogleAuth({
@@ -19,7 +20,7 @@ const auth = new google.auth.GoogleAuth({
         client_id: process.env.GOOGLE_CLIENT_ID,
         auth_uri: 'https://accounts.google.com/o/oauth2/auth',
         token_uri: 'https://oauth2.googleapis.com/token',
-        auth_provider_x509_cert_url: 'https://www.googleapis.com/auth/spreadsheets'
+        auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs'
     },
     scopes: ['https://www.googleapis.com/auth/spreadsheets']
 });

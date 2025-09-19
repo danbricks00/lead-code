@@ -25,7 +25,7 @@ Create a `.env.local` file with the required variables (see [ENVIRONMENT_VARIABL
 # Google OAuth
 GOOGLE_CLIENT_ID=your_client_id
 GOOGLE_CLIENT_SECRET=your_client_secret
-GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google
+GOOGLE_REDIRECT_URI=https://heat.nz/api/auth/callback/google
 
 # Google Sheets
 GOOGLE_CLIENT_EMAIL=your_service_account@project.iam.gserviceaccount.com

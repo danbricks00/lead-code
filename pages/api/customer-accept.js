@@ -7,6 +7,7 @@ import {sendEmail} from '../../lib/emailHelper.js';
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL || 'http://localhost:3000';
 
 // Initialize Google Sheets
 const auth = new google.auth.GoogleAuth({

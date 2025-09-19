@@ -36,7 +36,7 @@ SESSION_SECRET = your-secret-key-here
 
 ### Step 4: Test
 
-1. **Go to**: https://lead-code-git-main-dan-buis-projects-e44a173c.vercel.app/login
+1. **Go to**: https://heat.nz/login
 2. **The page should now load without errors**
 
 ## What I Fixed
@@ -63,8 +63,8 @@ SESSION_SECRET = your-secret-key-here
 ## After Fix
 
 Once the deployment works:
-1. **Test the main site**: https://lead-code-git-main-dan-buis-projects-e44a173c.vercel.app/
-2. **Test the login**: https://lead-code-git-main-dan-buis-projects-e44a173c.vercel.app/login
+1. **Test the main site**: https://heat.nz/
+2. **Test the login**: https://heat.nz/login
 3. **Update Google Cloud Console** with your Vercel domain
 4. **Test Google Sign-In**
 

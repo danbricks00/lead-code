@@ -9,7 +9,7 @@ The "choose an area" dropdown in the chatbot is not populating on the Vercel dep
 ### 1. Test the Debug Page
 Visit the debug page to identify the issue:
 ```
-https://your-vercel-domain.vercel.app/debug-zone-api.html
+https://heat.nz/debug-zone-api.html
 ```
 
 This page will:
@@ -56,7 +56,7 @@ Ensure your service account has access to the Google Sheet:
 ### 5. Test API Endpoint Directly
 Try accessing the API directly in your browser:
 ```
-https://your-vercel-domain.vercel.app/api/get-zone-data
+https://heat.nz/api/get-zone-data
 ```
 
 This should return JSON data or an error message.
@@ -116,7 +116,7 @@ npm run dev
 ```bash
 # Deploy to Vercel
 vercel --prod
-# Visit https://your-domain.vercel.app/debug-zone-api.html
+# Visit https://heat.nz/debug-zone-api.html
 ```
 
 ## Enhanced Error Handling

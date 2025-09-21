@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Chatbot from './Chatbot'; // Import the Chatbot
+import SEO from './SEO'; // Import the SEO component
 
 const Layout = ({ children }) => {
   const router = useRouter();
@@ -108,6 +109,14 @@ const Layout = ({ children }) => {
           }
         `}</style>
       </Head>
+      
+      {/* Default SEO for all pages - can be overridden by individual pages */}
+      <SEO
+        title="Heat NZ | Underfloor Heating Auckland — Free Quote"
+        description="Underfloor heating specialists in Auckland. Supply, install & service electric and hydronic systems. Fast quotes & warranties."
+        canonical={`https://heat.nz${router.asPath}`}
+      />
+      
       <header style={styles.header}>
         <nav style={styles.nav}>
           <div style={styles.logo}>

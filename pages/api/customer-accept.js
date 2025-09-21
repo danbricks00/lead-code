@@ -2,6 +2,13 @@ import { google } from 'googleapis';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import {sendEmail} from '../../lib/emailHelper.js';
+import { 
+  formatDateDDMMYYYY, 
+  formatDateTimeDDMMYYYY, 
+  parseAndFormatDate, 
+  getCurrentNZTimestamp,
+  getFallbackQuoteExpiry 
+} from '../../utils/dateUtils.js';
 
 // Environment variables
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
@@ -39,17 +46,17 @@ const transporter = nodemailer.createTransport({
 // Logger utility
 const quoteLogger = {
     info: (message, data, requestId) => {
-        console.log(`[${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}] [${requestId}] ${message}`, JSON.stringify(data));
+        console.log(`[${getCurrentNZTimestamp()}] [${requestId}] ${message}`, JSON.stringify(data));
     },
     error: (message, error, requestId) => {
-        console.error(`[${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}] [${requestId}] [ERROR] ${message}`, {
+        console.error(`[${getCurrentNZTimestamp()}] [${requestId}] [ERROR] ${message}`, {
             message: error.message,
             stack: error.stack,
             name: error.name
         });
     },
     response: (message, data, requestId) => {
-        console.log(`[${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}] [${requestId}] [RESPONSE] ${message}`, JSON.stringify(data));
+        console.log(`[${getCurrentNZTimestamp()}] [${requestId}] [RESPONSE] ${message}`, JSON.stringify(data));
     }
 };
 
@@ -73,7 +80,7 @@ export default async function handler(req, res) {
         url: req.url,
         method: req.method,
         query: req.query,
-        time: new Date().toISOString()
+        time: getCurrentNZTimestamp()
     });
 
     try {
@@ -187,39 +194,47 @@ export default async function handler(req, res) {
         let expiryDate;
         
         try {
-          // Parse date with DD/MM/YYYY format priority (New Zealand format)
-          const parts = validUntil.split('/');
-          if (parts.length === 3) {
-            // Try DD/MM/YYYY format first (New Zealand standard)
-            const day = parseInt(parts[0], 10);
-            const month = parseInt(parts[1], 10);
-            const year = parseInt(parts[2], 10);
-            
-            // Validate date components
-            if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 2020) {
-              expiryDate = new Date(year, month - 1, day); // month is 0-indexed in Date constructor
-              console.log(`[DECISION-API] Parsed DD/MM/YYYY: ${validUntil} -> ${expiryDate.toISOString()}`);
+            if (validUntil) {
+                // Use standardized date parsing that prioritizes DD/MM/YYYY
+                const parsedDate = parseAndFormatDate(validUntil);
+                if (parsedDate) {
+                    // Try to construct date from DD/MM/YYYY parts
+                    if (validUntil.includes('/')) {
+                        const parts = validUntil.split('/');
+                        if (parts.length === 3) {
+                            const day = parseInt(parts[0], 10);
+                            const month = parseInt(parts[1], 10);
+                            const year = parseInt(parts[2], 10);
+                            
+                            if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 2020) {
+                                expiryDate = new Date(year, month - 1, day);
+                                console.log(`[DECISION-API] Parsed DD/MM/YYYY: ${validUntil} -> ${expiryDate.toISOString()}`);
+                            } else {
+                                throw new Error('Invalid date components');
+                            }
+                        } else {
+                            throw new Error('Invalid date format');
+                        }
+                    } else {
+                        // Try other formats as fallback
+                        expiryDate = new Date(validUntil);
+                        if (isNaN(expiryDate.getTime())) {
+                            throw new Error('Unable to parse date');
+                        }
+                        console.log(`[DECISION-API] Parsed other format: ${validUntil} -> ${expiryDate.toISOString()}`);
+                    }
+                } else {
+                    throw new Error('Unable to parse date');
+                }
             } else {
-              throw new Error('Invalid date components');
+                throw new Error('No valid until date provided');
             }
-        } else {
-            // Try other formats as fallback
-            expiryDate = new Date(validUntil);
-            if (isNaN(expiryDate.getTime())) {
-              throw new Error('Unable to parse date');
-            }
-            console.log(`[DECISION-API] Parsed other format: ${validUntil} -> ${expiryDate.toISOString()}`);
-          }
-          
-          // Final validation
-          if (isNaN(expiryDate.getTime())) {
-            throw new Error('Invalid date result');
-          }
-        } catch (e) {
-          console.error(`[DECISION-API] Error parsing expiry date: ${validUntil}`, e.message);
-          // Set to 7 days from now as a fallback
-          expiryDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-          console.log(`[DECISION-API] Using fallback date: ${expiryDate.toISOString()}`);
+        } catch (error) {
+            console.error(`[DECISION-API] Error parsing expiry date: ${validUntil}`, error.message);
+            // Use standardized fallback date
+            expiryDate = new Date();
+            expiryDate.setTime(expiryDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+            console.log(`[DECISION-API] Using fallback date: ${expiryDate.toISOString()}`);
         }
         
         if (now > expiryDate) {
@@ -236,15 +251,8 @@ export default async function handler(req, res) {
                 expiryDate: expiryDate.toISOString() 
             }, requestId);
             
-            // Format timestamp for NZ timezone
-            const nzTimestamp = new Date().toLocaleString('en-NZ', {
-                timeZone: 'Pacific/Auckland',
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            }).replace(/\//g, '-');
+            // Format timestamp for NZ timezone using standardized function
+            const nzTimestamp = getCurrentNZTimestamp().replace(/\//g, '-');
             
             // Update the quote with expired status - ONLY update Z and AA columns
             await sheets.spreadsheets.values.update({
@@ -261,14 +269,7 @@ export default async function handler(req, res) {
         }
 
         // Record the acceptance decision - format timestamp as DD-MM-YYYY HH:mm
-        const nzTimestamp = new Date().toLocaleString('en-NZ', {
-            timeZone: 'Pacific/Auckland',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        }).replace(/\//g, '-');
+        const nzTimestamp = getCurrentNZTimestamp().replace(/\//g, '-');
         
         // Update the quote with acceptance decision - ONLY update Z and AA columns
         try {

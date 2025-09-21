@@ -1,9 +1,16 @@
 import React from 'react';
 import Layout from '../components/Layout';
+import SEO from '../components/SEO';
 
 const AboutPage = () => {
   return (
     <Layout>
+      <SEO
+        title="About Heat NZ | Professional Underfloor Heating Services"
+        description="Learn about Heat NZ, Auckland's trusted underfloor heating specialists. Professional installation, maintenance, and service for electric and hydronic systems."
+        canonical="https://heat.nz/about"
+        keywords="about heat nz, underfloor heating company auckland, professional heating services"
+      />
       <div style={styles.container}>
         <div style={styles.card}>
           <h1 style={styles.header}>About Heat.nz</h1>

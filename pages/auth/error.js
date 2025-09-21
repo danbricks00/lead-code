@@ -83,7 +83,7 @@ export default function AuthError() {
 
   const handleAction = () => {
     if (errorDetails?.action === 'Contact Support') {
-      window.location.href = 'mailto:support@kiwitrade.co.nz?subject=Authentication Error';
+      window.location.href = 'mailto:support@heat.nz?subject=Authentication Error';
     } else {
       router.push('/auth/signin');
     }
@@ -135,7 +135,7 @@ export default function AuthError() {
             If you continue to experience issues, please contact our support team:
           </p>
           <div className="contact-info">
-            <p><strong>Email:</strong> support@kiwitrade.co.nz</p>
+            <p><strong>Email:</strong> support@heat.nz</p>
             <p><strong>Phone:</strong> +64 9 123 4567</p>
           </div>
         </div>

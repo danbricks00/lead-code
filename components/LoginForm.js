@@ -112,7 +112,7 @@ export default function LoginForm() {
             Please check back later or contact support if you need immediate access.
           </p>
           <div className="contact-info">
-            <p><strong>Email:</strong> support@kiwitrade.co.nz</p>
+            <p><strong>Email:</strong> support@heat.nz</p>
             <p><strong>Phone:</strong> +64 9 123 4567</p>
           </div>
         </div>
@@ -124,7 +124,7 @@ export default function LoginForm() {
   return (
     <div className="login-form-container">
       <div className="login-header">
-        <h2>Welcome to KiwiTrade</h2>
+        <h2>Welcome to heat.nz</h2>
         <p>Sign in to access your account</p>
       </div>
 

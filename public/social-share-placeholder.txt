@@ -1,0 +1,33 @@
+SOCIAL SHARE IMAGE PLACEHOLDER
+================================
+
+This file should be replaced with: social-share.png (800x418 pixels)
+
+DESIGN SPECIFICATIONS:
+- Dimensions: 800x418 pixels (Facebook/Twitter optimal size)
+- Background: Gradient from #667eea to #764ba2
+- Logo: "🔥 Heat NZ" in large, bold white text
+- Main text: "Underfloor Heating Auckland" 
+- Subtext: "Professional Installation & Service"
+- Font: Arial or similar sans-serif
+- Colors: White text on gradient background
+
+CONTENT:
+- Logo: Heat NZ with fire emoji
+- Headline: Underfloor Heating Auckland
+- Subheading: Professional Installation & Service
+- Background: Blue to purple gradient
+- Style: Clean, professional, branded
+
+USAGE:
+This image will be used for:
+- Open Graph (Facebook) sharing
+- Twitter Card sharing  
+- LinkedIn sharing
+- General social media previews
+
+To create the actual image:
+1. Use the HTML file (social-share.html) as a reference
+2. Convert to PNG using screenshot or design tool
+3. Save as social-share.png in the public folder
+4. Delete this placeholder file

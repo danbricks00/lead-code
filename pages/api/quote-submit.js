@@ -4,6 +4,62 @@ import { generateQuotePDF } from '../../lib/pdfGenerator';
 import { upsertQuoteRow, getLeadById } from '../../utils/sheets.js';
 import { buildQuoteRow } from '../../utils/quotes.js';
 import { safeParseRooms, sumRoomsSqm, toNum, computeLineTotals, generateLineItemsHtml } from '../../utils/quoteHelpers.js';
+import { 
+  formatDateDDMMYYYY, 
+  formatDateTimeDDMMYYYY, 
+  parseAndFormatDate, 
+  getCurrentNZTimestamp,
+  getDefaultQuoteExpiry 
+} from '../../utils/dateUtils.js';
+
+// GA4 Conversion Tracking Function
+async function trackQuoteSubmission(quoteData, quoteId, isDraft = false) {
+  try {
+    if (!process.env.GA_MEASUREMENT_ID || !process.env.GA_API_SECRET) {
+      console.log('GA4 tracking not configured - skipping conversion tracking');
+      return;
+    }
+
+    const measurementId = process.env.GA_MEASUREMENT_ID;
+    const apiSecret = process.env.GA_API_SECRET;
+    
+    const eventData = {
+      client_id: quoteId, // Use quoteId as client_id for server-side tracking
+      events: [{
+        name: isDraft ? 'quote_draft_saved' : 'quote_submitted',
+        params: {
+          quote_id: quoteId,
+          customer_email: quoteData.customerEmail || 'unknown',
+          total_rooms: quoteData.rooms ? JSON.parse(quoteData.rooms).length : 0,
+          total_sqm: quoteData.totalSqm || 0,
+          system_type: quoteData.systemType || 'unknown',
+          location: 'Auckland',
+          currency: 'NZD',
+          value: quoteData.totalPrice || 0
+        }
+      }]
+    };
+
+    const response = await fetch(
+      `https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(eventData)
+      }
+    );
+
+    if (response.ok) {
+      console.log(`✅ GA4 conversion tracked: ${isDraft ? 'quote_draft_saved' : 'quote_submitted'}`);
+    } else {
+      console.error('GA4 tracking failed:', response.status, response.statusText);
+    }
+  } catch (error) {
+    console.error('Error tracking GA4 conversion:', error.message);
+  }
+}
 
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
@@ -185,13 +241,13 @@ export default async function handler(req, res) {
     if (body.validUntil) {
       // Parse the date from the form (usually in YYYY-MM-DD format)
       validUntilDate = new Date(body.validUntil);
-      validUntilStr = validUntilDate.toLocaleDateString('en-NZ');
+      validUntilStr = formatDateDDMMYYYY(validUntilDate);
       console.log('📅 Using tradesman-set valid until date:', validUntilStr);
     } else {
       // Fallback to 14 days if not provided
       validUntilDate = new Date();
       validUntilDate.setDate(validUntilDate.getDate() + 14);
-      validUntilStr = validUntilDate.toLocaleDateString('en-NZ');
+      validUntilStr = formatDateDDMMYYYY(validUntilDate);
       console.log('📅 Using default valid until date (14 days):', validUntilStr);
     }
 
@@ -235,7 +291,7 @@ export default async function handler(req, res) {
       // --- Data for PDF (nested structure) ---
       pdfData: {
         quoteId: quoteId,
-        date: new Date().toLocaleDateString('en-NZ'),
+        date: getCurrentNZDate(),
         validUntil: validUntilStr,
         customer: {
           name: normalizedData.customerName || lead.customerName,
@@ -300,6 +356,8 @@ export default async function handler(req, res) {
 
     if (isDraft) {
       console.log(`✅ Quote saved as draft: ${quoteId}`);
+      // Track draft save in GA4
+      await trackQuoteSubmission(req.body, quoteId, true);
       return res.status(200).json({ success: true, message: 'Quote saved as draft' });
     }
 
@@ -425,6 +483,9 @@ export default async function handler(req, res) {
       });
       console.log(`✅ Internal notification sent to: ${internalRecipients.join(', ')}`);
     }
+    
+    // Track quote submission in GA4
+    await trackQuoteSubmission(req.body, quoteId, false);
     
     return res.status(200).json({ success: true, message: 'Quote sent to customer' });
 

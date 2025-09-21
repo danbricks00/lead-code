@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
+import SEO from '../components/SEO';
 
 const HomePage = ({ openChat }) => { // Receive openChat prop from Layout
   const [isButtonHovered, setIsButtonHovered] = useState(false);
@@ -25,6 +26,12 @@ const HomePage = ({ openChat }) => { // Receive openChat prop from Layout
 
   return (
     <Layout>
+      <SEO
+        title="Underfloor Heating Auckland — Free Quote"
+        description="Underfloor heating specialists in Auckland. Supply, install & service electric and hydronic systems. Fast quotes & warranties."
+        canonical="https://heat.nz"
+        keywords="underfloor heating Auckland, electric underfloor heating, hydronic heating, heating installation Auckland, underfloor heating quote"
+      />
       <div style={styles.pageContainer}>
         {/* Hero Section */}
         <section style={styles.hero}>

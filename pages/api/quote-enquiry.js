@@ -185,12 +185,12 @@ export default async function handler(req, res) {
     // Generate quote link for tradesman
     const ts = Date.now();
     const token = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET).update(`${leadId}|${ts}`).digest("hex");
-    const quoteLink = `https://${baseUrl}/quote-submit/${leadId}?ts=${ts}&token=${token}`;
+    const quoteLink = `${baseUrl}/quote-submit/${leadId}?ts=${ts}&token=${token}`;
     
     console.log(`🔗 Generated quote link: ${quoteLink}`);
 
     // Email setup
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
     });

@@ -209,8 +209,6 @@ export default async function handler(req, res) {
       const area = zoneInfo.area.toLowerCase();
       const isGreaterAuckland = area.includes('rodney') || 
                                area.includes('papakura') || 
-                               area.includes('manukau') || 
-                               area.includes('waitakere') || 
                                area.includes('franklin');
       
       if (isGreaterAuckland) {

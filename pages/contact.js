@@ -96,8 +96,6 @@ const ContactPage = () => {
         const isGreaterAuckland = foundZone.area && (
           foundZone.area.toLowerCase().includes('rodney') ||
           foundZone.area.toLowerCase().includes('papakura') ||
-          foundZone.area.toLowerCase().includes('manukau') ||
-          foundZone.area.toLowerCase().includes('waitakere') ||
           foundZone.area.toLowerCase().includes('franklin')
         );
 
@@ -129,8 +127,6 @@ const ContactPage = () => {
 
         const isLikelyGreaterAuckland = locationLower.includes('rodney') ||
                                        locationLower.includes('papakura') ||
-                                       locationLower.includes('manukau') ||
-                                       locationLower.includes('waitakere') ||
                                        locationLower.includes('franklin') ||
                                        locationLower.includes('waiheke') ||
                                        locationLower.includes('great barrier');

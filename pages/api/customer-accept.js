@@ -343,7 +343,6 @@ export default async function handler(req, res) {
                 const tradesmanEmail = quoteRow[tradespersonEmailIndex];
                 const tradesmanName = quoteRow[TradePersonNameIndex] || 'Your assigned tradesperson';
                 const tradesmanPhone = quoteRow[tradespersonPhoneIndex] || 'N/A';
-                const tradesmanLicense = 'N/A'; // As requested, license is not needed.
 
                 const roomsData = quoteRow[roomsIndex];
                 let roomsHtml = '';
@@ -382,8 +381,7 @@ export default async function handler(req, res) {
                         <p>
                             <strong>Name:</strong> ${tradesmanName}<br>
                             <strong>Email:</strong> ${tradesmanEmail}<br>
-                            <strong>Phone:</strong> ${tradesmanPhone}<br>
-                            <strong>License:</strong> ${tradesmanLicense}
+                            <strong>Phone:</strong> ${tradesmanPhone}
                         </p>
                         <p>Your tradesperson will be in touch shortly to coordinate the work. Please note, we will contact you if anything else is required.</p>
                     </div>

@@ -29,6 +29,8 @@ const ContactPage = () => {
     zoneInfo: null 
   });
   const [isCheckingLocation, setIsCheckingLocation] = useState(false);
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Check if user should see manual quote option (admin/tradesman access)
   useEffect(() => {
@@ -208,7 +210,32 @@ const ContactPage = () => {
       window.locationCheckTimeout = setTimeout(() => {
         checkLocation(value);
       }, 500);
+      
+      // Show autocomplete suggestions
+      if (value.length > 1) {
+        const suggestions = zoneData
+          .filter(zone => 
+            zone.suburb.toLowerCase().startsWith(value.toLowerCase()) ||
+            (zone.altName && zone.altName.toLowerCase().startsWith(value.toLowerCase()))
+          )
+          .slice(0, 8); // Limit to 8 suggestions
+        setLocationSuggestions(suggestions);
+        setShowSuggestions(suggestions.length > 0);
+      } else {
+        setLocationSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } else if (name === 'location' && !value.trim()) {
+      setLocationSuggestions([]);
+      setShowSuggestions(false);
     }
+  };
+
+  const handleSuggestionSelect = (selectedZone) => {
+    setFormData(prev => ({ ...prev, location: selectedZone.suburb }));
+    setLocationSuggestions([]);
+    setShowSuggestions(false);
+    checkLocation(selectedZone.suburb);
   };
 
   const handleSubmit = async (e) => {
@@ -384,19 +411,70 @@ const ContactPage = () => {
                 </div>
                 <div style={styles.inputGroup}>
                   <label htmlFor="location">Location (Suburb/City) *</label>
-                  <input 
-                    type="text" 
-                    id="location" 
-                    name="location" 
-                    value={formData.location} 
-                    onChange={handleChange} 
-                    style={{
-                      ...styles.input,
-                      borderColor: locationStatus.isValid === true ? '#28a745' : 
-                                  locationStatus.isValid === false ? '#ffc107' : '#ddd'
-                    }} 
-                    required 
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type="text" 
+                      id="location" 
+                      name="location" 
+                      value={formData.location} 
+                      onChange={handleChange} 
+                      onFocus={() => {
+                        if (locationSuggestions.length > 0) {
+                          setShowSuggestions(true);
+                        }
+                      }}
+                      onBlur={() => {
+                        // Delay hiding suggestions to allow clicking on them
+                        setTimeout(() => setShowSuggestions(false), 200);
+                      }}
+                      style={{
+                        ...styles.input,
+                        borderColor: locationStatus.isValid === true ? '#28a745' : 
+                                    locationStatus.isValid === false ? '#ffc107' : '#ddd'
+                      }}
+                      placeholder="Start typing your suburb..."
+                      required 
+                    />
+                    {showSuggestions && locationSuggestions.length > 0 && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        backgroundColor: 'white',
+                        border: '1px solid #ddd',
+                        borderTop: 'none',
+                        borderRadius: '0 0 4px 4px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        zIndex: 1000,
+                        maxHeight: '200px',
+                        overflowY: 'auto'
+                      }}>
+                        {locationSuggestions.map((zone, index) => (
+                          <div
+                            key={`${zone.suburb}-${zone.area}-${index}`}
+                            onClick={() => handleSuggestionSelect(zone)}
+                            style={{
+                              padding: '10px 12px',
+                              cursor: 'pointer',
+                              borderBottom: index < locationSuggestions.length - 1 ? '1px solid #f0f0f0' : 'none',
+                              fontSize: '14px',
+                              color: '#333'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.backgroundColor = '#f5f5f5';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.backgroundColor = 'white';
+                            }}
+                          >
+                            <div style={{ fontWeight: '500' }}>{zone.suburb}</div>
+                            <div style={{ fontSize: '12px', color: '#666' }}>{zone.area}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   {isCheckingLocation && (
                     <div style={styles.locationChecking}>
                       🔍 Checking location...

@@ -92,12 +92,28 @@ const ContactPage = () => {
           foundZone.area.toLowerCase().includes('papakura')
         );
 
+        // Check if it's Greater Auckland (areas that may have extra costs)
+        const isGreaterAuckland = foundZone.area && (
+          foundZone.area.toLowerCase().includes('rodney') ||
+          foundZone.area.toLowerCase().includes('papakura') ||
+          foundZone.area.toLowerCase().includes('manukau') ||
+          foundZone.area.toLowerCase().includes('waitakere') ||
+          foundZone.area.toLowerCase().includes('franklin')
+        );
+
+        let message;
+        if (isAuckland && !isGreaterAuckland) {
+          message = `✅ We service ${foundZone.suburb} (${foundZone.area}) with standard travel costs`;
+        } else if (isGreaterAuckland) {
+          message = `⚠️ ${foundZone.suburb} is in Greater Auckland (${foundZone.area}). Travel costs may be higher than typical quotes.`;
+        } else {
+          message = `⚠️ ${foundZone.suburb} is outside our main Auckland service area. Travel costs may be higher than typical quotes.`;
+        }
+
         setLocationStatus({
           isValid: true,
-          message: isAuckland 
-            ? `✅ We service ${foundZone.suburb} (${foundZone.area}) with standard travel costs`
-            : `⚠️ ${foundZone.suburb} is outside our main Auckland service area. Travel costs may be higher than typical quotes.`,
-          isAuckland,
+          message,
+          isAuckland: isAuckland && !isGreaterAuckland, // Only true Auckland areas get standard costs
           zoneInfo: foundZone
         });
       } else {
@@ -108,14 +124,30 @@ const ContactPage = () => {
                                 locationLower.includes('rodney') ||
                                 locationLower.includes('papakura') ||
                                 locationLower.includes('manukau') ||
-                                locationLower.includes('waitakere');
+                                locationLower.includes('waitakere') ||
+                                locationLower.includes('franklin');
+
+        const isLikelyGreaterAuckland = locationLower.includes('rodney') ||
+                                       locationLower.includes('papakura') ||
+                                       locationLower.includes('manukau') ||
+                                       locationLower.includes('waitakere') ||
+                                       locationLower.includes('franklin') ||
+                                       locationLower.includes('waiheke') ||
+                                       locationLower.includes('great barrier');
+
+        let message;
+        if (isLikelyGreaterAuckland) {
+          message = `⚠️ ${location} is in Greater Auckland. Travel costs may be higher than typical quotes.`;
+        } else if (isLikelyAuckland) {
+          message = `⚠️ We may service ${location}, but it's not in our current database. Travel costs may be higher than typical quotes.`;
+        } else {
+          message = `⚠️ ${location} is outside our main Auckland service area. Travel costs may be higher than typical quotes.`;
+        }
 
         setLocationStatus({
           isValid: false,
-          message: isLikelyAuckland
-            ? `⚠️ We may service ${location}, but it's not in our current database. Travel costs may be higher than typical quotes.`
-            : `⚠️ ${location} is outside our main Auckland service area. Travel costs may be higher than typical quotes.`,
-          isAuckland: isLikelyAuckland,
+          message,
+          isAuckland: isLikelyAuckland && !isLikelyGreaterAuckland,
           zoneInfo: null
         });
       }

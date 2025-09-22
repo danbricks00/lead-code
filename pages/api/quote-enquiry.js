@@ -201,8 +201,29 @@ export default async function handler(req, res) {
     const roomsHtml = `<li><b>Project Type:</b> ${projectType}</li><li><b>Number of Rooms:</b> ${roomCount}</li><li><b>Estimated Area:</b> ${parseInt(roomCount) * 10} square meters</li>`;
 
     // Create email content with zone information
+    const getTravelCostMessage = () => {
+      if (!zoneInfo) {
+        return '(Location not in database - travel costs may be higher)';
+      }
+      
+      const area = zoneInfo.area.toLowerCase();
+      const isGreaterAuckland = area.includes('rodney') || 
+                               area.includes('papakura') || 
+                               area.includes('manukau') || 
+                               area.includes('waitakere') || 
+                               area.includes('franklin');
+      
+      if (isGreaterAuckland) {
+        return '(Greater Auckland - higher travel costs may apply)';
+      } else if (isAucklandArea) {
+        return '(Standard travel costs)';
+      } else {
+        return '(Higher travel costs may apply)';
+      }
+    };
+
     const zoneInfoHtml = zoneInfo ? 
-      `<li><b>Service Area:</b> ${zoneInfo.area} ${isAucklandArea ? '(Standard travel costs)' : '(Higher travel costs may apply)'}</li>` : 
+      `<li><b>Service Area:</b> ${zoneInfo.area} ${getTravelCostMessage()}</li>` : 
       `<li><b>Service Area:</b> ${location} (Location not in database - travel costs may be higher)</li>`;
 
     const leadDetailsHtml = `

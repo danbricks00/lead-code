@@ -50,7 +50,9 @@ export default async function handler(req, res) {
       roomCount,
       location,
       timeline,
-      message
+      message,
+      zoneInfo,
+      isAucklandArea
     } = req.body;
 
     // Validation
@@ -106,7 +108,7 @@ export default async function handler(req, res) {
       phone || "",                               // D: CustomerPhone
       projectType,                               // E: ServiceType
       JSON.stringify(rooms),                     // F: Rooms
-      "Contact Page",                            // G: Area (Zone) - indicates source
+      zoneInfo ? zoneInfo.area : "Contact Page", // G: Area (Zone) - use zone area if available
       location,                                  // H: Suburb
       "0",                                       // I: Budget (removed from chatbot, always 0)
       timeline || "",                            // J: Timeline
@@ -139,7 +141,7 @@ export default async function handler(req, res) {
       phone || "",                               // E: CustomerPhone
       projectType,                               // F: ServiceType
       JSON.stringify(rooms),                     // G: Rooms
-      "Contact Page",                            // H: Area
+      zoneInfo ? zoneInfo.area : "Contact Page", // H: Area - use zone area if available
       location,                                  // I: Suburb
       "0",                                       // J: Budget
       timeline || "",                            // K: Timeline
@@ -198,7 +200,11 @@ export default async function handler(req, res) {
     // Format rooms for email display
     const roomsHtml = `<li><b>Project Type:</b> ${projectType}</li><li><b>Number of Rooms:</b> ${roomCount}</li><li><b>Estimated Area:</b> ${parseInt(roomCount) * 10} square meters</li>`;
 
-    // Create email content
+    // Create email content with zone information
+    const zoneInfoHtml = zoneInfo ? 
+      `<li><b>Service Area:</b> ${zoneInfo.area} ${isAucklandArea ? '(Standard travel costs)' : '(Higher travel costs may apply)'}</li>` : 
+      `<li><b>Service Area:</b> ${location} (Location not in database - travel costs may be higher)</li>`;
+
     const leadDetailsHtml = `
       <p>A new quote enquiry has been received with the following details:</p>
       <ul>
@@ -209,6 +215,7 @@ export default async function handler(req, res) {
         <li><b>Phone:</b> ${phone || "Not provided"}</li>
         <li><b>Service:</b> ${projectType}</li>
         <li><b>Location:</b> ${location}</li>
+        ${zoneInfoHtml}
         <li><b>Timeline:</b> ${timeline || "Not specified"}</li>
         ${roomsHtml}
         <li><b>Source:</b> Contact Page Quote Enquiry</li>

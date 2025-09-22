@@ -21,6 +21,14 @@ const ContactPage = () => {
     location: ''
   });
   const [status, setStatus] = useState({ submitted: false, message: '', isError: false });
+  const [zoneData, setZoneData] = useState([]);
+  const [locationStatus, setLocationStatus] = useState({ 
+    isValid: null, 
+    message: '', 
+    isAuckland: null,
+    zoneInfo: null 
+  });
+  const [isCheckingLocation, setIsCheckingLocation] = useState(false);
 
   // Check if user should see manual quote option (admin/tradesman access)
   useEffect(() => {
@@ -41,6 +49,88 @@ const ContactPage = () => {
 
     checkAuth();
   }, []);
+
+  // Fetch zone data on component mount
+  useEffect(() => {
+    const fetchZones = async () => {
+      try {
+        const response = await fetch('/api/zone');
+        const data = await response.json();
+        if (data.success && Array.isArray(data.rows)) {
+          setZoneData(data.rows);
+        }
+      } catch (error) {
+        console.error('Failed to fetch zone data:', error);
+      }
+    };
+
+    fetchZones();
+  }, []);
+
+  // Check location against zone data
+  const checkLocation = async (location) => {
+    if (!location || location.length < 2) {
+      setLocationStatus({ isValid: null, message: '', isAuckland: null, zoneInfo: null });
+      return;
+    }
+
+    setIsCheckingLocation(true);
+    
+    try {
+      // Check against local zone data first
+      const foundZone = zoneData.find(zone => 
+        zone.suburb.toLowerCase() === location.toLowerCase() ||
+        (zone.altName && zone.altName.toLowerCase() === location.toLowerCase())
+      );
+
+      if (foundZone) {
+        // Location found in our zone data
+        const isAuckland = foundZone.area && (
+          foundZone.area.toLowerCase().includes('auckland') ||
+          foundZone.area.toLowerCase().includes('north shore') ||
+          foundZone.area.toLowerCase().includes('rodney') ||
+          foundZone.area.toLowerCase().includes('papakura')
+        );
+
+        setLocationStatus({
+          isValid: true,
+          message: isAuckland 
+            ? `✅ We service ${foundZone.suburb} (${foundZone.area}) with standard travel costs`
+            : `⚠️ ${foundZone.suburb} is outside our main Auckland service area. Travel costs may be higher than typical quotes.`,
+          isAuckland,
+          zoneInfo: foundZone
+        });
+      } else {
+        // Location not found - check if it might be Auckland area
+        const locationLower = location.toLowerCase();
+        const isLikelyAuckland = locationLower.includes('auckland') || 
+                                locationLower.includes('north shore') ||
+                                locationLower.includes('rodney') ||
+                                locationLower.includes('papakura') ||
+                                locationLower.includes('manukau') ||
+                                locationLower.includes('waitakere');
+
+        setLocationStatus({
+          isValid: false,
+          message: isLikelyAuckland
+            ? `⚠️ We may service ${location}, but it's not in our current database. Travel costs may be higher than typical quotes.`
+            : `⚠️ ${location} is outside our main Auckland service area. Travel costs may be higher than typical quotes.`,
+          isAuckland: isLikelyAuckland,
+          zoneInfo: null
+        });
+      }
+    } catch (error) {
+      console.error('Location check failed:', error);
+      setLocationStatus({
+        isValid: false,
+        message: '⚠️ Unable to verify location. Travel costs may be higher than typical quotes.',
+        isAuckland: null,
+        zoneInfo: null
+      });
+    } finally {
+      setIsCheckingLocation(false);
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -82,6 +172,15 @@ const ContactPage = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Check location when it changes (for quote enquiries)
+    if (name === 'location' && (formType === 'quote' || formType === 'manual-quote')) {
+      // Debounce the location check
+      clearTimeout(window.locationCheckTimeout);
+      window.locationCheckTimeout = setTimeout(() => {
+        checkLocation(value);
+      }, 500);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -92,10 +191,17 @@ const ContactPage = () => {
       // Use different API endpoints based on form type
       const apiEndpoint = formType === 'quote' ? '/api/quote-enquiry' : '/api/contact';
       
+      // Include zone information for quote enquiries
+      const submissionData = { ...formData, formType };
+      if (formType === 'quote' && locationStatus.zoneInfo) {
+        submissionData.zoneInfo = locationStatus.zoneInfo;
+        submissionData.isAucklandArea = locationStatus.isAuckland;
+      }
+
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, formType }),
+        body: JSON.stringify(submissionData),
       });
 
       const result = await response.json();
@@ -250,7 +356,32 @@ const ContactPage = () => {
                 </div>
                 <div style={styles.inputGroup}>
                   <label htmlFor="location">Location (Suburb/City) *</label>
-                  <input type="text" id="location" name="location" value={formData.location} onChange={handleChange} style={styles.input} required />
+                  <input 
+                    type="text" 
+                    id="location" 
+                    name="location" 
+                    value={formData.location} 
+                    onChange={handleChange} 
+                    style={{
+                      ...styles.input,
+                      borderColor: locationStatus.isValid === true ? '#28a745' : 
+                                  locationStatus.isValid === false ? '#ffc107' : '#ddd'
+                    }} 
+                    required 
+                  />
+                  {isCheckingLocation && (
+                    <div style={styles.locationChecking}>
+                      🔍 Checking location...
+                    </div>
+                  )}
+                  {locationStatus.message && !isCheckingLocation && (
+                    <div style={{
+                      ...styles.locationStatus,
+                      color: locationStatus.isAuckland ? '#28a745' : '#ffc107'
+                    }}>
+                      {locationStatus.message}
+                    </div>
+                  )}
                 </div>
                 <div style={styles.inputGroup}>
                   <label htmlFor="timeline">Desired Timeline</label>
@@ -488,6 +619,21 @@ const styles = {
   button: { padding: '15px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', border: 'none', borderRadius: '4px', fontSize: '1.1rem', cursor: 'pointer' },
   success: { marginTop: '15px', color: 'green', textAlign: 'center' },
   error: { marginTop: '15px', color: 'red', textAlign: 'center' },
+  locationChecking: { 
+    marginTop: '5px', 
+    fontSize: '0.9rem', 
+    color: '#666', 
+    fontStyle: 'italic' 
+  },
+  locationStatus: { 
+    marginTop: '5px', 
+    fontSize: '0.9rem', 
+    fontWeight: '500',
+    padding: '8px',
+    borderRadius: '4px',
+    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+    border: '1px solid rgba(255, 193, 7, 0.3)'
+  },
 };
 
 export default ContactPage;

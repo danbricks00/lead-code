@@ -267,6 +267,10 @@ export default async function handler(req, res) {
         html: `
           <h1>New Quote Enquiry Received (#${leadId})</h1>
           ${leadDetailsHtml}
+          <h2>Additional Project Notes</h2>
+          <div style="padding: 15px; background-color: #f5f5f5; border-left: 4px solid #007bff; margin: 15px 0;">
+            <p>${message}</p>
+          </div>
           <p><strong>Quote Submission Link:</strong> <a href="${quoteLink}">Submit Your Quote Now</a></p>
           <p><strong>Manual Quote Link:</strong> <a href="${baseUrl}/contact?access=tradesman">Access Manual Quote Form</a></p>
           <p>This is a large project with ${roomCount} rooms. Please prepare a detailed quote for this customer.</p>

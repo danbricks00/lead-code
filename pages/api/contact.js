@@ -1,6 +1,6 @@
 // pages/api/contact.js - Contact Form API
 import { sendEmail } from '../../lib/emailHelper';
-import { validateAndCorrectEmail } from '../../utils/emailValidator';
+import { validateAndCorrectEmail, logEmailValidation } from '../../utils/emailValidator';
 
 export default async function handler(req, res) {
     const { ADMIN_EMAIL, GMAIL_USER, GMAIL_APP_PASSWORD } = process.env;

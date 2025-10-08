@@ -160,6 +160,26 @@ const UnderfloorHeatingNorthShorePage = () => {
           </div>
         </section>
 
+        {/* Related Services Section */}
+        <section style={styles.section}>
+          <h2>Related Auckland Heating Services</h2>
+          <p>Explore our other Auckland heating services:</p>
+          <div style={styles.relatedLinks}>
+            <a href="/services/underfloor-heating-central-auckland" style={styles.relatedLink}>
+              Underfloor Heating Central Auckland
+            </a>
+            <a href="/services/underfloor-heating-west-auckland" style={styles.relatedLink}>
+              Underfloor Heating West Auckland
+            </a>
+            <a href="/services/underfloor-heating-remuera" style={styles.relatedLink}>
+              Underfloor Heating Remuera
+            </a>
+            <a href="/services/underfloor-heating" style={styles.relatedLink}>
+              All Auckland Heating Services
+            </a>
+          </div>
+        </section>
+
         {/* CTA Section */}
         <section style={styles.ctaSection}>
           <h2>Ready to Warm Your North Shore Property?</h2>
@@ -264,6 +284,24 @@ const styles = {
     backgroundColor: '#667eea',
     color: 'white',
     textAlign: 'center'
+  },
+  relatedLinks: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: '1rem',
+    marginTop: '1rem'
+  },
+  relatedLink: {
+    display: 'block',
+    padding: '1rem',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '8px',
+    textDecoration: 'none',
+    color: '#667eea',
+    fontWeight: '600',
+    textAlign: 'center',
+    border: '2px solid transparent',
+    transition: 'all 0.3s ease'
   }
 };
 

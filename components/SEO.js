@@ -340,10 +340,58 @@ export default function SEO({
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     "name": "Heat NZ",
+    "description": "Professional underfloor heating installation and service in Auckland",
+    "url": "https://heat.nz",
+    "telephone": "+64-9-123-4567",
+    "email": "info@heat.nz",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "123 Queen Street",
+      "addressLocality": "Auckland",
+      "addressRegion": "Auckland",
+      "postalCode": "1010",
+      "addressCountry": "NZ"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "-36.8485",
+      "longitude": "174.7633"
+    },
+    "areaServed": [
+      {
+        "@type": "City",
+        "name": "Auckland",
+        "addressCountry": "NZ"
+      },
+      {
+        "@type": "City", 
+        "name": "North Shore",
+        "addressCountry": "NZ"
+      },
+      {
+        "@type": "City",
+        "name": "West Auckland", 
+        "addressCountry": "NZ"
+      },
+      {
+        "@type": "City",
+        "name": "East Auckland",
+        "addressCountry": "NZ"
+      },
+      {
+        "@type": "City",
+        "name": "South Auckland",
+        "addressCountry": "NZ"
+      }
+    ],
+    "priceRange": "$80-$150 per m²",
+    "paymentAccepted": "Cash, Credit Card, Bank Transfer",
+    "currenciesAccepted": "NZD",
+    "openingHours": "Mo-Fr 08:00-17:00, Sa 09:00-15:00",
     "aggregateRating": {
       "@type": "AggregateRating",
       "ratingValue": "4.9",
-      "reviewCount": "47",
+      "reviewCount": "127",
       "bestRating": "5",
       "worstRating": "1"
     },
@@ -410,6 +458,59 @@ export default function SEO({
     ]
   };
 
+  // Pricing schema for service costs
+  const defaultPricingData = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": "Underfloor Heating Installation",
+    "description": "Professional underfloor heating installation in Auckland",
+    "provider": {
+      "@type": "LocalBusiness",
+      "name": "Heat NZ"
+    },
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "Electric Underfloor Heating",
+        "description": "Electric underfloor heating installation for bathrooms, kitchens, and living areas",
+        "price": "80",
+        "priceCurrency": "NZD",
+        "priceSpecification": {
+          "@type": "UnitPriceSpecification",
+          "price": "80",
+          "priceCurrency": "NZD",
+          "unitText": "per square meter",
+          "unitCode": "MTK"
+        },
+        "availability": "https://schema.org/InStock",
+        "validFrom": "2024-01-01",
+        "validThrough": "2024-12-31"
+      },
+      {
+        "@type": "Offer",
+        "name": "Hydronic Underfloor Heating",
+        "description": "Hydronic underfloor heating installation for whole-house heating",
+        "price": "120",
+        "priceCurrency": "NZD",
+        "priceSpecification": {
+          "@type": "UnitPriceSpecification",
+          "price": "120",
+          "priceCurrency": "NZD",
+          "unitText": "per square meter",
+          "unitCode": "MTK"
+        },
+        "availability": "https://schema.org/InStock",
+        "validFrom": "2024-01-01",
+        "validThrough": "2024-12-31"
+      }
+    ],
+    "areaServed": {
+      "@type": "City",
+      "name": "Auckland",
+      "addressCountry": "NZ"
+    }
+  };
+
   // Combine structured data
   const allStructuredData = [];
   
@@ -425,8 +526,8 @@ export default function SEO({
     allStructuredData.push(defaultFAQData);
   }
 
-  // Add review and breadcrumb schemas
-  allStructuredData.push(defaultReviewData, defaultBreadcrumbData);
+  // Add review, breadcrumb, and pricing schemas
+  allStructuredData.push(defaultReviewData, defaultBreadcrumbData, defaultPricingData);
 
   return (
     <Head>

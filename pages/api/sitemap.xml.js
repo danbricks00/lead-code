@@ -143,6 +143,48 @@ export default function handler(req, res) {
       priority: '0.8',
       changefreq: 'weekly',
       lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating-north-shore',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating-waitakere',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating-rodney',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating-manukau',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating-franklin',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating-papakura',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating-pukekohe',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
     }
   ];
 

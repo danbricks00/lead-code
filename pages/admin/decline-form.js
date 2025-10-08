@@ -1,8 +1,10 @@
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import crypto from 'crypto';
+import dynamic from 'next/dynamic';
 
-export default function AdminDeclineForm() {
+// Create a client-only component
+function AdminDeclineFormClient() {
   const router = useRouter();
   const { quoteId, ts, token } = router.query;
   const [reason, setReason] = useState('');
@@ -10,6 +12,12 @@ export default function AdminDeclineForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [dateError, setDateError] = useState('');
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure we're on the client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Generate token for API call
   function generateToken(id, ts) {
@@ -22,6 +30,8 @@ export default function AdminDeclineForm() {
   const urlRegex = /https?:\/\/|www\.|\S+\.\S+\/\S+/i;
 
   const handleDatePaste = (e) => {
+    if (typeof window === 'undefined') return;
+    
     const clip = (e.clipboardData || window.clipboardData).getData('text') || '';
     if (urlRegex.test(clip)) {
       e.preventDefault();
@@ -93,6 +103,26 @@ export default function AdminDeclineForm() {
       setIsSubmitting(false);
     }
   };
+
+  // Show loading state during SSR
+  if (!isClient) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '100vh',
+        fontFamily: 'Arial, sans-serif',
+        backgroundColor: '#f8f9fa',
+        padding: '20px'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <h2>Loading...</h2>
+          <p>Initializing admin form...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ 
@@ -253,3 +283,24 @@ export default function AdminDeclineForm() {
     </div>
   );
 }
+
+// Export with dynamic import to disable SSR
+export default dynamic(() => Promise.resolve(AdminDeclineFormClient), {
+  ssr: false,
+  loading: () => (
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      minHeight: '100vh',
+      fontFamily: 'Arial, sans-serif',
+      backgroundColor: '#f8f9fa',
+      padding: '20px'
+    }}>
+      <div style={{ textAlign: 'center' }}>
+        <h2>Loading...</h2>
+        <p>Initializing admin form...</p>
+      </div>
+    </div>
+  )
+});

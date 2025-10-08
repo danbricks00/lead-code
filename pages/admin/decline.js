@@ -1,14 +1,25 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import crypto from 'crypto';
+import dynamic from 'next/dynamic';
 
-export default function AdminDecline() {
+// Create a client-only component
+function AdminDeclineClient() {
   const router = useRouter();
   const { quoteId } = router.query;
   const [status, setStatus] = useState('processing');
   const [message, setMessage] = useState('Processing Quote Decline...');
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure we're on the client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     console.log('🔍 [ADMIN-PAGE] Component mounted, quoteId:', quoteId);
     console.log('🔍 [ADMIN-PAGE] Current URL:', window.location.href);
     console.log('🔍 [ADMIN-PAGE] Router query:', router.query);
@@ -92,6 +103,24 @@ export default function AdminDecline() {
     return hmac.digest("hex");
   }
 
+  // Show loading state during SSR
+  if (!isClient) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontFamily: 'Arial, sans-serif'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <h2>Loading...</h2>
+          <p>Initializing admin interface...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ 
       display: 'flex', 
@@ -144,3 +173,22 @@ export default function AdminDecline() {
     </div>
   );
 }
+
+// Export with dynamic import to disable SSR
+export default dynamic(() => Promise.resolve(AdminDeclineClient), {
+  ssr: false,
+  loading: () => (
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      height: '100vh',
+      fontFamily: 'Arial, sans-serif'
+    }}>
+      <div style={{ textAlign: 'center' }}>
+        <h2>Loading...</h2>
+        <p>Initializing admin interface...</p>
+      </div>
+    </div>
+  )
+});

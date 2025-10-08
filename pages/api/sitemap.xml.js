@@ -39,6 +39,12 @@ export default function handler(req, res) {
       priority: '0.5',
       changefreq: 'monthly',
       lastmod: currentDate
+    },
+    {
+      url: '/faq',
+      priority: '0.7',
+      changefreq: 'monthly',
+      lastmod: currentDate
     }
   ];
 
@@ -49,11 +55,64 @@ export default function handler(req, res) {
       priority: '0.8',
       changefreq: 'monthly',
       lastmod: currentDate
+    },
+    {
+      url: '/blog/electric-vs-hydronic-underfloor-heating',
+      priority: '0.7',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    },
+    {
+      url: '/blog/underfloor-heating-maintenance-tips',
+      priority: '0.7',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    },
+    {
+      url: '/blog/energy-efficient-heating-solutions',
+      priority: '0.7',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    },
+    {
+      url: '/blog/renovation-heating-options',
+      priority: '0.6',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    }
+  ];
+
+  // Additional service pages
+  const servicePages = [
+    {
+      url: '/services/electric-underfloor-heating',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/hydronic-underfloor-heating',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/heating-maintenance',
+      priority: '0.7',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/heating-repairs',
+      priority: '0.7',
+      changefreq: 'monthly',
+      lastmod: currentDate
     }
   ];
 
   // Key suburb service pages (high-priority Auckland suburbs)
   const suburbPages = [
+    // Central Auckland
     {
       url: '/services/underfloor-heating/remuera',
       priority: '0.8',
@@ -85,6 +144,25 @@ export default function handler(req, res) {
       lastmod: currentDate
     },
     {
+      url: '/services/underfloor-heating/newmarket',
+      priority: '0.8',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating/epsom',
+      priority: '0.8',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating/mt-eden',
+      priority: '0.8',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    },
+    // North Shore
+    {
       url: '/services/underfloor-heating/takapuna',
       priority: '0.8',
       changefreq: 'monthly',
@@ -103,21 +181,96 @@ export default function handler(req, res) {
       lastmod: currentDate
     },
     {
-      url: '/services/underfloor-heating/grey-lynn',
-      priority: '0.8',
+      url: '/services/underfloor-heating/northcote',
+      priority: '0.7',
       changefreq: 'monthly',
       lastmod: currentDate
     },
     {
-      url: '/services/underfloor-heating/epsom',
-      priority: '0.8',
+      url: '/services/underfloor-heating/birkenhead',
+      priority: '0.7',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating/albany',
+      priority: '0.7',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    },
+    // East Auckland
+    {
+      url: '/services/underfloor-heating/kohimarama',
+      priority: '0.7',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating/mission-bay',
+      priority: '0.7',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating/glendowie',
+      priority: '0.7',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating/beachlands',
+      priority: '0.6',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    },
+    // West Auckland
+    {
+      url: '/services/underfloor-heating/henderson',
+      priority: '0.7',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating/massey',
+      priority: '0.7',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating/new-lynn',
+      priority: '0.7',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating/titirangi',
+      priority: '0.6',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    },
+    // South Auckland
+    {
+      url: '/services/underfloor-heating/manurewa',
+      priority: '0.7',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating/papakura',
+      priority: '0.7',
+      changefreq: 'monthly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating/pukekohe',
+      priority: '0.6',
       changefreq: 'monthly',
       lastmod: currentDate
     }
   ];
 
   // Combine all pages
-  const allPages = [...staticPages, ...blogPosts, ...suburbPages];
+  const allPages = [...staticPages, ...blogPosts, ...servicePages, ...suburbPages];
 
   // Generate XML sitemap
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>

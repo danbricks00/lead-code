@@ -315,6 +315,97 @@ export default function SEO({
           "@type": "Answer",
           "text": "Yes, we provide comprehensive maintenance and repair services for both electric and hydronic underfloor heating systems throughout Auckland and surrounding areas."
         }
+      },
+      {
+        "@type": "Question",
+        "name": "What types of underfloor heating do you install?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "We install both electric and hydronic underfloor heating systems. Electric systems are ideal for smaller areas and renovations, while hydronic systems are more efficient for larger spaces and new builds."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do you provide warranties on your installations?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, all our installations come with comprehensive warranties covering both materials and workmanship. Warranty periods vary by system type and manufacturer."
+        }
+      }
+    ]
+  };
+
+  // Review schema for testimonials
+  const defaultReviewData = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "Heat NZ",
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "reviewCount": "47",
+      "bestRating": "5",
+      "worstRating": "1"
+    },
+    "review": [
+      {
+        "@type": "Review",
+        "author": {
+          "@type": "Person",
+          "name": "Sarah M."
+        },
+        "reviewRating": {
+          "@type": "Rating",
+          "ratingValue": "5",
+          "bestRating": "5"
+        },
+        "reviewBody": "Our new underfloor heating has completely changed how we live. It's warm, efficient, and no more cold tiles in winter!"
+      },
+      {
+        "@type": "Review",
+        "author": {
+          "@type": "Person",
+          "name": "James R."
+        },
+        "reviewRating": {
+          "@type": "Rating",
+          "ratingValue": "5",
+          "bestRating": "5"
+        },
+        "reviewBody": "The whole process was simple! Heat.nz found us a reliable installer who finished on time and within budget."
+      },
+      {
+        "@type": "Review",
+        "author": {
+          "@type": "Person",
+          "name": "Anika P."
+        },
+        "reviewRating": {
+          "@type": "Rating",
+          "ratingValue": "5",
+          "bestRating": "5"
+        },
+        "reviewBody": "Worth every dollar. The system runs quietly, the house feels amazing, and our power bills actually went down."
+      }
+    ]
+  };
+
+  // Breadcrumb schema
+  const defaultBreadcrumbData = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://heat.nz"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Underfloor Heating Auckland",
+        "item": "https://heat.nz/services/underfloor-heating"
       }
     ]
   };
@@ -334,6 +425,9 @@ export default function SEO({
     allStructuredData.push(defaultFAQData);
   }
 
+  // Add review and breadcrumb schemas
+  allStructuredData.push(defaultReviewData, defaultBreadcrumbData);
+
   return (
     <Head>
       {/* Basic Meta Tags */}
@@ -343,8 +437,18 @@ export default function SEO({
       {noindex && <meta name="robots" content="noindex,nofollow" />}
       <link rel="canonical" href={canonicalUrl} />
       
+      {/* Favicon and Icons */}
+      <link rel="icon" href="/favicon.ico" sizes="any" />
+      <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+      <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+      <link rel="manifest" href="/manifest.json" />
+      
       {/* Viewport and Mobile */}
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+      <meta name="theme-color" content="#667eea" />
+      <meta name="apple-mobile-web-app-capable" content="yes" />
+      <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      <meta name="apple-mobile-web-app-title" content="Heat NZ" />
       
       {/* Open Graph Tags */}
       <meta property="og:type" content={type} />

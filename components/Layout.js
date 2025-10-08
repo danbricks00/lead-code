@@ -50,6 +50,10 @@ const Layout = ({ children }) => {
       <Head>
         <title>Heat.nz - Connect with Qualified Tradesmen</title>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+        
+        {/* Preload critical fonts */}
+        <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" as="style" onLoad="this.onload=null;this.rel='stylesheet'" />
+        <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" /></noscript>
         <style jsx global>{`
           /* Mobile chatbot positioning fixes */
           @media (max-width: 768px) {
@@ -129,6 +133,7 @@ const Layout = ({ children }) => {
             <div style={styles.navMenu}>
               <Link href="/" style={router.pathname === '/' ? styles.activeLink : styles.navLink}>Home</Link>
               <Link href="/about" style={router.pathname === '/about' ? styles.activeLink : styles.navLink}>About Us</Link>
+              <Link href="/faq" style={router.pathname === '/faq' ? styles.activeLink : styles.navLink}>FAQ</Link>
               <Link href="/contact" style={router.pathname === '/contact' ? styles.activeLink : styles.navLink}>Contact</Link>
               <Link href="/tradesman-login" style={styles.loginBtn}>Tradesman Login</Link>
             </div>
@@ -153,6 +158,7 @@ const Layout = ({ children }) => {
           <div style={styles.mobileMenu}>
             <Link href="/" style={styles.mobileNavLink} onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
             <Link href="/about" style={styles.mobileNavLink} onClick={() => setIsMobileMenuOpen(false)}>About Us</Link>
+            <Link href="/faq" style={styles.mobileNavLink} onClick={() => setIsMobileMenuOpen(false)}>FAQ</Link>
             <Link href="/contact" style={styles.mobileNavLink} onClick={() => setIsMobileMenuOpen(false)}>Contact</Link>
             <Link href="/tradesman-login" style={styles.mobileLoginBtn} onClick={() => setIsMobileMenuOpen(false)}>Tradesman Login</Link>
           </div>

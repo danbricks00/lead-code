@@ -18,12 +18,12 @@ export default function SEO({
   // Construct canonical URL if not provided
   const canonicalUrl = canonical || (typeof window !== 'undefined' 
     ? `${window.location.origin}${router.asPath}` 
-    : `https://heat.nz${router.asPath}`);
+    : `https://heat.nz${router.asPath || ''}`);
   
   // Construct og:url
   const ogUrl = canonical || (typeof window !== 'undefined' 
     ? `${window.location.origin}${router.asPath}` 
-    : `https://heat.nz${router.asPath}`);
+    : `https://heat.nz${router.asPath || ''}`);
   
   // Default LocalBusiness structured data
   const defaultLocalBusinessData = {

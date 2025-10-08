@@ -6,6 +6,8 @@ const Analytics = () => {
   const router = useRouter();
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
     // Track page views
     const handleRouteChange = (url) => {
       if (typeof window !== 'undefined' && window.gtag) {
@@ -141,7 +143,8 @@ const Analytics = () => {
 
   // Enhanced conversion tracking for different user actions
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
       // Track scroll depth
       let maxScroll = 0;
       const trackScrollDepth = () => {
@@ -220,7 +223,6 @@ const Analytics = () => {
         window.removeEventListener('scroll', trackScrollDepth);
         window.removeEventListener('beforeunload', trackTimeOnPage);
       };
-    }
   }, []);
 
   return null; // This component doesn't render anything

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Chatbot from './Chatbot'; // Import the Chatbot
 import SEO from './SEO'; // Import the SEO component
-import Analytics from './Analytics'; // Import the Analytics component
+// import Analytics from './Analytics'; // Temporarily disabled for build // Import the Analytics component
 
 const Layout = ({ children }) => {
   const router = useRouter();
@@ -123,7 +123,7 @@ const Layout = ({ children }) => {
       />
       
       {/* Analytics tracking */}
-      <Analytics />
+        {/* <Analytics /> */}
       
       <header style={styles.header}>
         <nav style={styles.nav}>

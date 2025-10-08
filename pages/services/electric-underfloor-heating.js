@@ -191,10 +191,10 @@ const ElectricUnderfloorHeatingPage = () => {
               <div style={styles.tableCell}>Installation Time</div>
             </div>
             {costs.map((cost, index) => (
-              <div key={index} style={styles.tableRow}>
+              <div key={index} style={index === costs.length - 1 ? styles.tableRowLast : styles.tableRow}>
                 <div style={styles.tableCell}>{cost.area}</div>
                 <div style={styles.tableCell}>{cost.cost}</div>
-                <div style={styles.tableCell}>{cost.time}</div>
+                <div style={styles.tableCellLast}>{cost.time}</div>
               </div>
             ))}
           </div>
@@ -376,14 +376,17 @@ const styles = {
     gridTemplateColumns: '1fr 1fr 1fr',
     borderBottom: '1px solid #e5e7eb',
   },
-  tableRow:lastChild: {
+  tableRowLast: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr 1fr',
     borderBottom: 'none',
   },
   tableCell: {
     padding: '1rem',
     borderRight: '1px solid #e5e7eb',
   },
-  tableCell:lastChild: {
+  tableCellLast: {
+    padding: '1rem',
     borderRight: 'none',
   },
   costNote: {

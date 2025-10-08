@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Chatbot from './Chatbot'; // Import the Chatbot
 import SEO from './SEO'; // Import the SEO component
+import Analytics from './Analytics'; // Import the Analytics component
 
 const Layout = ({ children }) => {
   const router = useRouter();
@@ -120,6 +121,9 @@ const Layout = ({ children }) => {
         description="Underfloor heating specialists in Auckland. Supply, install & service electric and hydronic systems. Fast quotes & warranties."
         canonical={`https://heat.nz${router.asPath}`}
       />
+      
+      {/* Analytics tracking */}
+      <Analytics />
       
       <header style={styles.header}>
         <nav style={styles.nav}>

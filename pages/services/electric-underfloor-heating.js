@@ -152,7 +152,10 @@ const ElectricUnderfloorHeatingPage = () => {
               </p>
               <ul style={styles.benefitsList}>
                 {benefits.map((benefit, index) => (
-                  <li key={index}>{benefit}</li>
+                  <li key={index} style={styles.benefitItem}>
+                    <span style={styles.benefitIcon}>✓</span>
+                    {benefit}
+                  </li>
                 ))}
               </ul>
             </div>
@@ -309,17 +312,19 @@ const styles = {
     listStyle: 'none',
     padding: 0,
   },
-  benefitsList li: {
+  benefitItem: {
     padding: '0.5rem 0',
     position: 'relative',
     paddingLeft: '1.5rem',
+    display: 'flex',
+    alignItems: 'center',
   },
-  benefitsList li:before: {
-    content: '"✓"',
+  benefitIcon: {
     position: 'absolute',
     left: 0,
     color: '#667eea',
     fontWeight: 'bold',
+    marginRight: '0.5rem',
   },
   imageContent: {
     textAlign: 'center',

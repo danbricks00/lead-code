@@ -119,6 +119,30 @@ export default function handler(req, res) {
       priority: '0.8',
       changefreq: 'weekly',
       lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating-central-auckland',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating-west-auckland',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating-east-auckland',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating-south-auckland',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
     }
   ];
 

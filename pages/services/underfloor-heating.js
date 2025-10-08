@@ -83,11 +83,11 @@ const UnderfloorHeatingPage = () => {
 
   return (
     <Layout>
-      <SEO
-        title="Underfloor Heating Auckland — Install & Service"
-        description="Professional underfloor heating installation in Auckland. Electric and hydronic systems with free quotes. Serving Remuera, Ponsonby, Parnell and surrounding areas."
+        <SEO
+        title="Underfloor Heating Auckland — Professional Installation & Service | Heat NZ"
+        description="Auckland's leading underfloor heating specialists. Professional electric & hydronic heating installation, maintenance & repair. Free quotes for all Auckland suburbs including Remuera, Ponsonby, Parnell, Takapuna & more."
         canonical="https://heat.nz/services/underfloor-heating"
-        keywords="underfloor heating Auckland, electric underfloor heating, hydronic heating, heating installation Auckland, underfloor heating cost"
+        keywords="underfloor heating Auckland, electric underfloor heating Auckland, hydronic heating Auckland, heating installation Auckland, underfloor heating cost Auckland, bathroom heating Auckland, kitchen heating Auckland, heating contractors Auckland, floor heating Auckland, radiant heating Auckland"
         structuredData={[serviceData]}
         faqData={faqData}
       />
@@ -96,10 +96,10 @@ const UnderfloorHeatingPage = () => {
         {/* Hero Section */}
         <section style={styles.hero}>
           <div style={styles.container}>
-            <h1 style={styles.h1}>Underfloor Heating Auckland — Install & Service</h1>
+            <h1 style={styles.h1}>Professional Underfloor Heating Auckland — Electric & Hydronic Installation</h1>
             <p style={styles.lead}>
-              Professional underfloor heating specialists serving Auckland and surrounding areas. 
-              Get instant quotes for electric and hydronic systems with expert installation and ongoing service.
+              Auckland's premier underfloor heating specialists with 15+ years experience. We install, service, and maintain electric and hydronic heating systems throughout Auckland. 
+              From bathroom heating in Remuera to whole-house systems in Ponsonby, we provide energy-efficient heating solutions for every Auckland home.
             </p>
             <button 
               onClick={handleGetQuote}
@@ -107,6 +107,38 @@ const UnderfloorHeatingPage = () => {
             >
               Get Free Quote
             </button>
+          </div>
+        </section>
+
+        {/* Auckland Service Areas Section */}
+        <section style={styles.section}>
+          <div style={styles.container}>
+            <h2 style={styles.h2}>Underfloor Heating Services Across Auckland</h2>
+            <p style={styles.lead}>
+              We provide professional underfloor heating installation and service throughout Auckland, including:
+            </p>
+            <div style={styles.suburbsGrid}>
+              <div style={styles.suburbGroup}>
+                <h3>Central Auckland</h3>
+                <p>Remuera, Parnell, Newmarket, Epsom, Grafton, Mount Eden</p>
+              </div>
+              <div style={styles.suburbGroup}>
+                <h3>North Shore</h3>
+                <p>Takapuna, Milford, Devonport, Browns Bay, Albany, Glenfield</p>
+              </div>
+              <div style={styles.suburbGroup}>
+                <h3>East Auckland</h3>
+                <p>Howick, Pakuranga, Botany, Flat Bush, Half Moon Bay</p>
+              </div>
+              <div style={styles.suburbGroup}>
+                <h3>West Auckland</h3>
+                <p>Ponsonby, Grey Lynn, Herne Bay, Westmere, Pt Chevalier</p>
+              </div>
+              <div style={styles.suburbGroup}>
+                <h3>South Auckland</h3>
+                <p>Manukau, Papatoetoe, Otahuhu, Mangere, Papakura</p>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -378,6 +410,18 @@ const styles = {
     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
     gap: '30px',
     marginTop: '30px'
+  },
+  suburbsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: '2rem',
+    marginTop: '2rem'
+  },
+  suburbGroup: {
+    backgroundColor: '#f8f9fa',
+    padding: '2rem',
+    borderRadius: '10px',
+    border: '1px solid #e9ecef'
   },
   areaColumn: {
     backgroundColor: '#f8f9fa',

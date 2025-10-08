@@ -105,10 +105,10 @@ const ElectricUnderfloorHeatingPage = () => {
   return (
     <Layout>
       <SEO
-        title="Electric Underfloor Heating Auckland - Professional Installation"
-        description="Professional electric underfloor heating installation in Auckland. Perfect for renovations, bathrooms & individual room heating. Free quotes available."
+        title="Electric Underfloor Heating Auckland — Bathroom & Kitchen Heating Installation"
+        description="Professional electric underfloor heating installation in Auckland. Perfect for bathrooms, kitchens & renovations. From $80-$150/m² with 1-3 day installation. Free quotes for all Auckland suburbs."
         canonical="https://heat.nz/services/electric-underfloor-heating"
-        keywords="electric underfloor heating Auckland, electric heating installation, bathroom heating, kitchen heating, renovation heating"
+        keywords="electric underfloor heating Auckland, bathroom heating Auckland, kitchen heating Auckland, electric floor heating Auckland, heating mats Auckland, electric heating installation Auckland, renovation heating Auckland, tile heating Auckland, bathroom floor heating"
         structuredData={structuredData}
       />
       

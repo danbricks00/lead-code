@@ -107,6 +107,18 @@ export default function handler(req, res) {
       priority: '0.7',
       changefreq: 'monthly',
       lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating-remuera',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/underfloor-heating-ponsonby',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
     }
   ];
 

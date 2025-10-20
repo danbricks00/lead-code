@@ -79,6 +79,12 @@ export default function handler(req, res) {
       priority: '0.6',
       changefreq: 'monthly',
       lastmod: currentDate
+    },
+    {
+      url: '/blog/choosing-right-underfloor-heating-system-auckland',
+      priority: '0.7',
+      changefreq: 'monthly',
+      lastmod: currentDate
     }
   ];
 
@@ -134,6 +140,24 @@ export default function handler(req, res) {
     },
     {
       url: '/services/electric-tile-heating-east-auckland',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/floor-heating-west-auckland',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/electric-under-tile-heating-south-auckland',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/tile-heating-newmarket',
       priority: '0.8',
       changefreq: 'weekly',
       lastmod: currentDate

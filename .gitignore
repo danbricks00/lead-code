@@ -55,5 +55,10 @@ temp/
 # Ignore configuration files with sensitive information
 config.js
 
+# Ignore Google Service Account keys
+tradelead-*.json
+# Allow template files
+!tradelead-service-account-template.json
+
 # Ignore nested git repositories
 temp_pdf_converter/.vscode/

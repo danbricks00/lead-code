@@ -2,62 +2,62 @@ import React from 'react';
 import Layout from '../../components/Layout';
 import SEO from '../../components/SEO';
 
-const ElectricUnderfloorHeatingPage = () => {
+const TileHeatingPage = () => {
   const features = [
     {
-      title: "Easy Installation",
-      description: "Perfect for renovations and smaller spaces with minimal floor height increase.",
+      title: "Perfect for Bathrooms",
+      description: "Provides luxurious warmth under tile floor coverings, ideal for bathrooms and wet areas.",
+      icon: "🛁"
+    },
+    {
+      title: "Fast Warm-Up",
+      description: "Electric tile heating warms up quickly, providing instant comfort when you need it.",
       icon: "⚡"
     },
     {
-      title: "Individual Room Control",
-      description: "Each room can be controlled independently with programmable thermostats.",
-      icon: "🎛️"
+      title: "Energy Efficient",
+      description: "Zone-controlled heating allows you to heat only the areas you're using, saving energy.",
+      icon: "💚"
     },
     {
-      title: "Fast Response Time",
-      description: "Heats up quickly and provides immediate warmth when you need it.",
-      icon: "⚡"
-    },
-    {
-      title: "Low Maintenance",
-      description: "Minimal maintenance required with long-lasting heating elements.",
-      icon: "🔧"
-    },
-    {
-      title: "Cost Effective",
-      description: "Lower upfront costs compared to hydronic systems, ideal for targeted heating.",
-      icon: "💰"
+      title: "Low Profile",
+      description: "Minimal floor height increase means compatibility with existing door thresholds.",
+      icon: "📏"
     },
     {
       title: "Silent Operation",
-      description: "Completely silent operation with no moving parts or noise.",
+      description: "No moving parts means completely silent heating that won't disturb your peace.",
       icon: "🔇"
+    },
+    {
+      title: "Easy Control",
+      description: "Smart thermostats allow precise temperature control and programmable scheduling.",
+      icon: "🎛️"
     }
   ];
 
   const benefits = [
-    "Perfect for bathrooms, kitchens, and living areas",
-    "Ideal for renovations and retrofits",
-    "Individual room temperature control",
-    "Fast installation (1-3 days typically)",
+    "Perfect heating solution for tile floors",
+    "Ideal for bathrooms, kitchens, and wet areas",
+    "Fast installation with minimal disruption",
+    "Zone-controlled heating for energy efficiency",
+    "Compatible with ceramic, porcelain, and stone tiles",
     "Low maintenance requirements",
-    "Cost-effective for smaller areas",
-    "Silent operation",
-    "Compatible with most floor coverings"
+    "Individual room temperature control",
+    "Silent operation with no moving parts"
   ];
 
   const costs = [
-    { area: "Small Bathroom (5-10m²)", cost: "$400-$1,200", time: "1 day" },
-    { area: "Kitchen (15-25m²)", cost: "$1,200-$2,500", time: "1-2 days" },
-    { area: "Living Room (20-40m²)", cost: "$1,600-$4,000", time: "2-3 days" },
-    { area: "Whole House (100m²+)", cost: "$8,000-$15,000", time: "3-5 days" }
+    { area: "Bathroom (3-8m²)", cost: "$300-$1,000", time: "1 day" },
+    { area: "Kitchen (10-20m²)", cost: "$800-$2,000", time: "1-2 days" },
+    { area: "Ensuite (4-6m²)", cost: "$400-$800", time: "1 day" },
+    { area: "Powder Room (2-4m²)", cost: "$200-$500", time: "1 day" }
   ];
 
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Service",
-    "name": "Electric Underfloor Heating Installation Auckland",
+    "name": "Tile Heating Installation Auckland - Electric Under Tile Heating",
     "provider": {
       "name": "Heat NZ",
       "url": "https://heat.nz"
@@ -65,8 +65,8 @@ const ElectricUnderfloorHeatingPage = () => {
     "areaServed": {
       "name": "Auckland"
     },
-    "serviceType": "Electric underfloor heating installation, maintenance & repair",
-    "description": "Professional electric underfloor heating installation in Auckland. Perfect for renovations, bathrooms, kitchens, and individual room heating.",
+    "serviceType": "Tile heating installation, under tile heating, electric floor heating",
+    "description": "Professional tile heating installation in Auckland. Electric under tile heating perfect for bathrooms, kitchens, and wet areas with tile floor coverings.",
     "offers": {
       "@type": "Offer",
       "priceRange": "$80-$150 per square meter",
@@ -75,80 +75,111 @@ const ElectricUnderfloorHeatingPage = () => {
     "category": "Home Improvement",
     "hasOfferCatalog": {
       "@type": "OfferCatalog",
-      "name": "Electric Underfloor Heating Services",
+      "name": "Tile Heating Services",
       "itemListElement": [
         {
           "@type": "Offer",
           "itemOffered": {
             "@type": "Service",
-            "name": "Electric Heating Mat Installation"
+            "name": "Electric Tile Heating Mat Installation"
           }
         },
         {
           "@type": "Offer",
           "itemOffered": {
             "@type": "Service",
-            "name": "Electric Heating Cable Installation"
+            "name": "Under Tile Heating Cable Installation"
           }
         },
         {
           "@type": "Offer",
           "itemOffered": {
             "@type": "Service",
-            "name": "Thermostat Installation"
+            "name": "Bathroom Tile Heating"
           }
         }
       ]
     }
   };
 
+  const faqData = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How much does tile heating cost in Auckland?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Tile heating costs in Auckland typically range from $80-$150 per square meter, including installation. Smaller bathrooms may cost $300-$1,000, while larger areas like kitchens range from $800-$2,000 depending on size and complexity."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can tile heating be installed under any type of tile?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, electric tile heating is compatible with ceramic tiles, porcelain tiles, natural stone, and most other tile materials. We ensure proper installation techniques for each tile type to maximize efficiency and longevity."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How long does tile heating installation take?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Most tile heating installations take 1-2 days. Small bathrooms typically take 1 day, while larger areas like kitchens may take 1-2 days. The actual tiling is done after the heating system is installed and tested."
+        }
+      }
+    ]
+  };
+
   return (
     <Layout>
       <SEO
-        title="Electric Underfloor Heating Auckland — Bathroom & Kitchen Heating Installation"
-        description="Professional electric underfloor heating installation in Auckland. Perfect for bathrooms, kitchens & renovations. From $80-$150/m² with 1-3 day installation. Free quotes for all Auckland suburbs."
-        canonical="https://heat.nz/services/electric-underfloor-heating"
-        keywords="electric underfloor heating Auckland, tile heating Auckland, under tile heating Auckland, floor heating Auckland, electric tile heating Auckland, electric under tile heating Auckland, bathroom heating Auckland, kitchen heating Auckland, electric floor heating Auckland, heating mats Auckland, electric heating installation Auckland, renovation heating Auckland, bathroom floor heating"
-        structuredData={structuredData}
+        title="Tile Heating Auckland — Electric Under Tile Heating Installation | Heat NZ"
+        description="Professional tile heating installation in Auckland. Electric under tile heating perfect for bathrooms, kitchens & wet areas. From $80-$150/m² with fast 1-2 day installation. Free quotes."
+        canonical="https://heat.nz/services/tile-heating"
+        keywords="tile heating Auckland, under tile heating Auckland, floor heating Auckland, electric tile heating Auckland, electric under tile heating Auckland, electric under tile, bathroom heating Auckland, tile floor heating Auckland, electric under tile heating, heating mats under tiles, wet area heating Auckland, bathroom floor heating, tile heating installation Auckland, under tile heating installation, electric heating mats Auckland, tile heating cost Auckland, bathroom tile heating, kitchen tile heating, wet area tile heating, ceramic tile heating Auckland, porcelain tile heating Auckland, stone tile heating Auckland, mosaic tile heating Auckland, electric heating cables under tiles, tile heating systems Auckland, bathroom underfloor heating, kitchen underfloor heating, electric floor heating tiles, radiant tile heating, electric heating installation under tiles"
+        structuredData={[structuredData, faqData]}
       />
       
       <div style={styles.container}>
         {/* Hero Section */}
         <section style={styles.hero}>
           <div style={styles.heroContent}>
-            <h1>Electric Underfloor Heating Auckland</h1>
+            <h1>Tile Heating Auckland</h1>
             <p style={styles.heroSubtitle}>
-              Professional electric underfloor heating installation perfect for renovations, 
-              bathrooms, kitchens, and individual room heating solutions.
+              Professional electric tile heating installation perfect for bathrooms, 
+              kitchens, and wet areas with tile floor coverings.
             </p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
                 <strong>From:</strong> $80-$150/m²
               </div>
               <div style={styles.stat}>
-                <strong>Installation:</strong> 1-3 days
+                <strong>Installation:</strong> 1-2 days
               </div>
               <div style={styles.stat}>
-                <strong>Warranty:</strong> Up to 25 years
+                <strong>Compatible:</strong> All tile types
               </div>
             </div>
           </div>
         </section>
 
-        {/* What is Electric Underfloor Heating */}
+        {/* What is Tile Heating */}
         <section style={styles.section}>
           <div style={styles.contentGrid}>
             <div style={styles.textContent}>
-              <h2>What is Electric Underfloor Heating?</h2>
+              <h2>What is Electric Tile Heating?</h2>
               <p>
-                Electric underfloor heating uses heating cables or mats installed beneath your floor 
-                surface to provide radiant heat throughout the room. It's perfect for targeted heating 
-                in specific areas like bathrooms, kitchens, or living rooms.
+                Electric tile heating is a specialized form of underfloor heating designed 
+                specifically for areas with tile floor coverings. It uses thin heating mats 
+                or cables installed directly under your tiles to provide luxurious, even heat.
               </p>
               <p>
-                Unlike traditional radiators, electric underfloor heating distributes heat evenly 
-                across the entire floor surface, eliminating cold spots and providing comfortable, 
-                consistent warmth.
+                Perfect for bathrooms, kitchens, and wet areas, tile heating transforms 
+                cold tile floors into warm, comfortable surfaces that dry quickly and 
+                provide year-round comfort.
               </p>
               <ul style={styles.benefitsList}>
                 {benefits.map((benefit, index) => (
@@ -161,7 +192,7 @@ const ElectricUnderfloorHeatingPage = () => {
             </div>
             <div style={styles.imageContent}>
               <div style={styles.placeholderImage}>
-                <span style={styles.imageText}>Electric Heating System Diagram</span>
+                <span style={styles.imageText}>Tile Heating System Under Tiles</span>
               </div>
             </div>
           </div>
@@ -169,7 +200,7 @@ const ElectricUnderfloorHeatingPage = () => {
 
         {/* Features Grid */}
         <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Why Choose Electric Underfloor Heating?</h2>
+          <h2 style={styles.sectionTitle}>Why Choose Tile Heating?</h2>
           <div style={styles.featuresGrid}>
             {features.map((feature, index) => (
               <div key={index} style={styles.featureCard}>
@@ -183,7 +214,7 @@ const ElectricUnderfloorHeatingPage = () => {
 
         {/* Cost Guide */}
         <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Electric Underfloor Heating Costs</h2>
+          <h2 style={styles.sectionTitle}>Tile Heating Costs</h2>
           <div style={styles.costTable}>
             <div style={styles.tableHeader}>
               <div style={styles.tableCell}>Room Size</div>
@@ -199,8 +230,8 @@ const ElectricUnderfloorHeatingPage = () => {
             ))}
           </div>
           <p style={styles.costNote}>
-            *Prices include materials, installation, and basic thermostat. Final costs depend on 
-            room size, floor type, and specific requirements.
+            *Prices include heating mats, installation, and thermostat. Final costs depend on 
+            room size, tile type, and electrical requirements.
           </p>
         </section>
 
@@ -211,43 +242,70 @@ const ElectricUnderfloorHeatingPage = () => {
             <div style={styles.step}>
               <div style={styles.stepNumber}>1</div>
               <div style={styles.stepContent}>
-                <h3>Site Assessment</h3>
-                <p>We visit your property to assess the space, floor type, and electrical requirements.</p>
+                <h3>Assessment & Planning</h3>
+                <p>We assess your space, check electrical requirements, and plan the optimal heating layout for your tiles.</p>
               </div>
             </div>
             <div style={styles.step}>
               <div style={styles.stepNumber}>2</div>
               <div style={styles.stepContent}>
-                <h3>System Design</h3>
-                <p>Custom heating layout designed for optimal coverage and efficiency.</p>
+                <h3>System Installation</h3>
+                <p>Install heating mats or cables, connect to power supply, and test the system before tiling.</p>
               </div>
             </div>
             <div style={styles.step}>
               <div style={styles.stepNumber}>3</div>
               <div style={styles.stepContent}>
-                <h3>Installation</h3>
-                <p>Professional installation of heating elements, thermostats, and electrical connections.</p>
+                <h3>Tile Installation</h3>
+                <p>Your tiler installs tiles over the heating system using appropriate adhesives and techniques.</p>
               </div>
             </div>
             <div style={styles.step}>
               <div style={styles.stepNumber}>4</div>
               <div style={styles.stepContent}>
-                <h3>Testing & Handover</h3>
-                <p>System testing, user training, and warranty documentation provided.</p>
+                <h3>Final Setup</h3>
+                <p>Install thermostat, test final system, and provide user instructions and warranty documentation.</p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Auckland Service Areas */}
+        <section style={styles.section}>
+          <h2 style={styles.sectionTitle}>Tile Heating Throughout Auckland</h2>
+          <div style={styles.suburbsGrid}>
+            <div style={styles.suburbGroup}>
+              <h4>Central Auckland</h4>
+              <p>Remuera, Ponsonby, Parnell, Newmarket, Epsom, Mt Eden</p>
+            </div>
+            <div style={styles.suburbGroup}>
+              <h4>North Shore</h4>
+              <p>Takapuna, Devonport, Albany, Northcote, Birkenhead</p>
+            </div>
+            <div style={styles.suburbGroup}>
+              <h4>East Auckland</h4>
+              <p>Mission Bay, Kohimarama, Glendowie, Beachlands</p>
+            </div>
+            <div style={styles.suburbGroup}>
+              <h4>West Auckland</h4>
+              <p>Henderson, New Lynn, Massey, Titirangi</p>
+            </div>
+            <div style={styles.suburbGroup}>
+              <h4>South Auckland</h4>
+              <p>Manukau, Papakura, Pukekohe, Franklin</p>
             </div>
           </div>
         </section>
 
         {/* CTA Section */}
         <section style={styles.ctaSection}>
-          <h2>Ready for Electric Underfloor Heating?</h2>
-          <p>Get your free quote today and experience the comfort of electric underfloor heating.</p>
+          <h2>Ready for Warm Tile Floors?</h2>
+          <p>Transform your bathroom or kitchen with electric tile heating. Get your free quote today.</p>
           <button 
             style={styles.ctaButton}
             onClick={() => window.open('/', '_self')}
           >
-            Get Free Quote
+            Get Free Tile Heating Quote
           </button>
         </section>
       </div>
@@ -420,6 +478,18 @@ const styles = {
   stepContent: {
     flex: 1,
   },
+  suburbsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: '2rem',
+  },
+  suburbGroup: {
+    backgroundColor: 'white',
+    padding: '2rem',
+    borderRadius: '10px',
+    boxShadow: '0 5px 15px rgba(0,0,0,0.1)',
+    textAlign: 'center',
+  },
   ctaSection: {
     background: '#f8f9fa',
     padding: '3rem 2rem',
@@ -440,4 +510,4 @@ const styles = {
   },
 };
 
-export default ElectricUnderfloorHeatingPage;
+export default TileHeatingPage;

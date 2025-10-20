@@ -91,6 +91,54 @@ export default function handler(req, res) {
       lastmod: currentDate
     },
     {
+      url: '/services/tile-heating',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/under-tile-heating',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/floor-heating',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/electric-tile-heating',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/electric-under-tile-heating',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/tile-heating-central-auckland',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/under-tile-heating-north-shore',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
+      url: '/services/electric-tile-heating-east-auckland',
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: currentDate
+    },
+    {
       url: '/services/hydronic-underfloor-heating',
       priority: '0.8',
       changefreq: 'weekly',

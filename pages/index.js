@@ -30,7 +30,7 @@ const HomePage = ({ openChat }) => { // Receive openChat prop from Layout
         title="Underfloor Heating Auckland — Free Quote"
         description="Auckland's #1 underfloor heating specialists! Electric & hydronic installation from $80/m². 500+ homes heated. Free quotes, expert installation, 25-year warranty. Get your quote today!"
         canonical="https://heat.nz"
-        keywords="underfloor heating Auckland, electric underfloor heating Auckland, hydronic heating Auckland, heating installation Auckland, underfloor heating quote Auckland, bathroom heating Auckland, kitchen heating Auckland, heating contractors Auckland"
+        keywords="underfloor heating Auckland, tile heating Auckland, under tile heating Auckland, floor heating Auckland, electric tile heating Auckland, electric under tile heating Auckland, electric underfloor heating Auckland, hydronic heating Auckland, heating installation Auckland, underfloor heating quote Auckland, bathroom heating Auckland, kitchen heating Auckland, heating contractors Auckland"
       />
       <div style={styles.pageContainer}>
         {/* Hero Section */}

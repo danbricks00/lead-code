@@ -19,7 +19,10 @@ export default async function handler(req, res) {
     const fs = require('fs').promises;
     const filePath = path.join(process.cwd(), 'data', 'zones.json');
     const fileContents = await fs.readFile(filePath, 'utf8');
-    const zones = JSON.parse(fileContents);
+    const parsedData = JSON.parse(fileContents);
+    
+    // Handle the actual structure of zones.json which has a "suburbs" array
+    const zones = parsedData.suburbs || parsedData;
     
     // Ensure all zones have the new schema fields for compatibility
     const enhancedZones = zones.map(zone => ({

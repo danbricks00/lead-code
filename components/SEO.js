@@ -25,237 +25,143 @@ export default function SEO({
     ? `${window.location.origin}${router.asPath}` 
     : `https://heat.nz${router.asPath || ''}`);
   
-  // Default LocalBusiness structured data
+  // Default LocalBusiness structured data (merged with reviews)
   const defaultLocalBusinessData = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     "name": "Heat NZ",
+    "description": "Professional underfloor heating installation and service in Auckland",
     "url": "https://heat.nz",
     "telephone": "+64-9-123-4567",
+    "email": "info@heat.nz",
     "image": "https://heat.nz/logo.png",
-    "priceRange": "$$",
+    "priceRange": "$80-$150 per m²",
+    "paymentAccepted": "Cash, Credit Card, Bank Transfer",
+    "currenciesAccepted": "NZD",
+    "openingHours": "Mo-Fr 08:00-17:00, Sa 09:00-15:00",
     "address": {
       "@type": "PostalAddress",
+      "streetAddress": "123 Queen Street",
       "addressLocality": "Auckland",
       "addressRegion": "Auckland",
+      "postalCode": "1010",
       "addressCountry": "NZ"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "-36.8485",
+      "longitude": "174.7633"
     },
     "areaServed": [
       { "name": "Auckland" },
-      { "name": "Remuera" },
-      { "name": "Ponsonby" },
-      { "name": "Parnell" },
-      { "name": "Herne Bay" },
-      { "name": "St Heliers" },
-      { "name": "Takapuna" },
-      { "name": "Devonport" },
-      { "name": "Mission Bay" },
-      { "name": "Grey Lynn" },
-      { "name": "Epsom" },
-      { "name": "Newmarket" },
-      { "name": "Parnell" },
-      { "name": "Freemans Bay" },
-      { "name": "Kohimarama" },
-      { "name": "Glendowie" },
-      { "name": "Milford" },
-      { "name": "Castor Bay" },
-      { "name": "Belmont" },
+      { "name": "Auckland CBD" },
       { "name": "Albany" },
-      { "name": "Browns Bay" },
-      { "name": "Northcote" },
-      { "name": "Birkenhead" },
-      { "name": "Mairangi Bay" },
-      { "name": "Murrays Bay" },
-      { "name": "Torbay" },
-      { "name": "Long Bay" },
-      { "name": "Greenhithe" },
-      { "name": "Pinehill" },
-      { "name": "Rosedale" },
-      { "name": "Glenfield" },
+      { "name": "Algies Bay" },
+      { "name": "Anawhata" },
+      { "name": "Arch Hill" },
+      { "name": "Ardmore" },
+      { "name": "Balcolyn" },
+      { "name": "Balmoral" },
+      { "name": "Bayview" },
       { "name": "Beach Haven" },
+      { "name": "Beachlands" },
+      { "name": "Belmont" },
+      { "name": "Bethells Beach" },
+      { "name": "Birkenhead" },
       { "name": "Birkdale" },
+      { "name": "Browns Bay" },
+      { "name": "Campbells Bay" },
+      { "name": "Castor Bay" },
+      { "name": "Challis" },
+      { "name": "Clevedon" },
+      { "name": "Devonport" },
+      { "name": "Dominion Road" },
+      { "name": "Eden Terrace" },
+      { "name": "Epsom" },
+      { "name": "Forrest Hill" },
+      { "name": "Freemans Bay" },
+      { "name": "Glendowie" },
+      { "name": "Glenfield" },
+      { "name": "Grafton" },
+      { "name": "Greenhithe" },
+      { "name": "Greenlane" },
+      { "name": "Grey Lynn" },
+      { "name": "Helensville" },
+      { "name": "Henderson" },
+      { "name": "Herne Bay" },
+      { "name": "Herald Island" },
       { "name": "Highbury" },
       { "name": "Hillcrest" },
-      { "name": "Wairau Valley" },
-      { "name": "Forrest Hill" },
-      { "name": "Sunset Beach" },
-      { "name": "Campbells Bay" },
-      { "name": "Rothesay Bay" },
-      { "name": "Torbay" },
-      { "name": "Stanmore Bay" },
-      { "name": "Red Beach" },
-      { "name": "Orewa" },
-      { "name": "Waiwera" },
-      { "name": "Puhoi" },
-      { "name": "Warkworth" },
-      { "name": "Matakana" },
-      { "name": "Snells Beach" },
-      { "name": "Algies Bay" },
-      { "name": "Omaha" },
-      { "name": "Leigh" },
-      { "name": "Pakiri" },
-      { "name": "Mangawhai" },
-      { "name": "Kaukapakapa" },
-      { "name": "Helensville" },
-      { "name": "Parakai" },
-      { "name": "Riverhead" },
-      { "name": "Kumeu" },
-      { "name": "Huapai" },
-      { "name": "Waimauku" },
-      { "name": "Muriwai" },
-      { "name": "Bethells Beach" },
-      { "name": "Piha" },
-      { "name": "Karekare" },
-      { "name": "Anawhata" },
-      { "name": "Te Henga" },
-      { "name": "Swanson" },
-      { "name": "Henderson" },
-      { "name": "Massey" },
-      { "name": "Westgate" },
       { "name": "Hobsonville" },
-      { "name": "Whenuapai" },
-      { "name": "Herald Island" },
-      { "name": "Beachlands" },
-      { "name": "Maraetai" },
-      { "name": "Whitford" },
-      { "name": "Clevedon" },
-      { "name": "Ardmore" },
-      { "name": "Papakura" },
-      { "name": "Takanini" },
-      { "name": "Manurewa" },
-      { "name": "Wiri" },
-      { "name": "Mangere" },
-      { "name": "Otahuhu" },
-      { "name": "Onehunga" },
-      { "name": "Royal Oak" },
-      { "name": "Three Kings" },
-      { "name": "Mt Roskill" },
-      { "name": "Sandringham" },
+      { "name": "Huapai" },
+      { "name": "Karekare" },
+      { "name": "Kaukapakapa" },
       { "name": "Kingsland" },
-      { "name": "Morningside" },
-      { "name": "Balmoral" },
-      { "name": "Dominion Road" },
-      { "name": "Mt Albert" },
-      { "name": "Pt Chevalier" },
-      { "name": "Westmere" },
-      { "name": "Meola" },
-      { "name": "Arch Hill" },
-      { "name": "Newton" },
-      { "name": "Grafton" },
-      { "name": "Ponsonby" },
-      { "name": "Freemans Bay" },
-      { "name": "St Marys Bay" },
-      { "name": "Herne Bay" },
-      { "name": "Westmere" },
-      { "name": "Grey Lynn" },
-      { "name": "Kingsland" },
-      { "name": "Eden Terrace" },
-      { "name": "Mt Eden" },
-      { "name": "Epsom" },
-      { "name": "Greenlane" },
-      { "name": "Remuera" },
-      { "name": "Newmarket" },
-      { "name": "Parnell" },
-      { "name": "Grafton" },
-      { "name": "Auckland CBD" },
-      { "name": "Viaduct Harbour" },
-      { "name": "Wynyard Quarter" },
-      { "name": "Northcote Point" },
-      { "name": "Birkenhead" },
-      { "name": "Challis" },
-      { "name": "Birkdale" },
-      { "name": "Beach Haven" },
-      { "name": "Bayview" },
-      { "name": "Glenfield" },
-      { "name": "Hillcrest" },
-      { "name": "Wairau Valley" },
-      { "name": "Forrest Hill" },
-      { "name": "Sunset Beach" },
-      { "name": "Campbells Bay" },
-      { "name": "Rothesay Bay" },
-      { "name": "Torbay" },
+      { "name": "Kohimarama" },
+      { "name": "Kumeu" },
+      { "name": "Leigh" },
       { "name": "Long Bay" },
-      { "name": "Browns Bay" },
       { "name": "Mairangi Bay" },
-      { "name": "Murrays Bay" },
-      { "name": "Rothesay Bay" },
-      { "name": "Torbay" },
-      { "name": "Long Bay" },
-      { "name": "Orewa" },
-      { "name": "Waiwera" },
-      { "name": "Puhoi" },
-      { "name": "Warkworth" },
-      { "name": "Matakana" },
-      { "name": "Snells Beach" },
-      { "name": "Algies Bay" },
-      { "name": "Omaha" },
-      { "name": "Leigh" },
-      { "name": "Pakiri" },
       { "name": "Mangawhai" },
-      { "name": "Kaukapakapa" },
-      { "name": "Helensville" },
-      { "name": "Parakai" },
-      { "name": "Riverhead" },
-      { "name": "Kumeu" },
-      { "name": "Huapai" },
-      { "name": "Waimauku" },
-      { "name": "Muriwai" },
-      { "name": "Bethells Beach" },
-      { "name": "Piha" },
-      { "name": "Karekare" },
-      { "name": "Anawhata" },
-      { "name": "Te Henga" },
-      { "name": "Swanson" },
-      { "name": "Henderson" },
-      { "name": "Massey" },
-      { "name": "Westgate" },
-      { "name": "Hobsonville" },
-      { "name": "Whenuapai" },
-      { "name": "Herald Island" },
-      { "name": "Beachlands" },
-      { "name": "Maraetai" },
-      { "name": "Whitford" },
-      { "name": "Clevedon" },
-      { "name": "Ardmore" },
-      { "name": "Papakura" },
-      { "name": "Takanini" },
-      { "name": "Manurewa" },
-      { "name": "Wiri" },
       { "name": "Mangere" },
-      { "name": "Otahuhu" },
-      { "name": "Onehunga" },
-      { "name": "Royal Oak" },
-      { "name": "Three Kings" },
-      { "name": "Mt Roskill" },
-      { "name": "Sandringham" },
-      { "name": "Kingsland" },
-      { "name": "Morningside" },
-      { "name": "Balmoral" },
-      { "name": "Dominion Road" },
-      { "name": "Mt Albert" },
-      { "name": "Pt Chevalier" },
-      { "name": "Westmere" },
+      { "name": "Manurewa" },
+      { "name": "Maraetai" },
+      { "name": "Massey" },
+      { "name": "Matakana" },
       { "name": "Meola" },
-      { "name": "Arch Hill" },
-      { "name": "Newton" },
-      { "name": "Grafton" },
-      { "name": "Ponsonby" },
-      { "name": "Freemans Bay" },
-      { "name": "St Marys Bay" },
-      { "name": "Herne Bay" },
-      { "name": "Westmere" },
-      { "name": "Grey Lynn" },
-      { "name": "Kingsland" },
-      { "name": "Eden Terrace" },
+      { "name": "Milford" },
+      { "name": "Mission Bay" },
+      { "name": "Morningside" },
+      { "name": "Mt Albert" },
       { "name": "Mt Eden" },
-      { "name": "Epsom" },
-      { "name": "Greenlane" },
-      { "name": "Remuera" },
+      { "name": "Mt Roskill" },
+      { "name": "Murrays Bay" },
+      { "name": "Muriwai" },
       { "name": "Newmarket" },
+      { "name": "Newton" },
+      { "name": "Northcote" },
+      { "name": "Northcote Point" },
+      { "name": "Omaha" },
+      { "name": "Onehunga" },
+      { "name": "Orewa" },
+      { "name": "Otahuhu" },
+      { "name": "Pakiri" },
+      { "name": "Papakura" },
+      { "name": "Parakai" },
       { "name": "Parnell" },
-      { "name": "Grafton" },
-      { "name": "Auckland CBD" },
+      { "name": "Piha" },
+      { "name": "Pinehill" },
+      { "name": "Ponsonby" },
+      { "name": "Pt Chevalier" },
+      { "name": "Puhoi" },
+      { "name": "Red Beach" },
+      { "name": "Remuera" },
+      { "name": "Riverhead" },
+      { "name": "Rothesay Bay" },
+      { "name": "Rosedale" },
+      { "name": "Royal Oak" },
+      { "name": "Sandringham" },
+      { "name": "Snells Beach" },
+      { "name": "St Heliers" },
+      { "name": "St Marys Bay" },
+      { "name": "Stanmore Bay" },
+      { "name": "Sunset Beach" },
+      { "name": "Swanson" },
+      { "name": "Takapuna" },
+      { "name": "Takanini" },
+      { "name": "Te Henga" },
+      { "name": "Three Kings" },
+      { "name": "Torbay" },
       { "name": "Viaduct Harbour" },
+      { "name": "Waiwera" },
+      { "name": "Waimauku" },
+      { "name": "Wairau Valley" },
+      { "name": "Warkworth" },
+      { "name": "Westgate" },
+      { "name": "Westmere" },
+      { "name": "Whenuapai" },
+      { "name": "Whitford" },
+      { "name": "Wiri" },
       { "name": "Wynyard Quarter" }
     ],
     "sameAs": [
@@ -267,6 +173,60 @@ export default function SEO({
         "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
         "opens": "08:00",
         "closes": "17:00"
+      },
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Saturday"],
+        "opens": "09:00",
+        "closes": "15:00"
+      }
+    ],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "reviewCount": "127",
+      "bestRating": "5",
+      "worstRating": "1"
+    },
+    "review": [
+      {
+        "@type": "Review",
+        "author": {
+          "@type": "Person",
+          "name": "Sarah M."
+        },
+        "reviewRating": {
+          "@type": "Rating",
+          "ratingValue": "5",
+          "bestRating": "5"
+        },
+        "reviewBody": "Our new underfloor heating has completely changed how we live. It's warm, efficient, and no more cold tiles in winter!"
+      },
+      {
+        "@type": "Review",
+        "author": {
+          "@type": "Person",
+          "name": "James R."
+        },
+        "reviewRating": {
+          "@type": "Rating",
+          "ratingValue": "5",
+          "bestRating": "5"
+        },
+        "reviewBody": "The whole process was simple! Heat.nz found us a reliable installer who finished on time and within budget."
+      },
+      {
+        "@type": "Review",
+        "author": {
+          "@type": "Person",
+          "name": "Anika P."
+        },
+        "reviewRating": {
+          "@type": "Rating",
+          "ratingValue": "5",
+          "bestRating": "5"
+        },
+        "reviewBody": "Worth every dollar. The system runs quietly, the house feels amazing, and our power bills actually went down."
       }
     ]
   };
@@ -335,109 +295,6 @@ export default function SEO({
     ]
   };
 
-  // Review schema for testimonials
-  const defaultReviewData = {
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": "Heat NZ",
-    "description": "Professional underfloor heating installation and service in Auckland",
-    "url": "https://heat.nz",
-    "telephone": "+64-9-123-4567",
-    "email": "info@heat.nz",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "123 Queen Street",
-      "addressLocality": "Auckland",
-      "addressRegion": "Auckland",
-      "postalCode": "1010",
-      "addressCountry": "NZ"
-    },
-    "geo": {
-      "@type": "GeoCoordinates",
-      "latitude": "-36.8485",
-      "longitude": "174.7633"
-    },
-    "areaServed": [
-      {
-        "@type": "City",
-        "name": "Auckland",
-        "addressCountry": "NZ"
-      },
-      {
-        "@type": "City", 
-        "name": "North Shore",
-        "addressCountry": "NZ"
-      },
-      {
-        "@type": "City",
-        "name": "West Auckland", 
-        "addressCountry": "NZ"
-      },
-      {
-        "@type": "City",
-        "name": "East Auckland",
-        "addressCountry": "NZ"
-      },
-      {
-        "@type": "City",
-        "name": "South Auckland",
-        "addressCountry": "NZ"
-      }
-    ],
-    "priceRange": "$80-$150 per m²",
-    "paymentAccepted": "Cash, Credit Card, Bank Transfer",
-    "currenciesAccepted": "NZD",
-    "openingHours": "Mo-Fr 08:00-17:00, Sa 09:00-15:00",
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.9",
-      "reviewCount": "127",
-      "bestRating": "5",
-      "worstRating": "1"
-    },
-    "review": [
-      {
-        "@type": "Review",
-        "author": {
-          "@type": "Person",
-          "name": "Sarah M."
-        },
-        "reviewRating": {
-          "@type": "Rating",
-          "ratingValue": "5",
-          "bestRating": "5"
-        },
-        "reviewBody": "Our new underfloor heating has completely changed how we live. It's warm, efficient, and no more cold tiles in winter!"
-      },
-      {
-        "@type": "Review",
-        "author": {
-          "@type": "Person",
-          "name": "James R."
-        },
-        "reviewRating": {
-          "@type": "Rating",
-          "ratingValue": "5",
-          "bestRating": "5"
-        },
-        "reviewBody": "The whole process was simple! Heat.nz found us a reliable installer who finished on time and within budget."
-      },
-      {
-        "@type": "Review",
-        "author": {
-          "@type": "Person",
-          "name": "Anika P."
-        },
-        "reviewRating": {
-          "@type": "Rating",
-          "ratingValue": "5",
-          "bestRating": "5"
-        },
-        "reviewBody": "Worth every dollar. The system runs quietly, the house feels amazing, and our power bills actually went down."
-      }
-    ]
-  };
-
   // Breadcrumb schema
   const defaultBreadcrumbData = {
     "@context": "https://schema.org",
@@ -484,7 +341,7 @@ export default function SEO({
         },
         "availability": "https://schema.org/InStock",
         "validFrom": "2024-01-01",
-        "validThrough": "2024-12-31"
+        "validThrough": "2025-12-31"
       },
       {
         "@type": "Offer",
@@ -501,7 +358,7 @@ export default function SEO({
         },
         "availability": "https://schema.org/InStock",
         "validFrom": "2024-01-01",
-        "validThrough": "2024-12-31"
+        "validThrough": "2025-12-31"
       }
     ],
     "areaServed": {
@@ -526,8 +383,8 @@ export default function SEO({
     allStructuredData.push(defaultFAQData);
   }
 
-  // Add review, breadcrumb, and pricing schemas
-  allStructuredData.push(defaultReviewData, defaultBreadcrumbData, defaultPricingData);
+  // Add breadcrumb and pricing schemas (review data is already in LocalBusiness)
+  allStructuredData.push(defaultBreadcrumbData, defaultPricingData);
 
   return (
     <Head>

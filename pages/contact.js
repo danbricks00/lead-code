@@ -3,6 +3,11 @@ import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
 import SEO from '../components/SEO';
 
+// Track page load time for spam detection
+if (typeof window !== 'undefined' && !window.pageLoadTime) {
+  window.pageLoadTime = Date.now();
+}
+
 const ContactPage = () => {
   const router = useRouter();
   const [formType, setFormType] = useState('general'); // 'general', 'quote', 'manual-quote'
@@ -23,6 +28,13 @@ const ContactPage = () => {
     location: '',
     website: '' // Honeypot field (hidden from users)
   });
+  
+  // Track page load time for spam detection
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !window.pageLoadTime) {
+      window.pageLoadTime = Date.now();
+    }
+  }, []);
   const [status, setStatus] = useState({ submitted: false, message: '', isError: false });
   const [zoneData, setZoneData] = useState([]);
   const [locationStatus, setLocationStatus] = useState({ 
@@ -246,11 +258,14 @@ const ContactPage = () => {
     setStatus({ submitted: true, message: 'Sending...', isError: false });
 
     try {
+      // Calculate time on page for spam detection
+      const timeOnPage = Date.now() - (window.pageLoadTime || Date.now());
+      
       // Use different API endpoints based on form type
       const apiEndpoint = formType === 'quote' ? '/api/quote-enquiry' : '/api/contact';
       
       // Include zone information for quote enquiries
-      const submissionData = { ...formData, formType };
+      const submissionData = { ...formData, formType, timeOnPage };
       if (formType === 'quote' && locationStatus.zoneInfo) {
         submissionData.zoneInfo = locationStatus.zoneInfo;
         submissionData.isAucklandArea = locationStatus.isAuckland;

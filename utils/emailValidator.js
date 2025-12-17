@@ -95,6 +95,80 @@ const commonProviders = {
 };
 
 /**
+ * List of disposable/temporary email domains to block
+ * These are commonly used for spam and should be rejected
+ */
+const disposableDomains = [
+  "mailinator.com", "yopmail.com", "10minutemail.com",
+  "guerrillamail.com", "temp-mail.org", "fakemail.net",
+  "trashmail.com", "getnada.com", "dispostable.com", "mintemail.com",
+  // Additional domains
+  "0815.ru", "0clickemail.com", "0wnd.net", "0wnd.org",
+  "20minutemail.com", "2prong.com", "30minutemail.com", "4warding.com",
+  "4warding.net", "4warding.org", "60minutemail.com", "675hosting.com",
+  "675hosting.net", "675hosting.org", "6url.com", "75hosting.com",
+  "75hosting.net", "75hosting.org", "7tags.com", "9ox.net",
+  "a-bc.net", "afrobacon.com", "ajaxapp.net", "amilegit.com",
+  "amiri.net", "amiriindustries.com", "anonbox.net", "anonymbox.com",
+  "antichef.com", "antichef.net", "antispam.de", "beefmilk.com",
+  "binkmail.com", "bio-muesli.net", "bobmail.info", "bofthew.com",
+  "brefmail.com", "broadbandninja.com", "bsnow.net", "bugmenot.com",
+  "bumpymail.com", "casualdx.com", "centermail.com", "centermail.net",
+  "chogmail.com", "choicemail1.com", "cool.fr.nf", "correo.blogos.net",
+  "cosmorph.com", "courriel.fr.nf", "courrieltemporaire.com", "cubiclink.com",
+  "curryworld.de", "cust.in", "dacoolest.com", "dandikmail.com",
+  "dayrep.com", "deadaddress.com", "deadspam.com", "despam.it",
+  "despammed.com", "devnullmail.com", "dfgh.net", "digitalsanctuary.com",
+  "discardmail.com", "discardmail.de", "disposableaddress.com", "disposeamail.com",
+  "disposemail.com", "dodgeit.com", "dodgit.com", "dodgit.org",
+  "donemail.ru", "dontreg.com", "dontsendmespam.de", "dump-email.info",
+  "dumpandjunk.com", "dumpmail.de", "dumpyemail.com", "e4ward.com",
+  "email60.com", "emaildienst.de", "emailias.com", "emailigo.de",
+  "gmailnator.com", "maildrop.cc", "33mail.com",
+  // Note: ProtonMail (pm.me, proton.me, protonmail.ch, protonmail.com) removed - legitimate email provider
+  // Additional temporary email domains
+  "1secmail.com", "1secmail.net", "1secmail.org",
+  "addy.io", "altmails.com", "anonaddy.com", "anonaddy.me",
+  "burnermail.io", "cryptogmail.com", "duck.com",
+  "emailnator.com", "emailondeck.com", "emailtemp.org",
+  "fakermail.com", "fastmail.com", "firemail.cc",
+  "forwardemail.net", "getairmail.com", "hide.biz.st",
+  "hidemail.pro", "inboxalias.com", "inboxkitten.com",
+  "instant-mail.de", "kopeechka.store", "mail.tm",
+  "mailforspam.com", "mailpoof.com", "mailsac.com",
+  "mohmal.com", "mohmal.im", "mohmal.in",
+  "moakt.co", "moakt.ws", "muellmail.com",
+  "nada.email", "nada.ltd", "notmyemail.tech",
+  "onetimeemail.net", "pokemail.net", "privymail.com",
+  "quickmail.best", "randomail.net", "receivemail.org",
+  "sharklasers.com", "simplelogin.co", "simplelogin.io",
+  "spambox.xyz", "spamgourmet.com", "spamgourmet.net",
+  "spamhereplease.com", "spammail.xyz", "tempemail.co",
+  "tempmail.dev", "tempmail.plus", "tempmailo.com",
+  "tempr.email", "throwawaymail.com", "throwmail.app",
+  "tmpmail.org", "trashmail.io", "trashmail.ws",
+  "vomoto.com", "wegwerfmail.de", "wegwerfmail.net",
+  "yomail.info", "zeroe.ml"
+];
+
+/**
+ * Checks if an email domain is in the disposable domains list
+ * @param {string} email - Email to check
+ * @returns {boolean} - True if domain is disposable
+ */
+export function isDisposableEmail(email) {
+  if (!email || typeof email !== 'string') return false;
+  
+  const trimmedEmail = email.trim().toLowerCase();
+  const parts = trimmedEmail.split("@");
+  
+  if (parts.length !== 2) return false;
+  
+  const domain = parts[1].toLowerCase();
+  return disposableDomains.includes(domain);
+}
+
+/**
  * Validates email format using regex
  * @param {string} email - Email to validate
  * @returns {boolean} - True if valid format
@@ -200,7 +274,8 @@ export async function validateAndCorrectEmail(email, checkMX = true) {
       needsCorrection: false,
       error: 'Email is required',
       mxValid: null,
-      mxError: null
+      mxError: null,
+      isDisposable: false
     };
   }
   
@@ -213,13 +288,43 @@ export async function validateAndCorrectEmail(email, checkMX = true) {
       needsCorrection: false,
       error: 'Invalid email format. Please enter a valid email address.',
       mxValid: null,
-      mxError: null
+      mxError: null,
+      isDisposable: false
+    };
+  }
+  
+  // Check for disposable/temporary email domains BEFORE autocorrect
+  // This prevents spam from disposable email services
+  if (isDisposableEmail(originalEmail)) {
+    return {
+      isValid: false,
+      originalEmail: originalEmail,
+      correctedEmail: null,
+      needsCorrection: false,
+      error: '⚠️ Temporary or disposable email addresses are not allowed. Please use a personal or business email (e.g. name@gmail.com, name@outlook.com).',
+      mxValid: null,
+      mxError: null,
+      isDisposable: true
     };
   }
   
   // Try to autocorrect
   const correctedEmail = autocorrectEmail(originalEmail);
   const needsCorrection = correctedEmail.toLowerCase() !== originalEmail.toLowerCase();
+  
+  // Check disposable domains again on corrected email (in case autocorrect changed domain)
+  if (isDisposableEmail(correctedEmail)) {
+    return {
+      isValid: false,
+      originalEmail: originalEmail,
+      correctedEmail: correctedEmail,
+      needsCorrection: needsCorrection,
+      error: '⚠️ Temporary or disposable email addresses are not allowed. Please use a personal or business email (e.g. name@gmail.com, name@outlook.com).',
+      mxValid: null,
+      mxError: null,
+      isDisposable: true
+    };
+  }
   
   // Extract domain for MX check
   const domain = correctedEmail.split('@')[1];
@@ -246,7 +351,8 @@ export async function validateAndCorrectEmail(email, checkMX = true) {
     error: null,
     mxValid: mxResult.hasMX || mxResult.hasDNS,
     mxError: mxResult.error,
-    domain: domain
+    domain: domain,
+    isDisposable: false
   };
 }
 

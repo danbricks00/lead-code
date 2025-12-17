@@ -215,7 +215,37 @@ export function validateAndSplitName(fullName) {
 }
 
 /**
- * Validates message quality
+ * Common spam keywords and phrases to detect
+ */
+const spamKeywords = [
+  // Financial spam
+  'make money', 'get rich', 'work from home', 'earn $', 'guaranteed income',
+  'investment opportunity', 'bitcoin', 'crypto', 'forex', 'trading',
+  
+  // SEO/Advertising spam
+  'seo services', 'increase traffic', 'backlinks', 'page rank',
+  'google ranking', 'website promotion', 'social media marketing',
+  
+  // Scam patterns
+  'urgent', 'act now', 'limited time', 'click here', 'free trial',
+  'no credit check', 'guaranteed approval', 'risk free',
+  
+  // Link spam
+  'http://', 'https://', 'www.', '.com', '.net', '.org',
+  
+  // Pharmaceutical spam
+  'viagra', 'cialis', 'pharmacy', 'prescription', 'medication',
+  
+  // Adult content
+  'xxx', 'porn', 'adult', 'dating site',
+  
+  // Generic spam phrases
+  'congratulations', 'you have won', 'claim your prize', 'winner',
+  'lottery', 'sweepstakes', 'prize winner'
+];
+
+/**
+ * Validates message quality and checks for spam content
  * 
  * Requirements:
  * - Minimum length (default 15 characters)
@@ -224,6 +254,8 @@ export function validateAndSplitName(fullName) {
  * Blocks:
  * - Random character strings without spaces
  * - Extremely short messages
+ * - Messages with spam keywords
+ * - Excessive links
  */
 export function validateMessage(message, minLength = 15) {
   if (!message || typeof message !== 'string') {
@@ -251,6 +283,31 @@ export function validateMessage(message, minLength = 15) {
       isValid: false, 
       score: 10, 
       reason: 'Message must contain spaces (blocks random character strings)' 
+    };
+  }
+
+  // Check for spam keywords (case-insensitive)
+  const messageLower = trimmed.toLowerCase();
+  const foundKeywords = spamKeywords.filter(keyword => 
+    messageLower.includes(keyword.toLowerCase())
+  );
+  
+  if (foundKeywords.length > 0) {
+    return { 
+      isValid: false, 
+      score: 10, 
+      reason: `Message contains spam keywords: ${foundKeywords.slice(0, 3).join(', ')}` 
+    };
+  }
+
+  // Check for excessive links (more than 2 URLs is suspicious)
+  const urlPattern = /https?:\/\/[^\s]+/gi;
+  const urls = trimmed.match(urlPattern);
+  if (urls && urls.length > 2) {
+    return { 
+      isValid: false, 
+      score: 8, 
+      reason: 'Message contains too many links (likely spam)' 
     };
   }
 
@@ -289,6 +346,87 @@ export function checkHoneypot(honeypotValue) {
 }
 
 /**
+ * Validates email pattern for suspicious characteristics
+ * 
+ * Checks for:
+ * - Random character patterns
+ * - Suspicious domain patterns
+ * - Email addresses that look auto-generated
+ */
+export function validateEmailPattern(email) {
+  if (!email || typeof email !== 'string') {
+    return { isValid: false, score: 0, reason: 'Email is required' };
+  }
+
+  const trimmed = email.toLowerCase();
+  const [localPart, domain] = trimmed.split('@');
+
+  if (!localPart || !domain) {
+    return { isValid: false, score: 0, reason: 'Invalid email format' };
+  }
+
+  // Check for random character patterns in local part
+  // Patterns like: aaa123, abc123, random123, test123
+  const randomPatterns = [
+    /^[a-z]{3,}\d{3,}$/,  // letters followed by numbers
+    /^\d{3,}[a-z]{3,}$/,  // numbers followed by letters
+    /^[a-z]\d{5,}$/,       // single letter + many digits
+    /^test\d+$/,           // test + numbers
+    /^user\d+$/,           // user + numbers
+    /^temp\d+$/,           // temp + numbers
+    /^admin\d+$/,          // admin + numbers
+  ];
+
+  for (const pattern of randomPatterns) {
+    if (pattern.test(localPart)) {
+      return { 
+        isValid: false, 
+        score: 5, 
+        reason: 'Email address appears to be auto-generated' 
+      };
+    }
+  }
+
+  // Check for suspiciously short local parts (likely fake)
+  if (localPart.length < 2) {
+    return { 
+      isValid: false, 
+      score: 3, 
+      reason: 'Email local part is too short' 
+    };
+  }
+
+  return { isValid: true, score: 0, reason: 'Email pattern looks legitimate' };
+}
+
+/**
+ * Validates submission timing
+ * 
+ * If form is submitted too quickly after page load, it's likely a bot.
+ * Humans typically take at least a few seconds to fill out a form.
+ * 
+ * @param {number} timeOnPage - Time in milliseconds since page load (from hidden field)
+ * @param {number} minTime - Minimum time in milliseconds (default: 3000 = 3 seconds)
+ * @returns {Object} Timing validation result
+ */
+export function validateSubmissionTiming(timeOnPage, minTime = 3000) {
+  if (!timeOnPage || typeof timeOnPage !== 'number') {
+    // If timing not provided, don't penalize (might be legitimate)
+    return { isValid: true, score: 0, reason: 'Timing not provided' };
+  }
+
+  if (timeOnPage < minTime) {
+    return { 
+      isValid: false, 
+      score: 8, 
+      reason: `Form submitted too quickly (${Math.round(timeOnPage / 1000)}s). Bots typically submit instantly.` 
+    };
+  }
+
+  return { isValid: true, score: 0, reason: 'Submission timing looks legitimate' };
+}
+
+/**
  * Comprehensive spam scoring system
  * 
  * Calculates a total spam score based on all validation checks.
@@ -296,17 +434,20 @@ export function checkHoneypot(honeypotValue) {
  * 
  * @param {Object} formData - Form submission data
  * @param {number} threshold - Spam score threshold (default: 15)
+ * @param {Object} options - Additional options (timing, etc.)
  * @returns {Object} Validation result with score and details
  */
-export function calculateSpamScore(formData, threshold = 15) {
+export function calculateSpamScore(formData, threshold = 15, options = {}) {
   const {
     firstName,
     lastName,
     name, // Fallback if name not split
+    email,
     phone,
     message,
     website, // Honeypot field name
     honeypot, // Alternative honeypot field name
+    timeOnPage, // Form submission timing
     ...otherFields
   } = formData;
 
@@ -354,11 +495,27 @@ export function calculateSpamScore(formData, threshold = 15) {
     }
   }
 
+  // Validate email pattern (if email provided)
+  if (email) {
+    const emailPatternValidation = validateEmailPattern(email);
+    if (!emailPatternValidation.isValid || emailPatternValidation.score > 0) {
+      totalScore += emailPatternValidation.score;
+      issues.push(`Email Pattern: ${emailPatternValidation.reason}`);
+    }
+  }
+
   // Validate message
   const messageValidation = validateMessage(message);
   if (!messageValidation.isValid || messageValidation.score > 0) {
     totalScore += messageValidation.score;
     issues.push(`Message: ${messageValidation.reason}`);
+  }
+
+  // Validate submission timing (if provided)
+  const timingValidation = validateSubmissionTiming(timeOnPage || options.timeOnPage);
+  if (!timingValidation.isValid || timingValidation.score > 0) {
+    totalScore += timingValidation.score;
+    issues.push(`Timing: ${timingValidation.reason}`);
   }
 
   const isSpam = totalScore >= threshold;

@@ -4,6 +4,7 @@ import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import { validateAndCorrectEmail } from '../../utils/emailValidator';
 import { calculateSpamScore } from '../../utils/spamValidator';
+import { checkSubmissionRateLimit } from '../../utils/rateLimiter';
 
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
@@ -56,8 +57,22 @@ export default async function handler(req, res) {
       message,
       zoneInfo,
       isAucklandArea,
-      website // Honeypot field
+      website, // Honeypot field
+      timeOnPage // Form submission timing
     } = req.body;
+
+    // Rate limiting check (before processing)
+    const rateLimitCheck = checkSubmissionRateLimit(req, email, 5, 3);
+    if (!rateLimitCheck.allowed) {
+      console.log(`🚫 Rate limit exceeded (${rateLimitCheck.type}) for quote enquiry:`, {
+        email: email ? email.substring(0, 10) + '...' : 'no email',
+        reason: rateLimitCheck.reason
+      });
+      return res.status(429).json({
+        success: false,
+        error: rateLimitCheck.reason || 'Too many submissions. Please try again later.'
+      });
+    }
 
     // Combine firstName/lastName or use name field for spam validation
     const formDataForValidation = {
@@ -67,11 +82,12 @@ export default async function handler(req, res) {
       email,
       message,
       phone,
-      website // Honeypot field
+      website, // Honeypot field
+      timeOnPage // Form submission timing
     };
 
     // Server-side spam validation and scoring
-    const spamCheck = calculateSpamScore(formDataForValidation, 15);
+    const spamCheck = calculateSpamScore(formDataForValidation, 15, { timeOnPage });
     
     if (spamCheck.isSpam) {
       // Silently drop spam submissions - return success to client but don't process
@@ -105,6 +121,11 @@ export default async function handler(req, res) {
     const emailValidation = await validateAndCorrectEmail(email, true);
     
     if (!emailValidation.isValid) {
+      if (emailValidation.isDisposable) {
+        console.log(`🚫 Quote enquiry blocked disposable email: ${email}`);
+      } else {
+        console.log("❌ Quote enquiry validation failed - invalid email format");
+      }
       return res.status(400).json({
         success: false,
         error: emailValidation.error

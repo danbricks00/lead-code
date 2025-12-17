@@ -2,6 +2,7 @@
 import { sendEmail } from '../../lib/emailHelper';
 import { validateAndCorrectEmail, logEmailValidation } from '../../utils/emailValidator';
 import { calculateSpamScore } from '../../utils/spamValidator';
+import { checkSubmissionRateLimit } from '../../utils/rateLimiter';
 
 export default async function handler(req, res) {
     const { ADMIN_EMAIL, GMAIL_USER, GMAIL_APP_PASSWORD } = process.env;
@@ -20,8 +21,22 @@ export default async function handler(req, res) {
             timeline,
             budget,
             location,
-            website // Honeypot field
+            website, // Honeypot field
+            timeOnPage // Form submission timing
         } = req.body;
+
+        // Rate limiting check (before processing)
+        const rateLimitCheck = checkSubmissionRateLimit(req, email, 5, 3);
+        if (!rateLimitCheck.allowed) {
+            console.log(`🚫 Rate limit exceeded (${rateLimitCheck.type}):`, {
+                email: email ? email.substring(0, 10) + '...' : 'no email',
+                reason: rateLimitCheck.reason
+            });
+            return res.status(429).json({
+                success: false,
+                error: rateLimitCheck.reason || 'Too many submissions. Please try again later.'
+            });
+        }
 
         // Combine firstName/lastName or use name field for spam validation
         const formDataForValidation = {
@@ -31,11 +46,12 @@ export default async function handler(req, res) {
             email,
             message,
             phone,
-            website // Honeypot field
+            website, // Honeypot field
+            timeOnPage // Form submission timing
         };
 
         // Server-side spam validation and scoring
-        const spamCheck = calculateSpamScore(formDataForValidation, 15);
+        const spamCheck = calculateSpamScore(formDataForValidation, 15, { timeOnPage });
         
         if (spamCheck.isSpam) {
             // Silently drop spam submissions - return success to client but don't process
@@ -69,7 +85,11 @@ export default async function handler(req, res) {
         logEmailValidation('EMAIL_VALIDATION', emailValidation, 'contact-form');
         
         if (!emailValidation.isValid) {
-            console.log("❌ Contact form validation failed - invalid email format");
+            if (emailValidation.isDisposable) {
+                console.log(`🚫 Contact form blocked disposable email: ${email}`);
+            } else {
+                console.log("❌ Contact form validation failed - invalid email format");
+            }
             return res.status(400).json({
                 success: false,
                 error: emailValidation.error
@@ -93,14 +113,26 @@ export default async function handler(req, res) {
 
         // Environment checks
         const adminEmail = process.env.ADMIN_EMAIL;
+        const tradespersonEmail = process.env.TRADESPERSON_EMAIL;
         const gmailUser = process.env.GMAIL_USER;
         const gmailPass = process.env.GMAIL_APP_PASSWORD; // Use GMAIL_APP_PASSWORD for consistency
         
         console.log("🔧 Environment variables check:", {
             GMAIL_USER: gmailUser ? "SET" : "MISSING",
-            GMAIL_APP_PASSWORD: gmailPass ? "SET" : "MISSING", // Corrected from GMAIL_PASS
-            ADMIN_EMAIL: adminEmail ? "SET" : "MISSING"
+            GMAIL_APP_PASSWORD: gmailPass ? "SET" : "MISSING",
+            ADMIN_EMAIL: adminEmail ? "SET" : "MISSING",
+            TRADESPERSON_EMAIL: tradespersonEmail ? "SET" : "MISSING"
         });
+        
+        // Warn if Gmail credentials might be invalid
+        if (gmailUser && gmailPass) {
+            // Check if password looks like an app password (16 characters, no spaces)
+            if (gmailPass.length !== 16 || gmailPass.includes(' ')) {
+                console.warn("⚠️ GMAIL_APP_PASSWORD format looks incorrect. App passwords should be 16 characters with no spaces.");
+            }
+        } else {
+            console.warn("⚠️ Gmail credentials not configured - emails will fail");
+        }
 
         if (!adminEmail) {
             console.error("❌ ADMIN_EMAIL not configured");
@@ -199,7 +231,7 @@ export default async function handler(req, res) {
         // Send emails to both admin and tradesperson
         try {
             const adminEmail = process.env.ADMIN_EMAIL;
-            const tradespersonEmail = process.env.TRADEPERSON_EMAIL;
+            const tradespersonEmail = process.env.TRADESPERSON_EMAIL;
             
             // Send to admin
             let adminResult = null;
@@ -226,27 +258,61 @@ export default async function handler(req, res) {
                     console.error(`❌ Contact form email to tradesperson failed: ${tradespersonResult.error}`);
                 }
             } else {
-                console.warn("⚠️ TRADEPERSON_EMAIL not configured, skipping tradesperson notification");
+                console.warn("⚠️ TRADESPERSON_EMAIL not configured, skipping tradesperson notification");
             }
 
-            // Return success if at least one email was sent successfully, or if emails are not configured
-            if ((adminResult && adminResult.success) || (tradespersonResult && tradespersonResult.success) || (!adminEmail && !tradespersonEmail)) {
+            // Return success if at least one email was sent successfully
+            if ((adminResult && adminResult.success) || (tradespersonResult && tradespersonResult.success)) {
                 return res.status(200).json({
                     success: true,
                     message: "Thank you for your message. We'll get back to you soon!"
                 });
-            } else {
-                console.error(`❌ All contact form emails failed`);
-                return res.status(500).json({
-                    success: false,
-                    error: "Failed to send message. Please try again later."
+            }
+            
+            // If emails are not configured, still return success (but log warning)
+            if (!adminEmail && !tradespersonEmail) {
+                console.warn("⚠️ No email addresses configured - submission accepted but no notifications sent");
+                return res.status(200).json({
+                    success: true,
+                    message: "Thank you for your message. We'll get back to you soon!"
                 });
             }
+            
+            // All emails failed - log detailed error but still accept submission
+            // This prevents legitimate users from being blocked due to email service issues
+            console.error(`❌ All contact form emails failed - submission data logged:`, {
+                name: finalName,
+                email: finalEmail,
+                phone: phone || 'not provided',
+                message: message.substring(0, 100) + '...',
+                adminError: adminResult?.error,
+                tradespersonError: tradespersonResult?.error,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Still return success to user (don't block legitimate submissions due to email issues)
+            // But log the failure for admin review
+            return res.status(200).json({
+                success: true,
+                message: "Thank you for your message. We'll get back to you soon!"
+            });
         } catch (error) {
-            console.error(`❌ Contact form email error: ${error.message}`);
-            return res.status(500).json({
-                success: false,
-                error: "Failed to send message. Please try again later."
+            // Log error but don't block legitimate submissions
+            console.error(`❌ Contact form processing error:`, {
+                error: error.message,
+                stack: error.stack,
+                submissionData: {
+                    name: finalName,
+                    email: finalEmail,
+                    phone: phone || 'not provided'
+                },
+                timestamp: new Date().toISOString()
+            });
+            
+            // Still return success to user (email service issues shouldn't block submissions)
+            return res.status(200).json({
+                success: true,
+                message: "Thank you for your message. We'll get back to you soon!"
             });
         }
 

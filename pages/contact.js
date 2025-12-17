@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
+import SEO from '../components/SEO';
 
 const ContactPage = () => {
   const router = useRouter();
@@ -293,6 +294,12 @@ const ContactPage = () => {
 
   return (
     <Layout>
+      <SEO
+        title="Contact Heat NZ — Underfloor Heating Auckland"
+        description="Contact Heat NZ for professional underfloor heating services in Auckland. Get free quotes, expert advice, and installation services. Available for general enquiries and large projects."
+        canonical="https://www.heat.nz/contact"
+        keywords="contact underfloor heating Auckland, heating quote Auckland, heating installation contact, electric heating Auckland contact, hydronic heating Auckland contact"
+      />
       <div style={styles.container}>
         <div style={styles.card}>
           <h1 style={styles.header}>Contact Us</h1>

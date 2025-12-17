@@ -50,7 +50,7 @@ const UnderfloorHeatingPage = () => {
     "provider": {
       "@type": "LocalBusiness",
       "name": "Heat NZ",
-      "url": "https://heat.nz",
+      "url": "https://www.heat.nz",
       "telephone": "+64-9-123-4567"
     },
     "areaServed": [
@@ -86,7 +86,7 @@ const UnderfloorHeatingPage = () => {
         <SEO
         title="Underfloor Heating Auckland — Professional Installation & Service | Heat NZ"
         description="Auckland's leading underfloor heating specialists. Professional electric & hydronic heating installation, maintenance & repair. Free quotes for all Auckland suburbs including Remuera, Ponsonby, Parnell, Takapuna & more."
-        canonical="https://heat.nz/services/underfloor-heating"
+        canonical="https://www.heat.nz/services/underfloor-heating"
         keywords="underfloor heating Auckland, tile heating Auckland, under tile heating Auckland, floor heating Auckland, electric tile heating Auckland, electric under tile heating Auckland, electric underfloor heating Auckland, hydronic heating Auckland, heating installation Auckland, underfloor heating cost Auckland, bathroom heating Auckland, kitchen heating Auckland, heating contractors Auckland, radiant heating Auckland"
         structuredData={[serviceData]}
         faqData={faqData}

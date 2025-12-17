@@ -72,7 +72,7 @@ const SuburbPage = () => {
       <SEO
         title={`Underfloor Heating ${suburbName} - Professional Installation & Service`}
         description={currentData.description}
-        canonical={`https://heat.nz/services/underfloor-heating/${suburb}`}
+        canonical={`https://www.heat.nz/services/underfloor-heating/${suburb}`}
         keywords={`underfloor heating ${suburbName}, heating installation ${suburbName}, electric heating ${suburbName}, hydronic heating ${suburbName}`}
         structuredData={[
           {
@@ -81,7 +81,7 @@ const SuburbPage = () => {
             "name": `Underfloor Heating Installation in ${suburbName}`,
             "provider": {
               "name": "Heat NZ",
-              "url": "https://heat.nz"
+              "url": "https://www.heat.nz"
             },
             "areaServed": {
               "@type": "Place",

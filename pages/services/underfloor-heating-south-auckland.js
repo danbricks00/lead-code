@@ -10,7 +10,7 @@ const UnderfloorHeatingSouthAucklandPage = () => {
     "provider": {
       "@type": "LocalBusiness",
       "name": "Heat NZ",
-      "url": "https://heat.nz",
+      "url": "https://www.heat.nz",
       "address": {
         "@type": "PostalAddress",
         "addressLocality": "South Auckland",
@@ -54,7 +54,7 @@ const UnderfloorHeatingSouthAucklandPage = () => {
       <SEO
         title="Underfloor Heating South Auckland — Manukau & Papatoetoe Installation | Heat NZ"
         description="Professional underfloor heating installation in South Auckland. Manukau, Papatoetoe, Otahuhu & surrounding areas. Electric & hydronic systems from $75/m². Free quotes for South Auckland homes."
-        canonical="https://heat.nz/services/underfloor-heating-south-auckland"
+        canonical="https://www.heat.nz/services/underfloor-heating-south-auckland"
         keywords="underfloor heating South Auckland, heating installation South Auckland, electric heating South Auckland, hydronic heating South Auckland, Manukau heating, Papatoetoe heating, Otahuhu heating, South Auckland heating contractors, heating service South Auckland"
         structuredData={[structuredData]}
         faqData={faqData}

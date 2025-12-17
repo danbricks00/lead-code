@@ -1,5 +1,5 @@
 export default function handler(req, res) {
-  const baseUrl = 'https://heat.nz';
+  const baseUrl = 'https://www.heat.nz';
   const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
   
   // Static pages with their priorities and change frequencies

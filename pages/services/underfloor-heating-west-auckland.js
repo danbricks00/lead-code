@@ -54,7 +54,7 @@ const UnderfloorHeatingWestAucklandPage = () => {
       <SEO
         title="Underfloor Heating West Auckland — Henderson & New Lynn Installation | Heat NZ"
         description="Professional underfloor heating installation in West Auckland. Henderson, New Lynn, Glen Eden & surrounding areas. Electric & hydronic systems from $80/m². Free quotes for West Auckland homes."
-        canonical="https://heat.nz/services/underfloor-heating-west-auckland"
+        canonical="https://www.heat.nz/services/underfloor-heating-west-auckland"
         keywords="underfloor heating West Auckland, heating installation West Auckland, electric heating West Auckland, hydronic heating West Auckland, Henderson heating, New Lynn heating, Glen Eden heating, West Auckland heating contractors, heating service West Auckland"
         structuredData={[structuredData]}
         faqData={faqData}

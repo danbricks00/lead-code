@@ -51,7 +51,7 @@ const FAQPage = () => {
       <SEO
         title="Underfloor Heating Auckland FAQ — Costs, Installation & Service Questions"
         description="Get answers to all your underfloor heating questions! Costs, installation time, maintenance, and service info for Auckland homeowners. Expert advice from Heat NZ specialists."
-        canonical="https://heat.nz/faq"
+        canonical="https://www.heat.nz/faq"
         keywords="underfloor heating FAQ Auckland, heating costs Auckland, heating installation questions, electric heating FAQ, hydronic heating questions, heating service Auckland, heating maintenance Auckland"
       />
       <div style={styles.container}>

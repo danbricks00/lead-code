@@ -15,15 +15,15 @@ export default function SEO({
   const router = useRouter();
   const fullTitle = title.includes("Heat NZ") ? title : `Heat NZ | ${title}`;
   
-  // Construct canonical URL if not provided
+  // Construct canonical URL if not provided (always use www subdomain)
   const canonicalUrl = canonical || (typeof window !== 'undefined' 
-    ? `${window.location.origin}${router.asPath}` 
-    : `https://heat.nz${router.asPath || ''}`);
+    ? `${window.location.origin}${router.asPath}`.replace('https://heat.nz', 'https://www.heat.nz')
+    : `https://www.heat.nz${router.asPath || ''}`);
   
-  // Construct og:url
+  // Construct og:url (always use www subdomain)
   const ogUrl = canonical || (typeof window !== 'undefined' 
-    ? `${window.location.origin}${router.asPath}` 
-    : `https://heat.nz${router.asPath || ''}`);
+    ? `${window.location.origin}${router.asPath}`.replace('https://heat.nz', 'https://www.heat.nz')
+    : `https://www.heat.nz${router.asPath || ''}`);
   
   // Default LocalBusiness structured data (merged with reviews)
   const defaultLocalBusinessData = {
@@ -31,10 +31,10 @@ export default function SEO({
     "@type": "LocalBusiness",
     "name": "Heat NZ",
     "description": "Professional underfloor heating installation and service in Auckland",
-    "url": "https://heat.nz",
+    "url": "https://www.heat.nz",
     "telephone": "+64-9-123-4567",
     "email": "info@heat.nz",
-    "image": "https://heat.nz/logo.png",
+    "image": "https://www.heat.nz/logo.png",
     "priceRange": "$80-$150 per m²",
     "paymentAccepted": "Cash, Credit Card, Bank Transfer",
     "currenciesAccepted": "NZD",
@@ -238,7 +238,7 @@ export default function SEO({
     "name": "Underfloor Heating Installation",
     "provider": {
       "name": "Heat NZ",
-      "url": "https://heat.nz"
+      "url": "https://www.heat.nz"
     },
     "areaServed": {
       "name": "Auckland"
@@ -304,13 +304,13 @@ export default function SEO({
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://heat.nz"
+        "item": "https://www.heat.nz"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "Underfloor Heating Auckland",
-        "item": "https://heat.nz/services/underfloor-heating"
+        "item": "https://www.heat.nz/services/underfloor-heating"
       }
     ]
   };

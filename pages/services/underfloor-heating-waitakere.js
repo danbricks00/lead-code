@@ -10,7 +10,7 @@ const UnderfloorHeatingWaitakerePage = () => {
     "provider": {
       "@type": "LocalBusiness",
       "name": "Heat NZ",
-      "url": "https://heat.nz",
+      "url": "https://www.heat.nz",
       "address": {
         "@type": "PostalAddress",
         "addressLocality": "Waitakere",
@@ -54,7 +54,7 @@ const UnderfloorHeatingWaitakerePage = () => {
       <SEO
         title="Underfloor Heating Waitakere — Henderson & New Lynn Installation | Heat NZ"
         description="Professional underfloor heating installation in Waitakere, Auckland. Henderson, New Lynn, Glen Eden & surrounding areas. Electric & hydronic systems from $80/m². Free quotes for Waitakere homes."
-        canonical="https://heat.nz/services/underfloor-heating-waitakere"
+        canonical="https://www.heat.nz/services/underfloor-heating-waitakere"
         keywords="underfloor heating Waitakere, heating installation Waitakere, electric heating Waitakere, hydronic heating Waitakere, Henderson heating, New Lynn heating, Glen Eden heating, Waitakere heating contractors, heating service Waitakere"
         structuredData={[structuredData]}
         faqData={faqData}

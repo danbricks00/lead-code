@@ -10,7 +10,7 @@ const UnderfloorHeatingCentralAucklandPage = () => {
     "provider": {
       "@type": "LocalBusiness",
       "name": "Heat NZ",
-      "url": "https://heat.nz",
+      "url": "https://www.heat.nz",
       "address": {
         "@type": "PostalAddress",
         "addressLocality": "Central Auckland",
@@ -54,7 +54,7 @@ const UnderfloorHeatingCentralAucklandPage = () => {
       <SEO
         title="Underfloor Heating Central Auckland — CBD & Inner City Installation | Heat NZ"
         description="Professional underfloor heating installation in Central Auckland. CBD, Newmarket, Parnell & surrounding areas. Electric & hydronic systems from $85/m². Free quotes for Central Auckland homes & apartments."
-        canonical="https://heat.nz/services/underfloor-heating-central-auckland"
+        canonical="https://www.heat.nz/services/underfloor-heating-central-auckland"
         keywords="underfloor heating Central Auckland, heating installation Central Auckland, electric heating Central Auckland, hydronic heating Central Auckland, CBD heating Auckland, Newmarket heating, Parnell heating, apartment heating Auckland, inner city heating Auckland"
         structuredData={[structuredData]}
         faqData={faqData}

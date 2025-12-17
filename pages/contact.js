@@ -12,14 +12,16 @@ const ContactPage = () => {
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [formData, setFormData] = useState({ 
-    name: '', 
+    firstName: '', 
+    lastName: '',
     email: '', 
     message: '',
     phone: '',
     projectType: 'Underfloor Heating',
     roomCount: '',
     timeline: '',
-    location: ''
+    location: '',
+    website: '' // Honeypot field (hidden from users)
   });
   const [status, setStatus] = useState({ submitted: false, message: '', isError: false });
   const [zoneData, setZoneData] = useState([]);
@@ -278,14 +280,16 @@ const ContactPage = () => {
 
       setStatus({ submitted: true, message: successMessage, isError: false });
       setFormData({ 
-        name: '', 
+        firstName: '', 
+        lastName: '',
         email: '', 
         message: '',
         phone: '',
         projectType: 'Underfloor Heating',
         roomCount: '',
         timeline: '',
-        location: ''
+        location: '',
+        website: '' // Reset honeypot
       }); // Clear form
     } catch (error) {
       setStatus({ submitted: true, message: `❌ Error: ${error.message}`, isError: true });
@@ -384,10 +388,42 @@ const ContactPage = () => {
           </div>
           
           <form onSubmit={handleSubmit} style={styles.form}>
+            {/* Honeypot field - hidden from users but visible to bots */}
+            <input 
+              type="text" 
+              name="website" 
+              value={formData.website} 
+              onChange={handleChange} 
+              style={{ display: 'none' }}
+              tabIndex="-1"
+              autoComplete="off"
+              aria-hidden="true"
+            />
+            
             {/* Common Fields */}
             <div style={styles.inputGroup}>
-              <label htmlFor="name">Full Name *</label>
-              <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} style={styles.input} required />
+              <label htmlFor="firstName">First Name *</label>
+              <input 
+                type="text" 
+                id="firstName" 
+                name="firstName" 
+                value={formData.firstName} 
+                onChange={handleChange} 
+                style={styles.input} 
+                required 
+              />
+            </div>
+            <div style={styles.inputGroup}>
+              <label htmlFor="lastName">Last Name *</label>
+              <input 
+                type="text" 
+                id="lastName" 
+                name="lastName" 
+                value={formData.lastName} 
+                onChange={handleChange} 
+                style={styles.input} 
+                required 
+              />
             </div>
             <div style={styles.inputGroup}>
               <label htmlFor="email">Email Address *</label>

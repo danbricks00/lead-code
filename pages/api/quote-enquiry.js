@@ -3,6 +3,7 @@ import { google } from 'googleapis';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import { validateAndCorrectEmail } from '../../utils/emailValidator';
+import { calculateSpamScore } from '../../utils/spamValidator';
 
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
@@ -43,7 +44,9 @@ export default async function handler(req, res) {
 
   try {
     const {
-      name,
+      firstName,
+      lastName,
+      name, // Fallback for backward compatibility
       email,
       phone,
       projectType,
@@ -52,11 +55,46 @@ export default async function handler(req, res) {
       timeline,
       message,
       zoneInfo,
-      isAucklandArea
+      isAucklandArea,
+      website // Honeypot field
     } = req.body;
 
+    // Combine firstName/lastName or use name field for spam validation
+    const formDataForValidation = {
+      firstName,
+      lastName,
+      name: name || (firstName && lastName ? `${firstName} ${lastName}` : ''),
+      email,
+      message,
+      phone,
+      website // Honeypot field
+    };
+
+    // Server-side spam validation and scoring
+    const spamCheck = calculateSpamScore(formDataForValidation, 15);
+    
+    if (spamCheck.isSpam) {
+      // Silently drop spam submissions - return success to client but don't process
+      console.log(`🚫 Spam quote enquiry blocked (score: ${spamCheck.score}/${spamCheck.threshold}):`, {
+        issues: spamCheck.issues,
+        email: email ? email.substring(0, 10) + '...' : 'no email',
+        name: spamCheck.nameData.originalName.substring(0, 20) + '...'
+      });
+      return res.status(200).json({
+        success: true,
+        message: "Quote enquiry submitted successfully! We'll get back to you soon.",
+        leadId: 'SPAM-BLOCKED',
+        quoteId: 'SPAM-BLOCKED'
+      });
+    }
+
+    // Use validated name data (split from full name if needed)
+    const finalName = (firstName && lastName) 
+      ? `${firstName} ${lastName}` 
+      : (name || spamCheck.nameData.originalName);
+
     // Validation
-    if (!name || !email || !projectType || !roomCount || !location || !message) {
+    if (!finalName || !email || !projectType || !roomCount || !location || !message) {
       return res.status(400).json({
         success: false,
         error: "Missing required fields: name, email, projectType, roomCount, location, message"
@@ -84,7 +122,12 @@ export default async function handler(req, res) {
     const leadId = crypto.randomBytes(6).toString("hex");
     const quoteId = `INQ-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
     
-    console.log(`📋 Processing quote enquiry: Lead ${leadId}, Quote ${quoteId}`);
+    console.log(`📋 Processing quote enquiry: Lead ${leadId}, Quote ${quoteId}`, {
+      name: finalName,
+      email: finalEmail,
+      spamScore: spamCheck.score,
+      phone: phone || 'not provided'
+    });
 
     const sheets = getGoogleSheetsClient();
     
@@ -103,7 +146,7 @@ export default async function handler(req, res) {
     // Create lead row for Leads tab (same structure as chatbot leads)
     const leadRow = [
       leadId,                                    // A: Lead ID
-      name,                                      // B: CustomerName
+      finalName,                                 // B: CustomerName
       finalEmail,                                // C: CustomerEmail
       phone || "",                               // D: CustomerPhone
       projectType,                               // E: ServiceType
@@ -136,7 +179,7 @@ export default async function handler(req, res) {
     const quoteRow = [
       quoteId,                                   // A: QuoteID
       leadId,                                    // B: LeadID
-      name,                                      // C: CustomerName
+      finalName,                                 // C: CustomerName
       finalEmail,                                // D: CustomerEmail
       phone || "",                               // E: CustomerPhone
       projectType,                               // F: ServiceType
@@ -229,7 +272,8 @@ export default async function handler(req, res) {
       <ul>
         <li><b>Lead ID:</b> ${leadId}</li>
         <li><b>Quote ID:</b> ${quoteId}</li>
-        <li><b>Customer Name:</b> ${name}</li>
+        <li><b>Customer Name:</b> ${finalName}</li>
+        ${firstName && lastName ? `<li><b>First Name:</b> ${firstName}</li><li><b>Last Name:</b> ${lastName}</li>` : ''}
         <li><b>Email:</b> ${finalEmail}</li>
         <li><b>Phone:</b> ${phone || "Not provided"}</li>
         <li><b>Service:</b> ${projectType}</li>
@@ -249,7 +293,7 @@ export default async function handler(req, res) {
         to: finalEmail,
         subject: "✅ We've Received Your Quote Enquiry!",
         html: `
-          <p>Hi ${name},</p>
+          <p>Hi ${finalName},</p>
           <p>Thanks for your quote enquiry for your ${projectType} project. We've received your project details and a tradesperson will be in touch with a detailed quote shortly.</p>
           <p><strong>Quote Reference:</strong> ${quoteId}</p>
           <p>For your records, here are the details you provided:</p>
@@ -262,7 +306,7 @@ export default async function handler(req, res) {
       // Tradesman notification email
       await transporter.sendMail({
         from: `"Heat.nz Leads" <${process.env.GMAIL_USER}>`,
-        to: process.env.TRADESPERSON_EMAIL,
+        to: process.env.TRADEPERSON_EMAIL,
         subject: `🏠 New Quote Enquiry (${roomCount} Rooms): ${location}`,
         html: `
           <h1>New Quote Enquiry Received (#${leadId})</h1>
@@ -281,7 +325,7 @@ export default async function handler(req, res) {
       await transporter.sendMail({
         from: `"Heat.nz Alerts" <${process.env.GMAIL_USER}>`,
         to: process.env.ADMIN_EMAIL,
-        subject: `New Quote Enquiry: ${name} in ${location}`,
+        subject: `New Quote Enquiry: ${finalName} in ${location}`,
         html: `
           <h1>New Quote Enquiry Logged (#${leadId})</h1>
           ${leadDetailsHtml}

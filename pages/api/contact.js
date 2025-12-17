@@ -1,13 +1,16 @@
 // pages/api/contact.js - Contact Form API
 import { sendEmail } from '../../lib/emailHelper';
 import { validateAndCorrectEmail, logEmailValidation } from '../../utils/emailValidator';
+import { calculateSpamScore } from '../../utils/spamValidator';
 
 export default async function handler(req, res) {
     const { ADMIN_EMAIL, GMAIL_USER, GMAIL_APP_PASSWORD } = process.env;
 
     if (req.method === 'POST') {
         const { 
-            name, 
+            firstName,
+            lastName,
+            name, // Fallback for backward compatibility
             email, 
             message, 
             formType = 'general',
@@ -16,11 +19,44 @@ export default async function handler(req, res) {
             roomCount,
             timeline,
             budget,
-            location
+            location,
+            website // Honeypot field
         } = req.body;
 
-        // Validation
-        if (!name || !email || !message) {
+        // Combine firstName/lastName or use name field for spam validation
+        const formDataForValidation = {
+            firstName,
+            lastName,
+            name: name || (firstName && lastName ? `${firstName} ${lastName}` : ''),
+            email,
+            message,
+            phone,
+            website // Honeypot field
+        };
+
+        // Server-side spam validation and scoring
+        const spamCheck = calculateSpamScore(formDataForValidation, 15);
+        
+        if (spamCheck.isSpam) {
+            // Silently drop spam submissions - return success to client but don't process
+            console.log(`🚫 Spam submission blocked (score: ${spamCheck.score}/${spamCheck.threshold}):`, {
+                issues: spamCheck.issues,
+                email: email ? email.substring(0, 10) + '...' : 'no email',
+                name: spamCheck.nameData.originalName.substring(0, 20) + '...'
+            });
+            return res.status(200).json({
+                success: true,
+                message: "Thank you for your message. We'll get back to you soon!"
+            });
+        }
+
+        // Use validated name data (split from full name if needed)
+        const finalName = (firstName && lastName) 
+            ? `${firstName} ${lastName}` 
+            : (name || spamCheck.nameData.originalName);
+
+        // Basic validation (after spam check)
+        if (!finalName || !email || !message) {
             console.log("❌ Contact form validation failed - missing required fields");
             return res.status(400).json({
                 success: false,
@@ -48,7 +84,12 @@ export default async function handler(req, res) {
             console.log(`📧 Email autocorrected: ${email} → ${finalEmail}`);
         }
 
-        console.log("📧 Contact form submission received:", { name, email: finalEmail });
+        console.log("📧 Contact form submission received:", { 
+            name: finalName, 
+            email: finalEmail,
+            spamScore: spamCheck.score,
+            phone: phone || 'not provided'
+        });
 
         // Environment checks
         const adminEmail = process.env.ADMIN_EMAIL;
@@ -73,13 +114,14 @@ export default async function handler(req, res) {
         let subject, html;
         
         if (formType === 'quote') {
-            subject = `🏠 New Quote Enquiry (20+ Rooms) - ${name}`;
+            subject = `🏠 New Quote Enquiry (20+ Rooms) - ${finalName}`;
             html = `
                 <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
                     <h2 style="color: #333; margin: 20px 0;">🏠 New Quote Enquiry (20+ Rooms)</h2>
                     <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
                         <h3 style="color: #667eea; margin-top: 0;">Customer Information</h3>
-                        <p><strong>Name:</strong> ${name}</p>
+                        <p><strong>Name:</strong> ${finalName}</p>
+                        ${firstName && lastName ? `<p><strong>First Name:</strong> ${firstName}</p><p><strong>Last Name:</strong> ${lastName}</p>` : ''}
                         <p><strong>Email:</strong> ${finalEmail}</p>
                         ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ''}
                         
@@ -102,13 +144,14 @@ export default async function handler(req, res) {
                 </div>
             `;
         } else if (formType === 'manual-quote') {
-            subject = `📋 Manual Quote Submission - ${name}`;
+            subject = `📋 Manual Quote Submission - ${finalName}`;
             html = `
                 <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
                     <h2 style="color: #333; margin: 20px 0;">📋 Manual Quote Submission</h2>
                     <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
                         <h3 style="color: #667eea; margin-top: 0;">Tradesman/Admin Information</h3>
-                        <p><strong>Name:</strong> ${name}</p>
+                        <p><strong>Name:</strong> ${finalName}</p>
+                        ${firstName && lastName ? `<p><strong>First Name:</strong> ${firstName}</p><p><strong>Last Name:</strong> ${lastName}</p>` : ''}
                         <p><strong>Email:</strong> ${finalEmail}</p>
                         ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ''}
                         
@@ -132,12 +175,13 @@ export default async function handler(req, res) {
             `;
         } else {
             // General enquiry
-            subject = `📧 New Contact Form Submission - ${name}`;
+            subject = `📧 New Contact Form Submission - ${finalName}`;
             html = `
                 <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; max-width: 600px; margin: 0 auto;">
                     <h2 style="color: #333; margin: 20px 0;">New Contact Form Submission</h2>
                     <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
-                        <p><strong>Name:</strong> ${name}</p>
+                        <p><strong>Name:</strong> ${finalName}</p>
+                        ${firstName && lastName ? `<p><strong>First Name:</strong> ${firstName}</p><p><strong>Last Name:</strong> ${lastName}</p>` : ''}
                         <p><strong>Email:</strong> ${finalEmail}</p>
                         ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ''}
                         <p><strong>Message:</strong></p>
@@ -152,19 +196,47 @@ export default async function handler(req, res) {
 
         console.log("📧 Built contact form email template");
 
-        // Send email
+        // Send emails to both admin and tradesperson
         try {
-            console.log(`📤 Sending contact form email to: ${process.env.ADMIN_EMAIL}`);
-            const result = await sendEmail(process.env.ADMIN_EMAIL, subject, html);
+            const adminEmail = process.env.ADMIN_EMAIL;
+            const tradespersonEmail = process.env.TRADEPERSON_EMAIL;
             
-            if (result.success) {
-                console.log(`✅ Contact form email sent successfully, msgId: ${result.messageId}`);
+            // Send to admin
+            let adminResult = null;
+            if (adminEmail) {
+                console.log(`📤 Sending contact form email to admin: ${adminEmail}`);
+                adminResult = await sendEmail(adminEmail, subject, html);
+                if (adminResult.success) {
+                    console.log(`✅ Contact form email sent to admin successfully, msgId: ${adminResult.messageId}`);
+                } else {
+                    console.error(`❌ Contact form email to admin failed: ${adminResult.error}`);
+                }
+            } else {
+                console.warn("⚠️ ADMIN_EMAIL not configured, skipping admin notification");
+            }
+
+            // Send to tradesperson
+            let tradespersonResult = null;
+            if (tradespersonEmail) {
+                console.log(`📤 Sending contact form email to tradesperson: ${tradespersonEmail}`);
+                tradespersonResult = await sendEmail(tradespersonEmail, subject, html);
+                if (tradespersonResult.success) {
+                    console.log(`✅ Contact form email sent to tradesperson successfully, msgId: ${tradespersonResult.messageId}`);
+                } else {
+                    console.error(`❌ Contact form email to tradesperson failed: ${tradespersonResult.error}`);
+                }
+            } else {
+                console.warn("⚠️ TRADEPERSON_EMAIL not configured, skipping tradesperson notification");
+            }
+
+            // Return success if at least one email was sent successfully, or if emails are not configured
+            if ((adminResult && adminResult.success) || (tradespersonResult && tradespersonResult.success) || (!adminEmail && !tradespersonEmail)) {
                 return res.status(200).json({
                     success: true,
                     message: "Thank you for your message. We'll get back to you soon!"
                 });
             } else {
-                console.error(`❌ Contact form email failed: ${result.error}`);
+                console.error(`❌ All contact form emails failed`);
                 return res.status(500).json({
                     success: false,
                     error: "Failed to send message. Please try again later."

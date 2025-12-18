@@ -328,6 +328,7 @@ export default async function handler(req, res) {
       await transporter.sendMail({
         from: `"Heat.nz Leads" <${process.env.GMAIL_USER}>`,
         to: process.env.TRADESPERSON_EMAIL,
+        replyTo: finalEmail, // Reply-To customer email
         subject: `🏠 New Quote Enquiry (${roomCount} Rooms): ${location}`,
         html: `
           <h1>New Quote Enquiry Received (#${leadId})</h1>
@@ -339,6 +340,9 @@ export default async function handler(req, res) {
           <p><strong>Quote Submission Link:</strong> <a href="${quoteLink}">Submit Your Quote Now</a></p>
           <p><strong>Manual Quote Link:</strong> <a href="${baseUrl}/contact?access=tradesman">Access Manual Quote Form</a></p>
           <p>This is a large project with ${roomCount} rooms. Please prepare a detailed quote for this customer.</p>
+          <p style="color: #666; font-size: 12px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;">
+            <strong>💡 Tip:</strong> When replying to this email, your reply will automatically go to the customer (${finalEmail})
+          </p>
         `,
       });
 
@@ -346,12 +350,16 @@ export default async function handler(req, res) {
       await transporter.sendMail({
         from: `"Heat.nz Alerts" <${process.env.GMAIL_USER}>`,
         to: process.env.ADMIN_EMAIL,
+        replyTo: finalEmail, // Reply-To customer email
         subject: `New Quote Enquiry: ${finalName} in ${location}`,
         html: `
           <h1>New Quote Enquiry Logged (#${leadId})</h1>
           ${leadDetailsHtml}
           <p>A quote link has been sent to the tradesperson.</p>
           <p><strong>Quote Link:</strong> <a href="${quoteLink}">View Quote Submission</a></p>
+          <p style="color: #666; font-size: 12px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;">
+            <strong>💡 Tip:</strong> When replying to this email, your reply will automatically go to the customer (${finalEmail})
+          </p>
         `,
       });
 

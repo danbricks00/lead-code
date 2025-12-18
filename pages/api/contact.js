@@ -246,11 +246,16 @@ export default async function handler(req, res) {
             const adminEmail = process.env.ADMIN_EMAIL;
             const tradespersonEmail = process.env.TRADESPERSON_EMAIL;
             
-            // Send to admin
+            // Send to admin with Reply-To set to customer email
             let adminResult = null;
             if (adminEmail) {
                 console.log(`📤 Sending contact form email to admin: ${adminEmail}`);
-                adminResult = await sendEmail(adminEmail, subject, html);
+                adminResult = await sendEmail({
+                    to: adminEmail,
+                    subject: subject,
+                    html: html,
+                    replyTo: finalEmail // Reply-To customer email
+                });
                 if (adminResult.success) {
                     console.log(`✅ Contact form email sent to admin successfully, msgId: ${adminResult.messageId}`);
                 } else {
@@ -260,11 +265,16 @@ export default async function handler(req, res) {
                 console.warn("⚠️ ADMIN_EMAIL not configured, skipping admin notification");
             }
 
-            // Send to tradesperson
+            // Send to tradesperson with Reply-To set to customer email
             let tradespersonResult = null;
             if (tradespersonEmail) {
                 console.log(`📤 Sending contact form email to tradesperson: ${tradespersonEmail}`);
-                tradespersonResult = await sendEmail(tradespersonEmail, subject, html);
+                tradespersonResult = await sendEmail({
+                    to: tradespersonEmail,
+                    subject: subject,
+                    html: html,
+                    replyTo: finalEmail // Reply-To customer email
+                });
                 if (tradespersonResult.success) {
                     console.log(`✅ Contact form email sent to tradesperson successfully, msgId: ${tradespersonResult.messageId}`);
                 } else {

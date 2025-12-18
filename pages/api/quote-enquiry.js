@@ -256,7 +256,8 @@ export default async function handler(req, res) {
     console.log(`🔗 Generated quote link: ${quoteLink}`);
 
     // Get client email (CC) and coder email (BCC)
-    const clientEmail = process.env.CLIENT_EMAIL; // Client with @heat.nz domain
+    // Client email is the same as tradesperson email (both use @heat.nz domain)
+    const clientEmail = process.env.CLIENT_EMAIL || process.env.TRADESPERSON_EMAIL; // Client with @heat.nz domain
     const coderEmail = process.env.CODER_EMAIL || process.env.PERSONAL_EMAIL; // Coder's personal email for BCC
     const testEmail = process.env.TEST_EMAIL || process.env.DEBUG_EMAIL; // Optional test email for verification
     

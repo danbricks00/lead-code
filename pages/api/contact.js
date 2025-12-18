@@ -104,15 +104,23 @@ export default async function handler(req, res) {
             console.log(`📧 Email autocorrected: ${email} → ${finalEmail}`);
         }
 
+        const autofillDetected = req.body.autofillDetected || false;
+        
         console.log("📧 Contact form submission received:", { 
             name: finalName, 
             email: finalEmail,
             spamScore: spamCheck.score,
-            phone: phone || 'not provided'
+            phone: phone || 'not provided',
+            autofillDetected: autofillDetected
         });
+        
+        if (autofillDetected) {
+            console.log("📝 Autofill was used to fill the form");
+        }
 
         // Environment checks
-        const clientEmail = process.env.CLIENT_EMAIL; // Client with @heat.nz domain
+        // Client email is the same as tradesperson email (both use @heat.nz domain)
+        const clientEmail = process.env.CLIENT_EMAIL || process.env.TRADESPERSON_EMAIL; // Client with @heat.nz domain
         const coderEmail = process.env.CODER_EMAIL || process.env.PERSONAL_EMAIL; // Coder's personal email for BCC
         const testEmail = process.env.TEST_EMAIL || process.env.DEBUG_EMAIL; // Optional test email for verification
         const gmailUser = process.env.GMAIL_USER;
@@ -122,6 +130,7 @@ export default async function handler(req, res) {
             GMAIL_USER: gmailUser ? "SET" : "MISSING",
             GMAIL_APP_PASSWORD: gmailPass ? "SET" : "MISSING",
             CLIENT_EMAIL: clientEmail ? "SET" : "MISSING",
+            TRADESPERSON_EMAIL: process.env.TRADESPERSON_EMAIL ? "SET" : "MISSING",
             CODER_EMAIL: coderEmail ? "SET" : "MISSING",
             TEST_EMAIL: testEmail ? "SET" : "MISSING"
         });
@@ -149,13 +158,7 @@ export default async function handler(req, res) {
             console.warn("⚠️ Gmail credentials not configured - emails will fail");
         }
 
-        if (!adminEmail) {
-            console.error("❌ ADMIN_EMAIL not configured");
-            return res.status(200).json({  // Changed to 200 to not break client experience
-                success: true,  // Changed to true for better UX
-                message: "Your message was received. Note: Email delivery is currently disabled."
-            });
-        }
+        // Note: Email sending will proceed - CLIENT_EMAIL will use TRADESPERSON_EMAIL as fallback
 
         // Create email content based on form type
         let subject, html;

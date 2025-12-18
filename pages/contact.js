@@ -26,7 +26,8 @@ const ContactPage = () => {
     roomCount: '',
     timeline: '',
     location: '',
-    website: '' // Honeypot field (hidden from users)
+    website: '', // Honeypot field (hidden from users)
+    autofillDetected: false // Track if autofill was used
   });
   
   // Track page load time for spam detection
@@ -34,6 +35,80 @@ const ContactPage = () => {
     if (typeof window !== 'undefined' && !window.pageLoadTime) {
       window.pageLoadTime = Date.now();
     }
+    
+    // Detect autofill on form fields
+    const detectAutofill = () => {
+      const form = document.querySelector('form');
+      if (!form) return;
+      
+      const inputs = form.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], textarea');
+      let autofillFound = false;
+      
+      inputs.forEach(input => {
+        // Check multiple methods to detect autofill
+        try {
+          const computedStyle = window.getComputedStyle(input);
+          const isWebkitAutofill = input.matches && input.matches(':-webkit-autofill');
+          const hasAutofillBackground = computedStyle.backgroundColor !== 'rgba(0, 0, 0, 0)' && 
+                                        computedStyle.backgroundColor !== 'transparent' &&
+                                        computedStyle.backgroundColor !== '';
+          
+          // Check if value appeared without user interaction
+          if (input.value && !input.dataset.userInteracted) {
+            // If field has value but user hasn't interacted, likely autofill
+            if (isWebkitAutofill || hasAutofillBackground) {
+              autofillFound = true;
+              console.log('📝 Autofill detected on:', input.name || input.id);
+            }
+          }
+        } catch (e) {
+          // Ignore errors in autofill detection
+        }
+      });
+      
+      if (autofillFound) {
+        setFormData(prev => ({ ...prev, autofillDetected: true }));
+      }
+    };
+    
+    // Check for autofill after delays (autofill happens after page load)
+    const autofillCheck1 = setTimeout(detectAutofill, 500);
+    const autofillCheck2 = setTimeout(detectAutofill, 1000);
+    const autofillCheck3 = setTimeout(detectAutofill, 2000);
+    
+    // Listen for autofill animation (Chrome/Edge)
+    const handleAutofillAnimation = (e) => {
+      try {
+        if (e.animationName === 'onAutoFillStart' || (e.target.matches && e.target.matches(':-webkit-autofill'))) {
+          setFormData(prev => ({ ...prev, autofillDetected: true }));
+          console.log('📝 Autofill animation detected on:', e.target.name || e.target.id);
+        }
+      } catch (err) {
+        // Ignore errors
+      }
+    };
+    
+    // Track user interactions to distinguish from autofill
+    const handleUserInteraction = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        e.target.dataset.userInteracted = 'true';
+      }
+    };
+    
+    document.addEventListener('animationstart', handleAutofillAnimation, true);
+    document.addEventListener('input', handleUserInteraction);
+    document.addEventListener('focus', handleUserInteraction);
+    document.addEventListener('click', handleUserInteraction);
+    
+    return () => {
+      clearTimeout(autofillCheck1);
+      clearTimeout(autofillCheck2);
+      clearTimeout(autofillCheck3);
+      document.removeEventListener('animationstart', handleAutofillAnimation, true);
+      document.removeEventListener('input', handleUserInteraction);
+      document.removeEventListener('focus', handleUserInteraction);
+      document.removeEventListener('click', handleUserInteraction);
+    };
   }, []);
   const [status, setStatus] = useState({ submitted: false, message: '', isError: false });
   const [zoneData, setZoneData] = useState([]);
@@ -264,8 +339,13 @@ const ContactPage = () => {
       // Use different API endpoints based on form type
       const apiEndpoint = formType === 'quote' ? '/api/quote-enquiry' : '/api/contact';
       
-      // Include zone information for quote enquiries
-      const submissionData = { ...formData, formType, timeOnPage };
+      // Include zone information, timing, and autofill detection for quote enquiries
+      const submissionData = { 
+        ...formData, 
+        formType, 
+        timeOnPage,
+        autofillDetected: formData.autofillDetected || false
+      };
       if (formType === 'quote' && locationStatus.zoneInfo) {
         submissionData.zoneInfo = locationStatus.zoneInfo;
         submissionData.isAucklandArea = locationStatus.isAuckland;
@@ -277,7 +357,22 @@ const ContactPage = () => {
         body: JSON.stringify(submissionData),
       });
 
-      const result = await response.json();
+      // Handle response - check if it's valid JSON
+      let result;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const text = await response.text();
+        try {
+          result = text ? JSON.parse(text) : { success: false, error: 'Empty response' };
+        } catch (e) {
+          console.error('❌ Failed to parse JSON response:', e, 'Response:', text);
+          throw new Error('Invalid response from server. Please try again.');
+        }
+      } else {
+        const text = await response.text();
+        console.error('❌ Unexpected response type:', contentType, 'Response:', text);
+        throw new Error('Unexpected response from server. Please try again.');
+      }
 
       if (!response.ok || !result.success) {
         throw new Error(result.error || 'An unknown error occurred.');

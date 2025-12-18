@@ -112,16 +112,18 @@ export default async function handler(req, res) {
         });
 
         // Environment checks
-        const adminEmail = process.env.ADMIN_EMAIL;
-        const tradespersonEmail = process.env.TRADESPERSON_EMAIL;
+        const clientEmail = process.env.CLIENT_EMAIL; // Client with @heat.nz domain
+        const coderEmail = process.env.CODER_EMAIL || process.env.PERSONAL_EMAIL; // Coder's personal email for BCC
+        const testEmail = process.env.TEST_EMAIL || process.env.DEBUG_EMAIL; // Optional test email for verification
         const gmailUser = process.env.GMAIL_USER;
         const gmailPass = process.env.GMAIL_APP_PASSWORD; // Use GMAIL_APP_PASSWORD for consistency
         
         console.log("🔧 Environment variables check:", {
             GMAIL_USER: gmailUser ? "SET" : "MISSING",
             GMAIL_APP_PASSWORD: gmailPass ? "SET" : "MISSING",
-            ADMIN_EMAIL: adminEmail ? "SET" : "MISSING",
-            TRADESPERSON_EMAIL: tradespersonEmail ? "SET" : "MISSING"
+            CLIENT_EMAIL: clientEmail ? "SET" : "MISSING",
+            CODER_EMAIL: coderEmail ? "SET" : "MISSING",
+            TEST_EMAIL: testEmail ? "SET" : "MISSING"
         });
         
         // Warn if Gmail credentials might be invalid
@@ -241,84 +243,63 @@ export default async function handler(req, res) {
 
         console.log("📧 Built contact form email template");
 
-        // Send emails to both admin and tradesperson
+        // Email flow: To = Customer, CC = Client (@heat.nz), BCC = Coder
         try {
-            const adminEmail = process.env.ADMIN_EMAIL;
-            const tradespersonEmail = process.env.TRADESPERSON_EMAIL;
+            console.log(`📤 Sending contact form email:`);
+            console.log(`   To: ${finalEmail} (customer)`);
+            console.log(`   CC: ${clientEmail || 'NOT SET'} (client@heat.nz)`);
+            console.log(`   BCC: ${coderEmail || 'NOT SET'} (coder)`);
             
-            // Send to admin with Reply-To set to customer email
-            let adminResult = null;
-            if (adminEmail) {
-                console.log(`📤 Sending contact form email to admin: ${adminEmail}`);
-                adminResult = await sendEmail({
-                    to: adminEmail,
-                    subject: subject,
-                    html: html,
-                    replyTo: finalEmail // Reply-To customer email
-                });
-                if (adminResult.success) {
-                    console.log(`✅ Contact form email sent to admin successfully, msgId: ${adminResult.messageId}`);
-                } else {
-                    console.error(`❌ Contact form email to admin failed: ${adminResult.error}`);
-                }
+            const emailOptions = {
+                to: finalEmail, // To: Customer
+                subject: subject,
+                html: html,
+                replyTo: finalEmail // Reply-To customer email
+            };
+            
+            // Add CC to client (@heat.nz domain)
+            if (clientEmail) {
+                emailOptions.cc = [clientEmail];
+                console.log(`📧 CC added: ${clientEmail}`);
             } else {
-                console.warn("⚠️ ADMIN_EMAIL not configured, skipping admin notification");
+                console.warn("⚠️ CLIENT_EMAIL not configured - client will not receive email");
             }
-
-            // Send to tradesperson with Reply-To set to customer email
-            let tradespersonResult = null;
-            if (tradespersonEmail) {
-                console.log(`📤 Sending contact form email to tradesperson: ${tradespersonEmail}`);
-                tradespersonResult = await sendEmail({
-                    to: tradespersonEmail,
-                    subject: subject,
-                    html: html,
-                    replyTo: finalEmail // Reply-To customer email
-                });
-                if (tradespersonResult.success) {
-                    console.log(`✅ Contact form email sent to tradesperson successfully, msgId: ${tradespersonResult.messageId}`);
-                } else {
-                    console.error(`❌ Contact form email to tradesperson failed: ${tradespersonResult.error}`);
-                }
+            
+            // Add BCC to coder (your personal email)
+            const bccList = [];
+            if (coderEmail) {
+                bccList.push(coderEmail);
+                console.log(`📧 BCC added: ${coderEmail}`);
             } else {
-                console.warn("⚠️ TRADESPERSON_EMAIL not configured, skipping tradesperson notification");
+                console.warn("⚠️ CODER_EMAIL or PERSONAL_EMAIL not configured - coder will not receive BCC");
             }
-
-            // Return success if at least one email was sent successfully
-            if ((adminResult && adminResult.success) || (tradespersonResult && tradespersonResult.success)) {
+            
+            // Add optional test email for verification (if configured)
+            if (testEmail) {
+                bccList.push(testEmail);
+                console.log(`📧 Test email BCC added: ${testEmail} (for verification)`);
+            }
+            
+            if (bccList.length > 0) {
+                emailOptions.bcc = bccList;
+            }
+            
+            const emailResult = await sendEmail(emailOptions);
+            
+            if (emailResult.success) {
+                console.log(`✅ Contact form email sent successfully, msgId: ${emailResult.messageId}`);
+                return res.status(200).json({
+                    success: true,
+                    message: "Thank you for your message. We'll get back to you soon!"
+                });
+            } else {
+                console.error(`❌ Contact form email failed: ${emailResult.error}`);
+                // Still return success to user (don't block legitimate submissions due to email issues)
                 return res.status(200).json({
                     success: true,
                     message: "Thank you for your message. We'll get back to you soon!"
                 });
             }
-            
-            // If emails are not configured, still return success (but log warning)
-            if (!adminEmail && !tradespersonEmail) {
-                console.warn("⚠️ No email addresses configured - submission accepted but no notifications sent");
-                return res.status(200).json({
-                    success: true,
-                    message: "Thank you for your message. We'll get back to you soon!"
-                });
-            }
-            
-            // All emails failed - log detailed error but still accept submission
-            // This prevents legitimate users from being blocked due to email service issues
-            console.error(`❌ All contact form emails failed - submission data logged:`, {
-                name: finalName,
-                email: finalEmail,
-                phone: phone || 'not provided',
-                message: message.substring(0, 100) + '...',
-                adminError: adminResult?.error,
-                tradespersonError: tradespersonResult?.error,
-                timestamp: new Date().toISOString()
-            });
-            
-            // Still return success to user (don't block legitimate submissions due to email issues)
-            // But log the failure for admin review
-            return res.status(200).json({
-                success: true,
-                message: "Thank you for your message. We'll get back to you soon!"
-            });
         } catch (error) {
             // Log error but don't block legitimate submissions
             console.error(`❌ Contact form processing error:`, {

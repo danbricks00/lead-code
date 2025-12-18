@@ -255,6 +255,27 @@ export default async function handler(req, res) {
     
     console.log(`🔗 Generated quote link: ${quoteLink}`);
 
+    // Get client email (CC) and coder email (BCC)
+    const clientEmail = process.env.CLIENT_EMAIL; // Client with @heat.nz domain
+    const coderEmail = process.env.CODER_EMAIL || process.env.PERSONAL_EMAIL; // Coder's personal email for BCC
+    const testEmail = process.env.TEST_EMAIL || process.env.DEBUG_EMAIL; // Optional test email for verification
+    
+    if (clientEmail) {
+        console.log(`📧 Client email for CC: ${clientEmail} (for lead ${leadId})`);
+    } else {
+        console.warn("⚠️ CLIENT_EMAIL not configured - client will not receive email");
+    }
+    
+    if (coderEmail) {
+        console.log(`📧 Coder email for BCC: ${coderEmail} (for lead ${leadId})`);
+    } else {
+        console.warn("⚠️ CODER_EMAIL or PERSONAL_EMAIL not configured - coder will not receive BCC");
+    }
+    
+    if (testEmail) {
+        console.log(`📧 Test email for BCC: ${testEmail} (for verification - lead ${leadId})`);
+    }
+
     // Email setup
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -308,10 +329,10 @@ export default async function handler(req, res) {
 
     // Send emails
     try {
-      // Customer confirmation email
-      await transporter.sendMail({
+      // Customer confirmation email (To: Customer, CC: Client, BCC: Coder)
+      const customerEmailOptions = {
         from: `"Heat.nz" <${process.env.GMAIL_USER}>`,
-        to: finalEmail,
+        to: finalEmail, // To: Customer
         subject: "✅ We've Received Your Quote Enquiry!",
         html: `
           <p>Hi ${finalName},</p>
@@ -322,10 +343,32 @@ export default async function handler(req, res) {
           <p>If you have any questions, please don't hesitate to contact us.</p>
           <p>Best regards,<br>Heat.nz Team</p>
         `,
-      });
+      };
+      
+      // Add CC to client (@heat.nz domain)
+      if (clientEmail) {
+        customerEmailOptions.cc = [clientEmail];
+        console.log(`📧 CC added to customer email: ${clientEmail}`);
+      }
+      
+      // Add BCC to coder and optional test email
+      const customerBccList = [];
+      if (coderEmail) {
+        customerBccList.push(coderEmail);
+        console.log(`📧 BCC added to customer email: ${coderEmail}`);
+      }
+      if (testEmail) {
+        customerBccList.push(testEmail);
+        console.log(`📧 Test email BCC added to customer email: ${testEmail} (for verification)`);
+      }
+      if (customerBccList.length > 0) {
+        customerEmailOptions.bcc = customerBccList;
+      }
+      
+      await transporter.sendMail(customerEmailOptions);
 
-      // Tradesman notification email
-      await transporter.sendMail({
+      // Tradesman notification email (To: Tradesperson, CC: Client, BCC: Coder)
+      const tradespersonEmailOptions = {
         from: `"Heat.nz Leads" <${process.env.GMAIL_USER}>`,
         to: process.env.TRADESPERSON_EMAIL,
         replyTo: finalEmail, // Reply-To customer email
@@ -344,24 +387,29 @@ export default async function handler(req, res) {
             <strong>💡 Tip:</strong> When replying to this email, your reply will automatically go to the customer (${finalEmail})
           </p>
         `,
-      });
-
-      // Admin notification email
-      await transporter.sendMail({
-        from: `"Heat.nz Alerts" <${process.env.GMAIL_USER}>`,
-        to: process.env.ADMIN_EMAIL,
-        replyTo: finalEmail, // Reply-To customer email
-        subject: `New Quote Enquiry: ${finalName} in ${location}`,
-        html: `
-          <h1>New Quote Enquiry Logged (#${leadId})</h1>
-          ${leadDetailsHtml}
-          <p>A quote link has been sent to the tradesperson.</p>
-          <p><strong>Quote Link:</strong> <a href="${quoteLink}">View Quote Submission</a></p>
-          <p style="color: #666; font-size: 12px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;">
-            <strong>💡 Tip:</strong> When replying to this email, your reply will automatically go to the customer (${finalEmail})
-          </p>
-        `,
-      });
+      };
+      
+      // Add CC to client (@heat.nz domain)
+      if (clientEmail) {
+        tradespersonEmailOptions.cc = [clientEmail];
+        console.log(`📧 CC added to tradesperson email: ${clientEmail}`);
+      }
+      
+      // Add BCC to coder and optional test email
+      const tradespersonBccList = [];
+      if (coderEmail) {
+        tradespersonBccList.push(coderEmail);
+        console.log(`📧 BCC added to tradesperson email: ${coderEmail}`);
+      }
+      if (testEmail) {
+        tradespersonBccList.push(testEmail);
+        console.log(`📧 Test email BCC added to tradesperson email: ${testEmail} (for verification)`);
+      }
+      if (tradespersonBccList.length > 0) {
+        tradespersonEmailOptions.bcc = tradespersonBccList;
+      }
+      
+      await transporter.sendMail(tradespersonEmailOptions);
 
       console.log('✅ Quote enquiry emails sent successfully');
     } catch (emailError) {

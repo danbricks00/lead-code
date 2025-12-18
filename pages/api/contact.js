@@ -127,8 +127,21 @@ export default async function handler(req, res) {
         // Warn if Gmail credentials might be invalid
         if (gmailUser && gmailPass) {
             // Check if password looks like an app password (16 characters, no spaces)
-            if (gmailPass.length !== 16 || gmailPass.includes(' ')) {
-                console.warn("⚠️ GMAIL_APP_PASSWORD format looks incorrect. App passwords should be 16 characters with no spaces.");
+            const passwordLength = gmailPass.length;
+            const hasSpaces = gmailPass.includes(' ');
+            const trimmedLength = gmailPass.trim().length;
+            
+            if (passwordLength !== 16 || hasSpaces) {
+                console.error("❌ GMAIL_APP_PASSWORD format is INCORRECT:");
+                console.error(`   - Current length: ${passwordLength} characters (should be 16)`);
+                console.error(`   - Trimmed length: ${trimmedLength} characters`);
+                console.error(`   - Contains spaces: ${hasSpaces}`);
+                console.error("   - Action required: Generate a new App Password from https://myaccount.google.com/apppasswords");
+                console.error("   - Make sure to copy all 16 characters with NO spaces");
+                console.error("   - Update GMAIL_APP_PASSWORD in Vercel environment variables");
+                console.error("   - Redeploy the application after updating");
+            } else {
+                console.log("✅ GMAIL_APP_PASSWORD format looks correct (16 characters, no spaces)");
             }
         } else {
             console.warn("⚠️ Gmail credentials not configured - emails will fail");

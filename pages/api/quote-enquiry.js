@@ -327,7 +327,7 @@ export default async function handler(req, res) {
       // Tradesman notification email
       await transporter.sendMail({
         from: `"Heat.nz Leads" <${process.env.GMAIL_USER}>`,
-        to: process.env.TRADEPERSON_EMAIL,
+        to: process.env.TRADESPERSON_EMAIL,
         subject: `🏠 New Quote Enquiry (${roomCount} Rooms): ${location}`,
         html: `
           <h1>New Quote Enquiry Received (#${leadId})</h1>

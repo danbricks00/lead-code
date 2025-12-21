@@ -55,7 +55,7 @@ const UnderfloorHeatingRemueraPage = () => {
         title="Underfloor Heating Remuera — Luxury Home Heating Installation | Heat NZ"
         description="Premium underfloor heating installation in Remuera, Auckland. Specialists in luxury and heritage homes. Electric & hydronic systems with discreet installation. Free quotes for Remuera homeowners."
         canonical="https://heat.nz/services/underfloor-heating-remuera"
-        keywords="underfloor heating Remuera, heating installation Remuera, electric heating Remuera, hydronic heating Remuera, luxury home heating Remuera, heritage home heating Remuera, bathroom heating Remuera, kitchen heating Remuera, heating contractors Remuera"
+        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating Remuera, under floor heating Remuera, under-floor heating Remuera, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating Remuera, under tile heating Auckland, tile heating Remuera, tile heating Auckland, floor heating Remuera, floor heating Auckland, electric tile heating Remuera, electric tile heating Auckland, electric under floor Remuera, electric under floor Auckland, bathroom tile heating Remuera, bathroom tile heating Auckland, bathroom heating Remuera, bathroom heating Auckland, heating installation Remuera, electric heating Remuera, hydronic heating Remuera, luxury home heating Remuera, heritage home heating Remuera, kitchen heating Remuera, heating contractors Remuera"
         structuredData={[structuredData]}
         faqData={faqData}
       />

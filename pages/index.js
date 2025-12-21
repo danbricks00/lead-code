@@ -27,17 +27,17 @@ const HomePage = ({ openChat }) => { // Receive openChat prop from Layout
   return (
     <Layout>
       <SEO
-        title="Underfloor Heating Auckland — Free Quote"
-        description="Auckland's #1 underfloor heating specialists! Electric & hydronic installation from $80/m². 500+ homes heated. Free quotes, expert installation, 25-year warranty. Get your quote today!"
+        title="Underfloor Heating Auckland | Under Floor Heating — Free Quote"
+        description="Auckland's #1 underfloor heating & under floor heating specialists! Electric & hydronic installation from $80/m². 500+ homes heated. Serving West Auckland, Henderson, New Lynn & all Auckland. Free quotes, expert installation, 25-year warranty. Get your quote today!"
         canonical="https://www.heat.nz"
-        keywords="underfloor heating Auckland, tile heating Auckland, under tile heating Auckland, floor heating Auckland, electric tile heating Auckland, electric under tile heating Auckland, electric underfloor heating Auckland, hydronic heating Auckland, heating installation Auckland, underfloor heating quote Auckland, bathroom heating Auckland, kitchen heating Auckland, heating contractors Auckland"
+        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, underfloor heating West Auckland, under floor heating West Auckland, under-floor heating West Auckland, underfloor heating Henderson, under floor heating Henderson, under-floor heating Henderson, underfloor heating New Lynn, under floor heating New Lynn, under-floor heating New Lynn, tile heating Auckland, under tile heating Auckland, floor heating Auckland, electric tile heating Auckland, electric under tile heating Auckland, electric underfloor heating Auckland, electric under floor heating Auckland, electric under-floor heating Auckland, hydronic heating Auckland, heating installation Auckland, underfloor heating quote Auckland, bathroom heating Auckland, kitchen heating Auckland, heating contractors Auckland"
       />
       <div style={styles.pageContainer}>
         {/* Hero Section */}
         <section style={styles.hero}>
           <div style={styles.heroContent}>
-            <h1>Professional Underfloor Heating Auckland — Get Your Free Quote Today</h1>
-            <p>Heat NZ is Auckland's leading underfloor heating specialists. We install and service electric and hydronic heating systems throughout Auckland, providing warm, energy-efficient homes with expert installation and ongoing support.</p>
+            <h1>Professional Underfloor Heating Auckland | Under Floor Heating — Get Your Free Quote Today</h1>
+            <p>Heat NZ is Auckland's leading underfloor heating and under floor heating specialists. We install and service electric and hydronic heating systems throughout Auckland, including West Auckland, Henderson, New Lynn, and all Auckland suburbs, providing warm, energy-efficient homes with expert installation and ongoing support.</p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
                 <strong>500+</strong> Auckland homes heated

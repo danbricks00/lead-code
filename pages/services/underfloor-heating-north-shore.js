@@ -6,11 +6,11 @@ const UnderfloorHeatingNorthShorePage = () => {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Service",
-    "name": "Underfloor Heating Installation in North Shore",
+    "name": "Underfloor Heating & Under Floor Heating Installation in North Shore",
     "provider": {
       "@type": "LocalBusiness",
       "name": "Heat NZ",
-      "url": "https://heat.nz",
+      "url": "https://www.heat.nz",
       "address": {
         "@type": "PostalAddress",
         "addressLocality": "North Shore",
@@ -18,12 +18,38 @@ const UnderfloorHeatingNorthShorePage = () => {
         "addressCountry": "NZ"
       }
     },
-    "areaServed": {
-      "@type": "Place",
-      "name": "North Shore, Auckland"
-    },
-    "serviceType": "Underfloor heating installation, maintenance & repair",
-    "description": "Professional underfloor heating installation and service on the North Shore, including Takapuna, Devonport, and surrounding areas."
+    "areaServed": [
+      {
+        "@type": "Place",
+        "name": "North Shore, Auckland"
+      },
+      {
+        "@type": "Place",
+        "name": "Takapuna"
+      },
+      {
+        "@type": "Place",
+        "name": "Devonport"
+      },
+      {
+        "@type": "Place",
+        "name": "Browns Bay"
+      },
+      {
+        "@type": "Place",
+        "name": "Albany"
+      },
+      {
+        "@type": "Place",
+        "name": "Milford"
+      },
+      {
+        "@type": "Place",
+        "name": "Glenfield"
+      }
+    ],
+    "serviceType": "Underfloor heating installation, under floor heating installation, maintenance & repair",
+    "description": "Professional underfloor heating and under floor heating installation and service on the North Shore, including Takapuna, Devonport, Browns Bay, Albany, Milford, Glenfield, and surrounding areas."
   };
 
   const faqData = {
@@ -52,10 +78,10 @@ const UnderfloorHeatingNorthShorePage = () => {
   return (
     <Layout>
       <SEO
-        title="Underfloor Heating North Shore — Takapuna & Devonport Installation | Heat NZ"
-        description="Professional underfloor heating installation on Auckland's North Shore. Takapuna, Devonport, Browns Bay & surrounding areas. Electric & hydronic systems from $90/m². Free quotes for North Shore homes."
-        canonical="https://heat.nz/services/underfloor-heating-north-shore"
-        keywords="underfloor heating North Shore, heating installation North Shore, electric heating North Shore, hydronic heating North Shore, Takapuna heating, Devonport heating, Browns Bay heating, North Shore heating contractors, heating service North Shore"
+        title="Underfloor Heating North Shore | Under Floor Heating Takapuna, Devonport | Heat NZ"
+        description="Professional underfloor heating & under floor heating on Auckland's North Shore. Takapuna, Devonport, Browns Bay, Albany, Milford, Glenfield & surrounding areas. Electric & hydronic systems from $90/m². Free quotes for North Shore homes."
+        canonical="https://www.heat.nz/services/underfloor-heating-north-shore"
+        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating North Shore, under floor heating North Shore, under-floor heating North Shore, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating North Shore, under tile heating Auckland, tile heating North Shore, tile heating Auckland, floor heating North Shore, floor heating Auckland, electric tile heating North Shore, electric tile heating Auckland, electric under floor North Shore, electric under floor Auckland, bathroom tile heating North Shore, bathroom tile heating Auckland, bathroom heating North Shore, bathroom heating Auckland, underfloor heating Takapuna, under floor heating Takapuna, under-floor heating Takapuna, underfloor heating Devonport, under floor heating Devonport, under-floor heating Devonport, underfloor heating Browns Bay, under floor heating Browns Bay, under-floor heating Browns Bay, underfloor heating Albany, under floor heating Albany, under-floor heating Albany, underfloor heating Milford, under floor heating Milford, under-floor heating Milford, heating installation North Shore, electric heating North Shore, hydronic heating North Shore, North Shore heating contractors, heating service North Shore"
         structuredData={[structuredData]}
         faqData={faqData}
       />
@@ -64,9 +90,9 @@ const UnderfloorHeatingNorthShorePage = () => {
         {/* Hero Section */}
         <section style={styles.hero}>
           <div style={styles.heroContent}>
-            <h1>Professional Underfloor Heating North Shore — Takapuna & Devonport Specialists</h1>
+            <h1>Professional Underfloor Heating North Shore | Under Floor Heating Takapuna, Devonport & All North Shore</h1>
             <p style={styles.heroSubtitle}>
-              North Shore's premier underfloor heating specialists. We serve Takapuna, Devonport, Browns Bay, and all North Shore suburbs 
+              North Shore's premier underfloor heating and under floor heating specialists. We serve Takapuna, Devonport, Browns Bay, Albany, Milford, Glenfield, and all North Shore suburbs 
               with premium electric and hydronic heating installations for coastal homes, luxury properties, and family residences.
             </p>
             <div style={styles.heroStats}>
@@ -88,7 +114,7 @@ const UnderfloorHeatingNorthShorePage = () => {
 
         {/* North Shore Specific Content */}
         <section style={styles.section}>
-          <h2>Why North Shore Homeowners Choose Heat NZ for Underfloor Heating</h2>
+          <h2>Why North Shore Homeowners Choose Heat NZ for Underfloor Heating & Under Floor Heating</h2>
           <div style={styles.features}>
             <div style={styles.feature}>
               <h3>Coastal Property Expertise</h3>
@@ -111,51 +137,59 @@ const UnderfloorHeatingNorthShorePage = () => {
 
         {/* North Shore Areas */}
         <section style={styles.section}>
-          <h2>Underfloor Heating Services Throughout the North Shore</h2>
-          <p>We provide comprehensive underfloor heating services across all North Shore areas, including:</p>
+          <h2>Underfloor Heating & Under Floor Heating Services Throughout the North Shore</h2>
+          <p>We provide comprehensive underfloor heating and under floor heating services across all North Shore areas, including:</p>
           <div style={styles.suburbsGrid}>
             <div style={styles.suburbGroup}>
-              <h3>Takapuna</h3>
-              <p>Luxury homes, premium apartments, and commercial properties with high-end heating solutions</p>
+              <h3>Underfloor Heating Takapuna</h3>
+              <p>Premium underfloor heating and under floor heating in Takapuna. Luxury homes, premium apartments, and commercial properties with high-end heating solutions. Takapuna specialists.</p>
             </div>
             <div style={styles.suburbGroup}>
-              <h3>Devonport</h3>
-              <p>Heritage homes, character properties, and waterfront residences with period-appropriate heating</p>
+              <h3>Underfloor Heating Devonport</h3>
+              <p>Heritage underfloor heating and under floor heating for Devonport properties. Heritage homes, character properties, and waterfront residences with period-appropriate heating. Devonport experts.</p>
             </div>
             <div style={styles.suburbGroup}>
-              <h3>Browns Bay</h3>
-              <p>Family homes, coastal properties, and residential developments with reliable heating systems</p>
+              <h3>Underfloor Heating Browns Bay</h3>
+              <p>Reliable underfloor heating and under floor heating in Browns Bay. Family homes, coastal properties, and residential developments with reliable heating systems. Browns Bay specialists.</p>
             </div>
             <div style={styles.suburbGroup}>
-              <h3>Albany</h3>
-              <p>Modern homes, new developments, and commercial properties with contemporary heating solutions</p>
+              <h3>Underfloor Heating Albany</h3>
+              <p>Modern underfloor heating and under floor heating for Albany properties. Modern homes, new developments, and commercial properties with contemporary heating solutions. Albany experts.</p>
             </div>
             <div style={styles.suburbGroup}>
-              <h3>Milford</h3>
-              <p>Premium homes, waterfront properties, and luxury residences with sophisticated heating systems</p>
+              <h3>Underfloor Heating Milford</h3>
+              <p>Luxury underfloor heating and under floor heating in Milford. Premium homes, waterfront properties, and luxury residences with sophisticated heating systems. Milford specialists.</p>
             </div>
             <div style={styles.suburbGroup}>
-              <h3>Glenfield</h3>
-              <p>Family homes, rental properties, and residential developments with cost-effective heating solutions</p>
+              <h3>Underfloor Heating Glenfield</h3>
+              <p>Affordable underfloor heating and under floor heating for Glenfield homes. Family homes, rental properties, and residential developments with cost-effective heating solutions. Glenfield experts.</p>
             </div>
           </div>
         </section>
 
         {/* FAQ Section */}
         <section style={styles.section}>
-          <h2>Frequently Asked Questions - Underfloor Heating North Shore</h2>
+          <h2>Frequently Asked Questions - Underfloor Heating & Under Floor Heating North Shore</h2>
           <div style={styles.faq}>
             <div style={styles.faqItem}>
               <h3>How much does underfloor heating cost on the North Shore?</h3>
-              <p>Underfloor heating costs on the North Shore typically range from $90-$170 per square meter for electric systems and $125-$200 per square meter for hydronic systems, including installation. Premium locations like Takapuna and Devonport may have slightly higher costs.</p>
+              <p>Underfloor heating and under floor heating costs on the North Shore typically range from $90-$170 per square meter for electric systems and $125-$200 per square meter for hydronic systems, including installation. Premium locations like Takapuna and Devonport may have slightly higher costs.</p>
             </div>
             <div style={styles.faqItem}>
               <h3>Do you install underfloor heating in North Shore coastal properties?</h3>
-              <p>Yes, we specialize in installing underfloor heating in North Shore coastal properties, understanding the unique requirements of waterfront homes and managing salt air considerations.</p>
+              <p>Yes, we specialize in installing underfloor heating and under floor heating in North Shore coastal properties, understanding the unique requirements of waterfront homes and managing salt air considerations throughout Takapuna, Devonport, Milford, and all coastal North Shore areas.</p>
             </div>
             <div style={styles.faqItem}>
               <h3>What heating system is best for North Shore luxury homes?</h3>
-              <p>For North Shore luxury homes, we typically recommend hydronic systems for whole-house heating with smart controls, or electric systems for specific areas like bathrooms and kitchens. The choice depends on your home's size and heating requirements.</p>
+              <p>For North Shore luxury homes in Takapuna, Devonport, and Milford, we typically recommend hydronic systems for whole-house heating with smart controls, or electric systems for specific areas like bathrooms and kitchens. The choice depends on your home's size and heating requirements.</p>
+            </div>
+            <div style={styles.faqItem}>
+              <h3>Do you install under floor heating in Takapuna?</h3>
+              <p>Yes, we provide premium underfloor heating and under floor heating installation in Takapuna for luxury homes, premium apartments, and commercial properties. Our team understands Takapuna's high-end property requirements and provides tailored solutions.</p>
+            </div>
+            <div style={styles.faqItem}>
+              <h3>Can you install underfloor heating in Devonport heritage homes?</h3>
+              <p>Absolutely! We specialize in installing underfloor heating and under floor heating in Devonport's heritage homes and character properties, providing period-appropriate solutions that respect the property's historic value while adding modern comfort.</p>
             </div>
           </div>
         </section>

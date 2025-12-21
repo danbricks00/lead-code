@@ -52,10 +52,10 @@ const UnderfloorHeatingEastAucklandPage = () => {
   return (
     <Layout>
       <SEO
-        title="Underfloor Heating East Auckland — Howick & Pakuranga Installation | Heat NZ"
-        description="Professional underfloor heating installation in East Auckland. Howick, Pakuranga, Botany & surrounding areas. Electric & hydronic systems from $85/m². Free quotes for East Auckland homes."
+        title="Underfloor Heating East Auckland | Under Floor Heating Howick, Pakuranga | Heat NZ"
+        description="Professional underfloor heating & under floor heating in East Auckland. Howick, Pakuranga, Botany, Flat Bush, Half Moon Bay & surrounding areas. Electric & hydronic systems from $85/m². Free quotes for East Auckland homes."
         canonical="https://heat.nz/services/underfloor-heating-east-auckland"
-        keywords="underfloor heating East Auckland, heating installation East Auckland, electric heating East Auckland, hydronic heating East Auckland, Howick heating, Pakuranga heating, Botany heating, East Auckland heating contractors, heating service East Auckland"
+        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating East Auckland, under floor heating East Auckland, under-floor heating East Auckland, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating East Auckland, under tile heating Auckland, tile heating East Auckland, tile heating Auckland, floor heating East Auckland, floor heating Auckland, electric tile heating East Auckland, electric tile heating Auckland, electric under floor East Auckland, electric under floor Auckland, bathroom tile heating East Auckland, bathroom tile heating Auckland, bathroom heating East Auckland, bathroom heating Auckland, underfloor heating Howick, under floor heating Howick, under-floor heating Howick, underfloor heating Pakuranga, under floor heating Pakuranga, under-floor heating Pakuranga, underfloor heating Botany, under floor heating Botany, under-floor heating Botany, heating installation East Auckland, electric heating East Auckland, hydronic heating East Auckland, East Auckland heating contractors, heating service East Auckland"
         structuredData={[structuredData]}
         faqData={faqData}
       />

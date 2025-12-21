@@ -6,7 +6,7 @@ const UnderfloorHeatingSouthAucklandPage = () => {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Service",
-    "name": "Underfloor Heating Installation in South Auckland",
+    "name": "Underfloor Heating & Under Floor Heating Installation in South Auckland",
     "provider": {
       "@type": "LocalBusiness",
       "name": "Heat NZ",
@@ -18,12 +18,38 @@ const UnderfloorHeatingSouthAucklandPage = () => {
         "addressCountry": "NZ"
       }
     },
-    "areaServed": {
-      "@type": "Place",
-      "name": "South Auckland"
-    },
-    "serviceType": "Underfloor heating installation, maintenance & repair",
-    "description": "Professional underfloor heating installation and service in South Auckland, including Manukau, Papatoetoe, and surrounding areas."
+    "areaServed": [
+      {
+        "@type": "Place",
+        "name": "South Auckland"
+      },
+      {
+        "@type": "Place",
+        "name": "Manukau"
+      },
+      {
+        "@type": "Place",
+        "name": "Papatoetoe"
+      },
+      {
+        "@type": "Place",
+        "name": "Otahuhu"
+      },
+      {
+        "@type": "Place",
+        "name": "Mangere"
+      },
+      {
+        "@type": "Place",
+        "name": "Manurewa"
+      },
+      {
+        "@type": "Place",
+        "name": "Papakura"
+      }
+    ],
+    "serviceType": "Underfloor heating installation, under floor heating installation, maintenance & repair",
+    "description": "Professional underfloor heating and under floor heating installation and service in South Auckland, including Manukau, Papatoetoe, Otahuhu, Mangere, Manurewa, Papakura, and surrounding areas."
   };
 
   const faqData = {
@@ -52,10 +78,10 @@ const UnderfloorHeatingSouthAucklandPage = () => {
   return (
     <Layout>
       <SEO
-        title="Underfloor Heating South Auckland — Manukau & Papatoetoe Installation | Heat NZ"
-        description="Professional underfloor heating installation in South Auckland. Manukau, Papatoetoe, Otahuhu & surrounding areas. Electric & hydronic systems from $75/m². Free quotes for South Auckland homes."
+        title="Underfloor Heating South Auckland | Under Floor Heating Manukau, Papatoetoe | Heat NZ"
+        description="Professional underfloor heating & under floor heating in South Auckland. Manukau, Papatoetoe, Otahuhu, Mangere, Manurewa, Papakura & surrounding areas. Electric & hydronic systems from $75/m². Free quotes for South Auckland homes."
         canonical="https://www.heat.nz/services/underfloor-heating-south-auckland"
-        keywords="underfloor heating South Auckland, heating installation South Auckland, electric heating South Auckland, hydronic heating South Auckland, Manukau heating, Papatoetoe heating, Otahuhu heating, South Auckland heating contractors, heating service South Auckland"
+        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating South Auckland, under floor heating South Auckland, under-floor heating South Auckland, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating South Auckland, under tile heating Auckland, tile heating South Auckland, tile heating Auckland, floor heating South Auckland, floor heating Auckland, electric tile heating South Auckland, electric tile heating Auckland, electric under floor South Auckland, electric under floor Auckland, bathroom tile heating South Auckland, bathroom tile heating Auckland, bathroom heating South Auckland, bathroom heating Auckland, underfloor heating Manukau, under floor heating Manukau, under-floor heating Manukau, underfloor heating Papatoetoe, under floor heating Papatoetoe, under-floor heating Papatoetoe, underfloor heating Otahuhu, under floor heating Otahuhu, under-floor heating Otahuhu, underfloor heating Mangere, under floor heating Mangere, under-floor heating Mangere, underfloor heating Manurewa, under floor heating Manurewa, under-floor heating Manurewa, underfloor heating Papakura, under floor heating Papakura, under-floor heating Papakura, heating installation South Auckland, electric heating South Auckland, hydronic heating South Auckland, South Auckland heating contractors, heating service South Auckland"
         structuredData={[structuredData]}
         faqData={faqData}
       />
@@ -64,9 +90,9 @@ const UnderfloorHeatingSouthAucklandPage = () => {
         {/* Hero Section */}
         <section style={styles.hero}>
           <div style={styles.heroContent}>
-            <h1>Professional Underfloor Heating South Auckland — Manukau & Papatoetoe Specialists</h1>
+            <h1>Professional Underfloor Heating South Auckland | Under Floor Heating Manukau, Papatoetoe & All South Auckland</h1>
             <p style={styles.heroSubtitle}>
-              South Auckland's trusted underfloor heating specialists. We serve Manukau, Papatoetoe, Otahuhu, and all southern suburbs 
+              South Auckland's trusted underfloor heating and under floor heating specialists. We serve Manukau, Papatoetoe, Otahuhu, Mangere, Manurewa, Papakura, and all southern suburbs 
               with affordable electric and hydronic heating installations for homes, rental properties, and commercial buildings.
             </p>
             <div style={styles.heroStats}>
@@ -88,7 +114,7 @@ const UnderfloorHeatingSouthAucklandPage = () => {
 
         {/* South Auckland Specific Content */}
         <section style={styles.section}>
-          <h2>Why South Auckland Homeowners Choose Heat NZ for Underfloor Heating</h2>
+          <h2>Why South Auckland Homeowners Choose Heat NZ for Underfloor Heating & Under Floor Heating</h2>
           <div style={styles.features}>
             <div style={styles.feature}>
               <h3>Affordable Solutions</h3>
@@ -111,52 +137,88 @@ const UnderfloorHeatingSouthAucklandPage = () => {
 
         {/* South Auckland Areas */}
         <section style={styles.section}>
-          <h2>Underfloor Heating Services Throughout South Auckland</h2>
-          <p>We provide comprehensive underfloor heating services across all South Auckland areas, including:</p>
+          <h2>Underfloor Heating & Under Floor Heating Services Throughout South Auckland</h2>
+          <p>We provide comprehensive underfloor heating and under floor heating services across all South Auckland areas, including:</p>
           <div style={styles.suburbsGrid}>
             <div style={styles.suburbGroup}>
-              <h3>Manukau</h3>
-              <p>City center properties, commercial buildings, and residential developments with comprehensive heating solutions</p>
+              <h3>Underfloor Heating Manukau</h3>
+              <p>Professional underfloor heating and under floor heating in Manukau. City center properties, commercial buildings, and residential developments with comprehensive heating solutions. Expert Manukau service.</p>
             </div>
             <div style={styles.suburbGroup}>
-              <h3>Papatoetoe</h3>
-              <p>Family homes, rental properties, and residential buildings with reliable heating systems</p>
+              <h3>Underfloor Heating Papatoetoe</h3>
+              <p>Reliable underfloor heating and under floor heating for Papatoetoe properties. Family homes, rental properties, and residential buildings with reliable heating systems. Local Papatoetoe specialists.</p>
             </div>
             <div style={styles.suburbGroup}>
-              <h3>Otahuhu</h3>
-              <p>Character homes, modern developments, and commercial properties with efficient heating solutions</p>
+              <h3>Underfloor Heating Otahuhu</h3>
+              <p>Quality underfloor heating and under floor heating in Otahuhu. Character homes, modern developments, and commercial properties with efficient heating solutions. Otahuhu heating experts.</p>
             </div>
             <div style={styles.suburbGroup}>
-              <h3>Mangere</h3>
-              <p>Family homes, rental properties, and residential developments with cost-effective heating systems</p>
+              <h3>Underfloor Heating Mangere</h3>
+              <p>Affordable underfloor heating and under floor heating for Mangere homes. Family homes, rental properties, and residential developments with cost-effective heating systems. Mangere specialists.</p>
             </div>
             <div style={styles.suburbGroup}>
-              <h3>Papakura</h3>
-              <p>Rural properties, family homes, and residential developments with reliable heating solutions</p>
+              <h3>Underfloor Heating Papakura</h3>
+              <p>Professional underfloor heating and under floor heating in Papakura. Rural properties, family homes, and residential developments with reliable heating solutions. Papakura heating experts.</p>
             </div>
             <div style={styles.suburbGroup}>
-              <h3>Manurewa</h3>
-              <p>Family homes, rental properties, and residential buildings with affordable heating solutions</p>
+              <h3>Underfloor Heating Manurewa</h3>
+              <p>Cost-effective underfloor heating and under floor heating for Manurewa properties. Family homes, rental properties, and residential buildings with affordable heating solutions. Manurewa specialists.</p>
+            </div>
+            <div style={styles.suburbGroup}>
+              <h3>Underfloor Heating Takanini</h3>
+              <p>Modern underfloor heating and under floor heating for Takanini homes. New developments, family homes, and residential properties with contemporary heating solutions. Takanini experts.</p>
+            </div>
+            <div style={styles.suburbGroup}>
+              <h3>Underfloor Heating Wiri</h3>
+              <p>Commercial and residential underfloor heating and under floor heating in Wiri. Industrial properties, family homes, and commercial buildings with efficient heating systems. Wiri specialists.</p>
             </div>
           </div>
         </section>
 
         {/* FAQ Section */}
         <section style={styles.section}>
-          <h2>Frequently Asked Questions - Underfloor Heating South Auckland</h2>
+          <h2>Frequently Asked Questions - Underfloor Heating & Under Floor Heating South Auckland</h2>
           <div style={styles.faq}>
             <div style={styles.faqItem}>
               <h3>How much does underfloor heating cost in South Auckland?</h3>
-              <p>Underfloor heating costs in South Auckland typically range from $75-$145 per square meter for electric systems and $110-$175 per square meter for hydronic systems, including installation. South Auckland offers competitive pricing with excellent value for money.</p>
+              <p>Underfloor heating and under floor heating costs in South Auckland typically range from $75-$145 per square meter for electric systems and $110-$175 per square meter for hydronic systems, including installation. South Auckland offers competitive pricing with excellent value for money in Manukau, Papatoetoe, Otahuhu, Mangere, and all South Auckland suburbs.</p>
             </div>
             <div style={styles.faqItem}>
               <h3>Do you service underfloor heating systems in South Auckland?</h3>
-              <p>Yes, we provide comprehensive maintenance and repair services for underfloor heating systems throughout South Auckland, including Manukau, Papatoetoe, Otahuhu, and surrounding areas.</p>
+              <p>Yes, we provide comprehensive maintenance and repair services for underfloor heating and under floor heating systems throughout South Auckland, including Manukau, Papatoetoe, Otahuhu, Mangere, Manurewa, Papakura, and all surrounding areas.</p>
             </div>
             <div style={styles.faqItem}>
               <h3>Are your heating solutions suitable for South Auckland rental properties?</h3>
-              <p>Absolutely! We provide heating solutions suitable for South Auckland's rental market, including cost-effective electric systems and durable installations that appeal to both landlords and tenants.</p>
+              <p>Absolutely! We provide heating solutions suitable for South Auckland's rental market, including cost-effective electric systems and durable installations that appeal to both landlords and tenants throughout Manukau, Papatoetoe, and all South Auckland areas.</p>
             </div>
+            <div style={styles.faqItem}>
+              <h3>Do you install underfloor heating in Manukau?</h3>
+              <p>Yes, we specialize in underfloor heating and under floor heating installation in Manukau, including Manukau City center, commercial buildings, and residential developments. We provide expert service throughout all Manukau areas.</p>
+            </div>
+            <div style={styles.faqItem}>
+              <h3>Can you install under floor heating in Papatoetoe?</h3>
+              <p>Absolutely! We provide professional underfloor heating and under floor heating installation in Papatoetoe for family homes, rental properties, and residential buildings. Our team understands Papatoetoe's unique housing requirements.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Related Services Section */}
+        <section style={styles.section}>
+          <h2>Related Auckland Heating Services</h2>
+          <p>Explore our other Auckland heating services:</p>
+          <div style={styles.relatedLinks}>
+            <a href="/services/underfloor-heating-manukau" style={styles.relatedLink}>
+              Underfloor Heating Manukau
+            </a>
+            <a href="/services/underfloor-heating-central-auckland" style={styles.relatedLink}>
+              Underfloor Heating Central Auckland
+            </a>
+            <a href="/services/underfloor-heating-west-auckland" style={styles.relatedLink}>
+              Underfloor Heating West Auckland
+            </a>
+            <a href="/services/underfloor-heating" style={styles.relatedLink}>
+              All Auckland Heating Services
+            </a>
           </div>
         </section>
 
@@ -264,6 +326,24 @@ const styles = {
     backgroundColor: '#667eea',
     color: 'white',
     textAlign: 'center'
+  },
+  relatedLinks: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: '1rem',
+    marginTop: '1rem'
+  },
+  relatedLink: {
+    display: 'block',
+    padding: '1rem',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '8px',
+    textDecoration: 'none',
+    color: '#667eea',
+    fontWeight: '600',
+    textAlign: 'center',
+    border: '2px solid transparent',
+    transition: 'all 0.3s ease'
   }
 };
 

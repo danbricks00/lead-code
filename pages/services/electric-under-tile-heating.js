@@ -165,7 +165,7 @@ const ElectricUnderTileHeatingPage = () => {
         title="Electric Under Tile Heating Auckland — Electric Heating Cables Under Tiles | Heat NZ"
         description="Professional electric under tile heating installation in Auckland. Electric heating cables installed directly under tiles for bathrooms, kitchens & wet areas. From $80-$150/m². Free quotes."
         canonical="https://heat.nz/services/electric-under-tile-heating"
-        keywords="electric under tile heating Auckland, electric heating cables under tiles, electric underfloor heating tiles, bathroom electric heating under tiles, electric tile floor heating, wet area electric heating, electric heating under ceramic tiles"
+        keywords="under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, electric under tile heating Auckland, electric heating cables under tiles, electric underfloor heating tiles, bathroom electric heating under tiles, electric tile floor heating, wet area electric heating, electric heating under ceramic tiles"
         structuredData={[structuredData, faqData]}
       />
       

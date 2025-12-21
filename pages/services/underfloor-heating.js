@@ -45,8 +45,8 @@ const UnderfloorHeatingPage = () => {
   const serviceData = {
     "@context": "https://schema.org",
     "@type": "Service",
-    "name": "Underfloor Heating Installation Auckland",
-    "description": "Professional underfloor heating installation and service in Auckland. Electric and hydronic systems available with free quotes.",
+    "name": "Underfloor Heating & Under Floor Heating Installation Auckland",
+    "description": "Professional underfloor heating and under floor heating installation and service in Auckland, including West Auckland, Henderson, New Lynn, and all Auckland suburbs. Electric and hydronic systems available with free quotes.",
     "provider": {
       "@type": "LocalBusiness",
       "name": "Heat NZ",
@@ -57,6 +57,18 @@ const UnderfloorHeatingPage = () => {
       {
         "@type": "City",
         "name": "Auckland"
+      },
+      {
+        "@type": "City",
+        "name": "West Auckland"
+      },
+      {
+        "@type": "City", 
+        "name": "Henderson"
+      },
+      {
+        "@type": "City",
+        "name": "New Lynn"
       },
       {
         "@type": "City", 
@@ -84,10 +96,10 @@ const UnderfloorHeatingPage = () => {
   return (
     <Layout>
         <SEO
-        title="Underfloor Heating Auckland — Professional Installation & Service | Heat NZ"
-        description="Auckland's leading underfloor heating specialists. Professional electric & hydronic heating installation, maintenance & repair. Free quotes for all Auckland suburbs including Remuera, Ponsonby, Parnell, Takapuna & more."
+        title="Underfloor Heating Auckland | Under Floor Heating — Professional Installation & Service | Heat NZ"
+        description="Auckland's leading underfloor heating & under floor heating specialists. Professional electric & hydronic heating installation, maintenance & repair. Free quotes for all Auckland suburbs including West Auckland, Henderson, New Lynn, Remuera, Ponsonby, Parnell, Takapuna, North Shore, East Auckland & more."
         canonical="https://www.heat.nz/services/underfloor-heating"
-        keywords="underfloor heating Auckland, tile heating Auckland, under tile heating Auckland, floor heating Auckland, electric tile heating Auckland, electric under tile heating Auckland, electric underfloor heating Auckland, hydronic heating Auckland, heating installation Auckland, underfloor heating cost Auckland, bathroom heating Auckland, kitchen heating Auckland, heating contractors Auckland, radiant heating Auckland"
+        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, underfloor heating West Auckland, under floor heating West Auckland, under-floor heating West Auckland, underfloor heating Henderson, under floor heating Henderson, under-floor heating Henderson, underfloor heating New Lynn, under floor heating New Lynn, under-floor heating New Lynn, tile heating Auckland, under tile heating Auckland, floor heating Auckland, electric tile heating Auckland, electric under tile heating Auckland, electric underfloor heating Auckland, electric under floor heating Auckland, electric under-floor heating Auckland, hydronic heating Auckland, heating installation Auckland, underfloor heating cost Auckland, bathroom heating Auckland, kitchen heating Auckland, heating contractors Auckland, radiant heating Auckland"
         structuredData={[serviceData]}
         faqData={faqData}
       />
@@ -96,10 +108,10 @@ const UnderfloorHeatingPage = () => {
         {/* Hero Section */}
         <section style={styles.hero}>
           <div style={styles.container}>
-            <h1 style={styles.h1}>Professional Underfloor Heating Auckland — Electric & Hydronic Installation</h1>
+            <h1 style={styles.h1}>Professional Underfloor Heating Auckland | Under Floor Heating — Electric & Hydronic Installation</h1>
             <p style={styles.lead}>
-              Auckland's premier underfloor heating specialists with 15+ years experience. We install, service, and maintain electric and hydronic heating systems throughout Auckland. 
-              From bathroom heating in Remuera to whole-house systems in Ponsonby, we provide energy-efficient heating solutions for every Auckland home.
+              Auckland's premier underfloor heating and under floor heating specialists with 15+ years experience. We install, service, and maintain electric and hydronic heating systems throughout Auckland. 
+              From bathroom heating in West Auckland (Henderson, New Lynn) to whole-house systems in Remuera and Ponsonby, we provide energy-efficient heating solutions for every Auckland home.
             </p>
             <button 
               onClick={handleGetQuote}
@@ -132,7 +144,7 @@ const UnderfloorHeatingPage = () => {
               </div>
               <div style={styles.suburbGroup}>
                 <h3>West Auckland</h3>
-                <p>Ponsonby, Grey Lynn, Herne Bay, Westmere, Pt Chevalier</p>
+                <p>Henderson, New Lynn, Glen Eden, Te Atatū, Massey, Avondale, Waitakere, Swanson, Ranui</p>
               </div>
               <div style={styles.suburbGroup}>
                 <h3>South Auckland</h3>

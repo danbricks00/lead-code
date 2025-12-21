@@ -108,7 +108,7 @@ const ElectricUnderfloorHeatingPage = () => {
         title="Electric Underfloor Heating Auckland — Bathroom & Kitchen Heating Installation"
         description="Professional electric underfloor heating installation in Auckland. Perfect for bathrooms, kitchens & renovations. From $80-$150/m² with 1-3 day installation. Free quotes for all Auckland suburbs."
         canonical="https://heat.nz/services/electric-underfloor-heating"
-        keywords="electric underfloor heating Auckland, tile heating Auckland, under tile heating Auckland, floor heating Auckland, electric tile heating Auckland, electric under tile heating Auckland, bathroom heating Auckland, kitchen heating Auckland, electric floor heating Auckland, heating mats Auckland, electric heating installation Auckland, renovation heating Auckland, bathroom floor heating"
+        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, electric underfloor heating Auckland, tile heating Auckland, under tile heating Auckland, floor heating Auckland, electric tile heating Auckland, electric under tile heating Auckland, bathroom heating Auckland, kitchen heating Auckland, electric floor heating Auckland, heating mats Auckland, electric heating installation Auckland, renovation heating Auckland, bathroom floor heating"
         structuredData={structuredData}
       />
       

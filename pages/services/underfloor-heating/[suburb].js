@@ -73,7 +73,7 @@ const SuburbPage = () => {
         title={`Underfloor Heating ${suburbName} - Professional Installation & Service`}
         description={currentData.description}
         canonical={`https://www.heat.nz/services/underfloor-heating/${suburb}`}
-        keywords={`underfloor heating ${suburbName}, heating installation ${suburbName}, electric heating ${suburbName}, hydronic heating ${suburbName}`}
+        keywords={`underfloor heating ${suburbName}, under floor heating ${suburbName}, under-floor heating ${suburbName}, heating installation ${suburbName}, electric heating ${suburbName}, hydronic heating ${suburbName}`}
         structuredData={[
           {
             "@context": "https://schema.org",

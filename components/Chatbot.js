@@ -970,7 +970,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
     <div style={currentStyles.chatbotContainer}>
       <div style={currentStyles.chatbotHeader}>
         <div style={currentStyles.headerContent}>
-          <h3>Heat.nz Chatbot</h3>
+          <h3 style={{margin: '0 0 12px 0', fontSize: '18px', fontWeight: 700, letterSpacing: '-0.01em'}}>Heat.nz Quote Assistant</h3>
           <ProgressBar 
             steps={progressSteps} 
             currentStep={progressStep} 
@@ -981,8 +981,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
           />
         </div>
         <div style={currentStyles.headerButtons}>
-            <button onClick={handleClose} style={currentStyles.headerBtn}>—</button>
-            <button onClick={handleReset} style={currentStyles.headerBtn}>✕</button>
+            <button onClick={handleClose} style={currentStyles.headerBtn} title="Minimize">—</button>
+            <button onClick={handleReset} style={currentStyles.headerBtn} title="Close">✕</button>
         </div>
       </div>
       
@@ -1185,99 +1185,105 @@ const getResponsiveStyles = (windowSize) => {
   return {
     chatbotContainer: { 
       width: '100%', 
-      maxWidth: '400px', 
+      maxWidth: '420px', 
       height: isSmallMobile ? '60vh' : '100%', 
-      border: '1px solid #ddd', 
-      borderRadius: '10px', 
+      border: 'none', 
+      borderRadius: '24px', 
       display: 'flex', 
       flexDirection: 'column', 
       background: 'white', 
-      fontFamily: 'Arial, sans-serif',
-      // Mobile optimizations
-      minHeight: isSmallMobile ? '300px' : '400px',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      minHeight: isSmallMobile ? '350px' : '500px',
       maxHeight: isSmallMobile ? '60vh' : '100vh',
       overflow: 'hidden',
-      // Ensure proper sizing on mobile
       boxSizing: 'border-box',
-      // Prevent zoom on input focus (iOS)
-      fontSize: isSmallMobile ? '16px' : '14px'
+      fontSize: isSmallMobile ? '16px' : '15px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
     },
     chatbotMessages: { 
       flex: 1, 
       overflowY: 'auto', 
-      padding: isSmallMobile ? '8px 12px' : '15px', 
+      padding: isSmallMobile ? '16px' : '24px', 
       display: 'flex', 
       flexDirection: 'column', 
-      backgroundColor: '#f9f9f9',
-      fontSize: isSmallMobile ? '14px' : '15px'
+      backgroundColor: '#f7fafc',
+      fontSize: isSmallMobile ? '14px' : '15px',
+      gap: '12px'
     },
     chatbotInput: { 
       display: 'flex', 
-      padding: isSmallMobile ? '6px 8px' : '15px', 
-      gap: '10px', 
-      borderTop: '1px solid #eee',
-      // Mobile touch targets
-      minHeight: '44px'
+      padding: isSmallMobile ? '12px 16px' : '20px 24px', 
+      gap: '12px', 
+      borderTop: '1px solid #e2e8f0',
+      backgroundColor: 'white',
+      minHeight: '64px',
+      alignItems: 'center'
     },
     inputField: { 
       flex: 1, 
-      padding: isSmallMobile ? '8px 12px' : '10px', 
-      border: '1px solid #ddd', 
-      borderRadius: '20px', 
+      padding: isSmallMobile ? '12px 16px' : '14px 20px', 
+      border: '2px solid #e2e8f0', 
+      borderRadius: '24px', 
       outline: 'none', 
       fontSize: isSmallMobile ? '14px' : '15px',
-      // Mobile touch targets
-      minHeight: isSmallMobile ? '40px' : '44px'
+      minHeight: isSmallMobile ? '44px' : '48px',
+      transition: 'border-color 0.2s ease',
+      fontFamily: 'inherit'
     },
     sendButton: { 
-      width: isSmallMobile ? '40px' : '44px', 
-      height: isSmallMobile ? '40px' : '44px', 
+      width: isSmallMobile ? '44px' : '48px', 
+      height: isSmallMobile ? '44px' : '48px', 
       border: 'none', 
-      background: '#333', 
+      background: 'linear-gradient(135deg, #e63946 0%, #f77f00 100%)', 
       color: 'white', 
       borderRadius: '50%', 
       cursor: 'pointer', 
-      fontSize: '16px', 
+      fontSize: '18px', 
       display: 'flex', 
       alignItems: 'center', 
       justifyContent: 'center',
-      // Mobile touch targets
-      minHeight: isSmallMobile ? '40px' : '44px',
-      minWidth: isSmallMobile ? '40px' : '44px'
+      minHeight: isSmallMobile ? '44px' : '48px',
+      minWidth: isSmallMobile ? '44px' : '48px',
+      boxShadow: '0 4px 15px rgba(230, 57, 70, 0.3)',
+      transition: 'all 0.2s ease'
     },
     optionsContainer: { 
-      padding: isSmallMobile ? '6px 8px' : '10px', 
-      borderTop: '1px solid #eee', 
-      maxHeight: '150px', 
+      padding: isSmallMobile ? '12px 16px' : '20px 24px', 
+      borderTop: '1px solid #e2e8f0', 
+      maxHeight: '180px', 
       overflowY: 'auto', 
       display: 'flex', 
       flexWrap: 'wrap', 
-      gap: '8px', 
-      justifyContent: 'center' 
+      gap: '10px', 
+      justifyContent: 'center',
+      backgroundColor: 'white'
     },
     optionButton: { 
-      background: '#f0f0f0', 
-      border: '1px solid #ddd', 
-      borderRadius: '15px', 
-      padding: isSmallMobile ? '8px 12px' : '12px 16px', 
+      background: '#f7fafc', 
+      border: '2px solid #e2e8f0', 
+      borderRadius: '20px', 
+      padding: isSmallMobile ? '10px 16px' : '12px 20px', 
       cursor: 'pointer', 
       fontSize: isSmallMobile ? '14px' : '15px', 
-      minHeight: isSmallMobile ? '40px' : '44px',
+      minHeight: isSmallMobile ? '44px' : '48px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      '&:hover': { background: '#e0e0e0' } 
+      fontWeight: 600,
+      color: '#2d3748',
+      transition: 'all 0.2s ease'
     },
     suburbSearchContainer: { 
-      padding: isSmallMobile ? '8px 12px' : '15px', 
-      borderTop: '1px solid #eee', 
-      position: 'relative' 
+      padding: isSmallMobile ? '16px' : '24px', 
+      borderTop: '1px solid #e2e8f0', 
+      position: 'relative',
+      backgroundColor: 'white'
     },
     reviewContainer: { 
-      padding: isSmallMobile ? '8px 12px' : '15px', 
-      borderTop: '1px solid #eee', 
-      backgroundColor: '#f9f9f9', 
-      maxHeight: isSmallMobile ? '300px' : '400px', 
+      padding: isSmallMobile ? '16px' : '24px', 
+      borderTop: '1px solid #e2e8f0', 
+      backgroundColor: '#f7fafc', 
+      maxHeight: isSmallMobile ? '350px' : '450px', 
       overflowY: 'auto' 
     }
   };
@@ -1286,45 +1292,184 @@ const getResponsiveStyles = (windowSize) => {
 // Get responsive styles based on current window size
 const getCurrentStyles = (windowSize) => ({
   ...getResponsiveStyles(windowSize),
-  chatbotHeader: { background: '#333', color: 'white', padding: '10px 15px', borderRadius: '10px 10px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  headerContent: { flex: 1, textAlign: 'center', paddingLeft: '40px' /* Offset for buttons */ },
-  headerButtons: { display: 'flex', gap: '5px' },
-  headerBtn: { background: 'none', border: 'none', color: 'white', fontSize: '18px', cursor: 'pointer' },
-  suggestionsContainer: { position: 'absolute', bottom: '100%', left: '15px', right: '15px', background: 'white', border: '1px solid #ddd', borderRadius: '8px', zIndex: 10, maxHeight: '150px', overflowY: 'auto', boxShadow: '0 -2px 10px rgba(0,0,0,0.1)' },
-  suggestionItem: { padding: '10px', cursor: 'pointer', borderBottom: '1px solid #eee' },
-  progressBarContainer: { marginTop: '10px' },
+  chatbotHeader: { 
+    background: 'linear-gradient(135deg, #e63946 0%, #f77f00 100%)', 
+    color: 'white', 
+    padding: '20px 24px', 
+    borderRadius: '24px 24px 0 0', 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+  },
+  headerContent: { 
+    flex: 1, 
+    textAlign: 'center', 
+    paddingLeft: '40px'
+  },
+  headerButtons: { 
+    display: 'flex', 
+    gap: '8px' 
+  },
+  headerBtn: { 
+    background: 'rgba(255, 255, 255, 0.2)', 
+    border: 'none', 
+    color: 'white', 
+    fontSize: '18px', 
+    cursor: 'pointer',
+    width: '32px',
+    height: '32px',
+    borderRadius: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s ease'
+  },
+  suggestionsContainer: { 
+    position: 'absolute', 
+    bottom: '100%', 
+    left: '24px', 
+    right: '24px', 
+    background: 'white', 
+    border: '1px solid #e2e8f0', 
+    borderRadius: '16px', 
+    zIndex: 10, 
+    maxHeight: '200px', 
+    overflowY: 'auto', 
+    boxShadow: '0 -8px 30px rgba(0,0,0,0.15)',
+    marginBottom: '12px'
+  },
+  suggestionItem: { 
+    padding: '14px 20px', 
+    cursor: 'pointer', 
+    borderBottom: '1px solid #f1f5f9',
+    transition: 'background 0.2s ease',
+    fontSize: '15px',
+    color: '#2d3748'
+  },
+  progressBarContainer: { 
+    marginTop: '12px' 
+  },
   progressBarOuter: {
     width: '100%',
-    height: '16px',
-    background: '#eee',
-    borderRadius: '8px',
+    height: '8px',
+    background: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: '10px',
     overflow: 'hidden',
-    margin: '10px 0'
+    margin: '12px 0 8px'
   },
   progressBarInner: {
     height: '100%',
     width: '0%',
-    background: 'linear-gradient(90deg, #4CAF50, #2E8BFF)',
-    transition: 'width 260ms ease'
+    background: 'rgba(255, 255, 255, 0.9)',
+    transition: 'width 300ms ease',
+    borderRadius: '10px'
   },
   progressLabel: {
-    fontSize: '13px',
+    fontSize: '12px',
     marginTop: '4px',
-    color: '#333',
-    textAlign: 'center'
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+    fontWeight: 600
   },
-  progressBarSteps: { display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '5px', color: '#ccc' },
-  progressStep: { transition: 'color 0.4s ease' },
-  editingIndicator: { padding: '10px', borderRadius: '5px', marginBottom: '15px', fontSize: '14px', fontWeight: 'bold', textAlign: 'center' },
-  reviewSection: { marginBottom: '20px', backgroundColor: 'white', borderRadius: '8px', padding: '15px', border: '1px solid #ddd' },
-  reviewSectionTitle: { margin: '0 0 15px 0', fontSize: '16px', fontWeight: 'bold', color: '#333', borderBottom: '2px solid #4caf50', paddingBottom: '5px' },
-  reviewField: { display: 'flex', alignItems: 'center', marginBottom: '10px', padding: '8px', backgroundColor: '#f8f9fa', borderRadius: '5px', border: '1px solid #e9ecef' },
-  reviewLabel: { fontWeight: 'bold', minWidth: '120px', color: '#495057', fontSize: '14px' },
-  reviewValue: { flex: 1, margin: '0 10px', color: '#212529', fontSize: '14px' },
-  editButton: { background: '#007bff', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s ease', '&:hover': { background: '#0056b3', transform: 'translateY(-1px)' } },
-  roomReview: { marginBottom: '15px', padding: '10px', backgroundColor: '#f1f3f4', borderRadius: '5px', border: '1px solid #dee2e6' },
-  reviewActions: { textAlign: 'center', marginTop: '20px', paddingTop: '15px', borderTop: '2px solid #4caf50' },
-  submitButton: { background: '#28a745', color: 'white', border: 'none', borderRadius: '8px', padding: '12px 24px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', '&:hover': { background: '#218838' } }
+  progressBarSteps: { 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    fontSize: '11px', 
+    marginBottom: '8px', 
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: 500
+  },
+  progressStep: { 
+    transition: 'color 0.4s ease',
+    fontSize: '11px'
+  },
+  editingIndicator: { 
+    padding: '16px', 
+    borderRadius: '12px', 
+    marginBottom: '20px', 
+    fontSize: '14px', 
+    fontWeight: 600, 
+    textAlign: 'center',
+    background: '#fff3cd',
+    border: '2px solid #ffc107',
+    color: '#856404'
+  },
+  reviewSection: { 
+    marginBottom: '24px', 
+    backgroundColor: 'white', 
+    borderRadius: '16px', 
+    padding: '24px', 
+    border: '1px solid #e2e8f0',
+    boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
+  },
+  reviewSectionTitle: { 
+    margin: '0 0 20px 0', 
+    fontSize: '18px', 
+    fontWeight: 700, 
+    color: '#1a202c', 
+    borderBottom: '2px solid #e63946', 
+    paddingBottom: '8px'
+  },
+  reviewField: { 
+    display: 'flex', 
+    alignItems: 'center', 
+    marginBottom: '12px', 
+    padding: '12px', 
+    backgroundColor: '#f7fafc', 
+    borderRadius: '10px', 
+    border: '1px solid #e2e8f0'
+  },
+  reviewLabel: { 
+    fontWeight: 600, 
+    minWidth: '140px', 
+    color: '#4a5568', 
+    fontSize: '14px' 
+  },
+  reviewValue: { 
+    flex: 1, 
+    margin: '0 16px', 
+    color: '#1a202c', 
+    fontSize: '14px',
+    fontWeight: 500
+  },
+  editButton: { 
+    background: 'linear-gradient(135deg, #e63946 0%, #f77f00 100%)', 
+    color: 'white', 
+    border: 'none', 
+    borderRadius: '8px', 
+    padding: '8px 16px', 
+    fontSize: '12px', 
+    cursor: 'pointer', 
+    fontWeight: 600, 
+    transition: 'all 0.2s ease',
+    boxShadow: '0 2px 8px rgba(230, 57, 70, 0.3)'
+  },
+  roomReview: { 
+    marginBottom: '20px', 
+    padding: '16px', 
+    backgroundColor: '#f7fafc', 
+    borderRadius: '12px', 
+    border: '1px solid #e2e8f0'
+  },
+  reviewActions: { 
+    textAlign: 'center', 
+    marginTop: '24px', 
+    paddingTop: '24px', 
+    borderTop: '2px solid #e63946'
+  },
+  submitButton: { 
+    background: 'linear-gradient(135deg, #e63946 0%, #f77f00 100%)', 
+    color: 'white', 
+    border: 'none', 
+    borderRadius: '50px', 
+    padding: '14px 32px', 
+    fontSize: '16px', 
+    fontWeight: 700, 
+    cursor: 'pointer',
+    boxShadow: '0 4px 15px rgba(230, 57, 70, 0.4)',
+    transition: 'all 0.3s ease'
+  }
 });
 
 export default Chatbot;

@@ -49,28 +49,15 @@ export default function ChatMessage({ message, isUser, isTyping }) {
   // Determine the style based on the isUser prop
   const messageStyle = isUser ? styles.userMessage : styles.systemMessage;
 
-  // For user messages, add aggressive blue color forcing
+  // For user messages, use modern gradient styling
   if (isUser) {
     return (
       <div style={{
         ...messageStyle,
-        background: '#007bff',
-        backgroundColor: '#007bff',
+        background: 'linear-gradient(135deg, #e63946 0%, #f77f00 100%)',
+        backgroundColor: '#e63946',
         color: '#ffffff',
-        colorScheme: 'light',
-        filter: 'none',
-        WebkitFilter: 'none'
       }}>
-        <style jsx>{`
-          div {
-            background: #007bff !important;
-            background-color: #007bff !important;
-            color: #ffffff !important;
-            color-scheme: light !important;
-            filter: none !important;
-            -webkit-filter: none !important;
-          }
-        `}</style>
         {message}
       </div>
     );
@@ -86,36 +73,44 @@ export default function ChatMessage({ message, isUser, isTyping }) {
 // Centralized styles object for clarity
 const styles = {
   userMessage: {
-    maxWidth: "70%",
-    margin: "8px",
-    padding: "12px 16px",
-    borderRadius: "16px",
-    backgroundColor: "#007bff", // User message: Blue
-    color: "#ffffff", // White text for contrast
+    maxWidth: "75%",
+    margin: "4px 0",
+    padding: "14px 18px",
+    borderRadius: "20px 20px 4px 20px",
+    background: "linear-gradient(135deg, #e63946 0%, #f77f00 100%)",
+    backgroundColor: "#e63946",
+    color: "#ffffff",
     alignSelf: "flex-end",
-    fontSize: "16px",
-    lineHeight: "1.4",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+    fontSize: "15px",
+    lineHeight: "1.5",
+    boxShadow: "0 2px 8px rgba(230, 57, 70, 0.25)",
+    fontWeight: 400,
+    wordWrap: "break-word",
   },
   systemMessage: {
-    maxWidth: "70%",
-    margin: "8px",
-    padding: "12px 16px",
-    borderRadius: "16px",
-    backgroundColor: "#333", // System message: Dark Gray
-    color: "#fff",
+    maxWidth: "75%",
+    margin: "4px 0",
+    padding: "14px 18px",
+    borderRadius: "20px 20px 20px 4px",
+    backgroundColor: "white",
+    color: "#2d3748",
     alignSelf: "flex-start",
-    fontSize: "16px",
-    lineHeight: "1.4",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+    fontSize: "15px",
+    lineHeight: "1.5",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+    border: "1px solid #e2e8f0",
+    fontWeight: 400,
+    wordWrap: "break-word",
   },
   typingContainer: {
     alignSelf: 'flex-start',
     display: 'flex',
     alignItems: 'center',
-    margin: "8px",
-    padding: "12px 16px",
-    borderRadius: "16px",
-    backgroundColor: '#f1f1f1',
+    margin: "4px 0",
+    padding: "14px 18px",
+    borderRadius: "20px 20px 20px 4px",
+    backgroundColor: 'white',
+    border: '1px solid #e2e8f0',
+    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
   }
 };

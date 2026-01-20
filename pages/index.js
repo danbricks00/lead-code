@@ -219,8 +219,8 @@ const HomePage = ({ openChat }) => {
                   "Our new underfloor heating has completely changed how we live. It's warm, efficient, and no more cold tiles in winter! The installation team was professional and the whole process was stress-free."
                 </p>
                 <div style={styles.testimonialAuthor}>
-                  <strong>Sarah M.</strong>
-                  <span>Remuera, Auckland</span>
+                  <strong style={styles.testimonialAuthorName}>Sarah M.</strong>
+                  <span style={styles.testimonialAuthorLocation}>Remuera, Auckland</span>
                 </div>
               </div>
               <div style={styles.testimonialCard}>
@@ -229,8 +229,8 @@ const HomePage = ({ openChat }) => {
                   "The whole process was simple! Heat.nz provided excellent service from quote to completion. Finished on time and within budget. Couldn't be happier with the results."
                 </p>
                 <div style={styles.testimonialAuthor}>
-                  <strong>James R.</strong>
-                  <span>Ponsonby, Auckland</span>
+                  <strong style={styles.testimonialAuthorName}>James R.</strong>
+                  <span style={styles.testimonialAuthorLocation}>Ponsonby, Auckland</span>
                 </div>
               </div>
               <div style={styles.testimonialCard}>
@@ -239,8 +239,8 @@ const HomePage = ({ openChat }) => {
                   "Worth every dollar. The system runs quietly, the house feels amazing, and our power bills actually went down. Highly recommend Heat.nz to anyone considering underfloor heating."
                 </p>
                 <div style={styles.testimonialAuthor}>
-                  <strong>Anika P.</strong>
-                  <span>Parnell, Auckland</span>
+                  <strong style={styles.testimonialAuthorName}>Anika P.</strong>
+                  <span style={styles.testimonialAuthorLocation}>Parnell, Auckland</span>
                 </div>
               </div>
             </div>
@@ -597,11 +597,12 @@ const styles = {
     flexDirection: 'column',
     gap: '4px'
   },
-  testimonialAuthor strong: {
+  testimonialAuthorName: {
     color: '#1a202c',
-    fontSize: '1.1rem'
+    fontSize: '1.1rem',
+    fontWeight: 700
   },
-  testimonialAuthor span: {
+  testimonialAuthorLocation: {
     color: '#718096',
     fontSize: '0.9rem'
   },

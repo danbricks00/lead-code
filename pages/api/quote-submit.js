@@ -441,7 +441,9 @@ export default async function handler(req, res) {
       </body>
       </html>`;
 
-    await transporter.sendMail({
+    // Add BCC for tracking
+    const coderEmail = process.env.CODER_EMAIL;
+    const emailOptions = {
       from: `"Heat.nz" <${GMAIL_USER}>`,
       to: customerEmail, // Send only to customer
       subject: `📄 Your Heat.nz Quote #${quoteId} - ${serviceType}`,
@@ -451,8 +453,15 @@ export default async function handler(req, res) {
         content: pdfBuffer,
         contentType: 'application/pdf'
       }]
-    });
-    console.log(`✅ Quote email sent to customer: ${customerEmail}`);
+    };
+    
+    // Add BCC if CODER_EMAIL is set
+    if (coderEmail) {
+      emailOptions.bcc = coderEmail;
+    }
+    
+    await transporter.sendMail(emailOptions);
+    console.log(`✅ Quote email sent to customer: ${customerEmail}${coderEmail ? ` (BCC: ${coderEmail})` : ''}`);
 
     // --- Internal Team Email (No decision buttons, new text) ---
     const internalHtmlContent = `
@@ -471,7 +480,7 @@ export default async function handler(req, res) {
     const internalRecipients = [tradePersonEmail, adminEmail].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
 
     if (internalRecipients.length > 0) {
-      await transporter.sendMail({
+      const internalEmailOptions = {
         from: `"Heat.nz" <${GMAIL_USER}>`,
         to: internalRecipients.join(','),
         subject: `[Internal] Quote #${quoteId} Sent to ${customerName}`,
@@ -481,8 +490,15 @@ export default async function handler(req, res) {
           content: pdfBuffer,
           contentType: 'application/pdf'
         }]
-      });
-      console.log(`✅ Internal notification sent to: ${internalRecipients.join(', ')}`);
+      };
+      
+      // Add BCC if CODER_EMAIL is set
+      if (coderEmail) {
+        internalEmailOptions.bcc = coderEmail;
+      }
+      
+      await transporter.sendMail(internalEmailOptions);
+      console.log(`✅ Internal notification sent to: ${internalRecipients.join(', ')}${coderEmail ? ` (BCC: ${coderEmail})` : ''}`);
     }
     
     // Track quote submission in GA4

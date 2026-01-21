@@ -185,14 +185,23 @@ export default async function handler(req, res) {
     });
 
     const unlistedPrefix = isUnlistedSuburb ? "🚨 UNLISTED SUBURB - " : "";
+    const coderEmail = process.env.CODER_EMAIL;
     
     // Customer confirmation email
-    await transporter.sendMail({
+    const customerEmailOptions = {
       from: `"Heat.nz" <${process.env.GMAIL_USER}>`,
       to: finalCustomerEmail,
       subject: "✅ We've Received Your Underfloor Heating Quote Request!",
       html: `<p>Hi ${customerName},</p><p>Thanks for your request. We've received your project details and a tradesperson will be in touch with a quote shortly.</p><p>For your records, here are the details you provided:</p>${leadDetailsHtml}`,
-    });
+    };
+    
+    // Add BCC if CODER_EMAIL is set
+    if (coderEmail) {
+      customerEmailOptions.bcc = coderEmail;
+    }
+    
+    await transporter.sendMail(customerEmailOptions);
+    console.log(`✅ Customer confirmation email sent to: ${finalCustomerEmail}${coderEmail ? ` (BCC: ${coderEmail})` : ''}`);
 
     // Tradesperson notification email
     console.log('🔗 About to create tradesmanEmailHtml with quoteLink:', quoteLink);
@@ -208,13 +217,20 @@ export default async function handler(req, res) {
     console.log('📧 Quote link in HTML:', tradesmanEmailHtml.includes(quoteLink));
     
     try {
-      await transporter.sendMail({
+      const tradesmanEmailOptions = {
         from: `"Heat.nz Leads" <${process.env.GMAIL_USER}>`,
         to: process.env.TRADESPERSON_EMAIL,
         subject: `${unlistedPrefix}🔔 New Underfloor Heating Lead: ${suburb || area}`,
         html: `<h1>New Lead Logged (#${leadId})</h1>${leadDetailsHtml}<p>A quote link has been sent to the waiting for your submission.</p><p>Quote Link: ${quoteLink}</p>`,
-      });
-      console.log('✅ Tradesman email sent successfully');
+      };
+      
+      // Add BCC if CODER_EMAIL is set
+      if (coderEmail) {
+        tradesmanEmailOptions.bcc = coderEmail;
+      }
+      
+      await transporter.sendMail(tradesmanEmailOptions);
+      console.log(`✅ Tradesman email sent successfully${coderEmail ? ` (BCC: ${coderEmail})` : ''}`);
     } catch (tradesmanEmailError) {
       console.error('❌ Tradesman email failed:', tradesmanEmailError.message);
       console.error('❌ Tradesman email error details:', tradesmanEmailError);
@@ -222,13 +238,20 @@ export default async function handler(req, res) {
 
     // Admin notification email
     try {
-      await transporter.sendMail({
+      const adminEmailOptions = {
         from: `"Heat.nz Alerts" <${process.env.GMAIL_USER}>`,
         to: process.env.ADMIN_EMAIL,
         subject: `${unlistedPrefix}New Lead Logged: ${customerName} in ${suburb || area}`,
         html: `<h1>New Lead Logged (#${leadId})</h1>${leadDetailsHtml}<p>A quote link has been sent to the tradesperson.</p><p>Quote Link: ${quoteLink}</p>`,
-      });
-      console.log('✅ Admin email sent successfully');
+      };
+      
+      // Add BCC if CODER_EMAIL is set
+      if (coderEmail) {
+        adminEmailOptions.bcc = coderEmail;
+      }
+      
+      await transporter.sendMail(adminEmailOptions);
+      console.log(`✅ Admin email sent successfully${coderEmail ? ` (BCC: ${coderEmail})` : ''}`);
     } catch (adminEmailError) {
       console.error('❌ Admin email failed:', adminEmailError.message);
       console.error('❌ Admin email error details:', adminEmailError);

@@ -20,7 +20,7 @@ const HomePage = ({ openChat }) => {
     <Layout>
       <SEO
         title="Underfloor Heating Auckland | Under Floor Heating — Free Quote"
-        description="Auckland's #1 underfloor heating & under floor heating specialists! Electric & hydronic installation from $80/m². 500+ homes heated. Serving West Auckland, Henderson, New Lynn & all Auckland. Free quotes, expert installation, 25-year warranty. Get your quote today!"
+        description="Auckland's #1 underfloor heating & under floor heating specialists! Electric & hydronic installation from $80/m². 500+ homes heated. Serving West Auckland, Henderson, New Lynn & all Auckland. Free quotes, expert installation, 5-year warranty. Get your quote today!"
         canonical="https://www.heat.nz"
         keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, underfloor heating West Auckland, under floor heating West Auckland, under-floor heating West Auckland, underfloor heating Henderson, under floor heating Henderson, under-floor heating Henderson, underfloor heating New Lynn, under floor heating New Lynn, under-floor heating New Lynn, tile heating Auckland, under tile heating Auckland, floor heating Auckland, electric tile heating Auckland, electric under tile heating Auckland, electric underfloor heating Auckland, electric under floor heating Auckland, electric under-floor heating Auckland, hydronic heating Auckland, heating installation Auckland, underfloor heating quote Auckland, bathroom heating Auckland, kitchen heating Auckland, heating contractors Auckland"
       />
@@ -41,7 +41,7 @@ const HomePage = ({ openChat }) => {
                 <div style={styles.statLabel}>Homes Heated</div>
               </div>
               <div style={styles.stat}>
-                <div style={styles.statNumber}>25 Year</div>
+                <div style={styles.statNumber}>5 Year</div>
                 <div style={styles.statLabel}>Warranty</div>
               </div>
               <div style={styles.stat}>
@@ -70,7 +70,7 @@ const HomePage = ({ openChat }) => {
               </a>
             </div>
             <div style={styles.trustBadges}>
-              <div style={styles.badge}>✓ 25-Year Warranty</div>
+              <div style={styles.badge}>✓ 5-Year Warranty</div>
               <div style={styles.badge}>✓ Certified Installers</div>
               <div style={styles.badge}>✓ Free Consultations</div>
             </div>
@@ -90,7 +90,7 @@ const HomePage = ({ openChat }) => {
               <div style={styles.featureCard}>
                 <div style={styles.featureIcon}>🏆</div>
                 <h3 style={styles.featureTitle}>Premium Quality</h3>
-                <p style={styles.featureText}>Only the highest-grade materials and systems. Our 25-year warranty demonstrates our confidence in our work.</p>
+                <p style={styles.featureText}>Only the highest-grade materials and systems. Our 5-year warranty demonstrates our confidence in our work.</p>
               </div>
               <div style={styles.featureCard}>
                 <div style={styles.featureIcon}>⚡</div>
@@ -286,13 +286,15 @@ const styles = {
     position: 'relative',
     background: 'linear-gradient(135deg, #e63946 0%, #f77f00 50%, #fcbf49 100%)',
     color: 'white', 
-    padding: '120px 20px 100px',
+    padding: 'clamp(80px, 15vw, 120px) clamp(16px, 4vw, 20px) clamp(60px, 12vw, 100px)',
     textAlign: 'center',
     overflow: 'hidden',
-    minHeight: '600px',
+    minHeight: 'auto',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    width: '100%',
+    boxSizing: 'border-box'
   },
   heroOverlay: {
     position: 'absolute',
@@ -307,7 +309,10 @@ const styles = {
     position: 'relative',
     zIndex: 2,
     maxWidth: '900px', 
-    margin: '0 auto' 
+    margin: '0 auto',
+    width: '100%',
+    padding: '0 clamp(8px, 2vw, 16px)',
+    boxSizing: 'border-box'
   },
   heroBadge: {
     display: 'inline-block',
@@ -321,66 +326,95 @@ const styles = {
     letterSpacing: '0.5px'
   },
   heroTitle: {
-    fontSize: 'clamp(2.5rem, 5vw, 4rem)',
+    fontSize: 'clamp(1.75rem, 6vw, 4rem)',
     fontWeight: 800,
-    lineHeight: '1.1',
-    marginBottom: '24px',
-    letterSpacing: '-0.02em'
+    lineHeight: '1.2',
+    marginBottom: 'clamp(16px, 4vw, 24px)',
+    letterSpacing: '-0.02em',
+    padding: '0 clamp(8px, 2vw, 16px)',
+    wordWrap: 'break-word',
+    overflowWrap: 'break-word',
+    hyphens: 'auto',
+    width: '100%',
+    boxSizing: 'border-box'
   },
   heroSubtitle: {
-    fontSize: 'clamp(1.1rem, 2vw, 1.3rem)',
+    fontSize: 'clamp(0.95rem, 3vw, 1.3rem)',
     lineHeight: '1.6',
-    marginBottom: '40px',
+    marginBottom: 'clamp(24px, 5vw, 40px)',
     opacity: 0.95,
     maxWidth: '700px',
-    margin: '0 auto 40px'
+    margin: '0 auto clamp(24px, 5vw, 40px)',
+    padding: '0 clamp(12px, 3vw, 24px)',
+    wordWrap: 'break-word',
+    overflowWrap: 'break-word',
+    hyphens: 'auto',
+    width: '100%',
+    boxSizing: 'border-box'
   },
   heroStats: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-    gap: '24px',
-    margin: '40px 0',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+    gap: 'clamp(12px, 3vw, 24px)',
+    margin: 'clamp(24px, 5vw, 40px) 0',
     maxWidth: '800px',
-    margin: '40px auto'
+    margin: 'clamp(24px, 5vw, 40px) auto',
+    padding: '0 clamp(8px, 2vw, 16px)',
+    width: '100%',
+    boxSizing: 'border-box'
   },
   stat: {
     textAlign: 'center',
-    padding: '20px',
+    padding: 'clamp(12px, 3vw, 20px)',
     background: 'rgba(255, 255, 255, 0.15)',
     backdropFilter: 'blur(10px)',
     borderRadius: '16px',
-    border: '1px solid rgba(255, 255, 255, 0.2)'
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    minWidth: '0',
+    boxSizing: 'border-box'
   },
   statNumber: {
-    fontSize: '2rem',
+    fontSize: 'clamp(1.5rem, 4vw, 2rem)',
     fontWeight: 800,
-    marginBottom: '8px'
+    marginBottom: 'clamp(6px, 1.5vw, 8px)',
+    wordWrap: 'break-word',
+    overflowWrap: 'break-word',
+    lineHeight: '1.2'
   },
   statLabel: {
-    fontSize: '0.9rem',
+    fontSize: 'clamp(0.8rem, 2vw, 0.9rem)',
     opacity: 0.9,
-    fontWeight: 500
+    fontWeight: 500,
+    wordWrap: 'break-word',
+    overflowWrap: 'break-word',
+    lineHeight: '1.3'
   },
   heroButtons: {
     display: 'flex',
-    gap: '16px',
+    gap: 'clamp(12px, 2vw, 16px)',
     justifyContent: 'center',
     flexWrap: 'wrap',
-    marginTop: '40px'
+    marginTop: 'clamp(24px, 5vw, 40px)',
+    padding: '0 clamp(12px, 3vw, 24px)',
+    width: '100%',
+    boxSizing: 'border-box'
   },
   ctaButtonPrimary: { 
     background: 'white', 
     color: '#e63946', 
     border: 'none', 
-    padding: '16px 32px', 
+    padding: 'clamp(14px, 3vw, 16px) clamp(24px, 5vw, 32px)', 
     borderRadius: '50px', 
-    fontSize: '1.1rem', 
+    fontSize: 'clamp(0.95rem, 2.5vw, 1.1rem)', 
     fontWeight: 700, 
     cursor: 'pointer', 
     transition: 'all 0.3s ease', 
     boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
     transform: 'translateY(0)',
-    letterSpacing: '0.3px'
+    letterSpacing: '0.3px',
+    whiteSpace: 'nowrap',
+    minWidth: 'auto',
+    width: 'auto'
   },
   ctaButtonPrimaryHover: {
     transform: 'translateY(-3px)',
@@ -390,29 +424,36 @@ const styles = {
     background: 'transparent',
     color: 'white',
     border: '2px solid white',
-    padding: '14px 32px',
+    padding: 'clamp(12px, 3vw, 14px) clamp(24px, 5vw, 32px)',
     borderRadius: '50px',
-    fontSize: '1.1rem',
+    fontSize: 'clamp(0.95rem, 2.5vw, 1.1rem)',
     fontWeight: 700,
     textDecoration: 'none',
     display: 'inline-block',
     transition: 'all 0.3s ease',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    minWidth: 'auto'
   },
   trustBadges: {
     display: 'flex',
-    gap: '16px',
+    gap: 'clamp(8px, 2vw, 16px)',
     justifyContent: 'center',
     flexWrap: 'wrap',
-    marginTop: '40px'
+    marginTop: 'clamp(24px, 5vw, 40px)',
+    padding: '0 clamp(12px, 3vw, 24px)',
+    width: '100%',
+    boxSizing: 'border-box'
   },
   badge: {
     background: 'rgba(255, 255, 255, 0.15)',
     backdropFilter: 'blur(10px)',
-    padding: '8px 16px',
+    padding: 'clamp(6px, 1.5vw, 8px) clamp(12px, 3vw, 16px)',
     borderRadius: '20px',
-    fontSize: '0.9rem',
-    fontWeight: 600
+    fontSize: 'clamp(0.8rem, 2vw, 0.9rem)',
+    fontWeight: 600,
+    whiteSpace: 'nowrap',
+    textAlign: 'center'
   },
   // Why Choose Us
   whyChooseUs: {

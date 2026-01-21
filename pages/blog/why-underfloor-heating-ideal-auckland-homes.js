@@ -112,7 +112,7 @@ const BlogPost = () => {
             <h2 style={styles.heading}>Cost-Effective Long-Term Solution</h2>
             <p>
               While the initial installation cost may be higher than traditional heating, underfloor heating offers excellent 
-              long-term value. The system typically lasts 25+ years with minimal maintenance, and the energy savings 
+              long-term value. The system typically lasts 5+ years with minimal maintenance, and the energy savings 
               compound over time. For Auckland homeowners planning to stay in their property long-term, the investment 
               pays for itself through reduced energy bills and increased property value.
             </p>

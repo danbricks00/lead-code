@@ -317,7 +317,7 @@ const ElectricUnderTileHeatingPage = () => {
             </div>
             <div style={styles.specCard}>
               <h3>Warranty</h3>
-              <p>Up to 25 years system warranty</p>
+              <p>5 years system warranty</p>
             </div>
             <div style={styles.specCard}>
               <h3>Thermostat Options</h3>

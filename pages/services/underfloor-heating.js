@@ -200,7 +200,7 @@ const UnderfloorHeatingPage = () => {
                   <li style={styles.systemListItem}>Lower running costs ($120-$200 per m²)</li>
                   <li style={styles.systemListItem}>Whole-home heating solution</li>
                   <li style={styles.systemListItem}>Works with heat pumps and gas</li>
-                  <li style={styles.systemListItem}>Longer lifespan (25+ years)</li>
+                  <li style={styles.systemListItem}>Long-lasting system (5+ years)</li>
                   <li style={styles.systemListItem}>Ideal for new builds</li>
                 </ul>
               </div>

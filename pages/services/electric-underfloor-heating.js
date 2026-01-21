@@ -129,7 +129,7 @@ const ElectricUnderfloorHeatingPage = () => {
                 <strong>Installation:</strong> 1-3 days
               </div>
               <div style={styles.stat}>
-                <strong>Warranty:</strong> Up to 25 years
+                <strong>Warranty:</strong> 5 years
               </div>
             </div>
           </div>

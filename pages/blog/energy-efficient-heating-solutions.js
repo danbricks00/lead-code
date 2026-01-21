@@ -95,7 +95,7 @@ const EnergyEfficientHeatingPage = () => {
           <h3 style={styles.subHeading}>Energy Cost Savings</h3>
           <ul style={styles.list}>
             <li><strong>30-50% reduction</strong> in heating bills compared to traditional systems</li>
-            <li><strong>Lower operating costs</strong> over the system's 25+ year lifespan</li>
+            <li><strong>Lower operating costs</strong> over the system's 5+ year lifespan</li>
             <li><strong>Reduced peak demand</strong> charges during winter months</li>
             <li><strong>Better ROI</strong> through energy savings and increased property value</li>
           </ul>

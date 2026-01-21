@@ -92,7 +92,7 @@ const styles = {
     textAlign: 'center',
     marginBottom: '3rem',
     paddingBottom: '2rem',
-    borderBottom: '2px solid #667eea',
+    borderBottom: '2px solid #e63946',
   },
   faqContainer: {
     marginBottom: '3rem',
@@ -102,7 +102,7 @@ const styles = {
     padding: '1.5rem',
     backgroundColor: '#f8f9fa',
     borderRadius: '10px',
-    borderLeft: '4px solid #667eea',
+    borderLeft: '4px solid #e63946',
   },
   question: {
     color: '#333',
@@ -123,7 +123,7 @@ const styles = {
     border: '2px solid #e9ecef',
   },
   ctaButton: {
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    background: 'linear-gradient(135deg, #e63946 0%, #f77f00 100%)',
     color: 'white',
     border: 'none',
     padding: '1rem 2rem',
@@ -133,6 +133,7 @@ const styles = {
     cursor: 'pointer',
     marginTop: '1rem',
     transition: 'transform 0.3s ease',
+    boxShadow: '0 4px 15px rgba(230, 57, 70, 0.3)',
   },
 };
 

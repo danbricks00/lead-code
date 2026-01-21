@@ -32,11 +32,11 @@ const AboutPage = () => {
 };
 
 const styles = {
-  container: { background: '#f4f7f6', minHeight: 'calc(100vh - 120px)', padding: '40px 20px', fontFamily: 'Arial, sans-serif' },
-  card: { background: 'white', maxWidth: '800px', margin: 'auto', padding: '40px', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' },
-  header: { fontSize: '2.5rem', color: '#333', borderBottom: '2px solid #667eea', paddingBottom: '15px', marginBottom: '20px' },
-  subHeader: { fontSize: '1.8rem', color: '#555', marginTop: '30px', marginBottom: '15px' },
-  paragraph: { fontSize: '1.1rem', lineHeight: '1.7', color: '#444' },
+  container: { background: '#f7fafc', minHeight: 'calc(100vh - 120px)', padding: '40px 20px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' },
+  card: { background: 'white', maxWidth: '800px', margin: 'auto', padding: '40px', borderRadius: '16px', boxShadow: '0 10px 40px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0' },
+  header: { fontSize: 'clamp(2rem, 4vw, 2.5rem)', color: '#1a202c', borderBottom: '2px solid #e63946', paddingBottom: '15px', marginBottom: '20px', fontWeight: 800 },
+  subHeader: { fontSize: 'clamp(1.5rem, 3vw, 1.8rem)', color: '#2d3748', marginTop: '30px', marginBottom: '15px', fontWeight: 700 },
+  paragraph: { fontSize: '1.1rem', lineHeight: '1.7', color: '#4a5568' },
 };
 
 export default AboutPage;

@@ -756,7 +756,7 @@ const ContactPage = () => {
 const styles = {
   container: { background: '#f4f7f6', minHeight: 'calc(100vh - 120px)', padding: '40px 20px', fontFamily: 'Arial, sans-serif' },
   card: { background: 'white', maxWidth: '800px', margin: 'auto', padding: '40px', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' },
-  header: { fontSize: '2.5rem', color: '#333', borderBottom: '2px solid #667eea', paddingBottom: '15px', marginBottom: '10px' },
+  header: { fontSize: 'clamp(2rem, 4vw, 2.5rem)', color: '#1a202c', borderBottom: '2px solid #e63946', paddingBottom: '15px', marginBottom: '10px', fontWeight: 800 },
   paragraph: { fontSize: '1.1rem', lineHeight: '1.7', color: '#444', marginBottom: '30px' },
   formTypeSelector: { 
     display: 'flex', 
@@ -767,27 +767,27 @@ const styles = {
   },
   formTypeButton: {
     padding: '12px 20px',
-    border: '2px solid #667eea',
+    border: '2px solid #e63946',
     borderRadius: '6px',
     background: 'white',
-    color: '#667eea',
+    color: '#e63946',
     fontSize: '1rem',
     cursor: 'pointer',
     transition: 'all 0.3s ease',
     fontWeight: '500'
   },
   formTypeButtonActive: {
-    background: '#667eea',
+    background: 'linear-gradient(135deg, #e63946 0%, #f77f00 100%)',
     color: 'white',
     transform: 'translateY(-2px)',
-    boxShadow: '0 4px 8px rgba(102, 126, 234, 0.3)'
+    boxShadow: '0 4px 15px rgba(230, 57, 70, 0.3)'
   },
   formDescription: {
     background: '#f8f9fa',
     padding: '15px',
     borderRadius: '6px',
     marginBottom: '25px',
-    borderLeft: '4px solid #667eea'
+    borderLeft: '4px solid #e63946'
   },
   authStatus: {
     marginBottom: '20px',
@@ -875,7 +875,7 @@ const styles = {
   inputGroup: { display: 'flex', flexDirection: 'column' },
   input: { padding: '12px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '1rem' },
   textarea: { padding: '12px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '1rem', resize: 'vertical' },
-  button: { padding: '15px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', border: 'none', borderRadius: '4px', fontSize: '1.1rem', cursor: 'pointer' },
+  button: { padding: '15px', background: 'linear-gradient(135deg, #e63946 0%, #f77f00 100%)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.1rem', cursor: 'pointer', fontWeight: 600, boxShadow: '0 4px 15px rgba(230, 57, 70, 0.3)', transition: 'all 0.3s ease' },
   success: { marginTop: '15px', color: 'green', textAlign: 'center' },
   error: { marginTop: '15px', color: 'red', textAlign: 'center' },
   locationChecking: { 

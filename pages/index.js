@@ -103,7 +103,7 @@ const HomePage = ({ openChat }) => {
                 <p style={styles.featureText}>Certified, experienced installers who take pride in every project. Clean, professional, on-time completion.</p>
               </div>
               <div style={styles.featureCard}>
-                <div style={styles.featureIcon}>🔧</div>
+                <div style={styles.featureIcon}>🔥</div>
                 <h3 style={styles.featureTitle}>Ongoing Support</h3>
                 <p style={styles.featureText}>Comprehensive maintenance services and 24/7 support to keep your system running perfectly for years to come.</p>
               </div>
@@ -154,7 +154,7 @@ const HomePage = ({ openChat }) => {
                 </button>
               </div>
               <div style={styles.serviceCard}>
-                <div style={styles.serviceIcon}>🔧</div>
+                <div style={styles.serviceIcon}>🔥</div>
                 <h3 style={styles.serviceCardTitle}>Service & Maintenance</h3>
                 <p style={styles.serviceCardText}>
                   Keep your underfloor heating system running efficiently with our comprehensive maintenance and emergency repair services.

@@ -22,7 +22,7 @@ const ElectricUnderfloorHeatingPage = () => {
     {
       title: "Low Maintenance",
       description: "Minimal maintenance required with long-lasting heating elements.",
-      icon: "🔧"
+      icon: "🔥"
     },
     {
       title: "Cost Effective",

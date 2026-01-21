@@ -111,7 +111,7 @@ const TileHeatingNewmarketPage = () => {
               <p>Energy-efficient systems designed for modern Newmarket properties with smart thermostats and precise temperature control.</p>
             </div>
             <div>
-              <h3 style={{ color: '#007bff', marginBottom: '15px' }}>🔧 Expert Installation</h3>
+              <h3 style={{ color: '#007bff', marginBottom: '15px' }}>🔥 Expert Installation</h3>
               <p>Our experienced team understands Newmarket's unique challenges including parking, access, and working around busy commercial activities.</p>
             </div>
           </div>

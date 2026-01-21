@@ -121,7 +121,7 @@ const ElectricUnderTileHeatingSouthAucklandPage = () => {
               <p>South Auckland offers excellent value with competitive pricing starting from $75 per square meter including professional installation.</p>
             </div>
             <div>
-              <h3 style={{ color: '#007bff', marginBottom: '15px' }}>🔧 Expert Installation</h3>
+              <h3 style={{ color: '#007bff', marginBottom: '15px' }}>🔥 Expert Installation</h3>
               <p>Our certified technicians ensure proper installation with quality materials and comprehensive testing for maximum performance.</p>
             </div>
             <div>

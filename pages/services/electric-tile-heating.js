@@ -32,7 +32,7 @@ const ElectricTileHeatingPage = () => {
     {
       title: "Maintenance Free",
       description: "No moving parts means virtually maintenance-free operation for years.",
-      icon: "🔧"
+      icon: "🔥"
     }
   ];
 

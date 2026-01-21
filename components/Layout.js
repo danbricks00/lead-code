@@ -128,7 +128,7 @@ const Layout = ({ children }) => {
       <header style={styles.header}>
         <nav style={styles.nav}>
           <div style={styles.logo}>
-            <span role="img" aria-label="tool emoji">🔧</span>
+            <span role="img" aria-label="fire emoji">🔥</span>
             <Link href="/" style={styles.logoLink}>Heat.nz</Link>
           </div>
           

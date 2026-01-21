@@ -27,7 +27,7 @@ const UnderTileHeatingPage = () => {
     {
       title: "Low Maintenance",
       description: "Virtually maintenance-free with no moving parts or mechanical components.",
-      icon: "🔧"
+      icon: "🔥"
     },
     {
       title: "Energy Efficient",

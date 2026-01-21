@@ -7,7 +7,7 @@ const TradesmanLoginPage = () => {
       <div style={styles.container}>
         <div style={styles.content}>
           <div style={styles.iconContainer}>
-            <span style={styles.icon}>🔧</span>
+            <span style={styles.icon}>🔥</span>
           </div>
           
           <h1 style={styles.title}>Tradesman Login</h1>

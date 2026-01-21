@@ -422,7 +422,7 @@ const ContactPage = () => {
           {isAuthenticated && user && (
             <div style={styles.authStatus}>
               <p style={styles.authText}>
-                🔧 Logged in as: <strong>{user.name}</strong> ({user.email})
+                🔥 Logged in as: <strong>{user.name}</strong> ({user.email})
                 {user.businessName && ` - ${user.businessName}`}
               </p>
               <button onClick={handleLogout} style={styles.logoutButton}>
@@ -479,7 +479,7 @@ const ContactPage = () => {
                   color: 'white'
                 }}
               >
-                🔧 Tradesman Login
+                🔥 Tradesman Login
               </button>
             )}
           </div>

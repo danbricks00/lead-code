@@ -1,5 +1,5 @@
 // pages/api/contact.js - Contact Form API
-import { sendEmail, getTradespersonLeadEmail } from '../../lib/emailHelper';
+import { sendEmail } from '../../lib/emailHelper';
 import { validateAndCorrectEmail, logEmailValidation } from '../../utils/emailValidator';
 import { calculateSpamScore } from '../../utils/spamValidator';
 import { checkSubmissionRateLimit } from '../../utils/rateLimiter';
@@ -118,10 +118,11 @@ export default async function handler(req, res) {
             console.log("📝 Autofill was used to fill the form");
         }
 
-        // Environment checks
-        // Client email is the same as tradesperson email (both use @heat.nz domain)
-        const clientEmail = process.env.CLIENT_EMAIL || process.env.TRADESPERSON_EMAIL; // Client with @heat.nz domain
-        const tradesLeadBcc = getTradespersonLeadEmail(); // BCC: tradesperson inbox (TRADESPERSON_EMAIL → ADMIN_EMAIL)
+        // Environment checks (resolve actual values, never literal variable names)
+        const resolvedTradespersonEmail = (process.env.TRADESPERSON_EMAIL || '').trim();
+        const resolvedAdminEmail = (process.env.ADMIN_EMAIL || '').trim();
+        const resolvedClientEmail = (process.env.CLIENT_EMAIL || resolvedTradespersonEmail || resolvedAdminEmail || '').trim();
+        const resolvedTradesLeadBcc = (process.env.TRADES_LEAD_BCC || resolvedTradespersonEmail || resolvedAdminEmail || '').trim();
         const testEmail = process.env.TEST_EMAIL || process.env.DEBUG_EMAIL; // Optional test email for verification
         const gmailUser = process.env.GMAIL_USER;
         const gmailPass = process.env.GMAIL_APP_PASSWORD; // Use GMAIL_APP_PASSWORD for consistency
@@ -129,9 +130,10 @@ export default async function handler(req, res) {
         console.log("🔧 Environment variables check:", {
             GMAIL_USER: gmailUser ? "SET" : "MISSING",
             GMAIL_APP_PASSWORD: gmailPass ? "SET" : "MISSING",
-            CLIENT_EMAIL: clientEmail ? "SET" : "MISSING",
-            TRADESPERSON_EMAIL: process.env.TRADESPERSON_EMAIL ? "SET" : "MISSING",
-            TRADES_LEAD_BCC: tradesLeadBcc ? "SET" : "MISSING",
+            CLIENT_EMAIL: resolvedClientEmail ? "SET" : "MISSING",
+            TRADESPERSON_EMAIL: resolvedTradespersonEmail ? "SET" : "MISSING",
+            TRADES_LEAD_BCC: resolvedTradesLeadBcc ? "SET" : "MISSING",
+            ADMIN_EMAIL: resolvedAdminEmail ? "SET" : "MISSING",
             TEST_EMAIL: testEmail ? "SET" : "MISSING"
         });
         
@@ -158,7 +160,7 @@ export default async function handler(req, res) {
             console.warn("⚠️ Gmail credentials not configured - emails will fail");
         }
 
-        // Note: Email sending will proceed - CLIENT_EMAIL will use TRADESPERSON_EMAIL as fallback
+        // Note: Email sending will proceed - CC/BCC fallback uses TRADESPERSON_EMAIL -> ADMIN_EMAIL
 
         // Create email content based on form type
         let subject, html;
@@ -250,8 +252,8 @@ export default async function handler(req, res) {
         try {
             console.log(`📤 Sending contact form email:`);
             console.log(`   To: ${finalEmail} (customer)`);
-            console.log(`   CC: ${clientEmail || 'NOT SET'} (client@heat.nz)`);
-            console.log(`   BCC: ${tradesLeadBcc || 'NOT SET'} (TRADESPERSON_EMAIL or ADMIN_EMAIL)`);
+            console.log(`   CC: ${resolvedClientEmail || 'NOT SET'}`);
+            console.log(`   BCC: ${resolvedTradesLeadBcc || 'NOT SET'}`);
             
             const emailOptions = {
                 to: finalEmail, // To: Customer
@@ -261,17 +263,17 @@ export default async function handler(req, res) {
             };
             
             // Add CC to client (@heat.nz domain)
-            if (clientEmail) {
-                emailOptions.cc = [clientEmail];
-                console.log(`📧 CC added: ${clientEmail}`);
+            if (resolvedClientEmail) {
+                emailOptions.cc = [resolvedClientEmail];
+                console.log(`📧 CC added: ${resolvedClientEmail}`);
             } else {
                 console.warn("⚠️ CLIENT_EMAIL not configured - client will not receive email");
             }
             
             const bccList = [];
-            if (tradesLeadBcc) {
-                bccList.push(tradesLeadBcc);
-                console.log(`📧 BCC added (lead inbox): ${tradesLeadBcc}`);
+            if (resolvedTradesLeadBcc) {
+                bccList.push(resolvedTradesLeadBcc);
+                console.log(`📧 BCC added (lead inbox): ${resolvedTradesLeadBcc}`);
             } else {
                 console.warn("⚠️ TRADESPERSON_EMAIL and ADMIN_EMAIL not configured - no BCC lead copy");
             }

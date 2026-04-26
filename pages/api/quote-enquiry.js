@@ -3,7 +3,6 @@ import { google } from 'googleapis';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import { validateAndCorrectEmail } from '../../utils/emailValidator';
-import { getTradespersonLeadEmail } from '../../lib/emailHelper';
 import { calculateSpamScore } from '../../utils/spamValidator';
 import { checkSubmissionRateLimit } from '../../utils/rateLimiter';
 
@@ -256,21 +255,29 @@ export default async function handler(req, res) {
     
     console.log(`🔗 Generated quote link: ${quoteLink}`);
 
-    // Get client email (CC) and lead inbox for BCC / tradesperson To
-    const clientEmail = process.env.CLIENT_EMAIL || process.env.TRADESPERSON_EMAIL;
-    const tradesLeadEmail = getTradespersonLeadEmail();
+    // Resolve mail routing values (actual env evaluation with fallback)
+    const resolvedTradespersonEmail = (process.env.TRADESPERSON_EMAIL || '').trim();
+    const resolvedAdminEmail = (process.env.ADMIN_EMAIL || '').trim();
+    const resolvedClientEmail = (process.env.CLIENT_EMAIL || resolvedTradespersonEmail || resolvedAdminEmail || '').trim();
+    const resolvedTradesLeadBcc = (process.env.TRADES_LEAD_BCC || resolvedTradespersonEmail || resolvedAdminEmail || '').trim();
+    const tradesLeadEmail = (resolvedTradespersonEmail || resolvedAdminEmail || '').trim();
     const testEmail = process.env.TEST_EMAIL || process.env.DEBUG_EMAIL;
     
-    if (clientEmail) {
-        console.log(`📧 Client email for CC: ${clientEmail} (for lead ${leadId})`);
+    if (resolvedClientEmail) {
+        console.log(`📧 Client email for CC: ${resolvedClientEmail} (for lead ${leadId})`);
     } else {
         console.warn("⚠️ CLIENT_EMAIL not configured - client will not receive email");
     }
     
     if (tradesLeadEmail) {
-        console.log(`📧 Lead inbox (TRADESPERSON_EMAIL or ADMIN_EMAIL): ${tradesLeadEmail} (for lead ${leadId})`);
+        console.log(`📧 Tradesperson To resolved: ${tradesLeadEmail} (for lead ${leadId})`);
     } else {
         console.warn("⚠️ TRADESPERSON_EMAIL and ADMIN_EMAIL not configured - BCC/tradesperson delivery may fail");
+    }
+    if (resolvedTradesLeadBcc) {
+        console.log(`📧 Lead BCC resolved: ${resolvedTradesLeadBcc} (for lead ${leadId})`);
+    } else {
+        console.warn("⚠️ TRADES_LEAD_BCC/TRADESPERSON_EMAIL/ADMIN_EMAIL not configured - no lead BCC copy");
     }
     
     if (testEmail) {
@@ -347,15 +354,15 @@ export default async function handler(req, res) {
       };
       
       // Add CC to client (@heat.nz domain)
-      if (clientEmail) {
-        customerEmailOptions.cc = [clientEmail];
-        console.log(`📧 CC added to customer email: ${clientEmail}`);
+      if (resolvedClientEmail) {
+        customerEmailOptions.cc = [resolvedClientEmail];
+        console.log(`📧 CC added to customer email: ${resolvedClientEmail}`);
       }
       
       const customerBccList = [];
-      if (tradesLeadEmail) {
-        customerBccList.push(tradesLeadEmail);
-        console.log(`📧 BCC added to customer email: ${tradesLeadEmail}`);
+      if (resolvedTradesLeadBcc) {
+        customerBccList.push(resolvedTradesLeadBcc);
+        console.log(`📧 BCC added to customer email: ${resolvedTradesLeadBcc}`);
       }
       if (testEmail) {
         customerBccList.push(testEmail);
@@ -390,12 +397,16 @@ export default async function handler(req, res) {
       };
       
       // Add CC to client (@heat.nz domain)
-      if (clientEmail) {
-        tradespersonEmailOptions.cc = [clientEmail];
-        console.log(`📧 CC added to tradesperson email: ${clientEmail}`);
+      if (resolvedClientEmail) {
+        tradespersonEmailOptions.cc = [resolvedClientEmail];
+        console.log(`📧 CC added to tradesperson email: ${resolvedClientEmail}`);
       }
       
       const tradespersonBccList = [];
+      if (resolvedTradesLeadBcc) {
+        tradespersonBccList.push(resolvedTradesLeadBcc);
+        console.log(`📧 Lead BCC added to tradesperson email: ${resolvedTradesLeadBcc}`);
+      }
       if (testEmail) {
         tradespersonBccList.push(testEmail);
         console.log(`📧 Test email BCC added to tradesperson email: ${testEmail} (for verification)`);

@@ -2,6 +2,7 @@ import { getGoogleSheetsClient } from '../../lib/googleSheets.js';
 import { assertLeadWriteOnly } from '../../utils/writeGuard.js';
 import { validateAndCorrectEmail, logEmailValidation } from '../../utils/emailValidator.js';
 import nodemailer from "nodemailer";
+import { getTradespersonLeadEmail } from "../../lib/emailHelper.js";
 import crypto from "crypto";
 
 /**
@@ -207,14 +208,19 @@ export default async function handler(req, res) {
     console.log('📧 Tradesman email HTML preview (last 200 chars):', tradesmanEmailHtml.slice(-200));
     console.log('📧 Quote link in HTML:', tradesmanEmailHtml.includes(quoteLink));
     
+    const tradesLeadTo = getTradespersonLeadEmail();
     try {
-      await transporter.sendMail({
-        from: `"Heat.nz Leads" <${process.env.GMAIL_USER}>`,
-        to: process.env.TRADESPERSON_EMAIL,
-        subject: `${unlistedPrefix}🔔 New Underfloor Heating Lead: ${suburb || area}`,
-        html: `<h1>New Lead Logged (#${leadId})</h1>${leadDetailsHtml}<p>A quote link has been sent to the waiting for your submission.</p><p>Quote Link: ${quoteLink}</p>`,
-      });
-      console.log('✅ Tradesman email sent successfully');
+      if (!tradesLeadTo) {
+        console.warn('⚠️ TRADESPERSON_EMAIL and ADMIN_EMAIL unset — skipping tradesperson notification');
+      } else {
+        await transporter.sendMail({
+          from: `"Heat.nz Leads" <${process.env.GMAIL_USER}>`,
+          to: tradesLeadTo,
+          subject: `${unlistedPrefix}🔔 New Underfloor Heating Lead: ${suburb || area}`,
+          html: `<h1>New Lead Logged (#${leadId})</h1>${leadDetailsHtml}<p>A quote link has been sent to the waiting for your submission.</p><p>Quote Link: ${quoteLink}</p>`,
+        });
+        console.log('✅ Tradesman email sent successfully');
+      }
     } catch (tradesmanEmailError) {
       console.error('❌ Tradesman email failed:', tradesmanEmailError.message);
       console.error('❌ Tradesman email error details:', tradesmanEmailError);

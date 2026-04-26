@@ -1,7 +1,7 @@
 // pages/api/leads.js - Consolidated Lead/Quote Lifecycle API
 import { google } from 'googleapis';
 import { getGoogleSheetsClient, getSpreadsheetId } from '../../lib/googleSheets.js';
-import { sendEmail, createLeadIntakeEmails, createQuoteSubmissionEmails, createQuoteDecisionEmails } from '../../lib/emailHelper.js';
+import { sendEmail, getTradespersonLeadEmail, createLeadIntakeEmails, createQuoteSubmissionEmails, createQuoteDecisionEmails } from '../../lib/emailHelper.js';
 
 export default async function handler(req, res) {
   console.log("✅ Loaded API leads.js");
@@ -153,7 +153,7 @@ async function handleLeadCreate(req, res) {
     GMAIL_USER: process.env.GMAIL_USER || "MISSING",
     GMAIL_APP_PASSWORD: process.env.GMAIL_APP_PASSWORD ? "SET" : "MISSING",
     ADMIN_EMAIL: process.env.ADMIN_EMAIL || "MISSING",
-    TEAM_EMAIL: process.env.TEAM_EMAIL || "MISSING"
+    TRADES_LEAD_EMAIL: getTradespersonLeadEmail() ? "SET" : "MISSING"
   });
 
   try {
@@ -211,8 +211,8 @@ async function handleLeadCreate(req, res) {
       console.log("⚠️ ADMIN_EMAIL not configured, skipping admin notification");
     }
 
-    // Send tradesperson notification email
-    if (process.env.TEAM_EMAIL) {
+    const tradesLeadTo = getTradespersonLeadEmail();
+    if (tradesLeadTo) {
       try {
         const tradespersonSubject = `🆕 New Lead Available - ${serviceType} in ${suburbValue}`;
         const tradespersonHtml = `
@@ -234,10 +234,10 @@ async function handleLeadCreate(req, res) {
           </div>
         `;
 
-        console.log(`📤 Sending tradesperson notification email to: ${process.env.TEAM_EMAIL}`);
+        console.log(`📤 Sending tradesperson notification email to: ${tradesLeadTo}`);
         const tradespersonResult = await transporter.sendMail({
           from: process.env.GMAIL_USER,
-          to: process.env.TEAM_EMAIL,
+          to: tradesLeadTo,
           subject: tradespersonSubject,
           html: tradespersonHtml
         });
@@ -247,7 +247,7 @@ async function handleLeadCreate(req, res) {
         console.error(`❌ Tradesperson email failed: ${error.message}`);
       }
     } else {
-      console.log("⚠️ TEAM_EMAIL not configured, skipping tradesperson notification");
+      console.log("⚠️ TRADESPERSON_EMAIL and ADMIN_EMAIL not configured, skipping tradesperson notification");
     }
 
     console.log(`📧 Stage 1 Lead intake emails sent for leadId ${leadId} (${emailsSent} emails sent)`);

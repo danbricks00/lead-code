@@ -1,4 +1,5 @@
 import { google } from 'googleapis';
+import { getTradespersonLeadEmail } from '../../../../lib/emailHelper.js';
 
 export async function sendToSheets(leadData) {
   console.log('🔍 sendToSheets function called');
@@ -77,9 +78,10 @@ export async function sendToSheets(leadData) {
     console.log('📧 Quote link generated:', quoteLink);
 
     console.log('📧 Creating tradesman email options...');
+    const tradesLeadTo = getTradespersonLeadEmail();
     const tradesmanMailOptions = {
       from: `Heat.nz <${process.env.GMAIL_USER}>`,
-      to: process.env.TRADESPERSON_EMAIL,
+      to: tradesLeadTo,
       subject: 'New Lead - Underfloor Heating Project',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -111,13 +113,17 @@ export async function sendToSheets(leadData) {
     console.log('📧 Sending tradesman email...');
     console.log('📧 Email options:', {
       from: tradesmanMailOptions.from,
-      to: tradesmanMailOptions.to,
+      to: tradesmanMailOptions.to || '(unset)',
       subject: tradesmanMailOptions.subject
     });
     
-    await transporter.sendMail(tradesmanMailOptions);
-    console.log('✅ Tradesman notification email sent successfully');
-    tradesmanNotified = true;
+    if (!tradesLeadTo) {
+      console.warn('⚠️ TRADESPERSON_EMAIL and ADMIN_EMAIL unset — skipping tradesman notification');
+    } else {
+      await transporter.sendMail(tradesmanMailOptions);
+      console.log('✅ Tradesman notification email sent successfully');
+      tradesmanNotified = true;
+    }
   } catch (emailError) {
     console.error('❌ Tradesman email error:', emailError.message);
     console.error('❌ Tradesman email error stack:', emailError.stack);

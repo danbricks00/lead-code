@@ -208,7 +208,7 @@ async function sendStep1Emails(lead) {
     location: lead.location || 'your area',
   };
 
-  const tradesmanEmail = process.env.TRADESPERSON_EMAIL;
+  const tradesmanEmail = process.env.TRADESPERSON_EMAIL || process.env.ADMIN_EMAIL;
   const adminEmail = process.env.ADMIN_EMAIL;
 
   // Log emails being used
@@ -415,7 +415,7 @@ async function sendStep1Emails(lead) {
         
         <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3 style="color: #1976d2; margin-top: 0;">Status:</h3>
-          <p><strong>Assigned Tradesman:</strong> ${process.env.TRADESPERSON_EMAIL}</p>
+          <p><strong>Assigned Tradesman:</strong> ${tradesmanEmail}</p>
           <p><strong>Status:</strong> Quote request sent - awaiting response</p>
         </div>
         

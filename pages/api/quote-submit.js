@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 import nodemailer from 'nodemailer';
+import { getTradespersonLeadEmail } from '../../lib/emailHelper.js';
 import { generateQuotePDF } from '../../lib/pdfGenerator';
 import { upsertQuoteRow, getLeadById } from '../../utils/sheets.js';
 import { buildQuoteRow } from '../../utils/quotes.js';
@@ -477,7 +478,11 @@ export default async function handler(req, res) {
       </body></html>`;
 
     const adminEmail = process.env.ADMIN_EMAIL || '';
-    const internalRecipients = [tradePersonEmail, adminEmail].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
+    const leadInboxFallback = getTradespersonLeadEmail();
+    const internalRecipients = [
+      (tradePersonEmail && String(tradePersonEmail).trim()) || leadInboxFallback,
+      adminEmail
+    ].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
 
     if (internalRecipients.length > 0) {
       const internalEmailOptions = {

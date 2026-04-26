@@ -29,24 +29,21 @@ const HomePage = ({ openChat }) => {
         <section style={styles.hero}>
           <div style={styles.heroOverlay}></div>
           <div style={styles.heroContent}>
-            <div style={styles.heroBadge}>Premium Underfloor Heating Solutions</div>
-            <h1 style={styles.heroTitle}>Transform Your Home with Professional Underfloor Heating</h1>
-            <p style={styles.heroSubtitle}>
-              Auckland's trusted specialists for electric and hydronic underfloor heating systems. 
-              Experience ultimate comfort with energy-efficient solutions designed for New Zealand homes.
-            </p>
+            <div style={styles.heroBadge}>Auckland's Leading Underfloor Heating Specialists</div>
+            <h1 style={styles.heroTitle}>Warm, Comfortable Floors All Year Round</h1>
+            <p style={styles.heroDescription}>Transform your home with professional electric and hydronic underfloor heating. Expert installation, energy-efficient systems, and unbeatable service throughout Auckland.</p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
                 <div style={styles.statNumber}>500+</div>
                 <div style={styles.statLabel}>Homes Heated</div>
               </div>
               <div style={styles.stat}>
-                <div style={styles.statNumber}>5 Year</div>
-                <div style={styles.statLabel}>Warranty</div>
-              </div>
-              <div style={styles.stat}>
                 <div style={styles.statNumber}>15+</div>
                 <div style={styles.statLabel}>Years Experience</div>
+              </div>
+              <div style={styles.stat}>
+                <div style={styles.statNumber}>25 Year</div>
+                <div style={styles.statLabel}>Warranty</div>
               </div>
               <div style={styles.stat}>
                 <div style={styles.statNumber}>Free</div>
@@ -56,191 +53,134 @@ const HomePage = ({ openChat }) => {
             <div style={styles.heroButtons}>
               <button 
                 style={{
-                  ...styles.ctaButtonPrimary,
-                  ...(isButtonHovered ? styles.ctaButtonPrimaryHover : {})
+                  ...styles.ctaButton,
+                  ...(isButtonHovered ? styles.ctaButtonHover : {})
                 }}
                 onClick={handleOpenChat}
                 onMouseEnter={() => setIsButtonHovered(true)}
                 onMouseLeave={() => setIsButtonHovered(false)}
               >
-                Get Your Free Quote
+                Get Free Quote
               </button>
-              <a href="/about" style={styles.ctaButtonSecondary}>
+              <a href="/about" style={styles.secondaryButton}>
                 Learn More
               </a>
-            </div>
-            <div style={styles.trustBadges}>
-              <div style={styles.badge}>✓ 5-Year Warranty</div>
-              <div style={styles.badge}>✓ Certified Installers</div>
-              <div style={styles.badge}>✓ Free Consultations</div>
-            </div>
-          </div>
-        </section>
-
-        {/* Why Choose Us Section */}
-        <section style={styles.whyChooseUs}>
-          <div style={styles.container}>
-            <div style={styles.sectionHeader}>
-              <h2 style={styles.sectionTitle}>Why Choose Heat NZ?</h2>
-              <p style={styles.sectionSubtitle}>
-                Leading Auckland underfloor heating specialists with proven expertise, exceptional service, and unbeatable warranties
-              </p>
-            </div>
-            <div style={styles.featuresGrid}>
-              <div style={styles.featureCard}>
-                <div style={styles.featureIcon}>🏆</div>
-                <h3 style={styles.featureTitle}>Premium Quality</h3>
-                <p style={styles.featureText}>Only the highest-grade materials and systems. Our 5-year warranty demonstrates our confidence in our work.</p>
-              </div>
-              <div style={styles.featureCard}>
-                <div style={styles.featureIcon}>⚡</div>
-                <h3 style={styles.featureTitle}>Energy Efficient</h3>
-                <p style={styles.featureText}>Reduce your heating costs with our smart, energy-efficient systems designed for New Zealand conditions.</p>
-              </div>
-              <div style={styles.featureCard}>
-                <div style={styles.featureIcon}>👷</div>
-                <h3 style={styles.featureTitle}>Expert Installation</h3>
-                <p style={styles.featureText}>Certified, experienced installers who take pride in every project. Clean, professional, on-time completion.</p>
-              </div>
-              <div style={styles.featureCard}>
-                <div style={styles.featureIcon}>🔥</div>
-                <h3 style={styles.featureTitle}>Ongoing Support</h3>
-                <p style={styles.featureText}>Comprehensive maintenance services and 24/7 support to keep your system running perfectly for years to come.</p>
-              </div>
             </div>
           </div>
         </section>
 
         {/* Services Section */}
         <section style={styles.services}>
-          <div style={styles.container}>
-            <div style={styles.sectionHeader}>
-              <h2 style={styles.sectionTitle}>Our Underfloor Heating Services</h2>
-              <p style={styles.sectionSubtitle}>
-                Comprehensive heating solutions tailored to your home and budget
-              </p>
-            </div>
-            <div style={styles.servicesGrid}>
-              <div style={styles.serviceCard}>
-                <div style={styles.serviceIcon}>⚡</div>
-                <h3 style={styles.serviceCardTitle}>Electric Underfloor Heating</h3>
-                <p style={styles.serviceCardText}>
-                  Perfect for bathrooms, kitchens, and renovations. Quick installation with precise temperature control and minimal floor height increase.
-                </p>
-                <ul style={styles.serviceList}>
-                  <li>✓ From $80-$150 per m²</li>
-                  <li>✓ 1-3 day installation</li>
-                  <li>✓ Individual room control</li>
-                  <li>✓ Suitable for all floor types</li>
-                </ul>
-                <button style={styles.serviceButton} onClick={handleOpenChat}>
-                  Get Quote
-                </button>
-              </div>
-              <div style={styles.serviceCard}>
-                <div style={styles.serviceIcon}>💧</div>
-                <h3 style={styles.serviceCardTitle}>Hydronic Underfloor Heating</h3>
-                <p style={styles.serviceCardText}>
-                  Ideal for whole-house heating and new builds. Energy-efficient water-based systems with excellent running costs and uniform heat distribution.
-                </p>
-                <ul style={styles.serviceList}>
-                  <li>✓ From $120-$200 per m²</li>
-                  <li>✓ 3-7 day installation</li>
-                  <li>✓ Whole-house coverage</li>
-                  <li>✓ Lowest running costs</li>
-                </ul>
-                <button style={styles.serviceButton} onClick={handleOpenChat}>
-                  Get Quote
-                </button>
-              </div>
-              <div style={styles.serviceCard}>
-                <div style={styles.serviceIcon}>🔥</div>
-                <h3 style={styles.serviceCardTitle}>Service & Maintenance</h3>
-                <p style={styles.serviceCardText}>
-                  Keep your underfloor heating system running efficiently with our comprehensive maintenance and emergency repair services.
-                </p>
-                <ul style={styles.serviceList}>
-                  <li>✓ Annual system checks</li>
-                  <li>✓ Emergency repairs</li>
-                  <li>✓ System upgrades</li>
-                  <li>✓ Expert troubleshooting</li>
-                </ul>
-                <button style={styles.serviceButton} onClick={handleOpenChat}>
-                  Book Service
-                </button>
-              </div>
-            </div>
+          <div style={styles.sectionHeader}>
+            <div style={styles.sectionBadge}>Our Services</div>
+            <h2 style={styles.sectionTitle}>Professional Underfloor Heating Solutions</h2>
+            <p style={styles.sectionDescription}>We specialize in electric and hydronic underfloor heating systems, serving all Auckland suburbs with expert installation, maintenance, and repair services.</p>
           </div>
-        </section>
-
-        {/* How It Works Section */}
-        <section style={styles.howItWorks}>
-          <div style={styles.container}>
-            <div style={styles.sectionHeader}>
-              <h2 style={styles.sectionTitle}>How It Works</h2>
-              <p style={styles.sectionSubtitle}>Simple, straightforward process from quote to installation</p>
+          <div style={styles.servicesGrid}>
+            <div 
+              style={styles.serviceCard}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 20px 60px rgba(255,107,53,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 10px 40px rgba(0,0,0,0.08)';
+              }}
+            >
+              <div style={styles.serviceIcon}>⚡</div>
+              <h3 style={styles.serviceCardTitle}>Electric Underfloor Heating</h3>
+              <p style={styles.serviceCardDescription}>Perfect for bathrooms, kitchens, and renovations. Quick installation, precise temperature control, and minimal floor height increase.</p>
+              <ul style={styles.serviceList}>
+                <li style={styles.serviceListItem}>✓ From $80-$150 per m²</li>
+                <li style={styles.serviceListItem}>✓ 1-3 day installation</li>
+                <li style={styles.serviceListItem}>✓ Individual room control</li>
+                <li style={styles.serviceListItem}>✓ Smart thermostat compatible</li>
+              </ul>
             </div>
-            <div style={styles.stepsGrid}>
-              <div style={styles.step}>
-                <div style={styles.stepNumber}>1</div>
-                <h3 style={styles.stepTitle}>Free Consultation</h3>
-                <p style={styles.stepText}>Contact us for a free, no-obligation quote. We'll discuss your needs and recommend the best solution.</p>
-              </div>
-              <div style={styles.step}>
-                <div style={styles.stepNumber}>2</div>
-                <h3 style={styles.stepTitle}>Site Visit</h3>
-                <p style={styles.stepText}>Our expert team visits your property to assess requirements and provide a detailed quote.</p>
-              </div>
-              <div style={styles.step}>
-                <div style={styles.stepNumber}>3</div>
-                <h3 style={styles.stepTitle}>Professional Installation</h3>
-                <p style={styles.stepText}>Our certified installers complete the work efficiently with minimal disruption to your home.</p>
-              </div>
-              <div style={styles.step}>
-                <div style={styles.stepNumber}>4</div>
-                <h3 style={styles.stepTitle}>Enjoy Your Comfort</h3>
-                <p style={styles.stepText}>Start enjoying warm floors and energy-efficient heating with ongoing support from our team.</p>
-              </div>
+            <div 
+              style={styles.serviceCard}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 20px 60px rgba(255,107,53,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 10px 40px rgba(0,0,0,0.08)';
+              }}
+            >
+              <div style={styles.serviceIcon}>💧</div>
+              <h3 style={styles.serviceCardTitle}>Hydronic Underfloor Heating</h3>
+              <p style={styles.serviceCardDescription}>Ideal for whole-house heating and new builds. Energy-efficient water-based systems with excellent running costs.</p>
+              <ul style={styles.serviceList}>
+                <li style={styles.serviceListItem}>✓ From $120-$200 per m²</li>
+                <li style={styles.serviceListItem}>✓ 3-7 day installation</li>
+                <li style={styles.serviceListItem}>✓ Whole-house coverage</li>
+                <li style={styles.serviceListItem}>✓ Ultra-low running costs</li>
+              </ul>
+            </div>
+            <div 
+              style={styles.serviceCard}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 20px 60px rgba(255,107,53,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 10px 40px rgba(0,0,0,0.08)';
+              }}
+            >
+              <div style={styles.serviceIcon}>🔧</div>
+              <h3 style={styles.serviceCardTitle}>Service & Maintenance</h3>
+              <p style={styles.serviceCardDescription}>Keep your underfloor heating system running efficiently with our comprehensive maintenance and repair services.</p>
+              <ul style={styles.serviceList}>
+                <li style={styles.serviceListItem}>✓ Annual system checks</li>
+                <li style={styles.serviceListItem}>✓ Emergency repairs</li>
+                <li style={styles.serviceListItem}>✓ System upgrades</li>
+                <li style={styles.serviceListItem}>✓ 25-year warranty support</li>
+              </ul>
             </div>
           </div>
         </section>
 
         {/* Testimonials Section */}
         <section style={styles.testimonials}>
-          <div style={styles.container}>
-            <div style={styles.sectionHeader}>
-              <h2 style={styles.sectionTitle}>What Our Customers Say</h2>
-              <p style={styles.sectionSubtitle}>Real feedback from Auckland homeowners</p>
+          <div style={styles.sectionHeader}>
+            <div style={styles.sectionBadge}>Testimonials</div>
+            <h2 style={styles.sectionTitle}>Trusted by Auckland Homeowners</h2>
+            <p style={styles.sectionDescription}>See what our customers have to say about their underfloor heating experience with Heat.nz</p>
+          </div>
+          <div style={styles.testimonialsGrid}>
+            <div style={styles.testimonialCard}>
+              <div style={styles.stars}>★★★★★</div>
+              <p style={styles.testimonialText}>"Our new underfloor heating has completely changed how we live. It's warm, efficient, and no more cold tiles in winter! The installation was quick and professional."</p>
+              <div style={styles.testimonialAuthor}>
+                <div style={styles.testimonialAvatar}>SM</div>
+                <div>
+                  <div style={styles.testimonialName}>Sarah M.</div>
+                  <div style={styles.testimonialLocation}>Remuera, Auckland</div>
+                </div>
+              </div>
             </div>
-            <div style={styles.testimonialsGrid}>
-              <div style={styles.testimonialCard}>
-                <div style={styles.stars}>⭐⭐⭐⭐⭐</div>
-                <p style={styles.testimonialText}>
-                  "Our new underfloor heating has completely changed how we live. It's warm, efficient, and no more cold tiles in winter! The installation team was professional and the whole process was stress-free."
-                </p>
-                <div style={styles.testimonialAuthor}>
-                  <strong style={styles.testimonialAuthorName}>Sarah M.</strong>
-                  <span style={styles.testimonialAuthorLocation}>Remuera, Auckland</span>
+            <div style={styles.testimonialCard}>
+              <div style={styles.stars}>★★★★★</div>
+              <p style={styles.testimonialText}>"The whole process was simple! Heat.nz provided excellent service from quote to completion. Finished on time and within budget. Couldn't be happier!"</p>
+              <div style={styles.testimonialAuthor}>
+                <div style={styles.testimonialAvatar}>JR</div>
+                <div>
+                  <div style={styles.testimonialName}>James R.</div>
+                  <div style={styles.testimonialLocation}>Ponsonby, Auckland</div>
                 </div>
               </div>
-              <div style={styles.testimonialCard}>
-                <div style={styles.stars}>⭐⭐⭐⭐⭐</div>
-                <p style={styles.testimonialText}>
-                  "The whole process was simple! Heat.nz provided excellent service from quote to completion. Finished on time and within budget. Couldn't be happier with the results."
-                </p>
-                <div style={styles.testimonialAuthor}>
-                  <strong style={styles.testimonialAuthorName}>James R.</strong>
-                  <span style={styles.testimonialAuthorLocation}>Ponsonby, Auckland</span>
-                </div>
-              </div>
-              <div style={styles.testimonialCard}>
-                <div style={styles.stars}>⭐⭐⭐⭐⭐</div>
-                <p style={styles.testimonialText}>
-                  "Worth every dollar. The system runs quietly, the house feels amazing, and our power bills actually went down. Highly recommend Heat.nz to anyone considering underfloor heating."
-                </p>
-                <div style={styles.testimonialAuthor}>
-                  <strong style={styles.testimonialAuthorName}>Anika P.</strong>
-                  <span style={styles.testimonialAuthorLocation}>Parnell, Auckland</span>
+            </div>
+            <div style={styles.testimonialCard}>
+              <div style={styles.stars}>★★★★★</div>
+              <p style={styles.testimonialText}>"Worth every dollar. The system runs quietly, the house feels amazing, and our power bills actually went down. Highly recommend!"</p>
+              <div style={styles.testimonialAuthor}>
+                <div style={styles.testimonialAvatar}>AP</div>
+                <div>
+                  <div style={styles.testimonialName}>Anika P.</div>
+                  <div style={styles.testimonialLocation}>Parnell, Auckland</div>
                 </div>
               </div>
             </div>
@@ -272,298 +212,62 @@ const HomePage = ({ openChat }) => {
 // --- MODERN STYLES ---
 const styles = {
   pageContainer: { 
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', 
-    color: '#2d3748',
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", 
+    color: '#1a1a1a',
     overflowX: 'hidden'
   },
-  container: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '0 20px'
-  },
-  // Hero Section
   hero: { 
-    position: 'relative',
-    background: 'linear-gradient(135deg, #e63946 0%, #f77f00 50%, #fcbf49 100%)',
+    background: 'linear-gradient(135deg, #FF6B35 0%, #F7931E 50%, #FFB347 100%)', 
     color: 'white', 
-    padding: 'clamp(80px, 15vw, 120px) clamp(16px, 4vw, 20px) clamp(60px, 12vw, 100px)',
+    padding: '6rem 20px 5rem', 
     textAlign: 'center',
-    overflow: 'hidden',
-    minHeight: 'auto',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    boxSizing: 'border-box'
-  },
-  heroOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'rgba(0, 0, 0, 0.2)',
-    zIndex: 1
+    position: 'relative',
+    overflow: 'hidden'
   },
   heroContent: { 
-    position: 'relative',
-    zIndex: 2,
-    maxWidth: '900px', 
+    maxWidth: '1200px', 
     margin: '0 auto',
-    width: '100%',
-    padding: '0 clamp(8px, 2vw, 16px)',
-    boxSizing: 'border-box'
+    position: 'relative',
+    zIndex: 2
   },
   heroBadge: {
     display: 'inline-block',
-    background: 'rgba(255, 255, 255, 0.2)',
+    background: 'rgba(255,255,255,0.2)',
     backdropFilter: 'blur(10px)',
-    padding: '8px 20px',
-    borderRadius: '30px',
-    fontSize: '14px',
+    padding: '0.5rem 1.25rem',
+    borderRadius: '50px',
+    fontSize: '0.875rem',
     fontWeight: 600,
-    marginBottom: '20px',
-    letterSpacing: '0.5px'
+    marginBottom: '1.5rem',
+    letterSpacing: '0.5px',
+    textTransform: 'uppercase',
+    fontFamily: "'Inter', sans-serif",
   },
   heroTitle: {
-    fontSize: 'clamp(1.75rem, 6vw, 4rem)',
+    fontSize: 'clamp(2.5rem, 5vw, 4rem)',
     fontWeight: 800,
-    lineHeight: '1.2',
-    marginBottom: 'clamp(16px, 4vw, 24px)',
-    letterSpacing: '-0.02em',
-    padding: '0 clamp(8px, 2vw, 16px)',
-    wordWrap: 'break-word',
-    overflowWrap: 'break-word',
-    hyphens: 'auto',
-    width: '100%',
-    boxSizing: 'border-box'
+    marginBottom: '1.5rem',
+    lineHeight: '1.1',
+    letterSpacing: '-1px',
+    fontFamily: "'Poppins', sans-serif",
+    maxWidth: '900px',
+    margin: '0 auto 1.5rem',
   },
-  heroSubtitle: {
-    fontSize: 'clamp(0.95rem, 3vw, 1.3rem)',
-    lineHeight: '1.6',
-    marginBottom: 'clamp(24px, 5vw, 40px)',
-    opacity: 0.95,
+  heroDescription: {
+    fontSize: '1.25rem',
+    lineHeight: '1.7',
+    marginBottom: '2.5rem',
     maxWidth: '700px',
-    margin: '0 auto clamp(24px, 5vw, 40px)',
-    padding: '0 clamp(12px, 3vw, 24px)',
-    wordWrap: 'break-word',
-    overflowWrap: 'break-word',
-    hyphens: 'auto',
-    width: '100%',
-    boxSizing: 'border-box'
+    margin: '0 auto 2.5rem',
+    opacity: 0.95,
+    fontFamily: "'Inter', sans-serif",
   },
   heroStats: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-    gap: 'clamp(12px, 3vw, 24px)',
-    margin: 'clamp(24px, 5vw, 40px) 0',
-    maxWidth: '800px',
-    margin: 'clamp(24px, 5vw, 40px) auto',
-    padding: '0 clamp(8px, 2vw, 16px)',
-    width: '100%',
-    boxSizing: 'border-box'
-  },
-  stat: {
-    textAlign: 'center',
-    padding: 'clamp(12px, 3vw, 20px)',
-    background: 'rgba(255, 255, 255, 0.15)',
-    backdropFilter: 'blur(10px)',
-    borderRadius: '16px',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    minWidth: '0',
-    boxSizing: 'border-box'
-  },
-  statNumber: {
-    fontSize: 'clamp(1.5rem, 4vw, 2rem)',
-    fontWeight: 800,
-    marginBottom: 'clamp(6px, 1.5vw, 8px)',
-    wordWrap: 'break-word',
-    overflowWrap: 'break-word',
-    lineHeight: '1.2'
-  },
-  statLabel: {
-    fontSize: 'clamp(0.8rem, 2vw, 0.9rem)',
-    opacity: 0.9,
-    fontWeight: 500,
-    wordWrap: 'break-word',
-    overflowWrap: 'break-word',
-    lineHeight: '1.3'
-  },
-  heroButtons: {
     display: 'flex',
-    gap: 'clamp(12px, 2vw, 16px)',
     justifyContent: 'center',
-    flexWrap: 'wrap',
-    marginTop: 'clamp(24px, 5vw, 40px)',
-    padding: '0 clamp(12px, 3vw, 24px)',
-    width: '100%',
-    boxSizing: 'border-box'
-  },
-  ctaButtonPrimary: { 
-    background: 'white', 
-    color: '#e63946', 
-    border: 'none', 
-    padding: 'clamp(14px, 3vw, 16px) clamp(24px, 5vw, 32px)', 
-    borderRadius: '50px', 
-    fontSize: 'clamp(0.95rem, 2.5vw, 1.1rem)', 
-    fontWeight: 700, 
-    cursor: 'pointer', 
-    transition: 'all 0.3s ease', 
-    boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-    transform: 'translateY(0)',
-    letterSpacing: '0.3px',
-    whiteSpace: 'nowrap',
-    minWidth: 'auto',
-    width: 'auto'
-  },
-  ctaButtonPrimaryHover: {
-    transform: 'translateY(-3px)',
-    boxShadow: '0 15px 40px rgba(0,0,0,0.3)',
-  },
-  ctaButtonSecondary: {
-    background: 'transparent',
-    color: 'white',
-    border: '2px solid white',
-    padding: 'clamp(12px, 3vw, 14px) clamp(24px, 5vw, 32px)',
-    borderRadius: '50px',
-    fontSize: 'clamp(0.95rem, 2.5vw, 1.1rem)',
-    fontWeight: 700,
-    textDecoration: 'none',
-    display: 'inline-block',
-    transition: 'all 0.3s ease',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-    minWidth: 'auto'
-  },
-  trustBadges: {
-    display: 'flex',
-    gap: 'clamp(8px, 2vw, 16px)',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    marginTop: 'clamp(24px, 5vw, 40px)',
-    padding: '0 clamp(12px, 3vw, 24px)',
-    width: '100%',
-    boxSizing: 'border-box'
-  },
-  badge: {
-    background: 'rgba(255, 255, 255, 0.15)',
-    backdropFilter: 'blur(10px)',
-    padding: 'clamp(6px, 1.5vw, 8px) clamp(12px, 3vw, 16px)',
-    borderRadius: '20px',
-    fontSize: 'clamp(0.8rem, 2vw, 0.9rem)',
-    fontWeight: 600,
-    whiteSpace: 'nowrap',
-    textAlign: 'center'
-  },
-  // Why Choose Us
-  whyChooseUs: {
-    padding: '100px 20px',
-    background: '#ffffff'
-  },
-  sectionHeader: {
-    textAlign: 'center',
-    marginBottom: '60px'
-  },
-  sectionTitle: {
-    fontSize: 'clamp(2rem, 4vw, 3rem)',
-    fontWeight: 800,
-    color: '#1a202c',
-    marginBottom: '16px',
-    letterSpacing: '-0.02em'
-  },
-  sectionSubtitle: {
-    fontSize: '1.2rem',
-    color: '#718096',
-    maxWidth: '700px',
-    margin: '0 auto',
-    lineHeight: '1.6'
-  },
-  featuresGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '32px'
-  },
-  featureCard: {
-    textAlign: 'center',
-    padding: '40px 24px',
-    background: '#f7fafc',
-    borderRadius: '20px',
-    transition: 'all 0.3s ease',
-    border: '1px solid #e2e8f0'
-  },
-  featureIcon: {
-    fontSize: '3rem',
-    marginBottom: '20px'
-  },
-  featureTitle: {
-    fontSize: '1.5rem',
-    fontWeight: 700,
-    color: '#1a202c',
-    marginBottom: '12px'
-  },
-  featureText: {
-    fontSize: '1rem',
-    color: '#4a5568',
-    lineHeight: '1.6'
-  },
-  // Services
-  services: {
-    padding: '100px 20px',
-    background: 'linear-gradient(to bottom, #f7fafc 0%, #edf2f7 100%)'
-  },
-  servicesGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-    gap: '32px'
-  },
-  serviceCard: {
-    background: 'white',
-    padding: '40px 32px',
-    borderRadius: '24px',
-    boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
-    transition: 'all 0.3s ease',
-    border: '1px solid #e2e8f0',
-    display: 'flex',
-    flexDirection: 'column'
-  },
-  serviceIcon: {
-    fontSize: '3.5rem',
-    marginBottom: '24px'
-  },
-  serviceCardTitle: {
-    fontSize: '1.75rem',
-    fontWeight: 700,
-    color: '#1a202c',
-    marginBottom: '16px'
-  },
-  serviceCardText: {
-    fontSize: '1rem',
-    color: '#4a5568',
-    lineHeight: '1.7',
-    marginBottom: '24px',
-    flexGrow: 1
-  },
-  serviceList: {
-    listStyle: 'none',
-    padding: 0,
-    margin: '0 0 32px 0',
-    textAlign: 'left',
-    fontSize: '1rem',
-    color: '#2d3748',
-    lineHeight: '1.8'
-  },
-  serviceButton: {
-    background: 'linear-gradient(135deg, #e63946 0%, #f77f00 100%)',
-    color: 'white',
-    border: 'none',
-    padding: '14px 28px',
-    borderRadius: '50px',
-    fontSize: '1rem',
-    fontWeight: 700,
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    alignSelf: 'flex-start',
-    marginTop: 'auto'
+    gap: '2rem',
+    margin: '3rem 0',
+    flexWrap: 'wrap'
   },
   // How It Works
   howItWorks: {
@@ -578,7 +282,151 @@ const styles = {
   },
   step: {
     textAlign: 'center',
-    position: 'relative'
+    padding: '1.5rem 2rem',
+    background: 'rgba(255,255,255,0.15)',
+    backdropFilter: 'blur(10px)',
+    borderRadius: '16px',
+    minWidth: '160px',
+    border: '1px solid rgba(255,255,255,0.2)',
+    transition: 'transform 0.3s ease',
+  },
+  statNumber: {
+    fontSize: '2rem',
+    fontWeight: 800,
+    marginBottom: '0.5rem',
+    fontFamily: "'Poppins', sans-serif",
+  },
+  statLabel: {
+    fontSize: '0.9rem',
+    opacity: 0.9,
+    fontFamily: "'Inter', sans-serif",
+  },
+  heroButtons: {
+    display: 'flex',
+    gap: '1rem',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginTop: '2.5rem',
+  },
+  ctaButton: { 
+    background: 'white', 
+    color: '#FF6B35', 
+    border: 'none', 
+    padding: '1.1rem 2.5rem', 
+    borderRadius: '50px', 
+    fontSize: '1.1rem', 
+    fontWeight: 700, 
+    cursor: 'pointer', 
+    transition: 'all 0.3s ease', 
+    boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+    transform: 'translateY(0)',
+    fontFamily: "'Inter', sans-serif",
+  },
+  ctaButtonHover: {
+    transform: 'translateY(-3px)',
+    boxShadow: '0 15px 40px rgba(0,0,0,0.3)',
+    background: '#f8f9fa'
+  },
+  secondaryButton: {
+    background: 'transparent',
+    color: 'white',
+    border: '2px solid rgba(255,255,255,0.8)',
+    padding: '1.1rem 2.5rem',
+    borderRadius: '50px',
+    fontSize: '1.1rem',
+    fontWeight: 600,
+    textDecoration: 'none',
+    transition: 'all 0.3s ease',
+    fontFamily: "'Inter', sans-serif",
+    display: 'inline-block',
+  },
+  services: { 
+    padding: '6rem 20px', 
+    background: 'linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%)'
+  },
+  sectionHeader: { 
+    textAlign: 'center', 
+    marginBottom: '4rem',
+    maxWidth: '800px',
+    margin: '0 auto 4rem',
+  },
+  sectionBadge: {
+    display: 'inline-block',
+    background: 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)',
+    color: 'white',
+    padding: '0.5rem 1.25rem',
+    borderRadius: '50px',
+    fontSize: '0.875rem',
+    fontWeight: 600,
+    marginBottom: '1rem',
+    letterSpacing: '0.5px',
+    textTransform: 'uppercase',
+    fontFamily: "'Inter', sans-serif",
+  },
+  sectionTitle: {
+    fontSize: 'clamp(2rem, 4vw, 3rem)',
+    fontWeight: 800,
+    marginBottom: '1rem',
+    color: '#1a1a1a',
+    fontFamily: "'Poppins', sans-serif",
+    lineHeight: '1.2',
+  },
+  sectionDescription: {
+    fontSize: '1.125rem',
+    color: '#666',
+    lineHeight: '1.7',
+    fontFamily: "'Inter', sans-serif",
+  },
+  servicesGrid: { 
+    display: 'grid', 
+    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', 
+    gap: '2.5rem', 
+    maxWidth: '1400px', 
+    margin: '0 auto' 
+  },
+  serviceCard: { 
+    background: 'white', 
+    padding: '2.5rem', 
+    borderRadius: '20px', 
+    textAlign: 'left', 
+    boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
+    transition: 'all 0.3s ease',
+    border: '1px solid rgba(0,0,0,0.05)',
+    position: 'relative',
+    overflow: 'hidden',
+    cursor: 'default',
+  },
+  serviceIcon: {
+    fontSize: '3rem',
+    marginBottom: '1.5rem',
+    display: 'block',
+  },
+  serviceCardTitle: {
+    fontSize: '1.5rem',
+    fontWeight: 700,
+    marginBottom: '1rem',
+    color: '#1a1a1a',
+    fontFamily: "'Poppins', sans-serif",
+  },
+  serviceCardDescription: {
+    fontSize: '1rem',
+    lineHeight: '1.7',
+    color: '#666',
+    marginBottom: '1.5rem',
+    fontFamily: "'Inter', sans-serif",
+  },
+  serviceList: {
+    listStyle: 'none',
+    padding: 0,
+    margin: 0,
+  },
+  serviceListItem: {
+    padding: '0.75rem 0',
+    fontSize: '0.95rem',
+    color: '#333',
+    fontFamily: "'Inter', sans-serif",
+    borderBottom: '1px solid #f0f0f0',
   },
   stepNumber: {
     width: '60px',
@@ -606,83 +454,67 @@ const styles = {
   },
   // Testimonials
   testimonials: {
-    padding: '100px 20px',
-    background: 'linear-gradient(to bottom, #edf2f7 0%, #f7fafc 100%)'
+    padding: '6rem 20px',
+    backgroundColor: '#1a1a1a',
+    color: 'white',
   },
   testimonialsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-    gap: '32px'
+    gap: '2.5rem',
+    maxWidth: '1400px',
+    margin: '0 auto',
   },
   testimonialCard: {
-    background: 'white',
-    padding: '40px 32px',
-    borderRadius: '24px',
-    boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
-    border: '1px solid #e2e8f0'
+    background: 'rgba(255,255,255,0.05)',
+    backdropFilter: 'blur(10px)',
+    padding: '2.5rem',
+    borderRadius: '20px',
+    border: '1px solid rgba(255,255,255,0.1)',
+    transition: 'all 0.3s ease',
+    cursor: 'default',
   },
-  stars: {
-    fontSize: '1.5rem',
-    marginBottom: '20px',
-    color: '#fbbf24'
+  stars: { 
+    fontSize: '1.25rem', 
+    marginBottom: '1.5rem', 
+    color: '#FFD700',
+    letterSpacing: '2px',
   },
   testimonialText: {
     fontSize: '1.05rem',
-    color: '#4a5568',
     lineHeight: '1.7',
-    marginBottom: '24px',
-    fontStyle: 'italic'
+    marginBottom: '2rem',
+    fontStyle: 'italic',
+    color: 'rgba(255,255,255,0.9)',
+    fontFamily: "'Inter', sans-serif",
   },
   testimonialAuthor: {
     display: 'flex',
-    flexDirection: 'column',
-    gap: '4px'
+    alignItems: 'center',
+    gap: '1rem',
   },
-  testimonialAuthorName: {
-    color: '#1a202c',
-    fontSize: '1.1rem',
-    fontWeight: 700
-  },
-  testimonialAuthorLocation: {
-    color: '#718096',
-    fontSize: '0.9rem'
-  },
-  // CTA Section
-  ctaSection: {
-    padding: '100px 20px',
-    background: 'linear-gradient(135deg, #e63946 0%, #f77f00 100%)',
-    color: 'white'
-  },
-  ctaContent: {
-    textAlign: 'center',
-    maxWidth: '700px',
-    margin: '0 auto'
-  },
-  ctaTitle: {
-    fontSize: 'clamp(2rem, 4vw, 3rem)',
-    fontWeight: 800,
-    marginBottom: '20px',
-    letterSpacing: '-0.02em'
-  },
-  ctaSubtitle: {
-    fontSize: '1.2rem',
-    marginBottom: '40px',
-    opacity: 0.95,
-    lineHeight: '1.6'
-  },
-  ctaButtonLarge: {
-    background: 'white',
-    color: '#e63946',
-    border: 'none',
-    padding: '18px 40px',
-    borderRadius: '50px',
-    fontSize: '1.2rem',
+  testimonialAvatar: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '50%',
+    background: 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     fontWeight: 700,
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-    letterSpacing: '0.3px'
-  }
+    fontSize: '1rem',
+    fontFamily: "'Inter', sans-serif",
+  },
+  testimonialName: {
+    fontWeight: 600,
+    marginBottom: '0.25rem',
+    fontFamily: "'Inter', sans-serif",
+  },
+  testimonialLocation: {
+    fontSize: '0.875rem',
+    opacity: 0.7,
+    fontFamily: "'Inter', sans-serif",
+  },
 };
 
 export default HomePage;

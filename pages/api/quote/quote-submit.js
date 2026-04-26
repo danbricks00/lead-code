@@ -138,8 +138,12 @@ export default async function handler(req, res) {
           const travelTotal = parseFloat(fullRow.TravelCost || 0) * parseFloat(fullRow.TravelDistance || 0);
           const installationTotal = parseFloat(fullRow.InstallationCost || 0);
 
-          await sendEmail({
-            to: process.env.ADMIN_EMAIL || 'admin@example.com',
+          const adminReviewTo = (process.env.ADMIN_EMAIL || process.env.TRADESPERSON_EMAIL || '').trim();
+          if (!adminReviewTo) {
+            console.warn('⚠️ ADMIN_EMAIL and TRADESPERSON_EMAIL unset — skipping admin review email');
+          } else {
+            await sendEmail({
+            to: adminReviewTo,
             subject: `New Quote #${fullRow.QuoteID} for ${fullRow.CustomerName} - Waiting for Approval`,
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -221,7 +225,8 @@ export default async function handler(req, res) {
               content: pdfBuffer,
               contentType: 'application/pdf'
             }]
-          });
+            });
+          }
 
           // Send tradesperson email
           if (tradespersonEmail) {

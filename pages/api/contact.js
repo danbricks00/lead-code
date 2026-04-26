@@ -1,5 +1,5 @@
 // pages/api/contact.js - Contact Form API
-import { sendEmail } from '../../lib/emailHelper';
+import { sendEmail, getTradespersonLeadEmail } from '../../lib/emailHelper';
 import { validateAndCorrectEmail, logEmailValidation } from '../../utils/emailValidator';
 import { calculateSpamScore } from '../../utils/spamValidator';
 import { checkSubmissionRateLimit } from '../../utils/rateLimiter';
@@ -121,7 +121,7 @@ export default async function handler(req, res) {
         // Environment checks
         // Client email is the same as tradesperson email (both use @heat.nz domain)
         const clientEmail = process.env.CLIENT_EMAIL || process.env.TRADESPERSON_EMAIL; // Client with @heat.nz domain
-        const coderEmail = process.env.CODER_EMAIL || process.env.PERSONAL_EMAIL; // Coder's personal email for BCC
+        const tradesLeadBcc = getTradespersonLeadEmail(); // BCC: tradesperson inbox (TRADESPERSON_EMAIL → ADMIN_EMAIL)
         const testEmail = process.env.TEST_EMAIL || process.env.DEBUG_EMAIL; // Optional test email for verification
         const gmailUser = process.env.GMAIL_USER;
         const gmailPass = process.env.GMAIL_APP_PASSWORD; // Use GMAIL_APP_PASSWORD for consistency
@@ -131,7 +131,7 @@ export default async function handler(req, res) {
             GMAIL_APP_PASSWORD: gmailPass ? "SET" : "MISSING",
             CLIENT_EMAIL: clientEmail ? "SET" : "MISSING",
             TRADESPERSON_EMAIL: process.env.TRADESPERSON_EMAIL ? "SET" : "MISSING",
-            CODER_EMAIL: coderEmail ? "SET" : "MISSING",
+            TRADES_LEAD_BCC: tradesLeadBcc ? "SET" : "MISSING",
             TEST_EMAIL: testEmail ? "SET" : "MISSING"
         });
         
@@ -246,12 +246,12 @@ export default async function handler(req, res) {
 
         console.log("📧 Built contact form email template");
 
-        // Email flow: To = Customer, CC = Client (@heat.nz), BCC = Coder
+        // Email flow: To = Customer, CC = Client (@heat.nz), BCC = tradesperson lead inbox
         try {
             console.log(`📤 Sending contact form email:`);
             console.log(`   To: ${finalEmail} (customer)`);
             console.log(`   CC: ${clientEmail || 'NOT SET'} (client@heat.nz)`);
-            console.log(`   BCC: ${coderEmail || 'NOT SET'} (coder)`);
+            console.log(`   BCC: ${tradesLeadBcc || 'NOT SET'} (TRADESPERSON_EMAIL or ADMIN_EMAIL)`);
             
             const emailOptions = {
                 to: finalEmail, // To: Customer
@@ -268,13 +268,12 @@ export default async function handler(req, res) {
                 console.warn("⚠️ CLIENT_EMAIL not configured - client will not receive email");
             }
             
-            // Add BCC to coder (your personal email)
             const bccList = [];
-            if (coderEmail) {
-                bccList.push(coderEmail);
-                console.log(`📧 BCC added: ${coderEmail}`);
+            if (tradesLeadBcc) {
+                bccList.push(tradesLeadBcc);
+                console.log(`📧 BCC added (lead inbox): ${tradesLeadBcc}`);
             } else {
-                console.warn("⚠️ CODER_EMAIL or PERSONAL_EMAIL not configured - coder will not receive BCC");
+                console.warn("⚠️ TRADESPERSON_EMAIL and ADMIN_EMAIL not configured - no BCC lead copy");
             }
             
             // Add optional test email for verification (if configured)

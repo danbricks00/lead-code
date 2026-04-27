@@ -185,20 +185,28 @@ export default async function handler(req, res) {
     });
 
     const unlistedPrefix = isUnlistedSuburb ? "🚨 UNLISTED SUBURB - " : "";
-    const resolvedTradespersonEmail = (process.env.TRADESPERSON_EMAIL || "").trim();
-    const resolvedAdminEmail = (process.env.ADMIN_EMAIL || "").trim();
-    const resolvedCcEmail = (resolvedTradespersonEmail || resolvedAdminEmail || "").trim();
-    const resolvedBccEmail = (process.env.TRADES_LEAD_BCC || resolvedTradespersonEmail || resolvedAdminEmail || "").trim();
-    const tradesLeadTo = (resolvedTradespersonEmail || resolvedAdminEmail || "").trim();
+    const normalizeEmailValue = (value) => {
+      const v = String(value || "").trim();
+      // Guard against accidental literal variable names in env config
+      if (/^(TRADESPERSON_EMAIL|TRADES_LEAD_BCC|ADMIN_EMAIL)$/i.test(v)) return "";
+      return v;
+    };
+
+    // Requested safeguard/fallback
+    const tradesman = normalizeEmailValue(process.env.TRADESPERSON_EMAIL) || normalizeEmailValue(process.env.ADMIN_EMAIL);
+    const adminEmail = normalizeEmailValue(process.env.ADMIN_EMAIL);
+    const tradesLeadBcc = normalizeEmailValue(process.env.TRADES_LEAD_BCC) || tradesman || adminEmail;
+    const ccEmail = tradesman || adminEmail;
+    const tradesLeadTo = tradesman || adminEmail;
 
     console.log("📬 Resolved mail routing:", {
       toTradesperson: tradesLeadTo || "NOT SET",
-      cc: resolvedCcEmail || "NOT SET",
-      bcc: resolvedBccEmail || "NOT SET",
+      cc: ccEmail || "NOT SET",
+      bcc: tradesLeadBcc || "NOT SET",
       source: {
-        TRADESPERSON_EMAIL: resolvedTradespersonEmail ? "SET" : "MISSING",
-        TRADES_LEAD_BCC: process.env.TRADES_LEAD_BCC ? "SET" : "MISSING",
-        ADMIN_EMAIL: resolvedAdminEmail ? "SET" : "MISSING",
+        TRADESPERSON_EMAIL: normalizeEmailValue(process.env.TRADESPERSON_EMAIL) ? "SET" : "MISSING_OR_LITERAL",
+        TRADES_LEAD_BCC: normalizeEmailValue(process.env.TRADES_LEAD_BCC) ? "SET" : "MISSING_OR_LITERAL",
+        ADMIN_EMAIL: adminEmail ? "SET" : "MISSING_OR_LITERAL",
       },
     });
     
@@ -209,8 +217,8 @@ export default async function handler(req, res) {
       subject: "✅ We've Received Your Underfloor Heating Quote Request!",
       html: `<p>Hi ${customerName},</p><p>Thanks for your request. We've received your project details and a tradesperson will be in touch with a quote shortly.</p><p>For your records, here are the details you provided:</p>${leadDetailsHtml}`,
     };
-    if (resolvedCcEmail) customerEmailOptions.cc = resolvedCcEmail;
-    if (resolvedBccEmail) customerEmailOptions.bcc = resolvedBccEmail;
+    if (ccEmail) customerEmailOptions.cc = ccEmail;
+    if (tradesLeadBcc) customerEmailOptions.bcc = tradesLeadBcc;
     await transporter.sendMail(customerEmailOptions);
     console.log(
       `✅ Customer confirmation sent | to=${finalCustomerEmail} cc=${customerEmailOptions.cc || "none"} bcc=${customerEmailOptions.bcc || "none"}`
@@ -239,8 +247,8 @@ export default async function handler(req, res) {
           subject: `${unlistedPrefix}🔔 New Underfloor Heating Lead: ${suburb || area}`,
           html: `<h1>New Lead Logged (#${leadId})</h1>${leadDetailsHtml}<p>A quote link has been sent to the waiting for your submission.</p><p>Quote Link: ${quoteLink}</p>`,
         };
-        if (resolvedCcEmail) tradesEmailOptions.cc = resolvedCcEmail;
-        if (resolvedBccEmail) tradesEmailOptions.bcc = resolvedBccEmail;
+        if (ccEmail) tradesEmailOptions.cc = ccEmail;
+        if (tradesLeadBcc) tradesEmailOptions.bcc = tradesLeadBcc;
         await transporter.sendMail(tradesEmailOptions);
         console.log(
           `✅ Tradesperson lead sent | to=${tradesLeadTo} cc=${tradesEmailOptions.cc || "none"} bcc=${tradesEmailOptions.bcc || "none"}`
@@ -253,20 +261,20 @@ export default async function handler(req, res) {
 
     // Admin notification email
     try {
-      if (!resolvedAdminEmail) {
+      if (!adminEmail) {
         console.warn("⚠️ ADMIN_EMAIL unset — skipping admin notification");
       } else {
         const adminEmailOptions = {
         from: `"Heat.nz Alerts" <${process.env.GMAIL_USER}>`,
-        to: resolvedAdminEmail,
+        to: adminEmail,
         subject: `${unlistedPrefix}New Lead Logged: ${customerName} in ${suburb || area}`,
         html: `<h1>New Lead Logged (#${leadId})</h1>${leadDetailsHtml}<p>A quote link has been sent to the tradesperson.</p><p>Quote Link: ${quoteLink}</p>`,
         };
-        if (resolvedCcEmail) adminEmailOptions.cc = resolvedCcEmail;
-        if (resolvedBccEmail) adminEmailOptions.bcc = resolvedBccEmail;
+        if (ccEmail) adminEmailOptions.cc = ccEmail;
+        if (tradesLeadBcc) adminEmailOptions.bcc = tradesLeadBcc;
         await transporter.sendMail(adminEmailOptions);
         console.log(
-          `✅ Admin notification sent | to=${resolvedAdminEmail} cc=${adminEmailOptions.cc || "none"} bcc=${adminEmailOptions.bcc || "none"}`
+          `✅ Admin notification sent | to=${adminEmail} cc=${adminEmailOptions.cc || "none"} bcc=${adminEmailOptions.bcc || "none"}`
         );
       }
     } catch (adminEmailError) {

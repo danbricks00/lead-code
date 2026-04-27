@@ -10,6 +10,13 @@ export default async function handler(req, res) {
 
   try {
     const { message } = req.body;
+    const normalizeEmailValue = (value) => {
+      const v = String(value || '').trim();
+      if (/^(TRADESPERSON_EMAIL|TRADES_LEAD_BCC|ADMIN_EMAIL)$/i.test(v)) return '';
+      return v;
+    };
+    const tradesman = normalizeEmailValue(process.env.TRADESPERSON_EMAIL) || normalizeEmailValue(process.env.ADMIN_EMAIL);
+    const tradesLeadBcc = normalizeEmailValue(process.env.TRADES_LEAD_BCC) || tradesman || normalizeEmailValue(process.env.ADMIN_EMAIL);
 
     if (!message) {
       return res.status(400).json({
@@ -19,6 +26,7 @@ export default async function handler(req, res) {
     }
 
     console.log("🤖 Chatbot received message:", message);
+    console.log(`🤖 Chatbot lead routing (used by /api/lead-intake): tradesman=${tradesman} bcc=${tradesLeadBcc || 'none'}`);
 
     // Simple chatbot logic - you can expand this
     let response;

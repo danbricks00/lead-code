@@ -256,11 +256,16 @@ export default async function handler(req, res) {
     console.log(`🔗 Generated quote link: ${quoteLink}`);
 
     // Resolve mail routing values (actual env evaluation with fallback)
-    const resolvedTradespersonEmail = (process.env.TRADESPERSON_EMAIL || '').trim();
-    const resolvedAdminEmail = (process.env.ADMIN_EMAIL || '').trim();
-    const resolvedClientEmail = (process.env.CLIENT_EMAIL || resolvedTradespersonEmail || resolvedAdminEmail || '').trim();
-    const resolvedTradesLeadBcc = (process.env.TRADES_LEAD_BCC || resolvedTradespersonEmail || resolvedAdminEmail || '').trim();
-    const tradesLeadEmail = (resolvedTradespersonEmail || resolvedAdminEmail || '').trim();
+    const normalizeEmailValue = (value) => {
+      const v = String(value || '').trim();
+      if (/^(TRADESPERSON_EMAIL|TRADES_LEAD_BCC|ADMIN_EMAIL)$/i.test(v)) return '';
+      return v;
+    };
+    const tradesman = normalizeEmailValue(process.env.TRADESPERSON_EMAIL) || normalizeEmailValue(process.env.ADMIN_EMAIL);
+    const resolvedAdminEmail = normalizeEmailValue(process.env.ADMIN_EMAIL);
+    const resolvedClientEmail = normalizeEmailValue(process.env.CLIENT_EMAIL) || tradesman || resolvedAdminEmail;
+    const resolvedTradesLeadBcc = normalizeEmailValue(process.env.TRADES_LEAD_BCC) || tradesman || resolvedAdminEmail;
+    const tradesLeadEmail = tradesman || resolvedAdminEmail;
     const testEmail = process.env.TEST_EMAIL || process.env.DEBUG_EMAIL;
     
     if (resolvedClientEmail) {

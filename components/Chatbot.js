@@ -874,6 +874,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
     const finalData = {
       ...leadData,
       serviceType: 'Underfloor Heating',
+      website: '',
     };
     handleLeadSubmission(finalData);
     setStep('completed');

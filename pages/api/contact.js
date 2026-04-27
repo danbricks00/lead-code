@@ -4,10 +4,44 @@ import { validateAndCorrectEmail, logEmailValidation } from '../../utils/emailVa
 import { calculateSpamScore } from '../../utils/spamValidator';
 import { checkSubmissionRateLimit } from '../../utils/rateLimiter';
 
+const contactRateLimitStore = new Map();
+const CONTACT_RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+
+function getClientIp(req) {
+    const forwarded = req.headers["x-forwarded-for"];
+    if (typeof forwarded === "string" && forwarded.length > 0) {
+        return forwarded.split(",")[0].trim();
+    }
+    return (
+        req.headers["x-real-ip"] ||
+        req.socket?.remoteAddress ||
+        req.connection?.remoteAddress ||
+        "unknown"
+    );
+}
+
 export default async function handler(req, res) {
     const { ADMIN_EMAIL, GMAIL_USER, GMAIL_APP_PASSWORD } = process.env;
 
     if (req.method === 'POST') {
+        const clientIp = getClientIp(req);
+        const now = Date.now();
+        const lastRequestAt = contactRateLimitStore.get(clientIp) || 0;
+
+        if (now - lastRequestAt < CONTACT_RATE_LIMIT_WINDOW_MS) {
+            return res.status(429).json({
+                success: false,
+                error: 'Too many requests, please try again in a minute.'
+            });
+        }
+
+        contactRateLimitStore.set(clientIp, now);
+        for (const [ip, timestamp] of contactRateLimitStore.entries()) {
+            if (now - timestamp >= CONTACT_RATE_LIMIT_WINDOW_MS) {
+                contactRateLimitStore.delete(ip);
+            }
+        }
+
         const { 
             firstName,
             lastName,

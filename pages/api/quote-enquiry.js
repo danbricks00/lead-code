@@ -6,6 +6,22 @@ import { validateAndCorrectEmail } from '../../utils/emailValidator';
 import { calculateSpamScore } from '../../utils/spamValidator';
 import { checkSubmissionRateLimit } from '../../utils/rateLimiter';
 
+const quoteEnquiryRateLimitStore = new Map();
+const QUOTE_ENQUIRY_RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+
+function getClientIp(req) {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string" && forwarded.length > 0) {
+    return forwarded.split(",")[0].trim();
+  }
+  return (
+    req.headers["x-real-ip"] ||
+    req.socket?.remoteAddress ||
+    req.connection?.remoteAddress ||
+    "unknown"
+  );
+}
+
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
@@ -44,6 +60,24 @@ export default async function handler(req, res) {
   }
 
   try {
+    const clientIp = getClientIp(req);
+    const now = Date.now();
+    const lastRequestAt = quoteEnquiryRateLimitStore.get(clientIp) || 0;
+
+    if (now - lastRequestAt < QUOTE_ENQUIRY_RATE_LIMIT_WINDOW_MS) {
+      return res.status(429).json({
+        success: false,
+        error: 'Too many requests, please try again in a minute.'
+      });
+    }
+
+    quoteEnquiryRateLimitStore.set(clientIp, now);
+    for (const [ip, timestamp] of quoteEnquiryRateLimitStore.entries()) {
+      if (now - timestamp >= QUOTE_ENQUIRY_RATE_LIMIT_WINDOW_MS) {
+        quoteEnquiryRateLimitStore.delete(ip);
+      }
+    }
+
     const {
       firstName,
       lastName,

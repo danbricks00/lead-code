@@ -4,6 +4,22 @@ import { validateAndCorrectEmail, logEmailValidation } from '../../utils/emailVa
 import nodemailer from "nodemailer";
 import crypto from "crypto";
 
+const leadIntakeRateLimitStore = new Map();
+const LEAD_INTAKE_RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+
+function getClientIp(req) {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string" && forwarded.length > 0) {
+    return forwarded.split(",")[0].trim();
+  }
+  return (
+    req.headers["x-real-ip"] ||
+    req.socket?.remoteAddress ||
+    req.connection?.remoteAddress ||
+    "unknown"
+  );
+}
+
 /**
  * Clean Lead Intake API - Leads Tab Only
  * Writes ONLY to Leads tab, never touches Quotes tab
@@ -43,11 +59,33 @@ export default async function handler(req, res) {
     // Write guard - ensure only Leads tab writes
     assertLeadWriteOnly({ req, caller: 'lead-intake' });
 
+    const clientIp = getClientIp(req);
+    const now = Date.now();
+    const lastRequestAt = leadIntakeRateLimitStore.get(clientIp) || 0;
+    if (now - lastRequestAt < LEAD_INTAKE_RATE_LIMIT_WINDOW_MS) {
+      return res.status(429).json({
+        error: "Too many requests, please try again in a minute.",
+      });
+    }
+    leadIntakeRateLimitStore.set(clientIp, now);
+
+    for (const [ip, timestamp] of leadIntakeRateLimitStore.entries()) {
+      if (now - timestamp >= LEAD_INTAKE_RATE_LIMIT_WINDOW_MS) {
+        leadIntakeRateLimitStore.delete(ip);
+      }
+    }
+
     const {
       customerName, customerEmail, customerPhone, serviceType, rooms, 
       area, suburb, timeline, budget, specificDetails, projectDetails,
-      isUnlistedSuburb, suburbAdditionalInfo
+      isUnlistedSuburb, suburbAdditionalInfo, website
     } = req.body;
+
+    // Honeypot trap: real users never fill this hidden field
+    if (typeof website === "string" && website.trim() !== "") {
+      console.warn(`[LEAD-INTAKE] Honeypot triggered for request ${requestId}`);
+      return res.status(400).json({ error: "Invalid submission." });
+    }
 
     console.log('[LEAD-INTAKE] Received rooms data:', rooms);
     console.log('[LEAD-INTAKE] Rooms type:', typeof rooms);

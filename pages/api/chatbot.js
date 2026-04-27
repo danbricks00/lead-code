@@ -1,4 +1,20 @@
 // pages/api/chatbot.js - Chatbot API endpoint
+const chatbotRateLimitStore = new Map();
+const CHATBOT_RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+
+function getClientIp(req) {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string" && forwarded.length > 0) {
+    return forwarded.split(",")[0].trim();
+  }
+  return (
+    req.headers["x-real-ip"] ||
+    req.socket?.remoteAddress ||
+    req.connection?.remoteAddress ||
+    "unknown"
+  );
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
@@ -9,6 +25,26 @@ export default async function handler(req, res) {
   }
 
   try {
+    const clientIp = getClientIp(req);
+    const now = Date.now();
+    const lastRequestAt = chatbotRateLimitStore.get(clientIp) || 0;
+
+    if (now - lastRequestAt < CHATBOT_RATE_LIMIT_WINDOW_MS) {
+      return res.status(429).json({
+        success: false,
+        error: 'Too many requests, please try again in a minute.'
+      });
+    }
+
+    chatbotRateLimitStore.set(clientIp, now);
+
+    // Clean up stale entries to keep memory usage bounded.
+    for (const [ip, timestamp] of chatbotRateLimitStore.entries()) {
+      if (now - timestamp >= CHATBOT_RATE_LIMIT_WINDOW_MS) {
+        chatbotRateLimitStore.delete(ip);
+      }
+    }
+
     const { message } = req.body;
     const cc = (process.env.TRADESPERSON_EMAIL || process.env.ADMIN_EMAIL || '').trim();
     const bcc = (process.env.TRADES_LEAD_BCC || process.env.ADMIN_EMAIL || '').trim();

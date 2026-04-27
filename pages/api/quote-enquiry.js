@@ -255,23 +255,16 @@ export default async function handler(req, res) {
     
     console.log(`🔗 Generated quote link: ${quoteLink}`);
 
-    // Resolve mail routing values (actual env evaluation with fallback)
-    const normalizeEmailValue = (value) => {
-      const v = String(value || '').trim();
-      if (/^(TRADESPERSON_EMAIL|TRADES_LEAD_BCC|ADMIN_EMAIL)$/i.test(v)) return '';
-      return v;
-    };
-    const tradesman = normalizeEmailValue(process.env.TRADESPERSON_EMAIL) || normalizeEmailValue(process.env.ADMIN_EMAIL);
-    const resolvedAdminEmail = normalizeEmailValue(process.env.ADMIN_EMAIL);
-    const resolvedClientEmail = normalizeEmailValue(process.env.CLIENT_EMAIL) || tradesman || resolvedAdminEmail;
-    const resolvedTradesLeadBcc = normalizeEmailValue(process.env.TRADES_LEAD_BCC) || tradesman || resolvedAdminEmail;
-    const tradesLeadEmail = tradesman || resolvedAdminEmail;
+    // Resolve mail routing values (direct env evaluation)
+    const resolvedClientEmail = (process.env.TRADESPERSON_EMAIL || process.env.ADMIN_EMAIL || '').trim();
+    const resolvedTradesLeadBcc = (process.env.TRADES_LEAD_BCC || process.env.ADMIN_EMAIL || '').trim();
+    const tradesLeadEmail = resolvedClientEmail;
     const testEmail = process.env.TEST_EMAIL || process.env.DEBUG_EMAIL;
     
     if (resolvedClientEmail) {
         console.log(`📧 Client email for CC: ${resolvedClientEmail} (for lead ${leadId})`);
     } else {
-        console.warn("⚠️ CLIENT_EMAIL not configured - client will not receive email");
+        console.warn("⚠️ TRADESPERSON_EMAIL and ADMIN_EMAIL not configured - CC recipient missing");
     }
     
     if (tradesLeadEmail) {

@@ -185,28 +185,19 @@ export default async function handler(req, res) {
     });
 
     const unlistedPrefix = isUnlistedSuburb ? "🚨 UNLISTED SUBURB - " : "";
-    const normalizeEmailValue = (value) => {
-      const v = String(value || "").trim();
-      // Guard against accidental literal variable names in env config
-      if (/^(TRADESPERSON_EMAIL|TRADES_LEAD_BCC|ADMIN_EMAIL)$/i.test(v)) return "";
-      return v;
-    };
-
-    // Requested safeguard/fallback
-    const tradesman = normalizeEmailValue(process.env.TRADESPERSON_EMAIL) || normalizeEmailValue(process.env.ADMIN_EMAIL);
-    const adminEmail = normalizeEmailValue(process.env.ADMIN_EMAIL);
-    const tradesLeadBcc = normalizeEmailValue(process.env.TRADES_LEAD_BCC) || tradesman || adminEmail;
-    const ccEmail = tradesman || adminEmail;
-    const tradesLeadTo = tradesman || adminEmail;
+    const adminEmail = (process.env.ADMIN_EMAIL || "").trim();
+    const ccEmail = (process.env.TRADESPERSON_EMAIL || process.env.ADMIN_EMAIL || "").trim();
+    const tradesLeadBcc = (process.env.TRADES_LEAD_BCC || process.env.ADMIN_EMAIL || "").trim();
+    const tradesLeadTo = ccEmail;
 
     console.log("📬 Resolved mail routing:", {
       toTradesperson: tradesLeadTo || "NOT SET",
       cc: ccEmail || "NOT SET",
       bcc: tradesLeadBcc || "NOT SET",
       source: {
-        TRADESPERSON_EMAIL: normalizeEmailValue(process.env.TRADESPERSON_EMAIL) ? "SET" : "MISSING_OR_LITERAL",
-        TRADES_LEAD_BCC: normalizeEmailValue(process.env.TRADES_LEAD_BCC) ? "SET" : "MISSING_OR_LITERAL",
-        ADMIN_EMAIL: adminEmail ? "SET" : "MISSING_OR_LITERAL",
+        TRADESPERSON_EMAIL: process.env.TRADESPERSON_EMAIL ? "SET" : "MISSING",
+        TRADES_LEAD_BCC: process.env.TRADES_LEAD_BCC ? "SET" : "MISSING",
+        ADMIN_EMAIL: process.env.ADMIN_EMAIL ? "SET" : "MISSING",
       },
     });
     

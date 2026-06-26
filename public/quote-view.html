@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quote View - Kiwi Trade</title>
+    <title>Quote View - Heat.nz</title>
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
@@ -143,7 +143,7 @@
 
         <div id="quote-content" style="display: none;">
             <div class="header">
-                <h1>Kiwi Trade Quote</h1>
+                <h1>Heat.nz Quote</h1>
                 <p>Professional Trade Services</p>
             </div>
 
@@ -271,8 +271,8 @@
             statusBadge.className = `status-badge status-${(quote.status || 'pending').toLowerCase()}`;
 
             // Set up action buttons
-            const acceptUrl = `/api/quote-decision?leadId=${quote.leadId}&action=accept`;
-            const declineUrl = `/api/quote-decision?leadId=${quote.leadId}&action=decline`;
+            const acceptUrl = `/api/customer-accept?leadId=${quote.leadId}&action=accept`;
+            const declineUrl = `/api/customer-decline?leadId=${quote.leadId}&action=decline`;
             const pdfUrl = `/api/quote-pdf?leadId=${quote.leadId}`;
 
             document.getElementById('accept-quote').href = acceptUrl;

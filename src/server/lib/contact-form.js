@@ -50,8 +50,8 @@ export default async function handler(req, res) {
         }
 
         // Check if Gmail credentials are configured
-        const gmailUser = process.env.GMAIL_USER || 'danbricks18@gmail.com';
-        const gmailPass = process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom';
+        const gmailUser = process.env.GMAIL_USER;
+        const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
 
         if (!gmailUser || !gmailPass) {
             console.error('❌ Gmail credentials not configured');
@@ -82,13 +82,13 @@ export default async function handler(req, res) {
                 ${message.replace(/\n/g, '<br>')}
             </div>
             <hr>
-            <p><em>This message was sent from the Kiwi Trade contact form.</em></p>
+            <p><em>This message was sent from the Heat.nz contact form.</em></p>
         `;
 
         // Send email to admin
         const adminEmail = gmailUser;
         const mailOptions = {
-            from: process.env.MAIL_FROM || `Kiwi Trade <${gmailUser}>`,
+            from: process.env.MAIL_FROM || `Heat.nz <${gmailUser}>`,
             to: adminEmail,
             replyTo: email, // Set reply-to as the customer's email
             subject: emailSubject,
@@ -101,9 +101,9 @@ export default async function handler(req, res) {
 
         // Send confirmation email to customer
         const customerConfirmation = {
-            from: process.env.MAIL_FROM || `Kiwi Trade <${gmailUser}>`,
+            from: process.env.MAIL_FROM || `Heat.nz <${gmailUser}>`,
             to: email,
-            subject: 'Thank you for contacting Kiwi Trade',
+            subject: 'Thank you for contacting Heat.nz',
             html: `
                 <h2>Thank you for your message!</h2>
                 <p>Hi ${name},</p>
@@ -115,9 +115,9 @@ export default async function handler(req, res) {
                 <p>If you have any urgent questions, you can also reach us at:</p>
                 <ul>
                     <li>Phone: +64 9 123 4567</li>
-                    <li>Email: support@kiwiunderfloor.com</li>
+                    <li>Email: ${process.env.SUPPORT_EMAIL || 'support@heat.nz'}</li>
                 </ul>
-                <p>Best regards,<br>The Kiwi Trade Team</p>
+                <p>Best regards,<br>The Heat.nz Team</p>
             `
         };
 
@@ -135,4 +135,60 @@ export default async function handler(req, res) {
             error: 'Failed to send message. Please try again or contact us directly.' 
         });
     }
-} 
+}
+const cors = initMiddleware(corsMiddleware);
+
+const requiredEnvVars = [
+    'GMAIL_USER',
+    'GMAIL_APP_PASSWORD',
+    'ADMIN_EMAIL',
+    'SUPPORT_EMAIL',
+    'SUPPORT_PHONE'
+];
+
+// Send admin notification
+const adminMailOptions = {
+    from: `"New Lead" <${process.env.SUPPORT_EMAIL}>`,
+    to: process.env.ADMIN_EMAIL,
+    subject: `New Contact Form Submission from ${name}`,
+    html: `
+        <h2>Thank you for your message!</h2>
+        <p>Hi ${name},</p>
+        <p>We've received your message and will get back to you within 24 hours.</p>
+        <p><strong>Your message:</strong></p>
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0;">
+            ${message.replace(/\n/g, '<br>')}
+        </div>
+        <p>If you have any urgent questions, you can also reach us at:</p>
+        <ul>
+            <li>Phone: +64 9 123 4567</li>
+            <li>Email: ${process.env.SUPPORT_EMAIL || 'support@heat.nz'}</li>
+        </ul>
+        <p>Best regards,<br>The Heat.nz Team</p>
+    `
+};
+
+// Send customer confirmation
+const customerMailOptions = {
+    from: `"Heat.nz" <${process.env.SUPPORT_EMAIL}>`,
+    to: email,
+    subject: 'Thank you for your enquiry',
+    text: `Thank you for contacting us. We will get back to you shortly. You can also reach us at ${process.env.SUPPORT_PHONE}.`,
+    html: `<p>Thank you for contacting us. We will get back to you shortly. You can also reach us at <strong>${process.env.SUPPORT_PHONE}</strong>.</p>`
+};
+
+try {
+    await transporter.sendMail(customerConfirmation);
+    console.log('✅ Confirmation email sent to customer:', email);
+
+    res.status(200).json({ 
+        success: true, 
+        message: 'Your message has been sent successfully. We\'ll get back to you within 24 hours.' 
+    });
+
+} catch (error) {
+    console.error('❌ Error sending contact form email:', error);
+    res.status(500).json({ 
+        error: 'Failed to send message. Please try again or contact us directly.' 
+    });
+}

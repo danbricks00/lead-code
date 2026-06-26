@@ -6,45 +6,47 @@
 export function buildQuoteRow({
   lead,
   quoteId,
-  tradePersonName = '',
-  tradePersonEmail = '',
-  tradePersonPhone = '',
   body = {},          // financials + notes on submit
   mode = 'draft'      // 'draft' | 'submitted' | 'accepted' | 'rejected'
 }) {
-  // Generate NZT timestamp in DD/MM/YYYY HH:MM AM/PM format
-  const nzTimestamp = new Date().toLocaleString('en-NZ', {
-    timeZone: 'Pacific/Auckland',
+  // Generate NZT timestamp in DD-MM-YYYY HH:mm format
+  const now = new Date();
+  const options = {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: true
-  });
+    timeZone: 'Pacific/Auckland' // Ensure NZT
+  };
+  const nztFormattedDate = new Intl.DateTimeFormat('en-NZ', options).format(now);
+
+  // Normalize tradesperson fields from various possible keys - using consistent TradePerson format
+  const TradePersonName = body.TradePersonName || body.tradePersonName || body.trade_name || lead.TradePersonName || '';
+  const TradePersonEmail = body.TradePersonEmail || body.tradePersonEmail || body.tradespersonEmail || body.trade_email || lead.TradePersonEmail || '';
+  const TradePersonPhone = body.TradePersonPhone || body.tradePersonPhone || body.tradespersonPhone || body.trade_phone || lead.TradePersonPhone || '';
 
   const row = {
-    TimeStamp: nzTimestamp,
+    Timestamp: nztFormattedDate, // Corrected from TimeStamp
     QuoteID: quoteId,
-    LeadID: lead.Lead || '',
+    LeadID: body.leadId || lead.LeadID || '', // Corrected from lead.Lead
 
     // Customer / lead info
-    CustomerName: lead.CustomerName || '',
-    CustomerEmail: lead.CustomerEmail || '',
-    CustomerPhone: lead.CustomerPhone || '',
-    ServiceType: lead.ServiceType || '',
-    Rooms: lead.Rooms || '',
-    Sqm: lead.Sqm || '',
-    Area: lead.Area || '',
-    Suburb: lead.Suburb || '',
+    CustomerName: body.customerName || lead.CustomerName || '',
+    CustomerEmail: body.customerEmail || lead.CustomerEmail || '',
+    CustomerPhone: body.customerPhone || lead.CustomerPhone || '',
+    ServiceType: body.serviceType || lead.ServiceType || '',
+    Address: body.address || lead.Address || '', // Prefer submitted address
+    Rooms: body.rooms || lead.Rooms || '', // Use submitted rooms
+    TotalSQM: body.TotalSQM || body.totalSqm ? parseFloat(body.TotalSQM || body.totalSqm).toFixed(2) : (lead.TotalSQM || ''), // Use calculated totalSqm
+    Location: lead.Location || '',
+    Timeline: lead.Timeline || '',  // Note: exact spelling with typo
     Budget: lead.Budget || '',
-    Timelline: lead.Timelline || '',  // Note: exact spelling with typo
-    'Specfic Details': lead['Specfic Details'] || '',  // Note: exact spelling with typo
 
-    // Tradesperson info
-    TradePersonName: tradePersonName || '',
-    TradePersonEmail: tradePersonEmail || '',
-    TradePersonPhone: tradePersonPhone || '',
+    // Tradesperson info (now normalized) - Using consistent TradePerson format as per Google Sheet
+    TradePersonName: body.TradePersonName || TradePersonName,
+    TradePersonEmail: body.TradePersonEmail || TradePersonEmail,
+    TradePersonPhone: body.TradePersonPhone || TradePersonPhone,
 
     // Financials (blank in draft; filled on submit)
     LabourRate: body.labourRate || '',
@@ -61,38 +63,40 @@ export function buildQuoteRow({
     GST: body.gst || '',
     TotalQuote: body.totalQuote || '',
     Notes: body.notes || '',
-    ValidUnitl: body.validUntil || '',  // Note: exact spelling with typo
+    ValidUntil: body.validUntil || '',
 
-    // Decision fields
-    Decison: '',  // Note: exact spelling with typo
-    DecisonTimeStamp: '',  // Note: exact spelling with typo
+    // Decision fields - Fixed column names to match Google Sheets structure
+    Decision: '',  // Fixed typo from 'Decison'
+    DecisionTimestamp: '',  // Fixed typo from 'DecisonTimeStamp'
+    AdminDecisionTimeStamp: body.adminDecisionTimestamp || '',
+    AdminDecision: body.adminDecision || '',
 
-    // Default workflow states
-    TradePersonStatus: 'Draft',
+    // Default workflow states - Using camelCase format as per Google Sheet
+    TradePersonStatus: 'Draft',  // camelCase format
     CustomerStatus: 'Pending',
-    AdminPersonStatus: 'Pending',
+    AdminPersonStatus: 'Pending',  // camelCase format
   };
 
   if (mode === 'submitted') {
-    row.TradePersonStatus = 'Pending';
+    row.TradePersonStatus = 'Pending';  // camelCase format
     row.CustomerStatus = 'Submitted';
-    row.AdminPersonStatus = 'Pending';
+    row.AdminPersonStatus = 'Pending';  // camelCase format
   }
 
   if (mode === 'accepted') {
-    row.TradePersonStatus = 'Accepted';
+    row.TradePersonStatus = 'Accepted';  // camelCase format
     row.CustomerStatus = 'Approved';
-    row.AdminPersonStatus = 'Closed';
-    row.Decison = 'Accepted';
-    row.DecisonTimeStamp = nzTimestamp;
+    row.AdminPersonStatus = 'Closed';  // camelCase format
+    row.Decision = 'Accepted';  // Fixed typo
+    row.DecisionTimestamp = nztFormattedDate;  // Fixed typo and variable name
   }
 
   if (mode === 'rejected') {
-    row.TradePersonStatus = 'Declined';
+    row.TradePersonStatus = 'Declined';  // camelCase format
     row.CustomerStatus = 'Not Sent';
-    row.AdminPersonStatus = 'Closed';
-    row.Decison = 'Rejected';
-    row.DecisonTimeStamp = nzTimestamp;
+    row.AdminPersonStatus = 'Closed';  // camelCase format
+    row.Decision = 'Rejected';  // Fixed typo
+    row.DecisionTimestamp = nztFormattedDate;  // Fixed typo and variable name
   }
 
   return row;

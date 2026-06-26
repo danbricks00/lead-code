@@ -1,5 +1,90 @@
 import { google } from 'googleapis';
 
+// Function to safely format dates
+function formatDate(dateInput) {
+  try {
+    if (!dateInput) {
+      console.log('🔍 No date input provided');
+      return null;
+    }
+    
+    console.log('🔍 Formatting date:', dateInput, 'Type:', typeof dateInput);
+    
+    let date;
+    
+    // Handle different input types
+    if (typeof dateInput === 'number') {
+      // Handle Excel serial date (days since 1900-01-01)
+      if (dateInput > 25569) { // Excel date (after 1970)
+        date = new Date((dateInput - 25569) * 86400 * 1000);
+      } else {
+        // Google Sheets serial date (days since 1899-12-30)
+        date = new Date((dateInput - 2) * 86400 * 1000);
+      }
+      console.log('🔍 Parsed as serial date:', dateInput, '->', date);
+    } else if (typeof dateInput === 'string') {
+      // Trim whitespace
+      const trimmedDate = dateInput.trim();
+      
+      // Handle empty or whitespace-only strings
+      if (!trimmedDate) {
+        console.log('🔍 Empty date string after trimming');
+        return null;
+      }
+      
+      // Try different date formats
+      if (trimmedDate.includes('/')) {
+        // Handle DD/MM/YYYY format
+        const parts = trimmedDate.split('/');
+        if (parts.length === 3) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+          const year = parseInt(parts[2], 10);
+          date = new Date(year, month, day);
+          console.log('🔍 Parsed DD/MM/YYYY:', { day, month: month + 1, year });
+        } else {
+          date = new Date(trimmedDate);
+        }
+      } else if (trimmedDate.includes('-')) {
+        // Handle YYYY-MM-DD or DD-MM-YYYY format
+        date = new Date(trimmedDate);
+      } else if (trimmedDate.match(/^\d{8}$/)) {
+        // Handle YYYYMMDD format
+        const year = trimmedDate.substring(0, 4);
+        const month = trimmedDate.substring(4, 6);
+        const day = trimmedDate.substring(6, 8);
+        date = new Date(year, month - 1, day);
+        console.log('🔍 Parsed YYYYMMDD:', { year, month, day });
+      } else {
+        // Try direct parsing
+        date = new Date(trimmedDate);
+      }
+    } else if (dateInput instanceof Date) {
+      date = dateInput;
+    } else {
+      date = new Date(dateInput);
+    }
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      console.log('❌ Invalid date after parsing:', dateInput);
+      return null; // Return null instead of 'Invalid Date' to trigger fallback
+    }
+    
+    const formatted = date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+    
+    console.log('✅ Date formatted successfully:', dateInput, '->', formatted);
+    return formatted;
+  } catch (error) {
+    console.error('Date formatting error:', error, 'Input:', dateInput);
+    return null; // Return null instead of 'Invalid Date' to trigger fallback
+  }
+}
+
 export default async function handler(req, res) {
   console.log('🔍 View quote API called:', req.method, req.url);
   
@@ -35,7 +120,7 @@ export default async function handler(req, res) {
           // Fetch quote data from Google Sheets
           const response = await sheets.spreadsheets.values.get({
             spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-            range: 'Quotes!A:Z',
+            range: 'Quotes!A:AZ',
           });
 
           const rows = response.data.values || [];
@@ -46,6 +131,13 @@ export default async function handler(req, res) {
           );
 
           if (quoteRow) {
+            // Get headers to find the correct column for ValidUntil
+            const headers = rows[0] || [];
+            const validUntilIndex = headers.indexOf('ValidUntil');
+            console.log('🔍 Headers found:', headers);
+            console.log('🔍 ValidUntil column index:', validUntilIndex);
+            console.log('🔍 All column names:', headers.map((h, i) => `${String.fromCharCode(65 + i)}: ${h}`).join(', '));
+            
             quoteData = {
               quoteId: quoteRow[1],
               quoteNumber: quoteRow[2],
@@ -54,7 +146,7 @@ export default async function handler(req, res) {
               tradesmanPhone: quoteRow[5],
               totalAmount: quoteRow[6],
               itemBreakdown: quoteRow[7],
-              validUntil: quoteRow[8],
+              validUntil: validUntilIndex !== -1 ? quoteRow[validUntilIndex] : quoteRow[8], // Use correct column or fallback
               additionalNotes: quoteRow[9],
               status: quoteRow[10],
               customerName: quoteRow[11],
@@ -68,6 +160,26 @@ export default async function handler(req, res) {
               timeline: quoteRow[19]
             };
             console.log('✅ Found quote data:', quoteData);
+            console.log('🔍 ValidUntil raw value:', quoteData.validUntil, 'Type:', typeof quoteData.validUntil);
+            console.log('🔍 ValidUntil from column:', validUntilIndex !== -1 ? `Column ${String.fromCharCode(65 + validUntilIndex)}` : 'Column I (fallback)');
+            console.log('🔍 Raw quoteRow data:', quoteRow);
+            if (validUntilIndex !== -1) {
+              console.log('🔍 ValidUntil cell value:', quoteRow[validUntilIndex], 'Length:', quoteRow[validUntilIndex]?.length);
+              console.log('🔍 ValidUntil cell value details:', {
+                value: quoteRow[validUntilIndex],
+                type: typeof quoteRow[validUntilIndex],
+                isNull: quoteRow[validUntilIndex] === null,
+                isUndefined: quoteRow[validUntilIndex] === undefined,
+                isEmpty: quoteRow[validUntilIndex] === '',
+                stringValue: String(quoteRow[validUntilIndex]),
+                jsonValue: JSON.stringify(quoteRow[validUntilIndex])
+              });
+            }
+            
+            // Test the formatDate function with the actual value
+            console.log('🧪 Testing formatDate function with ValidUntil value...');
+            const testResult = formatDate(quoteData.validUntil);
+            console.log('🧪 formatDate result:', testResult);
           }
         } catch (sheetsError) {
           console.error('❌ Google Sheets error:', sheetsError.message);
@@ -128,9 +240,7 @@ export default async function handler(req, res) {
         `);
       }
 
-      const currentUrl = process.env.VERCEL_URL ? 
-        `https://${process.env.VERCEL_URL}` : 
-        'https://lead-code.vercel.app';
+      const currentUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
       // Function to generate breakdown table rows from itemBreakdown text
       const generateBreakdownRows = (itemBreakdown) => {
@@ -429,19 +539,30 @@ export default async function handler(req, res) {
           <div class="actions">
             <h2>Quote ${quoteData.quoteNumber}</h2>
             <p>Please review the quote below and choose your action:</p>
-            <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+            <a href="${currentUrl}/api/customer-accept?quoteId=${quoteData.quoteId}&leadId=${quoteData.leadId}" 
                class="accept-btn">✅ Accept Quote</a>
-            <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+            <a href="${currentUrl}/api/customer-decline?quoteId=${quoteData.quoteId}&leadId=${quoteData.leadId}" 
                class="decline-btn">❌ Decline Quote</a>
           </div>
 
           <div class="header">
-            <h1 class="company-name">KIWI TRADE</h1>
+            <h1 class="company-name">HEAT.NZ</h1>
             <h2 class="quote-title">QUOTE</h2>
             <div class="quote-info">
               <p><strong>Quote Number:</strong> ${quoteData.quoteNumber}</p>
               <p><strong>Date:</strong> ${new Date().toLocaleDateString('en-GB')}</p>
-              <p><strong>Valid Until:</strong> ${quoteData.validUntil ? new Date(quoteData.validUntil).toLocaleDateString('en-GB') : '30 days from date'}</p>
+              <p><strong>Valid Until:</strong> ${(() => {
+                const formattedDate = formatDate(quoteData.validUntil);
+                const fallbackDate = formatDate(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000));
+                const finalDate = formattedDate || fallbackDate;
+                console.log('🎯 Final ValidUntil display:', {
+                  originalValue: quoteData.validUntil,
+                  formattedDate: formattedDate,
+                  fallbackDate: fallbackDate,
+                  finalDate: finalDate
+                });
+                return finalDate;
+              })()}</p>
             </div>
           </div>
 
@@ -494,17 +615,17 @@ export default async function handler(req, res) {
           ` : ''}
 
           <div class="footer">
-            <p><strong>Kiwi Trade</strong></p>
+            <p><strong>Heat.nz</strong></p>
             <p>Professional underfloor heating solutions for your home</p>
             <p>This quote was generated using our automated system</p>
-            <p>Thank you for choosing Kiwi Trade!</p>
+            <p>Thank you for choosing Heat.nz!</p>
           </div>
 
           <div class="actions">
             <p><strong>Ready to proceed?</strong></p>
-            <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+            <a href="${currentUrl}/api/customer-accept?quoteId=${quoteData.quoteId}&leadId=${quoteData.leadId}" 
                class="accept-btn">✅ Accept Quote</a>
-            <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+            <a href="${currentUrl}/api/customer-decline?quoteId=${quoteData.quoteId}&leadId=${quoteData.leadId}" 
                class="decline-btn">❌ Decline Quote</a>
           </div>
 

@@ -1,172 +1,91 @@
-// Address normalization utilities
+/**
+ * Normalization utilities for handling Google Sheets data
+ * Maps PascalCase sheet headers to camelCase API parameters
+ */
 
 /**
- * Normalize customer address by removing "Unlisted Suburb" suffix
- * @param {string} address - The address to normalize
- * @returns {string} - Normalized address
+ * Maps a Google Sheets row to include both PascalCase and camelCase ID fields
+ * @param {Object} row - Raw row data from Google Sheets
+ * @returns {Object} - Row with both QuoteID/LeadID and quoteId/leadId fields
  */
-export function normalizeCustomerAddress(address) {
-    if (!address || typeof address !== 'string') {
-        return address || '';
-    }
-
-    // Remove "Unlisted Suburb" suffix (case-insensitive)
-    const normalized = address.replace(/\s*unlisted\s+suburb\s*$/i, '').trim();
-    
-    console.log(`[NORMALIZE] Address normalization: "${address}" → "${normalized}"`);
-    
-    return normalized;
+export function mapIds(row) {
+  if (!row) return row;
+  
+  return {
+    ...row,
+    // Add camelCase versions for API compatibility
+    quoteId: row.QuoteID,
+    leadId: row.LeadID,
+    // Keep original PascalCase for sheet operations
+    QuoteID: row.QuoteID,
+    LeadID: row.LeadID,
+  };
 }
 
 /**
- * Normalize suburb name by removing "Unlisted Suburb" suffix
- * @param {string} suburb - The suburb to normalize
- * @returns {string} - Normalized suburb
+ * Normalizes query parameters from URL to sheet header format
+ * @param {Object} query - Request query parameters
+ * @returns {Object} - Normalized parameters with both formats
  */
-export function normalizeSuburbName(suburb) {
-    if (!suburb || typeof suburb !== 'string') {
-        return suburb || '';
-    }
-
-    // Remove "Unlisted Suburb" suffix (case-insensitive)
-    const normalized = suburb.replace(/\s*unlisted\s+suburb\s*$/i, '').trim();
-    
-    console.log(`[NORMALIZE] Suburb normalization: "${suburb}" → "${normalized}"`);
-    
-    return normalized;
+export function normalizeQueryParams(query) {
+  const { quoteId, leadId, ...otherParams } = query;
+  
+  return {
+    // Original camelCase (for API responses)
+    quoteId,
+    leadId,
+    // PascalCase (for sheet operations)
+    QuoteID: quoteId,
+    LeadID: leadId,
+    // Other parameters
+    ...otherParams
+  };
 }
 
 /**
- * Normalize location data (address + suburb combination)
- * @param {string} location - The location string to normalize
- * @returns {string} - Normalized location
+ * Validates that quote and lead IDs match
+ * @param {Object} quoteData - Quote data from sheets
+ * @param {Object} leadData - Lead data from sheets
+ * @param {string} expectedQuoteId - Expected quote ID
+ * @param {string} expectedLeadId - Expected lead ID
+ * @returns {boolean} - True if IDs match
  */
-export function normalizeLocation(location) {
-    if (!location || typeof location !== 'string') {
-        return location || '';
-    }
-
-    // Split by common separators and normalize each part
-    const parts = location.split(/[,\s]+/).filter(part => part.trim());
-    const normalizedParts = parts.map(part => normalizeSuburbName(part));
-    
-    const normalized = normalizedParts.join(' ').trim();
-    
-    console.log(`[NORMALIZE] Location normalization: "${location}" → "${normalized}"`);
-    
-    return normalized;
+export function validateIdMatch(quoteData, leadData, expectedQuoteId, expectedLeadId) {
+  if (!quoteData || !leadData) return false;
+  
+  const quoteMatches = quoteData.QuoteID === expectedQuoteId;
+  const leadMatches = leadData.LeadID === expectedLeadId;
+  const crossMatches = quoteData.LeadID === expectedLeadId && leadData.QuoteID === expectedQuoteId;
+  
+  return quoteMatches && leadMatches && crossMatches;
 }
 
 /**
- * Check if an address contains "Unlisted Suburb"
- * @param {string} address - The address to check
- * @returns {boolean} - True if address contains "Unlisted Suburb"
+ * Creates a standardized error response for ID mismatches
+ * @param {string} tag - Error tag for logging
+ * @param {string} quoteId - Quote ID
+ * @param {string} leadId - Lead ID
+ * @param {Object} quoteData - Quote data (optional)
+ * @param {Object} leadData - Lead data (optional)
+ * @returns {Object} - Error response object
  */
-export function isUnlistedSuburb(address) {
-    if (!address || typeof address !== 'string') {
-        return false;
-    }
-    
-    return /unlisted\s+suburb/i.test(address);
-}
-
-/**
- * Extract primary suburb name from address
- * @param {string} address - The address to extract from
- * @returns {string} - Primary suburb name
- */
-export function extractPrimarySuburb(address) {
-    if (!address || typeof address !== 'string') {
-        return '';
-    }
-
-    // Remove "Unlisted Suburb" suffix and get the primary suburb
-    const normalized = normalizeSuburbName(address);
-    
-    // If it's a compound suburb like "Epsom South", return the first part
-    const parts = normalized.split(/\s+/);
-    if (parts.length > 1) {
-        return parts[0];
-    }
-    
-    return normalized;
-}
-
-/**
- * Normalize quote data addresses
- * @param {object} quoteData - Quote data object
- * @returns {object} - Quote data with normalized addresses
- */
-export function normalizeQuoteDataAddresses(quoteData) {
-    if (!quoteData || typeof quoteData !== 'object') {
-        return quoteData;
-    }
-
-    const normalized = { ...quoteData };
-
-    // Normalize customer address
-    if (normalized.customerAddress) {
-        normalized.customerAddress = normalizeCustomerAddress(normalized.customerAddress);
-    }
-
-    // Normalize location
-    if (normalized.location) {
-        normalized.location = normalizeLocation(normalized.location);
-    }
-
-    // Normalize address in breakdown if it exists
-    if (normalized.breakdown && normalized.breakdown.address) {
-        normalized.breakdown.address = normalizeCustomerAddress(normalized.breakdown.address);
-    }
-
-    console.log(`[NORMALIZE] Normalized quote data addresses for quoteId: ${normalized.quoteId || 'unknown'}`);
-
-    return normalized;
-}
-
-/**
- * Normalize lead data addresses
- * @param {object} leadData - Lead data object
- * @returns {object} - Lead data with normalized addresses
- */
-export function normalizeLeadDataAddresses(leadData) {
-    if (!leadData || typeof leadData !== 'object') {
-        return leadData;
-    }
-
-    const normalized = { ...leadData };
-
-    // Normalize location
-    if (normalized.Location) {
-        normalized.Location = normalizeLocation(normalized.Location);
-    }
-
-    // Normalize location (lowercase)
-    if (normalized.location) {
-        normalized.location = normalizeLocation(normalized.location);
-    }
-
-    // Normalize suburb
-    if (normalized.Suburb) {
-        normalized.Suburb = normalizeSuburbName(normalized.Suburb);
-    }
-
-    // Normalize suburb (lowercase)
-    if (normalized.suburb) {
-        normalized.suburb = normalizeSuburbName(normalized.suburb);
-    }
-
-    // Normalize area
-    if (normalized.Area) {
-        normalized.Area = normalizeSuburbName(normalized.Area);
-    }
-
-    // Normalize area (lowercase)
-    if (normalized.area) {
-        normalized.area = normalizeSuburbName(normalized.area);
-    }
-
-    console.log(`[NORMALIZE] Normalized lead data addresses for leadId: ${normalized.LeadId || normalized.Lead || 'unknown'}`);
-
-    return normalized;
+export function createIdMismatchError(tag, quoteId, leadId, quoteData = null, leadData = null) {
+  console.error(JSON.stringify({
+    tag,
+    quoteId,
+    leadId,
+    foundQuote: !!quoteData,
+    foundLead: !!leadData,
+    quoteQuoteID: quoteData?.QuoteID,
+    quoteLeadID: quoteData?.LeadID,
+    leadQuoteID: leadData?.QuoteID,
+    leadLeadID: leadData?.LeadID,
+    expectedQuoteID: quoteId,
+    expectedLeadID: leadId
+  }));
+  
+  return {
+    status: 404,
+    json: { error: 'Quote or Lead not found' }
+  };
 }

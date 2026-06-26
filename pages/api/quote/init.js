@@ -1,7 +1,6 @@
 /**
- * Quote Init API - Draft Write Only
- * GET-only endpoint. Reads from Leads; creates/updates a Draft row in Quotes only if TradePersonName present.
- * No PDF/email here.
+ * Quote Init API - Initialize Draft Quote
+ * POST-only. Creates a new draft quote entry in Google Sheets.
  */
 
 import { getLeadById, upsertQuoteRow, getQuotesByLeadId, getQuoteById } from '../../../utils/sheets.js';
@@ -9,9 +8,19 @@ import { buildQuoteRow } from '../../../utils/quotes.js';
 import { generateVersionedQuoteId } from '../../../utils/quoteVersioning.js';
 
 export default async function handler(req, res) {
+  const requestId = `quote-init-${Date.now()}`;
+  
+  console.log(JSON.stringify({ 
+    tag: 'QUOTE_INIT_REQ_START', 
+    route: 'quote-init', 
+    method: req.method,
+    requestId,
+    timestamp: new Date().toISOString()
+  }));
+  
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { leadId, tradePersonName = '', tradePersonEmail = '', tradePersonPhone = '' } = req.query || {};
+  const { leadId, TradePersonName = '', tradePersonEmail = '', tradePersonPhone = '' } = req.query || {};
   if (!leadId) return res.status(400).json({ error: 'leadId is required' });
 
   try {
@@ -51,7 +60,7 @@ export default async function handler(req, res) {
     const draftRow = buildQuoteRow({
       lead,
       quoteId: versionedQuoteId,
-      tradePersonName,
+      TradePersonName,
       tradePersonEmail,
       tradePersonPhone,
       mode: 'draft',
@@ -77,9 +86,10 @@ export default async function handler(req, res) {
       serviceType: lead.ServiceType || '',
       rooms: parsedRooms,
       sqm: lead.Sqm || '',
+      address: lead.Address || '', // Use the full address from the sheet
       area: lead.Area || '',
       suburb: lead.Suburb || '',
-      location: lead.Suburb || lead.Area || '',
+      location: lead.Address || `${lead.Suburb}, ${lead.Area}`.trim() || '', // Use full address for location
       budget: lead.Budget || '',
       timeline: lead.Timelline || '',
       details: lead['Specfic Details'] || '',
@@ -89,9 +99,9 @@ export default async function handler(req, res) {
 
     // Check for existing quotes to preload data for resubmission
     let existingQuoteData = null;
-    if (otherQuotes.length > 0) {
+    if (existingQuotes.length > 0) {
       // Find the most recent rejected quote to preload its data
-      const rejectedQuotes = otherQuotes.filter(q => 
+      const rejectedQuotes = existingQuotes.filter(q => 
         q.AdminPersonStatus === 'Declined' || 
         q.AdminPersonStatus === 'Rejected' ||
         q.Decison === 'Rejected' ||
@@ -110,8 +120,8 @@ export default async function handler(req, res) {
           travelDistance: mostRecentRejected.TravelDistance || '',
           installationCost: mostRecentRejected.InstallationCost || '',
           notes: mostRecentRejected.Notes || '',
-          validUntil: mostRecentRejected.ValidUnitl || '',
-          tradePersonName: mostRecentRejected.TradePersonName || '',
+          validUntil: mostRecentRejected.ValidUntil || '',
+          TradePersonName: mostRecentRejected.TradePersonName || '',
           tradePersonEmail: mostRecentRejected.TradePersonEmail || '',
           tradePersonPhone: mostRecentRejected.TradePersonPhone || ''
         };
@@ -119,6 +129,15 @@ export default async function handler(req, res) {
       }
     }
 
+    console.log(JSON.stringify({ 
+      tag: 'QUOTE_INIT_OK', 
+      route: 'quote-init', 
+      leadId,
+      quoteId: versionedQuoteId,
+      requestId,
+      timestamp: new Date().toISOString()
+    }));
+    
     return res.status(200).json({ 
       lead: mappedLead, 
       draft: draftRow,
@@ -127,7 +146,13 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('Quote init error:', error);
+    console.error(JSON.stringify({ 
+      tag: 'QUOTE_INIT_FAIL', 
+      route: 'quote-init', 
+      error: error.message,
+      requestId,
+      timestamp: new Date().toISOString()
+    }));
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

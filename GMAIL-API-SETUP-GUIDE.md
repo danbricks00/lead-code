@@ -57,7 +57,7 @@ GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\
 1. **Deploy the updated code**
 2. **Test the Gmail API endpoint**:
    ```
-   https://your-domain.vercel.app/api/test-gmail-simple
+   https://heat.nz/api/test-gmail-simple
    ```
 3. **Submit a contact form** to test the full flow
 
@@ -127,7 +127,7 @@ auth.setCredentials({
 
 ### Test Gmail API Authentication
 ```bash
-curl https://your-domain.vercel.app/api/test-gmail-simple
+curl https://heat.nz/api/test-gmail-simple
 ```
 
 ### Check Environment Variables

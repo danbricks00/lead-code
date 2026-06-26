@@ -13,7 +13,7 @@ GOOGLE_CLIENT_ID=your_google_client_id_here
 GOOGLE_CLIENT_SECRET=your_google_client_secret_here
 
 # Google OAuth Redirect URI (must match your app's callback URL)
-GOOGLE_REDIRECT_URI=https://your-domain.com/api/auth/google
+GOOGLE_REDIRECT_URI=https://heat.nz/api/auth/callback/google
 ```
 
 ### Google Sheets Configuration
@@ -43,10 +43,10 @@ NEXT_PUBLIC_ALLOW_GOOGLE_AUTH=true
 QUOTE_LINK_SECRET=your-secure-random-string-here
 
 # Base URL for the application (used in email links)
-NEXT_PUBLIC_BASE_URL=your-domain.com
+NEXT_PUBLIC_BASE_URL=https://heat.nz
 
 # Admin email address for quote notifications
-ADMIN_EMAIL=admin@kiwitrade.co.nz
+ADMIN_EMAIL=admin@heat.nz
 ```
 
 ### PDF Generation Services
@@ -74,8 +74,7 @@ API2PDF_API_KEY=your_api2pdf_api_key_here
 5. Configure OAuth consent screen
 6. Create OAuth 2.0 client ID for web application
 7. Add authorized redirect URIs:
-   - `https://your-domain.com/api/auth/google` (for custom OAuth)
-   - `https://your-domain.com/api/auth/callback/google` (for NextAuth.js)
+   - `https://heat.nz/api/auth/callback/google` (for NextAuth.js)
 
 ### 2. Google Sheets Service Account
 1. In Google Cloud Console, go to "IAM & Admin" → "Service Accounts"
@@ -207,9 +206,9 @@ ALLOW_GOOGLE_AUTH=true
 NEXT_PUBLIC_ALLOW_GOOGLE_AUTH=true
 
 # Quote System
-QUOTE_LINK_SECRET=kiwi-trade-quote-security-secret-2024
-NEXT_PUBLIC_BASE_URL=your-domain.com
-ADMIN_EMAIL=admin@kiwitrade.co.nz
+QUOTE_LINK_SECRET=heat-nz-quote-security-secret-2024
+NEXT_PUBLIC_BASE_URL=https://heat.nz
+ADMIN_EMAIL=admin@heat.nz
 
 # Debug
 DEBUG_AUTH=true

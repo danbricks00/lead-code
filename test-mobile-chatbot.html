@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile Chatbot Test - iPhone 6s/SE 2020</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .test-container {
+            width: 100%;
+            max-width: 400px;
+            height: 100vh;
+            max-height: 667px; /* iPhone 6s height */
+            border: 2px solid #333;
+            border-radius: 10px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .test-header {
+            background: #333;
+            color: white;
+            padding: 10px 15px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .test-content {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f9f9f9;
+        }
+        
+        .test-input {
+            padding: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .test-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+            font-size: 15px;
+            min-height: 44px;
+        }
+        
+        .test-button {
+            width: 44px;
+            height: 44px;
+            border: none;
+            background: #333;
+            color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Mobile optimizations for small screens */
+        @media (max-width: 375px) and (max-height: 667px) {
+            .test-container {
+                height: 60vh;
+                max-height: 60vh;
+            }
+            
+            .test-content {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+            
+            .test-input {
+                padding: 6px 8px;
+            }
+            
+            .test-input input {
+                font-size: 14px;
+                min-height: 40px;
+                padding: 8px 12px;
+            }
+            
+            .test-button {
+                width: 40px;
+                height: 40px;
+                min-width: 40px;
+                min-height: 40px;
+            }
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .feature-list li:before {
+            content: "✅ ";
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
+        .device-info {
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            📱 Mobile Chatbot Test
+        </div>
+        
+        <div class="test-content">
+            <div class="device-info">
+                <strong>Target Devices:</strong><br>
+                • iPhone 6s (375×667)<br>
+                • iPhone SE 2020 (375×667)<br>
+                • Similar 4.7" 16:9 screens
+            </div>
+            
+            <h3>Mobile Optimizations Applied:</h3>
+            <ul class="feature-list">
+                <li>Chat window height: 60vh (maximizes visible area)</li>
+                <li>Reduced padding: 8px 12px (was 15px)</li>
+                <li>Input font size: 14px (prevents zoom on iOS)</li>
+                <li>Input height: 40px (easy tapping)</li>
+                <li>Send button: 40×40px (touch-friendly)</li>
+                <li>Keyboard handling: Auto-adjusts viewport</li>
+                <li>Viewport meta: Prevents unwanted zoom</li>
+                <li>Responsive breakpoint: ≤375px × ≤667px</li>
+            </ul>
+            
+            <h3>Test Instructions:</h3>
+            <ol>
+                <li>Resize browser to 375×667 or use device emulation</li>
+                <li>Test input field - should not zoom on focus</li>
+                <li>Test send button - should be easy to tap</li>
+                <li>Test keyboard open/close - input should stay visible</li>
+                <li>Test scrolling - should be smooth and responsive</li>
+            </ol>
+            
+            <div style="margin-top: 20px; padding: 10px; background: #fff3cd; border-radius: 5px; font-size: 14px;">
+                <strong>Note:</strong> This is a static test. The actual chatbot component includes dynamic responsive styles that adjust based on real-time viewport changes.
+            </div>
+        </div>
+        
+        <div class="test-input">
+            <input type="text" placeholder="Test mobile input field..." />
+            <button class="test-button">➤</button>
+        </div>
+    </div>
+    
+    <script>
+        // Simulate mobile behavior
+        function updateDeviceInfo() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const isSmallMobile = width <= 375 && height <= 667;
+            
+            console.log(`Viewport: ${width}×${height}`);
+            console.log(`Small mobile mode: ${isSmallMobile}`);
+            
+            // Update page title with current dimensions
+            document.title = `Mobile Test: ${width}×${height}${isSmallMobile ? ' (Small Mobile)' : ''}`;
+        }
+        
+        // Update on load and resize
+        updateDeviceInfo();
+        window.addEventListener('resize', updateDeviceInfo);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(updateDeviceInfo, 100);
+        });
+        
+        // Test input focus behavior
+        const input = document.querySelector('input');
+        input.addEventListener('focus', () => {
+            console.log('Input focused - checking for zoom prevention');
+        });
+        
+        // Test button tap
+        const button = document.querySelector('.test-button');
+        button.addEventListener('click', () => {
+            console.log('Send button tapped - checking touch target size');
+        });
+    </script>
+</body>
+</html>

@@ -85,7 +85,7 @@ async function handleQuoteGeneration(req, res) {
       tradesmanName,
       tradesmanEmail,
       tradesmanPhone,
-      companyName = 'Kiwi Underfloor Heating',
+      companyName = 'Heat.nz',
       companyAddress = 'Auckland, New Zealand',
       gstNumber = '120-681-729',
       items = []
@@ -187,14 +187,14 @@ async function handleQuoteGeneration(req, res) {
 }
 
  function generateQuoteHTML(quote, includeActions = true) {
-   const currentUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+   const currentUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
    
    const actionsSection = includeActions ? `
      <div class="actions">
-       <a href="${currentUrl}/api/quote-responses?action=accept&quoteId=${quote.quoteId}" class="action-btn accept-btn">
+       <a href="${currentUrl}/api/customer-accept?quoteId=${quote.quoteId}&leadId=${quote.leadId}" class="action-btn accept-btn">
          ✅ Accept Quote
        </a>
-       <a href="${currentUrl}/api/quote-responses?action=decline&quoteId=${quote.quoteId}" class="action-btn decline-btn">
+       <a href="${currentUrl}/api/customer-decline?quoteId=${quote.quoteId}&leadId=${quote.leadId}" class="action-btn decline-btn">
          ❌ Decline Quote
        </a>
      </div>
@@ -454,7 +454,7 @@ async function handleQuoteGeneration(req, res) {
                         <span class="info-label">${quote.tradesmanPhone || '+64 9 123 4567'}</span>
                     </div>
                     <div class="info-item">
-                        <span class="info-label">${quote.tradesmanEmail || 'info@kiwiunderfloor.com'}</span>
+                        <span class="info-label">${quote.tradesmanEmail || 'info@heat.nz'}</span>
                     </div>
                 </div>
             </div>
@@ -497,7 +497,7 @@ async function handleQuoteGeneration(req, res) {
              
              <div class="footer">
                 <p>This quote is valid until ${formatDate(quote.expiryDate)}</p>
-                <p>For any questions, please contact us at ${quote.tradesmanEmail || 'info@kiwiunderfloor.com'}</p>
+                <p>For any questions, please contact us at ${quote.tradesmanEmail || 'info@heat.nz'}</p>
             </div>
         </div>
     </body>
@@ -574,8 +574,8 @@ async function handleQuoteGeneration(req, res) {
  async function sendQuoteEmail(quoteData, req) {
   try {
     // Use fallback credentials like the contact form
-    const gmailUser = process.env.GMAIL_USER || 'danbricks18@gmail.com';
-    const gmailPass = process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom';
+    const gmailUser = process.env.GMAIL_USER;
+    const gmailPass = process.env.GMAIL_APP_PASSWORD;
 
     console.log('📧 Using Gmail credentials for quote email:', { user: gmailUser, pass: gmailPass ? '***' : 'missing' });
 
@@ -587,9 +587,7 @@ async function handleQuoteGeneration(req, res) {
       }
     });
 
-     const currentUrl = req.headers.host ? 
-       `https://${req.headers.host}` : 
-       'https://lead-code-kpkgaky5l-leadcode-b19d9acc.vercel.app';
+     const currentUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
      // Generate PDF
      const pdfBuffer = await generatePDF(quoteData, req);
@@ -648,8 +646,8 @@ async function handleQuoteGeneration(req, res) {
 async function sendAdminQuoteEmail(quoteData, req) {
   try {
     // Use fallback credentials like the contact form
-    const gmailUser = process.env.GMAIL_USER || 'danbricks18@gmail.com';
-    const gmailPass = process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom';
+    const gmailUser = process.env.GMAIL_USER;
+    const gmailPass = process.env.GMAIL_APP_PASSWORD;
 
     console.log('📧 Using Gmail credentials for admin quote email:', { user: gmailUser, pass: gmailPass ? '***' : 'missing' });
 
@@ -661,9 +659,7 @@ async function sendAdminQuoteEmail(quoteData, req) {
       }
     });
 
-    const currentUrl = req.headers.host ? 
-      `https://${req.headers.host}` : 
-      'https://lead-code-kpkgaky5l-leadcode-b19d9acc.vercel.app';
+    const currentUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
     // Calculate potential commission (example: 10% of total)
     const commissionRate = 0.10; // 10% commission
@@ -722,7 +718,7 @@ async function sendAdminQuoteEmail(quoteData, req) {
 
         <p style="margin-top: 30px;">This quote has been automatically tracked in the system for commission purposes.</p>
         
-        <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Underfloor Heating System</strong></p>
+        <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz System</strong></p>
       </div>
     `;
 
@@ -792,7 +788,7 @@ async function saveQuoteToDatabase(quoteData) {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-      range: 'Quotes!A:V', // Extended range for new fields
+      range: 'Quotes!A:AZ', // Extended range for new fields
       valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       resource: { values }
@@ -848,7 +844,7 @@ async function saveQuoteToQuoteDatabase(quoteData) {
     try {
       await sheets.spreadsheets.values.append({
         spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-        range: 'Quotes!A:N', // Use the quote database format
+        range: 'Quotes!A:AZ', // Use the quote database format
         valueInputOption: 'RAW',
         insertDataOption: 'INSERT_ROWS',
         resource: { values }
@@ -885,7 +881,7 @@ async function findQuoteInSpreadsheet(quoteId) {
     // Try to find the quote in the main spreadsheet
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-      range: 'Quotes!A:V',
+      range: 'Quotes!A:AZ',
     });
 
     const rows = response.data.values;
@@ -901,7 +897,7 @@ async function findQuoteInSpreadsheet(quoteId) {
         console.log('✅ Found quote in spreadsheet at row:', i + 1);
         
         // Convert spreadsheet row to quote object
-        return {
+        const quoteData = {
           quoteId: row[1],
           quoteNumber: row[2],
           customerName: row[3],
@@ -922,6 +918,16 @@ async function findQuoteInSpreadsheet(quoteId) {
           status: row[18],
           items: row[22] ? JSON.parse(row[22]) : []
         };
+        
+        console.log('🔍 Found quote data from spreadsheet:', {
+          quoteId: quoteData.quoteId,
+          expiryDate: quoteData.expiryDate,
+          expiryDateType: typeof quoteData.expiryDate,
+          expiryDateString: String(quoteData.expiryDate),
+          expiryDateJSON: JSON.stringify(quoteData.expiryDate)
+        });
+        
+        return quoteData;
       }
     }
 
@@ -934,11 +940,84 @@ async function findQuoteInSpreadsheet(quoteId) {
   }
 }
 
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-NZ', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  });
-} 
+function formatDate(dateInput) {
+  try {
+    console.log('🔍 generate-quote.js formatDate input:', dateInput, 'Type:', typeof dateInput);
+    
+    if (!dateInput) {
+      console.log('🔍 No date input, using fallback');
+      // Return 2 weeks from now as fallback
+      const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+      return fallbackDate.toLocaleDateString('en-NZ', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    }
+    
+    let date;
+    
+    // Handle different input types
+    if (typeof dateInput === 'number') {
+      // Handle Excel serial date (days since 1900-01-01)
+      if (dateInput > 25569) { // Excel date (after 1970)
+        date = new Date((dateInput - 25569) * 86400 * 1000);
+      } else {
+        // Google Sheets serial date (days since 1899-12-30)
+        date = new Date((dateInput - 2) * 86400 * 1000);
+      }
+      console.log('🔍 Parsed as serial date:', dateInput, '->', date);
+    } else if (typeof dateInput === 'string') {
+      // Handle string dates
+      const trimmed = dateInput.trim();
+      if (trimmed.includes('/')) {
+        // Handle DD/MM/YYYY format
+        const parts = trimmed.split('/');
+        if (parts.length === 3) {
+          date = new Date(parts[2], parts[1] - 1, parts[0]);
+        } else {
+          date = new Date(trimmed);
+        }
+      } else {
+        date = new Date(trimmed);
+      }
+      console.log('🔍 Parsed as string date:', dateInput, '->', date);
+    } else if (dateInput instanceof Date) {
+      date = dateInput;
+      console.log('🔍 Already a Date object:', date);
+    } else {
+      date = new Date(dateInput);
+      console.log('🔍 Parsed as generic:', dateInput, '->', date);
+    }
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      console.log('❌ Invalid date after parsing:', dateInput);
+      // Return 2 weeks from now as fallback
+      const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+      return fallbackDate.toLocaleDateString('en-NZ', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    }
+    
+    const formatted = date.toLocaleDateString('en-NZ', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+    
+    console.log('✅ Date formatted successfully:', dateInput, '->', formatted);
+    return formatted;
+  } catch (error) {
+    console.error('Date formatting error in generate-quote.js:', error, 'Input:', dateInput);
+    // Return 2 weeks from now as fallback
+    const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+    return fallbackDate.toLocaleDateString('en-NZ', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  }
+}

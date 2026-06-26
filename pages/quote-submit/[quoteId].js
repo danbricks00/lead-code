@@ -41,11 +41,11 @@ const QuoteSubmitPage = () => {
   // Form state
   const [tradesperson, setTradesperson] = useState({ name: '', email: '', phone: '' });
   const [costs, setCosts] = useState({
-    labourRate: '',
+    labourRate: '50',
     labourHours: '',
     materialsCost: '',
     materialsQuantity: '',
-    travelCost: '',
+    travelCost: '2',
     travelDistance: '',
     installationCost: '',
   });
@@ -136,10 +136,10 @@ const QuoteSubmitPage = () => {
               setValidUntil(result.existingQuote.validUntil || '');
               
               // Set tradesperson details if available
-              if (result.existingQuote.tradePersonName) {
+              if (result.existingQuote.TradePersonName) {
                 setTradespersonDetails(prev => ({
                   ...prev,
-                  name: result.existingQuote.tradePersonName,
+                  name: result.existingQuote.TradePersonName,
                   email: result.existingQuote.tradePersonEmail,
                   phone: result.existingQuote.tradePersonPhone
                 }));
@@ -291,12 +291,13 @@ const QuoteSubmitPage = () => {
   };
 
 
+  // Add these lines to the existing component where state is defined
+  const [isDraft, setIsDraft] = useState(false);
+  
+  // Modify the handleSubmit function
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmissionStatus('submitting');
-    setErrorMessage('');
-
-    const { token, ts } = query;
+    setSubmissionStatus('loading');
     
     // Use the versioned quote ID from the API response
     if (!versionedQuoteId) {
@@ -311,19 +312,24 @@ const QuoteSubmitPage = () => {
       subtotal: totals.subtotal,
       gst: totals.gst,
       totalQuote: totals.final,
-      tradespersonName: tradesperson.name,
+      TradePersonName: tradesperson.name,
       tradespersonEmail: tradesperson.email,
       tradespersonPhone: tradesperson.phone,
       validUntil, // Add expiry date to submitted data
+      isDraft, // Add draft flag
+      // Add these fields for validation in the API
+      customerEmail: leadDetails.customerEmail,
+      customerName: leadDetails.customerName,
+      serviceType: leadDetails.serviceType
     };
-
+  
     try {
       // Update leadDetails with current room data before submitting
       const updatedLeadDetails = {
         ...leadDetails,
         Rooms: JSON.stringify(parsedRooms) // Update rooms with any edits made by tradesperson
       };
-
+  
       const response = await fetch('/api/quote-submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -333,12 +339,12 @@ const QuoteSubmitPage = () => {
           ...quoteDetails, // Spread the quote details directly
         }),
       });
-
+  
       const result = await response.json();
       if (!response.ok) {
         throw new Error(result.error || 'Failed to submit quote.');
       }
-
+  
       setSubmissionStatus('success');
     } catch (error) {
       setSubmissionStatus('error');
@@ -400,6 +406,7 @@ const QuoteSubmitPage = () => {
               <div><strong>Email:</strong> {leadDetails['customerEmail'] || leadDetails['CustomerEmail'] || 'N/A'}</div>
               <div><strong>Phone:</strong> {leadDetails['customerPhone'] || leadDetails['CustomerPhone'] || 'N/A'}</div>
               <div><strong>Service:</strong> {leadDetails['serviceType'] || leadDetails['ServiceType'] || 'Underfloor Heating'}</div>
+              <div><strong>Address:</strong> {leadDetails['address'] || 'N/A'}</div>
               <div><strong>Area:</strong> {leadDetails['area'] || leadDetails['Area'] || 'N/A'}</div>
               <div><strong>Suburb:</strong> {leadDetails['suburb'] || leadDetails['Suburb'] || 'N/A'}</div>
               <div><strong>Timeline:</strong> {leadDetails['timeline'] || leadDetails['Timelline'] || 'N/A'}</div>
@@ -411,6 +418,7 @@ const QuoteSubmitPage = () => {
               <div style={styles.inputGroup}><label>Email</label><input type="email" name="customerEmail" value={leadDetails['customerEmail'] || leadDetails['CustomerEmail'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
               <div style={styles.inputGroup}><label>Phone</label><input type="tel" name="customerPhone" value={leadDetails['customerPhone'] || leadDetails['CustomerPhone'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
               <div style={styles.inputGroup}><label>Service</label><input type="text" name="serviceType" value={leadDetails['serviceType'] || leadDetails['ServiceType'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
+              <div style={styles.inputGroup}><label>Address</label><input type="text" name="address" value={leadDetails['address'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
               <div style={styles.inputGroup}><label>Area</label><input type="text" name="area" value={leadDetails['area'] || leadDetails['Area'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
               <div style={styles.inputGroup}><label>Suburb</label><input type="text" name="suburb" value={leadDetails['suburb'] || leadDetails['Suburb'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
               <div style={styles.inputGroup}><label>Timeline</label><input type="text" name="timeline" value={leadDetails['timeline'] || leadDetails['Timelline'] || ''} onChange={handleLeadDetailsChange} style={styles.input}/></div>
@@ -638,18 +646,49 @@ const QuoteSubmitPage = () => {
             padding: '12px',
             borderTop: '1px solid #eee'
           }}>
-            <button type="submit" style={{
-              width: '100%',
-              background: '#0a7aff',
-              color: '#fff',
-              padding: '14px 18px',
-              border: 'none',
-              borderRadius: '8px',
-              fontWeight: 600,
-              fontSize: '16px',
-              cursor: 'pointer'
-            }} disabled={submissionStatus === 'submitting'}>
-              {submissionStatus === 'submitting' ? 'Submitting...' : 'Submit Quote'}
+            // Add this before the submit button in the form
+            <div className="mb-4 p-4 border rounded bg-light">
+              <h5>Submission Options</h5>
+              <div className="form-check">
+                <input
+                  className="form-check-input"
+                  type="radio"
+                  name="submissionType"
+                  id="finalSubmission"
+                  checked={!isDraft}
+                  onChange={() => setIsDraft(false)}
+                />
+                <label className="form-check-label" htmlFor="finalSubmission">
+                  <strong>Final Submission</strong> - Send to customer with PDF
+                </label>
+              </div>
+              <div className="form-check">
+                <input
+                  className="form-check-input"
+                  type="radio"
+                  name="submissionType"
+                  id="draftSubmission"
+                  checked={isDraft}
+                  onChange={() => setIsDraft(true)}
+                />
+                <label className="form-check-label" htmlFor="draftSubmission">
+                  <strong>Save as Draft</strong> - Save to spreadsheet only (no customer email)
+                </label>
+              </div>
+            </div>
+            
+            {/* Modify the submit button to show different text based on isDraft */}
+            <button 
+              type="submit" 
+              className={`btn ${isDraft ? 'btn-secondary' : 'btn-primary'} btn-lg`}
+              disabled={submissionStatus === 'loading'}
+            >
+              {submissionStatus === 'loading' ? (
+                <span>
+                  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  {' '}Processing...
+                </span>
+              ) : isDraft ? 'Save as Draft' : 'Submit Quote to Customer'}
             </button>
           </div>
           {submissionStatus === 'error' && <p style={styles.error}>{errorMessage}</p>}

@@ -57,7 +57,7 @@ export default async function handler(req, res) {
     // Read all data from the Quotes sheet
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: spreadsheetId,
-      range: 'Quotes!A:V', // Extended range for all quote fields
+      range: 'Quotes!A:AZ', // Extended range for all quote fields
     });
 
     const rows = response.data.values;

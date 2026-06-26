@@ -23,9 +23,7 @@ export default async function handler(req, res) {
       const leadId = `TEST-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
       // Get current URL for quote links
-      const currentUrl = process.env.VERCEL_URL ? 
-        `https://${process.env.VERCEL_URL}` : 
-        'https://lead-code.vercel.app';
+      const currentUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
       // Create quote submission link with pre-filled data
       const quoteLink = `${currentUrl}/api/quote-submission?leadId=${leadId}&customerName=${encodeURIComponent(leadData.customerName)}&customerEmail=${encodeURIComponent(leadData.customerEmail)}&customerPhone=${encodeURIComponent(leadData.customerPhone)}&serviceType=${encodeURIComponent(leadData.selectedService)}&projectDetails=${encodeURIComponent(leadData.projectDetails)}&projectSize=${encodeURIComponent(leadData.projectSize)}&budget=${encodeURIComponent(leadData.budget)}&timeline=${encodeURIComponent(leadData.timeline)}&location=${encodeURIComponent(leadData.location)}`;

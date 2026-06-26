@@ -83,9 +83,9 @@ export default async function handler(req, res) {
         '{{PROJECT_DETAILS}}': quoteData.projectDetails || 'Project Details',
         
         // Tradesman details
-        '{{TRADESMAN_NAME}}': quoteData.tradesmanName || 'Kiwi Trade',
+        '{{TRADESMAN_NAME}}': quoteData.tradesmanName || 'Heat.nz',
         '{{TRADESMAN_PHONE}}': quoteData.tradesmanPhone || 'Not specified',
-        '{{TRADESMAN_EMAIL}}': quoteData.tradesmanEmail || 'info@kiwitrade.co.nz',
+        '{{TRADESMAN_EMAIL}}': quoteData.tradesmanEmail || process.env.TRADESMAN_EMAIL || 'info@heat.nz',
         
         // Pricing details
         '{{TOTAL_AMOUNT}}': quoteData.totalAmount || '0.00',
@@ -93,7 +93,7 @@ export default async function handler(req, res) {
         '{{ADDITIONAL_NOTES}}': quoteData.additionalNotes || '',
         
         // Company details (from your template)
-        '{{COMPANY_NAME}}': 'Kiwi Trade',
+        '{{COMPANY_NAME}}': 'Heat.nz',
         '{{COMPANY_ADDRESS}}': 'Auckland, New Zealand',
         '{{GST_NUMBER}}': '120-681-729',
         '{{REFERENCE}}': quoteData.location || 'Auckland'
@@ -176,14 +176,14 @@ export default async function handler(req, res) {
         const transporter = nodemailer.default.createTransport({
           service: 'gmail',
           auth: {
-            user: process.env.GMAIL_USER || 'danbricks18@gmail.com',
-            pass: process.env.GMAIL_APP_PASSWORD || 'ptmcojqgthvjbqom'
+            user: process.env.GMAIL_USER,
+            pass: process.env.GMAIL_APP_PASSWORD
           }
         });
 
         const adminMailOptions = {
-          from: `Kiwi Trade <${process.env.GMAIL_USER || 'danbricks18@gmail.com'}>`,
-          to: 'danbricks18@gmail.com',
+          from: `Heat.nz <${process.env.GMAIL_USER}>`,
+          to: process.env.ADMIN_EMAIL,
           subject: `Quote ${quoteData.quoteNumber} Document Created - ${quoteData.tradesmanName}`,
           html: `
             <h2>Quote Document Created Successfully!</h2>

@@ -17,7 +17,7 @@ export default async function handler(req, res) {
         const spreadsheetId = getSpreadsheetId();
 
         // Get all data from the "Leads" tab
-        const range = 'Leads!A:Z';
+        const range = 'Leads!A:P';
         const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
         const rows = response.data.values;
         
@@ -66,6 +66,12 @@ export default async function handler(req, res) {
                     case 'Suburb':
                         lead.suburb = dataRow[index];
                         break;
+                    case 'Street Address':
+                        lead.streetAddress = dataRow[index];
+                        break;
+                    case 'Address':
+                        lead.address = dataRow[index];
+                        break;
                     case 'Budget':
                         lead.budget = dataRow[index];
                         break;
@@ -91,7 +97,7 @@ export default async function handler(req, res) {
         });
         
         // Set default values for missing fields
-        lead.location = lead.area ? `${lead.area}, ${lead.suburb}` : 'Auckland';
+        lead.location = lead.address || (lead.area ? `${lead.area}, ${lead.suburb}` : 'Auckland');
         lead.projectDetails = lead.specificDetails || '';
         lead.projectSize = lead.totalSqm ? `${lead.totalSqm} sqm` : '';
         

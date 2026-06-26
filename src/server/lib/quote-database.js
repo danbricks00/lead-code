@@ -119,7 +119,7 @@ export async function addQuote(quoteData) {
     
     await sheets.spreadsheets.values.append({
       spreadsheetId: spreadsheetId,
-      range: 'Quotes!A:A',
+      range: 'Quotes!A:AZ',
       valueInputOption: 'RAW',
       requestBody: {
         values: [rowData]
@@ -190,7 +190,7 @@ export async function updateQuoteStatus(quoteId, status, response = '') {
     // Find the row number for this quote
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: spreadsheetId,
-      range: 'Quotes!A:A'
+      range: 'Quotes!A:AZ'
     });
     
     const rows = response.data.values;
@@ -255,7 +255,7 @@ export async function getAllQuotes() {
     
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: spreadsheetId,
-      range: 'Quotes!A:N'
+      range: 'Quotes!A:AZ'
     });
     
     const rows = response.data.values;

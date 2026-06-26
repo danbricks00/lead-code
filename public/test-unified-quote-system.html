@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Test Unified Quote System - Kiwi Trade</title>
+  <title>Test Unified Quote System - Heat.nz</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -264,7 +264,7 @@
       try {
         showResult(resultDiv, 'Testing quote decision state...', 'info');
         
-        const response = await fetch(`/api/quote-decision?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=test&action=accept`);
+        const response = await fetch(`/api/customer-accept?quoteId=${encodeURIComponent(quoteId)}&leadId=${encodeURIComponent(leadId)}&token=test&action=accept`);
         
         if (response.ok) {
           const html = await response.text();
@@ -285,7 +285,7 @@
       try {
         showResult(resultDiv, 'Testing quote decision state with custom parameters...', 'info');
         
-        const response = await fetch(`/api/quote-decision?quoteId=QUOTE-CUSTOM-123&leadId=LEAD-CUSTOM-123&token=test&action=decline`);
+        const response = await fetch(`/api/customer-decline?quoteId=QUOTE-CUSTOM-123&leadId=LEAD-CUSTOM-123&token=test&action=decline`);
         
         if (response.ok) {
           const html = await response.text();

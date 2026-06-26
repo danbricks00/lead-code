@@ -6,7 +6,11 @@ import {
   DEFAULT_PHONE_PREFIX,
   validatePhoneWithPrefix,
 } from '../utils/phonePrefixes';
-import { validateFreestyleSuburb } from '../utils/freestyleSuburbValidation';
+import {
+  validateFreestyleSuburb,
+  findZoneBySuburbInput,
+  getSuburbConfirmationMessage,
+} from '../utils/freestyleSuburbValidation';
 
 // Email validation utility (inline for frontend)
 const commonProviders = {
@@ -648,17 +652,20 @@ const Chatbot = ({ handleClose, handleReset }) => {
         case 'ask_phone':
             // Handled by handlePhoneSubmit
             break;
-        case 'ask_suburb':
-            // Check if suburb is in our list
-            const selectedZone = zoneData.find(zone => zone.suburb.toLowerCase() === input.toLowerCase());
-            
+        case 'ask_suburb': {
+            const selectedZone = findZoneBySuburbInput(input, zoneData);
+
             if (selectedZone) {
-                setLeadData(prev => ({ 
-                    ...prev, 
+                setLeadData(prev => ({
+                    ...prev,
                     suburb: selectedZone.suburb,
                     area: selectedZone.area,
-                    isUnlistedSuburb: false
+                    isUnlistedSuburb: false,
                 }));
+                const confirmMsg = getSuburbConfirmationMessage(selectedZone.suburb);
+                if (confirmMsg) {
+                    addMessage(confirmMsg);
+                }
                 updateProgress();
                 nextStep('ask_email');
             } else {
@@ -667,17 +674,18 @@ const Chatbot = ({ handleClose, handleReset }) => {
                     addMessage(suburbCheck.error);
                     return;
                 }
-                setLeadData(prev => ({ 
-                    ...prev, 
+                setLeadData(prev => ({
+                    ...prev,
                     suburb: input,
                     area: 'Unlisted Suburb',
                     isUnlistedSuburb: true,
-                    suburbAdditionalInfo: ''
+                    suburbAdditionalInfo: '',
                 }));
                 updateProgress();
                 nextStep('ask_email');
             }
             break;
+        }
         case 'ask_email':
             // Comprehensive email validation
             const emailResult = validateEmailFrontend(input);
@@ -756,6 +764,17 @@ const Chatbot = ({ handleClose, handleReset }) => {
       return;
     }
 
+    if (fieldKey === 'suburb') {
+      const selectedZone = findZoneBySuburbInput(newValue, zoneData);
+      if (!selectedZone) {
+        const suburbCheck = validateFreestyleSuburb(newValue);
+        if (!suburbCheck.valid) {
+          addMessage(suburbCheck.error);
+          return;
+        }
+      }
+    }
+
     setLeadData(prev => {
       const updated = { ...prev };
       
@@ -794,13 +813,19 @@ const Chatbot = ({ handleClose, handleReset }) => {
         case 'customerEmail':
           updated.customerEmail = newValue;
           break;
-        case 'suburb':
-          const selectedZone = zoneData.find(zone => zone.suburb.toLowerCase() === newValue.toLowerCase());
+        case 'suburb': {
+          const selectedZone = findZoneBySuburbInput(newValue, zoneData);
           if (selectedZone) {
             updated.suburb = selectedZone.suburb;
             updated.area = selectedZone.area;
+            updated.isUnlistedSuburb = false;
+          } else {
+            updated.suburb = newValue;
+            updated.area = 'Unlisted Suburb';
+            updated.isUnlistedSuburb = true;
           }
           break;
+        }
         case 'timeline':
           updated.timeline = newValue;
           break;
@@ -909,8 +934,12 @@ const Chatbot = ({ handleClose, handleReset }) => {
     setSuburbSearch(value);
 
     if (value.length > 1) { // Start searching after 1 character
+        const searchLower = value.toLowerCase();
         const suggestions = zoneData
-            .filter(zone => zone.suburb.toLowerCase().startsWith(value.toLowerCase()))
+            .filter(zone =>
+              zone.suburb.toLowerCase().startsWith(searchLower) ||
+              (zone.altName && zone.altName.toLowerCase().startsWith(searchLower))
+            )
             .slice(0, 5); // Limit suggestions
         setSuburbSuggestions(suggestions);
     } else {

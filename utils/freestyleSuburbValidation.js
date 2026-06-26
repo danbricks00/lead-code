@@ -7,17 +7,21 @@ const BANNED_SUBURB_PHRASES = ['auckland council', 'auckland city'];
  */
 export const AMBIGUOUS_SUBURB_NAMES = new Set([
   'avondale',
+  'belmont',
   'brookfield',
   'clinton',
   'fairfield',
   'gladstone',
   'highbury',
+  'highland park',
+  'hillcrest',
   'morningside',
   'northcote',
   'omaha',
   'portland',
   'richmond',
   'rosebank',
+  'silverdale',
   'waihi',
   'windsor',
 ]);

@@ -20,35 +20,35 @@ const SuburbPage = () => {
 
   const suburbData = {
     'remuera': {
-      description: 'Premium underfloor heating solutions for Remuera\'s luxury homes. Professional installation in Auckland\'s most prestigious suburb.',
-      features: ['Luxury home heating', 'Quiet operation', 'Energy efficient systems', 'Premium warranties'],
-      averageCost: '$120-$180 per m²',
+      description: 'Electric underfloor heating for Remuera homes. Professional installation in an established Auckland suburb.',
+      features: ['Luxury home heating', 'Quiet operation', 'Energy efficient systems', '10-year warranty'],
+      averageCost: 'Custom quote',
       serviceAreas: ['Remuera', 'Newmarket', 'Parnell', 'Epsom']
     },
     'ponsonby': {
       description: 'Modern underfloor heating for Ponsonby\'s stylish homes. Combining contemporary design with efficient heating solutions.',
       features: ['Contemporary heating design', 'Smart home integration', 'Fast installation', 'Modern aesthetics'],
-      averageCost: '$100-$160 per m²',
+      averageCost: 'Custom quote',
       serviceAreas: ['Ponsonby', 'Grey Lynn', 'Herne Bay', 'Westmere']
     },
     'parnell': {
       description: 'Historic charm meets modern comfort with underfloor heating in Parnell. Perfect for heritage homes and modern renovations.',
-      features: ['Heritage home compatibility', 'Restoration-friendly', 'Period-appropriate solutions', 'Expert consultation'],
-      averageCost: '$110-$170 per m²',
+      features: ['Heritage home compatibility', 'Restoration-friendly', 'Period-appropriate solutions', 'Professional consultation'],
+      averageCost: 'Custom quote',
       serviceAreas: ['Parnell', 'Newmarket', 'Grafton', 'Remuera']
     },
     'takapuna': {
-      description: 'North Shore\'s premier underfloor heating service in Takapuna. Professional installation for beachside and suburban homes.',
+      description: 'Experienced underfloor heating service in Takapuna. Professional installation for beachside and suburban homes.',
       features: ['Beachside home heating', 'Salt air protection', 'Coastal warranties', 'Local expertise'],
-      averageCost: '$100-$150 per m²',
+      averageCost: 'Custom quote',
       serviceAreas: ['Takapuna', 'Devonport', 'Milford', 'Castor Bay']
     }
   };
 
   const currentData = suburbData[suburb] || {
-    description: `Professional underfloor heating installation in ${suburbName}, Auckland. Expert service for homes throughout the area.`,
+    description: `Professional underfloor heating installation in ${suburbName}, Auckland. Serving homes throughout the area.`,
     features: ['Local expertise', 'Free quotes', 'Quality installation', 'Comprehensive warranties'],
-    averageCost: '$90-$150 per m²',
+    averageCost: 'Custom quote',
     serviceAreas: [suburbName, 'Auckland Central', 'Surrounding suburbs']
   };
 
@@ -73,7 +73,7 @@ const SuburbPage = () => {
         title={`Underfloor Heating ${suburbName} - Professional Installation & Service`}
         description={currentData.description}
         canonical={`https://www.heat.nz/services/underfloor-heating/${suburb}`}
-        keywords={`underfloor heating ${suburbName}, under floor heating ${suburbName}, under-floor heating ${suburbName}, heating installation ${suburbName}, electric heating ${suburbName}, hydronic heating ${suburbName}`}
+        keywords={`underfloor heating ${suburbName}, under floor heating ${suburbName}, under-floor heating ${suburbName}, heating installation ${suburbName}, electric heating ${suburbName}, electric heating ${suburbName}`}
         structuredData={[
           {
             "@context": "https://schema.org",
@@ -91,7 +91,7 @@ const SuburbPage = () => {
                 "name": "Auckland"
               }
             },
-            "serviceType": "Underfloor heating installation, maintenance & repair",
+            "serviceType": "Underfloor heating installation, installation",
             "description": currentData.description,
             "offers": {
               "@type": "Offer",

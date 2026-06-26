@@ -28,28 +28,28 @@ const HomePage = ({ openChat }) => { // Receive openChat prop from Layout
     <Layout>
       <SEO
         title="Underfloor Heating Auckland | Under Floor Heating — Free Quote"
-        description="Auckland's #1 underfloor heating & under floor heating specialists! Electric & hydronic installation from $80/m². 500+ homes heated. Serving West Auckland, Henderson, New Lynn & all Auckland. Free quotes, expert installation, 25-year warranty. Get your quote today!"
+        description="Among Auckland's experienced electric underfloor heating specialists. 500+ homes heated, 25+ years in business. Serving West Auckland, Henderson, New Lynn & all Auckland. Free custom quotes, expert installation, 10-year warranty. Get your quote today!"
         canonical="https://www.heat.nz"
-        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, underfloor heating West Auckland, under floor heating West Auckland, under-floor heating West Auckland, underfloor heating Henderson, under floor heating Henderson, under-floor heating Henderson, underfloor heating New Lynn, under floor heating New Lynn, under-floor heating New Lynn, tile heating Auckland, under tile heating Auckland, floor heating Auckland, electric tile heating Auckland, electric under tile heating Auckland, electric underfloor heating Auckland, electric under floor heating Auckland, electric under-floor heating Auckland, hydronic heating Auckland, heating installation Auckland, underfloor heating quote Auckland, bathroom heating Auckland, kitchen heating Auckland, heating contractors Auckland"
+        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, underfloor heating West Auckland, under floor heating West Auckland, under-floor heating West Auckland, underfloor heating Henderson, under floor heating Henderson, under-floor heating Henderson, underfloor heating New Lynn, under floor heating New Lynn, under-floor heating New Lynn, tile heating Auckland, under tile heating Auckland, floor heating Auckland, electric tile heating Auckland, electric under tile heating Auckland, electric underfloor heating Auckland, electric under floor heating Auckland, electric under-floor heating Auckland, heating installation Auckland, underfloor heating quote Auckland, bathroom heating Auckland, kitchen heating Auckland, heating contractors Auckland"
       />
       <div style={styles.pageContainer}>
         {/* Hero Section */}
         <section style={styles.hero}>
           <div style={styles.heroContent}>
-            <div style={styles.heroBadge}>Auckland's Leading Underfloor Heating Specialists</div>
+            <div style={styles.heroBadge}>Among Auckland&apos;s Experienced Underfloor Heating Specialists</div>
             <h1 style={styles.heroTitle}>Warm, Comfortable Floors All Year Round</h1>
-            <p style={styles.heroDescription}>Transform your home with professional electric and hydronic underfloor heating. Expert installation, energy-efficient systems, and unbeatable service throughout Auckland.</p>
+            <p style={styles.heroDescription}>Transform your home with professional electric underfloor heating. With over 25 years serving Auckland, we deliver professional installation, energy-efficient systems, and reliable service throughout the region.</p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
                 <div style={styles.statNumber}>500+</div>
                 <div style={styles.statLabel}>Homes Heated</div>
               </div>
               <div style={styles.stat}>
-                <div style={styles.statNumber}>15+</div>
-                <div style={styles.statLabel}>Years Experience</div>
+                <div style={styles.statNumber}>25+</div>
+                <div style={styles.statLabel}>Years in Business</div>
               </div>
               <div style={styles.stat}>
-                <div style={styles.statNumber}>25 Year</div>
+                <div style={styles.statNumber}>10 Year</div>
                 <div style={styles.statLabel}>Warranty</div>
               </div>
               <div style={styles.stat}>
@@ -81,7 +81,7 @@ const HomePage = ({ openChat }) => { // Receive openChat prop from Layout
           <div style={styles.sectionHeader}>
             <div style={styles.sectionBadge}>Our Services</div>
             <h2 style={styles.sectionTitle}>Professional Underfloor Heating Solutions</h2>
-            <p style={styles.sectionDescription}>We specialize in electric and hydronic underfloor heating systems, serving all Auckland suburbs with expert installation, maintenance, and repair services.</p>
+            <p style={styles.sectionDescription}>We specialise in premium electric underfloor heating systems, serving all Auckland suburbs with expert new installations.</p>
           </div>
           <div style={styles.servicesGrid}>
             <div 
@@ -99,10 +99,10 @@ const HomePage = ({ openChat }) => { // Receive openChat prop from Layout
               <h3 style={styles.serviceCardTitle}>Electric Underfloor Heating</h3>
               <p style={styles.serviceCardDescription}>Perfect for bathrooms, kitchens, and renovations. Quick installation, precise temperature control, and minimal floor height increase.</p>
               <ul style={styles.serviceList}>
-                <li style={styles.serviceListItem}>✓ From $80-$150 per m²</li>
-                <li style={styles.serviceListItem}>✓ 1-3 day installation</li>
+                <li style={styles.serviceListItem}>✓ Custom quote for your floor plan</li>
                 <li style={styles.serviceListItem}>✓ Individual room control</li>
                 <li style={styles.serviceListItem}>✓ Smart thermostat compatible</li>
+                <li style={styles.serviceListItem}>✓ 10-year warranty</li>
               </ul>
             </div>
             <div 
@@ -116,14 +116,14 @@ const HomePage = ({ openChat }) => { // Receive openChat prop from Layout
                 e.currentTarget.style.boxShadow = '0 10px 40px rgba(0,0,0,0.08)';
               }}
             >
-              <div style={styles.serviceIcon}>💧</div>
-              <h3 style={styles.serviceCardTitle}>Hydronic Underfloor Heating</h3>
-              <p style={styles.serviceCardDescription}>Ideal for whole-house heating and new builds. Energy-efficient water-based systems with excellent running costs.</p>
+              <div style={styles.serviceIcon}>🛁</div>
+              <h3 style={styles.serviceCardTitle}>Electric Under-Tile Heating</h3>
+              <p style={styles.serviceCardDescription}>Ideal for bathrooms, ensuites, and wet areas. Heating mats installed directly beneath tiles for luxurious warm floors.</p>
               <ul style={styles.serviceList}>
-                <li style={styles.serviceListItem}>✓ From $120-$200 per m²</li>
-                <li style={styles.serviceListItem}>✓ 3-7 day installation</li>
-                <li style={styles.serviceListItem}>✓ Whole-house coverage</li>
-                <li style={styles.serviceListItem}>✓ Ultra-low running costs</li>
+                <li style={styles.serviceListItem}>✓ Perfect for wet areas</li>
+                <li style={styles.serviceListItem}>✓ Works with all tile types</li>
+                <li style={styles.serviceListItem}>✓ Energy-efficient zone heating</li>
+                <li style={styles.serviceListItem}>✓ Free custom quote</li>
               </ul>
             </div>
             <div 
@@ -137,14 +137,14 @@ const HomePage = ({ openChat }) => { // Receive openChat prop from Layout
                 e.currentTarget.style.boxShadow = '0 10px 40px rgba(0,0,0,0.08)';
               }}
             >
-              <div style={styles.serviceIcon}>🔧</div>
-              <h3 style={styles.serviceCardTitle}>Service & Maintenance</h3>
-              <p style={styles.serviceCardDescription}>Keep your underfloor heating system running efficiently with our comprehensive maintenance and repair services.</p>
+              <div style={styles.serviceIcon}>🏠</div>
+              <h3 style={styles.serviceCardTitle}>Whole-Home Electric Heating</h3>
+              <p style={styles.serviceCardDescription}>Multi-zone electric systems for living areas, bedrooms, and open-plan spaces. Designed and quoted to suit your specific layout.</p>
               <ul style={styles.serviceList}>
-                <li style={styles.serviceListItem}>✓ Annual system checks</li>
-                <li style={styles.serviceListItem}>✓ Emergency repairs</li>
-                <li style={styles.serviceListItem}>✓ System upgrades</li>
-                <li style={styles.serviceListItem}>✓ 25-year warranty support</li>
+                <li style={styles.serviceListItem}>✓ Multi-room zoning</li>
+                <li style={styles.serviceListItem}>✓ New builds & renovations</li>
+                <li style={styles.serviceListItem}>✓ Premium components</li>
+                <li style={styles.serviceListItem}>✓ 25+ years experience</li>
               </ul>
             </div>
           </div>

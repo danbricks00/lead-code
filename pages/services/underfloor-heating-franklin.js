@@ -22,7 +22,7 @@ const UnderfloorHeatingFranklinPage = () => {
       "@type": "Place",
       "name": "Franklin, Auckland"
     },
-    "serviceType": "Underfloor heating installation, maintenance & repair",
+    "serviceType": "Underfloor heating installation, installation",
     "description": "Professional underfloor heating installation and service in Franklin, including Pukekohe, Waiuku, and surrounding rural areas."
   };
 
@@ -35,7 +35,7 @@ const UnderfloorHeatingFranklinPage = () => {
         "name": "How much does underfloor heating cost in Franklin?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Underfloor heating costs in Franklin typically range from $80-$155 per square meter for electric systems and $115-$185 per square meter for hydronic systems, including installation. Rural properties may have slightly higher costs due to travel and access requirements."
+          "text": "Contact us for a free custom quote based on your specific floor plan and project requirements."
         }
       },
       {
@@ -53,9 +53,9 @@ const UnderfloorHeatingFranklinPage = () => {
     <Layout>
       <SEO
         title="Underfloor Heating Franklin — Pukekohe & Waiuku Installation | Heat NZ"
-        description="Professional underfloor heating installation in Franklin, Auckland. Pukekohe, Waiuku, rural properties & surrounding areas. Electric & hydronic systems from $80/m². Free quotes for Franklin homes."
+        description="Professional underfloor heating installation in Franklin, Auckland. Pukekohe, Waiuku, rural properties & surrounding areas. Electric systems custom quote. Free quotes for Franklin homes."
         canonical="https://heat.nz/services/underfloor-heating-franklin"
-        keywords="underfloor heating Franklin, heating installation Franklin, electric heating Franklin, hydronic heating Franklin, Pukekohe heating, Waiuku heating, rural heating Franklin, Franklin heating contractors, heating service Franklin"
+        keywords="underfloor heating Franklin, heating installation Franklin, electric heating Franklin, electric heating Franklin, Pukekohe heating, Waiuku heating, rural heating Franklin, Franklin heating contractors, heating service Franklin"
         structuredData={[structuredData]}
         faqData={faqData}
       />
@@ -66,8 +66,8 @@ const UnderfloorHeatingFranklinPage = () => {
           <div style={styles.heroContent}>
             <h1>Professional Underfloor Heating Franklin — Pukekohe & Waiuku Specialists</h1>
             <p style={styles.heroSubtitle}>
-              Franklin's trusted underfloor heating specialists. We serve Pukekohe, Waiuku, and all Franklin rural areas 
-              with reliable electric and hydronic heating installations for farms, lifestyle blocks, and rural properties.
+              Among Franklin's experienced underfloor heating specialists. We serve Pukekohe, Waiuku, and all Franklin rural areas 
+              with reliable electric heating installations for farms, lifestyle blocks, and rural properties.
             </p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
@@ -147,15 +147,11 @@ const UnderfloorHeatingFranklinPage = () => {
           <div style={styles.faq}>
             <div style={styles.faqItem}>
               <h3>How much does underfloor heating cost in Franklin?</h3>
-              <p>Underfloor heating costs in Franklin typically range from $80-$155 per square meter for electric systems and $115-$185 per square meter for hydronic systems, including installation. Rural properties may have slightly higher costs due to travel and access requirements.</p>
-            </div>
-            <div style={styles.faqItem}>
-              <h3>Do you install underfloor heating in Franklin rural properties?</h3>
-              <p>Yes, we specialize in installing underfloor heating in Franklin's rural properties, farms, and lifestyle blocks, understanding the unique requirements of country living and agricultural properties.</p>
+              <p>Contact us for a free custom quote based on your specific floor plan and project requirements."s rural properties, farms, and lifestyle blocks, understanding the unique requirements of country living and agricultural properties.</p>
             </div>
             <div style={styles.faqItem}>
               <h3>What heating system is best for Franklin farm buildings?</h3>
-              <p>For Franklin farm buildings, we typically recommend hydronic systems for main residences or electric systems for workshops and storage areas. The choice depends on your building's use, insulation, and energy requirements.</p>
+              <p>For Franklin farm buildings, we typically recommend electric systems for main residences or electric systems for workshops and storage areas. The choice depends on your building's use, insulation, and energy requirements.</p>
             </div>
           </div>
         </section>

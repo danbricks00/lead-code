@@ -11,7 +11,7 @@ export default function handler(req, res) {
       lastmod: currentDate
     },
     {
-      url: '/services/underfloor-heating',
+      url: '/services/electric-underfloor-heating',
       priority: '0.9',
       changefreq: 'weekly',
       lastmod: currentDate
@@ -45,6 +45,12 @@ export default function handler(req, res) {
       priority: '0.7',
       changefreq: 'monthly',
       lastmod: currentDate
+    },
+    {
+      url: '/privacy',
+      priority: '0.5',
+      changefreq: 'yearly',
+      lastmod: currentDate
     }
   ];
 
@@ -53,36 +59,6 @@ export default function handler(req, res) {
     {
       url: '/blog/why-underfloor-heating-ideal-auckland-homes',
       priority: '0.8',
-      changefreq: 'monthly',
-      lastmod: currentDate
-    },
-    {
-      url: '/blog/electric-vs-hydronic-underfloor-heating',
-      priority: '0.7',
-      changefreq: 'monthly',
-      lastmod: currentDate
-    },
-    {
-      url: '/blog/underfloor-heating-maintenance-tips',
-      priority: '0.7',
-      changefreq: 'monthly',
-      lastmod: currentDate
-    },
-    {
-      url: '/blog/energy-efficient-heating-solutions',
-      priority: '0.7',
-      changefreq: 'monthly',
-      lastmod: currentDate
-    },
-    {
-      url: '/blog/renovation-heating-options',
-      priority: '0.6',
-      changefreq: 'monthly',
-      lastmod: currentDate
-    },
-    {
-      url: '/blog/choosing-right-underfloor-heating-system-auckland',
-      priority: '0.7',
       changefreq: 'monthly',
       lastmod: currentDate
     }
@@ -160,24 +136,6 @@ export default function handler(req, res) {
       url: '/services/tile-heating-newmarket',
       priority: '0.8',
       changefreq: 'weekly',
-      lastmod: currentDate
-    },
-    {
-      url: '/services/hydronic-underfloor-heating',
-      priority: '0.8',
-      changefreq: 'weekly',
-      lastmod: currentDate
-    },
-    {
-      url: '/services/heating-maintenance',
-      priority: '0.7',
-      changefreq: 'monthly',
-      lastmod: currentDate
-    },
-    {
-      url: '/services/heating-repairs',
-      priority: '0.7',
-      changefreq: 'monthly',
       lastmod: currentDate
     },
     {

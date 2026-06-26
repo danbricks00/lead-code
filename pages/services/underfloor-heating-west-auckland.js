@@ -48,7 +48,7 @@ const UnderfloorHeatingWestAucklandPage = () => {
         "name": "Avondale"
       }
     ],
-    "serviceType": "Underfloor heating installation, under floor heating installation, maintenance & repair",
+    "serviceType": "Underfloor heating installation, under floor heating installation, installation",
     "description": "Professional underfloor heating and under floor heating installation and service in West Auckland, including Henderson, New Lynn, Glen Eden, Te Atatū, Massey, Avondale, and surrounding areas."
   };
 
@@ -61,7 +61,7 @@ const UnderfloorHeatingWestAucklandPage = () => {
         "name": "How much does underfloor heating cost in West Auckland?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Underfloor heating costs in West Auckland typically range from $80-$150 per square meter for electric systems and $115-$185 per square meter for hydronic systems, including installation. Costs are competitive due to good access and established residential areas."
+          "text": "Contact us for a free custom quote based on your specific floor plan and project requirements."
         }
       },
       {
@@ -69,7 +69,7 @@ const UnderfloorHeatingWestAucklandPage = () => {
         "name": "Do you service underfloor heating systems in West Auckland?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Yes, we provide comprehensive maintenance and repair services for underfloor heating systems throughout West Auckland, including Henderson, New Lynn, and surrounding suburbs."
+          "text": "Yes, we provide comprehensive installation services for underfloor heating systems throughout West Auckland, including Henderson, New Lynn, and surrounding suburbs."
         }
       }
     ]
@@ -79,9 +79,9 @@ const UnderfloorHeatingWestAucklandPage = () => {
     <Layout>
       <SEO
         title="Underfloor Heating West Auckland | Under Floor Heating Henderson, New Lynn | Heat NZ"
-        description="Professional underfloor heating & under floor heating in West Auckland. Henderson, New Lynn, Glen Eden, Te Atatū, Massey, Avondale & all West Auckland suburbs. Electric & hydronic systems from $80/m². Free quotes for West Auckland homes."
+        description="Professional underfloor heating & under floor heating in West Auckland. Henderson, New Lynn, Glen Eden, Te Atatū, Massey, Avondale & all West Auckland suburbs. Electric systems custom quote. Free quotes for West Auckland homes."
         canonical="https://www.heat.nz/services/underfloor-heating-west-auckland"
-        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating West Auckland, under floor heating West Auckland, under-floor heating West Auckland, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating West Auckland, under tile heating Auckland, tile heating West Auckland, tile heating Auckland, floor heating West Auckland, floor heating Auckland, electric tile heating West Auckland, electric tile heating Auckland, electric under floor West Auckland, electric under floor Auckland, bathroom tile heating West Auckland, bathroom tile heating Auckland, bathroom heating West Auckland, bathroom heating Auckland, underfloor heating Henderson, under floor heating Henderson, under-floor heating Henderson, underfloor heating New Lynn, under floor heating New Lynn, under-floor heating New Lynn, underfloor heating Glen Eden, under floor heating Glen Eden, under-floor heating Glen Eden, underfloor heating Te Atatū, under floor heating Te Atatū, under-floor heating Te Atatū, underfloor heating Massey, under floor heating Massey, under-floor heating Massey, underfloor heating Avondale, under floor heating Avondale, under-floor heating Avondale, heating installation West Auckland, electric heating West Auckland, hydronic heating West Auckland, West Auckland heating contractors, heating service West Auckland"
+        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating West Auckland, under floor heating West Auckland, under-floor heating West Auckland, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating West Auckland, under tile heating Auckland, tile heating West Auckland, tile heating Auckland, floor heating West Auckland, floor heating Auckland, electric tile heating West Auckland, electric tile heating Auckland, electric under floor West Auckland, electric under floor Auckland, bathroom tile heating West Auckland, bathroom tile heating Auckland, bathroom heating West Auckland, bathroom heating Auckland, underfloor heating Henderson, under floor heating Henderson, under-floor heating Henderson, underfloor heating New Lynn, under floor heating New Lynn, under-floor heating New Lynn, underfloor heating Glen Eden, under floor heating Glen Eden, under-floor heating Glen Eden, underfloor heating Te Atatū, under floor heating Te Atatū, under-floor heating Te Atatū, underfloor heating Massey, under floor heating Massey, under-floor heating Massey, underfloor heating Avondale, under floor heating Avondale, under-floor heating Avondale, heating installation West Auckland, electric heating West Auckland, electric heating West Auckland, West Auckland heating contractors, heating service West Auckland"
         structuredData={[structuredData]}
         faqData={faqData}
       />
@@ -92,8 +92,8 @@ const UnderfloorHeatingWestAucklandPage = () => {
           <div style={styles.heroContent}>
             <h1>Professional Underfloor Heating West Auckland — Under Floor Heating Henderson, New Lynn & All West Auckland</h1>
             <p style={styles.heroSubtitle}>
-              West Auckland's trusted underfloor heating and under floor heating specialists. We serve Henderson, New Lynn, Glen Eden, Te Atatū, Massey, Avondale, and all western suburbs 
-              with reliable electric and hydronic heating installations for family homes and commercial properties. Expert installation throughout West Auckland.
+              Among West Auckland's experienced underfloor heating and under floor heating specialists. We serve Henderson, New Lynn, Glen Eden, Te Atatū, Massey, Avondale, and all western suburbs 
+              with reliable electric heating installations for family homes and commercial properties. Expert installation throughout West Auckland.
             </p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
@@ -126,7 +126,7 @@ const UnderfloorHeatingWestAucklandPage = () => {
             </div>
             <div style={styles.feature}>
               <h3>Reliable Local Service</h3>
-              <p>We provide dependable underfloor heating service throughout West Auckland, with local knowledge and fast response times for maintenance and repairs in Henderson, New Lynn, Glen Eden, and all surrounding suburbs.</p>
+              <p>We provide dependable underfloor heating service throughout West Auckland, with local knowledge and fast response times for installations in Henderson, New Lynn, Glen Eden, and all surrounding suburbs.</p>
             </div>
             <div style={styles.feature}>
               <h3>Competitive Pricing</h3>
@@ -185,15 +185,11 @@ const UnderfloorHeatingWestAucklandPage = () => {
           <div style={styles.faq}>
             <div style={styles.faqItem}>
               <h3>How much does underfloor heating cost in West Auckland?</h3>
-              <p>Underfloor heating and under floor heating costs in West Auckland typically range from $80-$150 per square meter for electric systems and $115-$185 per square meter for hydronic systems, including installation. Costs are competitive due to good access and established residential areas in Henderson, New Lynn, Glen Eden, and all West Auckland suburbs.</p>
+              <p>Contact us for a free custom quote based on your specific floor plan and project requirements.</p>
             </div>
             <div style={styles.faqItem}>
-              <h3>Do you service underfloor heating systems in West Auckland?</h3>
-              <p>Yes, we provide comprehensive maintenance and repair services for underfloor heating and under floor heating systems throughout West Auckland, including Henderson, New Lynn, Glen Eden, Te Atatū, Massey, Avondale, and all surrounding suburbs.</p>
-            </div>
-            <div style={styles.faqItem}>
-              <h3>What's the best heating system for West Auckland family homes?</h3>
-              <p>For West Auckland family homes in Henderson, New Lynn, Glen Eden, and other suburbs, we typically recommend hydronic systems for whole-house heating or electric systems for specific rooms. The choice depends on your home's size, insulation, and family heating needs.</p>
+              <h3>s the best heating system for West Auckland family homes?</h3>
+              <p>For West Auckland family homes in Henderson, New Lynn, Glen Eden, and other suburbs, we typically recommend electric systems for whole-house heating or electric systems for specific rooms. The choice depends on your home's size, insulation, and family heating needs.</p>
             </div>
             <div style={styles.faqItem}>
               <h3>Do you install underfloor heating in Henderson?</h3>

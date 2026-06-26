@@ -4,6 +4,7 @@ import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import { validateAndCorrectEmail } from '../../utils/emailValidator';
 import { calculateSpamScore } from '../../utils/spamValidator';
+import { validateFreestyleSuburb } from '../../utils/freestyleSuburbValidation';
 import { checkSubmissionRateLimit } from '../../utils/rateLimiter';
 
 const quoteEnquiryRateLimitStore = new Map();
@@ -149,6 +150,13 @@ export default async function handler(req, res) {
         success: false,
         error: "Missing required fields: name, email, projectType, roomCount, location, message"
       });
+    }
+
+    if (!zoneInfo) {
+      const suburbCheck = validateFreestyleSuburb(location);
+      if (!suburbCheck.valid) {
+        return res.status(400).json({ success: false, error: suburbCheck.error });
+      }
     }
 
     // Smart email validation with autocorrect

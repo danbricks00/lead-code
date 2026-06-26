@@ -22,7 +22,7 @@ const UnderfloorHeatingHendersonPage = () => {
       "@type": "Place",
       "name": "Henderson, West Auckland"
     },
-    "serviceType": "Underfloor heating installation, under floor heating installation, maintenance & repair",
+    "serviceType": "Underfloor heating installation, under floor heating installation, installation",
     "description": "Professional underfloor heating and under floor heating installation and service in Henderson, West Auckland. Expert installation for family homes, modern developments, and commercial properties."
   };
 
@@ -35,7 +35,7 @@ const UnderfloorHeatingHendersonPage = () => {
         "name": "How much does underfloor heating cost in Henderson?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Underfloor heating and under floor heating costs in Henderson typically range from $80-$150 per square meter for electric systems and $115-$185 per square meter for hydronic systems, including installation. We provide free quotes for all Henderson properties."
+          "text": "Underfloor heating and under floor heating costs in Henderson typically range from custom quote based on your floor plan for electric systems and Contact us for a free custom quote based on your specific floor plan and project requirements."
         }
       },
       {
@@ -53,9 +53,9 @@ const UnderfloorHeatingHendersonPage = () => {
     <Layout>
       <SEO
         title="Underfloor Heating Henderson | Under Floor Heating Henderson, West Auckland | Heat NZ"
-        description="Professional underfloor heating & under floor heating in Henderson, West Auckland. Expert installation for Henderson family homes, modern developments & commercial properties. Electric & hydronic systems from $80/m². Free quotes for Henderson properties."
+        description="Professional underfloor heating & under floor heating in Henderson, West Auckland. Expert installation for Henderson family homes, modern developments & commercial properties. Electric systems custom quote. Free quotes for Henderson properties."
         canonical="https://www.heat.nz/services/underfloor-heating-henderson"
-        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating Henderson, under floor heating Henderson, under-floor heating Henderson, underfloor heating Henderson West Auckland, under floor heating Henderson West Auckland, under-floor heating Henderson West Auckland, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating Henderson, under tile heating Auckland, tile heating Henderson, tile heating Auckland, floor heating Henderson, floor heating Auckland, electric tile heating Henderson, electric tile heating Auckland, electric under floor Henderson, electric under floor Auckland, bathroom tile heating Henderson, bathroom tile heating Auckland, bathroom heating Henderson, bathroom heating Auckland, heating installation Henderson, electric heating Henderson, hydronic heating Henderson, Henderson heating contractors"
+        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating Henderson, under floor heating Henderson, under-floor heating Henderson, underfloor heating Henderson West Auckland, under floor heating Henderson West Auckland, under-floor heating Henderson West Auckland, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating Henderson, under tile heating Auckland, tile heating Henderson, tile heating Auckland, floor heating Henderson, floor heating Auckland, electric tile heating Henderson, electric tile heating Auckland, electric under floor Henderson, electric under floor Auckland, bathroom tile heating Henderson, bathroom tile heating Auckland, bathroom heating Henderson, bathroom heating Auckland, heating installation Henderson, electric heating Henderson, electric heating Henderson, Henderson heating contractors"
         structuredData={[structuredData]}
         faqData={faqData}
       />
@@ -66,7 +66,7 @@ const UnderfloorHeatingHendersonPage = () => {
           <div style={styles.heroContent}>
             <h1>Professional Underfloor Heating Henderson | Under Floor Heating Henderson, West Auckland</h1>
             <p style={styles.heroSubtitle}>
-              Henderson's trusted underfloor heating and under floor heating specialists. We provide expert installation for Henderson family homes, 
+              Among Henderson's experienced underfloor heating and under floor heating specialists. We provide professional installation for Henderson family homes, 
               modern developments, and commercial properties throughout Henderson and Henderson Valley.
             </p>
             <div style={styles.heroStats}>
@@ -104,7 +104,7 @@ const UnderfloorHeatingHendersonPage = () => {
             </div>
             <div style={styles.feature}>
               <h3>Local Henderson Knowledge</h3>
-              <p>As West Auckland specialists, we understand Henderson's unique housing mix, local conditions, and provide fast, reliable service throughout Henderson.</p>
+              <p>Serving West Auckland, we understand Henderson's unique housing mix, local conditions, and provide fast, reliable service throughout Henderson.</p>
             </div>
           </div>
         </section>
@@ -139,15 +139,11 @@ const UnderfloorHeatingHendersonPage = () => {
           <div style={styles.faq}>
             <div style={styles.faqItem}>
               <h3>How much does underfloor heating cost in Henderson?</h3>
-              <p>Underfloor heating and under floor heating costs in Henderson typically range from $80-$150 per square meter for electric systems and $115-$185 per square meter for hydronic systems, including installation. We provide free quotes for all Henderson properties.</p>
+              <p>Contact us for a free custom quote based on your specific floor plan and project requirements.</p>
             </div>
             <div style={styles.faqItem}>
-              <h3>Do you install underfloor heating in Henderson?</h3>
-              <p>Yes, we specialize in underfloor heating and under floor heating installation in Henderson, West Auckland. We serve all Henderson areas including Henderson Valley, providing expert installation for family homes, modern developments, and commercial properties.</p>
-            </div>
-            <div style={styles.faqItem}>
-              <h3>What's the best heating system for Henderson homes?</h3>
-              <p>For Henderson homes, we typically recommend hydronic systems for whole-house heating or electric systems for specific rooms like bathrooms and kitchens. The choice depends on your home's size, insulation, and heating needs.</p>
+              <h3>s the best heating system for Henderson homes?</h3>
+              <p>For Henderson homes, we typically recommend electric systems for whole-house heating or electric systems for specific rooms like bathrooms and kitchens. The choice depends on your home's size, insulation, and heating needs.</p>
             </div>
           </div>
         </section>

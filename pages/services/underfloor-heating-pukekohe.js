@@ -22,7 +22,7 @@ const UnderfloorHeatingPukekohePage = () => {
       "@type": "Place",
       "name": "Pukekohe, Auckland"
     },
-    "serviceType": "Underfloor heating installation, maintenance & repair",
+    "serviceType": "Underfloor heating installation, installation",
     "description": "Professional underfloor heating installation and service in Pukekohe, including rural properties and surrounding farming areas."
   };
 
@@ -35,7 +35,7 @@ const UnderfloorHeatingPukekohePage = () => {
         "name": "How much does underfloor heating cost in Pukekohe?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Underfloor heating costs in Pukekohe typically range from $80-$155 per square meter for electric systems and $115-$185 per square meter for hydronic systems, including installation. Rural properties may have slightly higher costs due to access requirements."
+          "text": "Contact us for a free custom quote based on your specific floor plan and project requirements."
         }
       },
       {
@@ -53,9 +53,9 @@ const UnderfloorHeatingPukekohePage = () => {
     <Layout>
       <SEO
         title="Underfloor Heating Pukekohe — Farm Properties Installation | Heat NZ"
-        description="Professional underfloor heating installation in Pukekohe, Auckland. Farm properties, rural homes & surrounding areas. Electric & hydronic systems from $80/m². Free quotes for Pukekohe homes."
+        description="Professional underfloor heating installation in Pukekohe, Auckland. Farm properties, rural homes & surrounding areas. Electric systems custom quote. Free quotes for Pukekohe homes."
         canonical="https://heat.nz/services/underfloor-heating-pukekohe"
-        keywords="underfloor heating Pukekohe, heating installation Pukekohe, electric heating Pukekohe, hydronic heating Pukekohe, farm heating Pukekohe, rural heating Pukekohe, Pukekohe heating contractors, heating service Pukekohe"
+        keywords="underfloor heating Pukekohe, heating installation Pukekohe, electric heating Pukekohe, electric heating Pukekohe, farm heating Pukekohe, rural heating Pukekohe, Pukekohe heating contractors, heating service Pukekohe"
         structuredData={[structuredData]}
         faqData={faqData}
       />
@@ -66,8 +66,8 @@ const UnderfloorHeatingPukekohePage = () => {
           <div style={styles.heroContent}>
             <h1>Professional Underfloor Heating Pukekohe — Farm Properties Specialists</h1>
             <p style={styles.heroSubtitle}>
-              Pukekohe's trusted underfloor heating specialists. We serve Pukekohe and surrounding farming areas 
-              with reliable electric and hydronic heating installations for farm properties, rural homes, and agricultural buildings.
+              Among Pukekohe's experienced underfloor heating specialists. We serve Pukekohe and surrounding farming areas 
+              with reliable electric heating installations for farm properties, rural homes, and agricultural buildings.
             </p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
@@ -147,15 +147,11 @@ const UnderfloorHeatingPukekohePage = () => {
           <div style={styles.faq}>
             <div style={styles.faqItem}>
               <h3>How much does underfloor heating cost in Pukekohe?</h3>
-              <p>Underfloor heating costs in Pukekohe typically range from $80-$155 per square meter for electric systems and $115-$185 per square meter for hydronic systems, including installation. Rural properties may have slightly higher costs due to access requirements.</p>
-            </div>
-            <div style={styles.faqItem}>
-              <h3>Do you install underfloor heating in Pukekohe farm properties?</h3>
-              <p>Yes, we specialize in installing underfloor heating in Pukekohe's farm properties, rural homes, and agricultural buildings, understanding the unique requirements of farming communities.</p>
+              <p>Contact us for a free custom quote based on your specific floor plan and project requirements."s farm properties, rural homes, and agricultural buildings, understanding the unique requirements of farming communities.</p>
             </div>
             <div style={styles.faqItem}>
               <h3>What heating system is best for Pukekohe farm buildings?</h3>
-              <p>For Pukekohe farm buildings, we typically recommend hydronic systems for main residences or electric systems for workshops and storage areas. The choice depends on your building's use, insulation, and energy requirements.</p>
+              <p>For Pukekohe farm buildings, we typically recommend electric systems for main residences or electric systems for workshops and storage areas. The choice depends on your building's use, insulation, and energy requirements.</p>
             </div>
           </div>
         </section>

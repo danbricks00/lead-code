@@ -22,7 +22,7 @@ const ElectricUnderTileHeatingSouthAucklandPage = () => {
       "@type": "Place",
       "name": "South Auckland"
     },
-    "serviceType": "Electric under tile heating installation, maintenance & repair",
+    "serviceType": "Electric under tile heating installation, installation",
     "description": "Professional electric under tile heating installation and service in South Auckland, including Manukau, Papatoetoe, Otahuhu, and surrounding areas."
   };
 
@@ -35,7 +35,7 @@ const ElectricUnderTileHeatingSouthAucklandPage = () => {
         "name": "How much does electric under tile heating cost in South Auckland?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Electric under tile heating costs in South Auckland typically range from $75-$145 per square meter, including installation. South Auckland offers competitive pricing with excellent value for money and flexible payment options."
+          "text": "Electric under Contact us for a free custom quote based on your specific floor plan and project requirements."
         }
       },
       {

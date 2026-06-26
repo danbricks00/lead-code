@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
 import SEO from '../components/SEO';
+import PhoneInput, { validatePhoneWithPrefix, combinePhoneNumber } from '../components/PhoneInput';
+import { DEFAULT_PHONE_PREFIX } from '../utils/phonePrefixes';
+import { validateFreestyleSuburb, isSuburbInZoneList } from '../utils/freestyleSuburbValidation';
 
 // Track page load time for spam detection
 if (typeof window !== 'undefined' && !window.pageLoadTime) {
@@ -22,6 +25,8 @@ const ContactPage = () => {
     email: '', 
     message: '',
     phone: '',
+    phonePrefix: DEFAULT_PHONE_PREFIX,
+    phoneNumber: '',
     projectType: 'Underfloor Heating',
     roomCount: '',
     timeline: '',
@@ -333,15 +338,50 @@ const ContactPage = () => {
     setStatus({ submitted: true, message: 'Sending...', isError: false });
 
     try {
-      // Calculate time on page for spam detection
+      // Honeypot check — reject instantly if filled
+      if (formData.website && formData.website.trim().length > 0) {
+        setStatus({ submitted: true, message: '❌ Unable to submit. Please try again.', isError: true });
+        return;
+      }
+
+      // Time-on-page check — reject submissions under 4 seconds
       const timeOnPage = Date.now() - (window.pageLoadTime || Date.now());
-      
+      if (timeOnPage < 4000) {
+        setStatus({
+          submitted: true,
+          message: '❌ Please take a moment to complete the form before submitting.',
+          isError: true,
+        });
+        return;
+      }
+
+      // Validate phone with prefix
+      const phoneValidation = validatePhoneWithPrefix(formData.phonePrefix, formData.phoneNumber);
+      if (formData.phoneNumber && !phoneValidation.valid) {
+        setStatus({ submitted: true, message: `❌ ${phoneValidation.error}`, isError: true });
+        return;
+      }
+      const fullPhone = phoneValidation.fullNumber || '';
+
+      // Validate freestyle suburb for unlisted locations (quote forms)
+      if ((formType === 'quote' || formType === 'manual-quote') && formData.location) {
+        const inList = isSuburbInZoneList(formData.location, zoneData);
+        if (!inList) {
+          const suburbCheck = validateFreestyleSuburb(formData.location);
+          if (!suburbCheck.valid) {
+            setStatus({ submitted: true, message: `❌ ${suburbCheck.error}`, isError: true });
+            return;
+          }
+        }
+      }
+
       // Use different API endpoints based on form type
       const apiEndpoint = formType === 'quote' ? '/api/quote-enquiry' : '/api/contact';
       
       // Include zone information, timing, and autofill detection for quote enquiries
       const submissionData = { 
-        ...formData, 
+        ...formData,
+        phone: fullPhone,
         formType, 
         timeOnPage,
         autofillDetected: formData.autofillDetected || false
@@ -395,6 +435,8 @@ const ContactPage = () => {
         email: '', 
         message: '',
         phone: '',
+        phonePrefix: DEFAULT_PHONE_PREFIX,
+        phoneNumber: '',
         projectType: 'Underfloor Heating',
         roomCount: '',
         timeline: '',
@@ -412,7 +454,7 @@ const ContactPage = () => {
         title="Contact Heat NZ — Underfloor Heating Auckland"
         description="Contact Heat NZ for professional underfloor heating services in Auckland. Get free quotes, expert advice, and installation services. Available for general enquiries and large projects."
         canonical="https://www.heat.nz/contact"
-        keywords="contact underfloor heating Auckland, heating quote Auckland, heating installation contact, electric heating Auckland contact, hydronic heating Auckland contact"
+        keywords="contact underfloor heating Auckland, heating quote Auckland, heating installation contact, electric heating Auckland contact"
       />
       <div style={styles.container}>
         <div style={styles.card}>
@@ -541,7 +583,15 @@ const ContactPage = () => {
             </div>
             <div style={styles.inputGroup}>
               <label htmlFor="phone">Phone Number</label>
-              <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleChange} style={styles.input} />
+              <PhoneInput
+                id="phone"
+                prefix={formData.phonePrefix}
+                number={formData.phoneNumber}
+                onPrefixChange={(value) => setFormData(prev => ({ ...prev, phonePrefix: value }))}
+                onNumberChange={(value) => setFormData(prev => ({ ...prev, phoneNumber: value }))}
+                inputStyle={styles.input}
+                selectStyle={styles.input}
+              />
             </div>
 
             {/* Quote Enquiry Specific Fields */}

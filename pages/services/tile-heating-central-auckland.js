@@ -45,7 +45,7 @@ const TileHeatingCentralAucklandPage = () => {
     <Layout>
       <SEO
         title="Tile Heating Central Auckland — Electric Under Tile Heating | Heat NZ"
-        description="Professional tile heating installation in Central Auckland. Electric under tile heating for bathrooms, kitchens & wet areas in CBD, Parnell, Ponsonby & central suburbs. From $80-$150/m². Free quotes."
+        description="Professional tile heating installation in Central Auckland. Electric under tile heating for bathrooms, kitchens & wet areas in CBD, Parnell, Ponsonby & central suburbs. Custom quote. Free quotes."
         canonical="https://heat.nz/services/tile-heating-central-auckland"
         keywords="tile heating Central Auckland, under tile heating Central Auckland, floor heating Central Auckland, electric tile heating Central Auckland, electric under tile heating Central Auckland, tile heating Auckland CBD, tile heating Parnell, tile heating Ponsonby, under tile heating Auckland CBD, under tile heating Parnell, under tile heating Ponsonby, electric tile heating Auckland CBD, electric tile heating Parnell, electric tile heating Ponsonby, bathroom heating Central Auckland, kitchen heating Central Auckland, wet area heating Central Auckland, tile floor heating Central Auckland, electric under tile heating Auckland CBD, electric under tile heating Parnell, electric under tile heating Ponsonby, heating mats under tiles Central Auckland, tile heating installation Central Auckland, under tile heating installation Central Auckland, electric heating mats Central Auckland, tile heating cost Central Auckland, bathroom tile heating Central Auckland, kitchen tile heating Central Auckland, wet area tile heating Central Auckland, ceramic tile heating Central Auckland, porcelain tile heating Central Auckland, stone tile heating Central Auckland, mosaic tile heating Central Auckland, electric heating cables under tiles Central Auckland, tile heating systems Central Auckland, bathroom underfloor heating Central Auckland, kitchen underfloor heating Central Auckland, electric floor heating tiles Central Auckland, radiant tile heating Central Auckland, electric heating installation under tiles Central Auckland"
         structuredData={[structuredData, faqData]}
@@ -62,7 +62,7 @@ const TileHeatingCentralAucklandPage = () => {
             </p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
-                <strong>From:</strong> $80-$150/m²
+                <strong>From:</strong> custom quote
               </div>
               <div style={styles.stat}>
                 <strong>Areas:</strong> All Central Auckland
@@ -125,7 +125,7 @@ const TileHeatingCentralAucklandPage = () => {
         {/* CTA Section */}
         <section style={styles.ctaSection}>
           <h2>Ready for Tile Heating in Central Auckland?</h2>
-          <p>Transform your tiled floors with professional electric heating. Get your free quote from Central Auckland's tile heating specialists.</p>
+          <p>Transform your tiled floors with professional electric heating. Get your free custom quote for tile heating in Central Auckland.</p>
           <button 
             style={styles.ctaButton}
             onClick={() => window.open('/', '_self')}

@@ -45,7 +45,7 @@ const UnderTileHeatingNorthShorePage = () => {
     <Layout>
       <SEO
         title="Under Tile Heating North Shore — Electric Heating Under Tiles | Heat NZ"
-        description="Professional under tile heating installation in North Shore Auckland. Electric heating under tiles for bathrooms, kitchens & wet areas in Takapuna, Devonport, Albany & surrounding areas. From $80-$150/m²."
+        description="Professional under tile heating installation in North Shore Auckland. Electric heating under tiles for bathrooms, kitchens & wet areas in Takapuna, Devonport, Albany & surrounding areas. Custom quote."
         canonical="https://heat.nz/services/under-tile-heating-north-shore"
         keywords="under tile heating North Shore, electric heating under tiles North Shore, tile floor heating North Shore, bathroom heating under tiles North Shore, wet area heating North Shore, electric underfloor heating tiles North Shore, heating mats under tiles North Shore, tile heating installation North Shore, under tile heating installation North Shore, electric under tile heating North Shore, electric heating cables under tiles North Shore, bathroom under tile heating North Shore, kitchen under tile heating North Shore, wet area under tile heating North Shore, ceramic tile heating under North Shore, porcelain tile heating under North Shore, stone tile heating under North Shore, mosaic tile heating under North Shore, electric heating mats under tiles North Shore, tile heating cost North Shore, under tile heating systems North Shore, radiant heating under tiles North Shore, electric floor heating under tiles North Shore, bathroom floor heating under tiles North Shore, kitchen floor heating under tiles North Shore, shower heating under tiles North Shore, bathroom heating installation under tiles North Shore, wet area heating installation North Shore, electric heating installation under tiles North Shore, under tile heating contractors North Shore, professional under tile heating North Shore, under tile heating Takapuna, under tile heating Devonport, under tile heating Albany, under tile heating Milford, under tile heating Browns Bay, electric heating under tiles Takapuna, electric heating under tiles Devonport, electric heating under tiles Albany"
         structuredData={[structuredData, faqData]}
@@ -62,7 +62,7 @@ const UnderTileHeatingNorthShorePage = () => {
             </p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
-                <strong>From:</strong> $80-$150/m²
+                <strong>From:</strong> custom quote
               </div>
               <div style={styles.stat}>
                 <strong>Areas:</strong> All North Shore
@@ -125,7 +125,7 @@ const UnderTileHeatingNorthShorePage = () => {
         {/* CTA Section */}
         <section style={styles.ctaSection}>
           <h2>Transform Your North Shore Tiled Floors</h2>
-          <p>Experience the luxury of under tile heating throughout North Shore. Get your free quote from Auckland's under tile heating specialists.</p>
+          <p>Experience the luxury of under tile heating throughout North Shore. Get your free custom quote for under tile heating in Auckland.</p>
           <button 
             style={styles.ctaButton}
             onClick={() => window.open('/', '_self')}

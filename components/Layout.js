@@ -118,7 +118,7 @@ const Layout = ({ children }) => {
       {/* Default SEO for all pages - can be overridden by individual pages */}
       <SEO
         title="Heat NZ | Underfloor Heating Auckland — Free Quote"
-        description="Underfloor heating specialists in Auckland. Supply, install & service electric and hydronic systems. Fast quotes & warranties."
+        description="Underfloor heating specialists in Auckland. Premium electric underfloor heating installation. Fast quotes & 10-year warranties."
         canonical={`https://heat.nz${router.asPath}`}
       />
       
@@ -213,7 +213,7 @@ const Layout = ({ children }) => {
         <div style={styles.footerContent}>
           <div style={styles.footerSection}>
             <h3 style={styles.footerHeading}>Heat.nz</h3>
-            <p style={styles.footerText}>Auckland's leading underfloor heating specialists. Expert installation, quality products, trusted service.</p>
+            <p style={styles.footerText}>Among Auckland&apos;s experienced underfloor heating specialists. Quality installation, trusted service.</p>
           </div>
           <div style={styles.footerSection}>
             <h4 style={styles.footerSubHeading}>Quick Links</h4>
@@ -224,9 +224,8 @@ const Layout = ({ children }) => {
           </div>
           <div style={styles.footerSection}>
             <h4 style={styles.footerSubHeading}>Services</h4>
-            <Link href="/services/underfloor-heating" style={styles.footerLink}>Electric Heating</Link>
-            <Link href="/services/underfloor-heating" style={styles.footerLink}>Hydronic Heating</Link>
-            <Link href="/contact" style={styles.footerLink}>Maintenance & Repair</Link>
+            <Link href="/services/electric-underfloor-heating" style={styles.footerLink}>Electric Underfloor Heating</Link>
+            <Link href="/services/electric-under-tile-heating" style={styles.footerLink}>Electric Under-Tile Heating</Link>
           </div>
           <div style={styles.footerSection}>
             <h4 style={styles.footerSubHeading}>Contact</h4>
@@ -251,7 +250,10 @@ const Layout = ({ children }) => {
           </div>
         </div>
         <div style={styles.footerBottom}>
-          <p>&copy; {new Date().getFullYear()} Heat.nz. All rights reserved.</p>
+          <p>
+            &copy; {new Date().getFullYear()} Heat.nz. All rights reserved.{' '}
+            <Link href="/privacy" style={styles.footerBottomLink}>Privacy Policy</Link>
+          </p>
         </div>
       </footer>
 
@@ -539,6 +541,11 @@ const styles = {
     color: 'rgba(255,255,255,0.6)',
     fontSize: '0.9rem',
     fontFamily: "'Inter', sans-serif",
+  },
+  footerBottomLink: {
+    color: 'rgba(255,255,255,0.8)',
+    textDecoration: 'none',
+    marginLeft: '8px',
   },
   // Chatbot styles moved from index.js - Mobile optimized
   chatbotContainer: { 

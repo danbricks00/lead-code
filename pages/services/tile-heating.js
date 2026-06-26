@@ -47,13 +47,6 @@ const TileHeatingPage = () => {
     "Silent operation with no moving parts"
   ];
 
-  const costs = [
-    { area: "Bathroom (3-8m²)", cost: "$300-$1,000", time: "1 day" },
-    { area: "Kitchen (10-20m²)", cost: "$800-$2,000", time: "1-2 days" },
-    { area: "Ensuite (4-6m²)", cost: "$400-$800", time: "1 day" },
-    { area: "Powder Room (2-4m²)", cost: "$200-$500", time: "1 day" }
-  ];
-
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Service",
@@ -69,7 +62,7 @@ const TileHeatingPage = () => {
     "description": "Professional tile heating installation in Auckland. Electric under tile heating perfect for bathrooms, kitchens, and wet areas with tile floor coverings.",
     "offers": {
       "@type": "Offer",
-      "priceRange": "$80-$150 per square meter",
+      "priceRange": "custom quote based on your floor plan",
       "availability": "https://schema.org/InStock"
     },
     "category": "Home Improvement",
@@ -111,7 +104,7 @@ const TileHeatingPage = () => {
         "name": "How much does tile heating cost in Auckland?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Tile heating costs in Auckland typically range from $80-$150 per square meter, including installation. Smaller bathrooms may cost $300-$1,000, while larger areas like kitchens range from $800-$2,000 depending on size and complexity."
+          "text": "Contact us for a free custom quote based on your specific floor plan and project requirements."
         }
       },
       {
@@ -127,7 +120,7 @@ const TileHeatingPage = () => {
         "name": "How long does tile heating installation take?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Most tile heating installations take 1-2 days. Small bathrooms typically take 1 day, while larger areas like kitchens may take 1-2 days. The actual tiling is done after the heating system is installed and tested."
+          "text": "Installation timeframes vary depending on room size and layout. We provide a detailed timeline with every custom quote."
         }
       }
     ]
@@ -137,7 +130,7 @@ const TileHeatingPage = () => {
     <Layout>
       <SEO
         title="Tile Heating Auckland — Electric Under Tile Heating Installation | Heat NZ"
-        description="Professional tile heating installation in Auckland. Electric under tile heating perfect for bathrooms, kitchens & wet areas. From $80-$150/m² with fast 1-2 day installation. Free quotes."
+        description="Professional tile heating installation in Auckland. Electric under tile heating perfect for bathrooms, kitchens & wet areas. Free custom quotes."
         canonical="https://heat.nz/services/tile-heating"
         keywords="tile heating, under tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, tile heating Auckland, under tile heating Auckland, floor heating Auckland, electric tile heating Auckland, electric under tile heating Auckland, electric under tile, bathroom heating Auckland, tile floor heating Auckland, electric under tile heating, heating mats under tiles, wet area heating Auckland, bathroom floor heating, tile heating installation Auckland, under tile heating installation, electric heating mats Auckland, tile heating cost Auckland, bathroom tile heating, kitchen tile heating, wet area tile heating, ceramic tile heating Auckland, porcelain tile heating Auckland, stone tile heating Auckland, mosaic tile heating Auckland, electric heating cables under tiles, tile heating systems Auckland, bathroom underfloor heating, kitchen underfloor heating, electric floor heating tiles, radiant tile heating, electric heating installation under tiles"
         structuredData={[structuredData, faqData]}
@@ -154,10 +147,10 @@ const TileHeatingPage = () => {
             </p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
-                <strong>From:</strong> $80-$150/m²
+                <strong>Pricing:</strong> Custom quote
               </div>
               <div style={styles.stat}>
-                <strong>Installation:</strong> 1-2 days
+                <strong>Experience:</strong> 25+ years
               </div>
               <div style={styles.stat}>
                 <strong>Compatible:</strong> All tile types
@@ -212,96 +205,20 @@ const TileHeatingPage = () => {
           </div>
         </section>
 
-        {/* Cost Guide */}
+        {/* Custom Quote */}
         <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Tile Heating Costs</h2>
-          <div style={styles.costTable}>
-            <div style={styles.tableHeader}>
-              <div style={styles.tableCell}>Room Size</div>
-              <div style={styles.tableCell}>Typical Cost</div>
-              <div style={styles.tableCell}>Installation Time</div>
-            </div>
-            {costs.map((cost, index) => (
-              <div key={index} style={index === costs.length - 1 ? styles.tableRowLast : styles.tableRow}>
-                <div style={styles.tableCell}>{cost.area}</div>
-                <div style={styles.tableCell}>{cost.cost}</div>
-                <div style={styles.tableCellLast}>{cost.time}</div>
-              </div>
-            ))}
-          </div>
+          <h2 style={styles.sectionTitle}>Get a Custom Quote</h2>
           <p style={styles.costNote}>
-            *Prices include heating mats, installation, and thermostat. Final costs depend on 
-            room size, tile type, and electrical requirements.
+            Tile heating costs depend on your room sizes, tile type, and layout. Contact us for a free,
+            no-obligation custom quote based on your specific floor plan.
           </p>
-        </section>
-
-        {/* Installation Process */}
-        <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Installation Process</h2>
-          <div style={styles.processSteps}>
-            <div style={styles.step}>
-              <div style={styles.stepNumber}>1</div>
-              <div style={styles.stepContent}>
-                <h3>Assessment & Planning</h3>
-                <p>We assess your space, check electrical requirements, and plan the optimal heating layout for your tiles.</p>
-              </div>
-            </div>
-            <div style={styles.step}>
-              <div style={styles.stepNumber}>2</div>
-              <div style={styles.stepContent}>
-                <h3>System Installation</h3>
-                <p>Install heating mats or cables, connect to power supply, and test the system before tiling.</p>
-              </div>
-            </div>
-            <div style={styles.step}>
-              <div style={styles.stepNumber}>3</div>
-              <div style={styles.stepContent}>
-                <h3>Tile Installation</h3>
-                <p>Your tiler installs tiles over the heating system using appropriate adhesives and techniques.</p>
-              </div>
-            </div>
-            <div style={styles.step}>
-              <div style={styles.stepNumber}>4</div>
-              <div style={styles.stepContent}>
-                <h3>Final Setup</h3>
-                <p>Install thermostat, test final system, and provide user instructions and warranty documentation.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Auckland Service Areas */}
-        <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Tile Heating Throughout Auckland</h2>
-          <div style={styles.suburbsGrid}>
-            <div style={styles.suburbGroup}>
-              <h4>Central Auckland</h4>
-              <p>Remuera, Ponsonby, Parnell, Newmarket, Epsom, Mt Eden</p>
-            </div>
-            <div style={styles.suburbGroup}>
-              <h4>North Shore</h4>
-              <p>Takapuna, Devonport, Albany, Northcote, Birkenhead</p>
-            </div>
-            <div style={styles.suburbGroup}>
-              <h4>East Auckland</h4>
-              <p>Mission Bay, Kohimarama, Glendowie, Beachlands</p>
-            </div>
-            <div style={styles.suburbGroup}>
-              <h4>West Auckland</h4>
-              <p>Henderson, New Lynn, Massey, Titirangi</p>
-            </div>
-            <div style={styles.suburbGroup}>
-              <h4>South Auckland</h4>
-              <p>Manukau, Papakura, Pukekohe, Franklin</p>
-            </div>
-          </div>
         </section>
 
         {/* CTA Section */}
         <section style={styles.ctaSection}>
           <h2>Ready for Warm Tile Floors?</h2>
-          <p>Transform your bathroom or kitchen with electric tile heating. Get your free quote today.</p>
-          <button 
+          <p>Get your free custom quote today and experience the comfort of electric tile heating.</p>
+          <button
             style={styles.ctaButton}
             onClick={() => window.open('/', '_self')}
           >

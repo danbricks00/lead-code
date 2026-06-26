@@ -5,36 +5,32 @@ import SEO from '../components/SEO';
 const FAQPage = () => {
   const faqs = [
     {
-      question: "How much does underfloor heating cost in Auckland?",
-      answer: "Underfloor heating costs in Auckland typically range from $80-$150 per square meter for electric systems and $120-$200 per square meter for hydronic systems, including installation. We provide free quotes for all projects."
+      question: "How much does electric underfloor heating cost in Auckland?",
+      answer: "Every home is different. Costs depend on your floor plan, room sizes, floor type, and system requirements. We provide free, no-obligation custom quotes tailored to your specific project — contact us to get started."
     },
     {
-      question: "How long does underfloor heating installation take?",
-      answer: "Installation time varies by system type and room size. Electric underfloor heating typically takes 1-3 days, while hydronic systems may take 3-7 days. We provide detailed timelines with every quote."
-    },
-    {
-      question: "Do you service underfloor heating systems in Auckland?",
-      answer: "Yes, we provide comprehensive maintenance and repair services for both electric and hydronic underfloor heating systems throughout Auckland and surrounding areas."
+      question: "How long does electric underfloor heating installation take?",
+      answer: "Installation timeframes vary depending on the scope of your project, floor type, and number of zones. We provide a detailed timeline with every custom quote so you know exactly what to expect."
     },
     {
       question: "What types of underfloor heating do you install?",
-      answer: "We install both electric and hydronic underfloor heating systems. Electric systems are ideal for smaller areas and renovations, while hydronic systems are more efficient for larger spaces and new builds."
+      answer: "We specialise exclusively in premium electric underfloor heating systems — including under-tile heating for bathrooms and wet areas, and whole-home electric systems for living spaces and renovations."
     },
     {
       question: "Do you provide warranties on your installations?",
-      answer: "Yes, all our installations come with comprehensive warranties covering both materials and workmanship. Warranty periods vary by system type and manufacturer."
+      answer: "Yes, all our electric underfloor heating installations come with a 10-year warranty covering both materials and workmanship."
     },
     {
       question: "Can underfloor heating be installed in existing homes?",
-      answer: "Yes, underfloor heating can be retrofitted into existing homes. Electric systems are particularly suitable for renovations as they require minimal floor height increase."
+      answer: "Yes, electric underfloor heating can be retrofitted into existing homes. Electric systems are particularly suitable for renovations as they require minimal floor height increase."
     },
     {
-      question: "Which is more energy efficient - electric or hydronic?",
-      answer: "Hydronic systems are generally more energy efficient for larger areas and whole-house heating. Electric systems are efficient for smaller spaces and provide precise temperature control."
+      question: "Is electric underfloor heating energy efficient?",
+      answer: "Electric underfloor heating with smart thermostats and proper zoning is highly efficient for targeted heating. It provides precise temperature control and heats only the areas you need."
     },
     {
       question: "Do you work with all floor types?",
-      answer: "Yes, we can install underfloor heating under most floor types including tiles, stone, engineered wood, and some carpet types. We'll assess your specific floor during the quote process."
+      answer: "Yes, we can install electric underfloor heating under most floor types including tiles, stone, engineered wood, and some carpet types. We'll assess your specific floor during the quote process."
     },
     {
       question: "What areas of Auckland do you service?",
@@ -42,22 +38,22 @@ const FAQPage = () => {
     },
     {
       question: "How do I get a free quote?",
-      answer: "Simply use our chatbot to provide your project details, or contact us directly. We'll arrange a convenient time to visit your property and provide a detailed, no-obligation quote."
+      answer: "Simply use our chatbot to provide your project details, or contact us directly. We'll arrange a convenient time to visit your property and provide a detailed, no-obligation custom quote."
     }
   ];
 
   return (
     <Layout>
       <SEO
-        title="Underfloor Heating Auckland FAQ — Costs, Installation & Service Questions"
-        description="Get answers to all your underfloor heating questions! Costs, installation time, maintenance, and service info for Auckland homeowners. Expert advice from Heat NZ specialists."
+        title="Underfloor Heating Auckland FAQ — Electric Heating Questions"
+        description="Get answers to your electric underfloor heating questions! Installation, warranties, and service info for Auckland homeowners. Expert advice from Heat NZ specialists."
         canonical="https://www.heat.nz/faq"
-        keywords="underfloor heating FAQ Auckland, heating costs Auckland, heating installation questions, electric heating FAQ, hydronic heating questions, heating service Auckland, heating maintenance Auckland"
+        keywords="underfloor heating FAQ Auckland, electric heating FAQ, heating installation questions, electric heating Auckland, underfloor heating quote Auckland"
       />
       <div style={styles.container}>
         <div style={styles.header}>
           <h1>Frequently Asked Questions</h1>
-          <p>Get answers to common questions about underfloor heating in Auckland</p>
+          <p>Get answers to common questions about electric underfloor heating in Auckland</p>
         </div>
         
         <div style={styles.faqContainer}>
@@ -118,21 +114,20 @@ const styles = {
   ctaSection: {
     textAlign: 'center',
     padding: '2rem',
-    backgroundColor: '#f8f9fa',
-    borderRadius: '15px',
-    border: '2px solid #e9ecef',
+    backgroundColor: '#667eea',
+    borderRadius: '10px',
+    color: 'white',
   },
   ctaButton: {
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: 'white',
+    backgroundColor: 'white',
+    color: '#667eea',
     border: 'none',
-    padding: '1rem 2rem',
-    borderRadius: '25px',
-    fontSize: '1.1rem',
+    padding: '12px 24px',
+    borderRadius: '5px',
+    fontSize: '1rem',
     fontWeight: '600',
     cursor: 'pointer',
     marginTop: '1rem',
-    transition: 'transform 0.3s ease',
   },
 };
 

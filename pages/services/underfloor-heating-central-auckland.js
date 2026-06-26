@@ -48,7 +48,7 @@ const UnderfloorHeatingCentralAucklandPage = () => {
         "name": "Epsom"
       }
     ],
-    "serviceType": "Underfloor heating installation, under floor heating installation, maintenance & repair",
+    "serviceType": "Underfloor heating installation, under floor heating installation, installation",
     "description": "Professional underfloor heating and under floor heating installation and service in Central Auckland, including CBD, Newmarket, Parnell, Grafton, Mount Eden, Epsom, and surrounding areas."
   };
 
@@ -61,7 +61,7 @@ const UnderfloorHeatingCentralAucklandPage = () => {
         "name": "How much does underfloor heating cost in Central Auckland?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Underfloor heating costs in Central Auckland typically range from $85-$165 per square meter for electric systems and $125-$195 per square meter for hydronic systems, including installation. CBD locations may have slightly higher costs due to access requirements."
+          "text": "Contact us for a free custom quote based on your specific floor plan and project requirements."
         }
       },
       {
@@ -79,9 +79,9 @@ const UnderfloorHeatingCentralAucklandPage = () => {
     <Layout>
       <SEO
         title="Underfloor Heating Central Auckland | Under Floor Heating CBD, Newmarket, Parnell | Heat NZ"
-        description="Professional underfloor heating & under floor heating in Central Auckland. CBD, Newmarket, Parnell, Grafton, Mount Eden, Epsom & surrounding areas. Electric & hydronic systems from $85/m². Free quotes for Central Auckland homes & apartments."
+        description="Professional underfloor heating & under floor heating in Central Auckland. CBD, Newmarket, Parnell, Grafton, Mount Eden, Epsom & surrounding areas. Electric systems custom quote. Free quotes for Central Auckland homes & apartments."
         canonical="https://www.heat.nz/services/underfloor-heating-central-auckland"
-        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating Central Auckland, under floor heating Central Auckland, under-floor heating Central Auckland, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating Central Auckland, under tile heating Auckland, tile heating Central Auckland, tile heating Auckland, floor heating Central Auckland, floor heating Auckland, electric tile heating Central Auckland, electric tile heating Auckland, electric under floor Central Auckland, electric under floor Auckland, bathroom tile heating Central Auckland, bathroom tile heating Auckland, bathroom heating Central Auckland, bathroom heating Auckland, underfloor heating CBD Auckland, under floor heating CBD Auckland, under-floor heating CBD Auckland, underfloor heating Newmarket, under floor heating Newmarket, under-floor heating Newmarket, underfloor heating Parnell, under floor heating Parnell, under-floor heating Parnell, underfloor heating Grafton, under floor heating Grafton, under-floor heating Grafton, underfloor heating Mount Eden, under floor heating Mount Eden, under-floor heating Mount Eden, underfloor heating Epsom, under floor heating Epsom, under-floor heating Epsom, heating installation Central Auckland, electric heating Central Auckland, hydronic heating Central Auckland, apartment heating Auckland, inner city heating Auckland"
+        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating Central Auckland, under floor heating Central Auckland, under-floor heating Central Auckland, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating Central Auckland, under tile heating Auckland, tile heating Central Auckland, tile heating Auckland, floor heating Central Auckland, floor heating Auckland, electric tile heating Central Auckland, electric tile heating Auckland, electric under floor Central Auckland, electric under floor Auckland, bathroom tile heating Central Auckland, bathroom tile heating Auckland, bathroom heating Central Auckland, bathroom heating Auckland, underfloor heating CBD Auckland, under floor heating CBD Auckland, under-floor heating CBD Auckland, underfloor heating Newmarket, under floor heating Newmarket, under-floor heating Newmarket, underfloor heating Parnell, under floor heating Parnell, under-floor heating Parnell, underfloor heating Grafton, under floor heating Grafton, under-floor heating Grafton, underfloor heating Mount Eden, under floor heating Mount Eden, under-floor heating Mount Eden, underfloor heating Epsom, under floor heating Epsom, under-floor heating Epsom, heating installation Central Auckland, electric heating Central Auckland, electric heating Central Auckland, apartment heating Auckland, inner city heating Auckland"
         structuredData={[structuredData]}
         faqData={faqData}
       />
@@ -92,8 +92,8 @@ const UnderfloorHeatingCentralAucklandPage = () => {
           <div style={styles.heroContent}>
             <h1>Professional Underfloor Heating Central Auckland | Under Floor Heating CBD, Newmarket, Parnell & All Central Auckland</h1>
             <p style={styles.heroSubtitle}>
-              Central Auckland's leading underfloor heating and under floor heating specialists. We serve the CBD, Newmarket, Parnell, Grafton, Mount Eden, Epsom, and all inner-city areas 
-              with professional electric and hydronic heating installations for homes, apartments, and commercial properties.
+              Among Central Auckland's experienced underfloor heating and under floor heating specialists. We serve the CBD, Newmarket, Parnell, Grafton, Mount Eden, Epsom, and all inner-city areas 
+              with professional electric heating installations for homes, apartments, and commercial properties.
             </p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
@@ -181,14 +181,10 @@ const UnderfloorHeatingCentralAucklandPage = () => {
           <div style={styles.faq}>
             <div style={styles.faqItem}>
               <h3>How much does underfloor heating cost in Central Auckland?</h3>
-              <p>Underfloor heating and under floor heating costs in Central Auckland typically range from $85-$165 per square meter for electric systems and $125-$195 per square meter for hydronic systems, including installation. CBD locations may have slightly higher costs due to access requirements.</p>
+              <p>Contact us for a free custom quote based on your specific floor plan and project requirements.</p>
             </div>
             <div style={styles.faqItem}>
-              <h3>Do you install underfloor heating in Central Auckland apartments?</h3>
-              <p>Yes, we specialize in installing underfloor heating and under floor heating in Central Auckland apartments and high-rise buildings. We work with body corporates and understand the specific requirements for apartment installations in the CBD, Newmarket, Parnell, and all Central Auckland areas.</p>
-            </div>
-            <div style={styles.faqItem}>
-              <h3>Can you work around Central Auckland's parking restrictions?</h3>
+              <h3>s parking restrictions?</h3>
               <p>Absolutely! We're experienced in working within Central Auckland's parking and access restrictions. We coordinate with building management and use efficient installation techniques to minimize disruption throughout the CBD and inner-city areas.</p>
             </div>
             <div style={styles.faqItem}>

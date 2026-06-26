@@ -48,7 +48,7 @@ const UnderfloorHeatingWaitakerePage = () => {
         "name": "Massey"
       }
     ],
-    "serviceType": "Underfloor heating installation, under floor heating installation, maintenance & repair",
+    "serviceType": "Underfloor heating installation, under floor heating installation, installation",
     "description": "Professional underfloor heating and under floor heating installation and service in Waitākere, including Henderson, New Lynn, Glen Eden, Avondale, Te Atatū, Massey, and surrounding areas."
   };
 
@@ -61,7 +61,7 @@ const UnderfloorHeatingWaitakerePage = () => {
         "name": "How much does underfloor heating cost in Waitākere?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Underfloor heating and under floor heating costs in Waitākere typically range from $80-$150 per square meter for electric systems and $115-$185 per square meter for hydronic systems, including installation. Waitākere offers competitive pricing with excellent value for money."
+          "text": "Underfloor heating and under floor heating costs in Waitākere typically range from custom quote based on your floor plan for electric systems and Contact us for a free custom quote based on your specific floor plan and project requirements."
         }
       },
       {
@@ -69,7 +69,7 @@ const UnderfloorHeatingWaitakerePage = () => {
         "name": "Do you service underfloor heating systems in Waitākere?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Yes, we provide comprehensive maintenance and repair services for underfloor heating and under floor heating systems throughout Waitākere, including Henderson, New Lynn, Glen Eden, Avondale, Te Atatū, Massey, and all surrounding suburbs."
+          "text": "Yes, we provide comprehensive installation services for underfloor heating and under floor heating systems throughout Waitākere, including Henderson, New Lynn, Glen Eden, Avondale, Te Atatū, Massey, and all surrounding suburbs."
         }
       }
     ]
@@ -79,9 +79,9 @@ const UnderfloorHeatingWaitakerePage = () => {
     <Layout>
       <SEO
         title="Underfloor Heating Waitākere | Under Floor Heating Henderson, New Lynn | Heat NZ"
-        description="Professional underfloor heating & under floor heating in Waitākere, Auckland. Henderson, New Lynn, Glen Eden, Avondale, Te Atatū, Massey & surrounding areas. Electric & hydronic systems from $80/m². Free quotes for Waitākere homes."
+        description="Professional underfloor heating & under floor heating in Waitākere, Auckland. Henderson, New Lynn, Glen Eden, Avondale, Te Atatū, Massey & surrounding areas. Electric systems custom quote. Free quotes for Waitākere homes."
         canonical="https://www.heat.nz/services/underfloor-heating-waitakere"
-        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating Waitākere, under floor heating Waitākere, under-floor heating Waitākere, underfloor heating Waitakere, under floor heating Waitakere, under-floor heating Waitakere, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating Waitākere, under tile heating Auckland, tile heating Waitākere, tile heating Auckland, floor heating Waitākere, floor heating Auckland, electric tile heating Waitākere, electric tile heating Auckland, electric under floor Waitākere, electric under floor Auckland, bathroom tile heating Waitākere, bathroom tile heating Auckland, bathroom heating Waitākere, bathroom heating Auckland, underfloor heating Henderson, under floor heating Henderson, under-floor heating Henderson, underfloor heating New Lynn, under floor heating New Lynn, under-floor heating New Lynn, underfloor heating Glen Eden, under floor heating Glen Eden, under-floor heating Glen Eden, underfloor heating Avondale, under floor heating Avondale, under-floor heating Avondale, heating installation Waitākere, electric heating Waitākere, hydronic heating Waitākere, Waitākere heating contractors, heating service Waitākere"
+        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating Waitākere, under floor heating Waitākere, under-floor heating Waitākere, underfloor heating Waitakere, under floor heating Waitakere, under-floor heating Waitakere, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating Waitākere, under tile heating Auckland, tile heating Waitākere, tile heating Auckland, floor heating Waitākere, floor heating Auckland, electric tile heating Waitākere, electric tile heating Auckland, electric under floor Waitākere, electric under floor Auckland, bathroom tile heating Waitākere, bathroom tile heating Auckland, bathroom heating Waitākere, bathroom heating Auckland, underfloor heating Henderson, under floor heating Henderson, under-floor heating Henderson, underfloor heating New Lynn, under floor heating New Lynn, under-floor heating New Lynn, underfloor heating Glen Eden, under floor heating Glen Eden, under-floor heating Glen Eden, underfloor heating Avondale, under floor heating Avondale, under-floor heating Avondale, heating installation Waitākere, electric heating Waitākere, electric heating Waitākere, Waitākere heating contractors, heating service Waitākere"
         structuredData={[structuredData]}
         faqData={faqData}
       />
@@ -92,8 +92,8 @@ const UnderfloorHeatingWaitakerePage = () => {
           <div style={styles.heroContent}>
             <h1>Professional Underfloor Heating Waitākere | Under Floor Heating Henderson, New Lynn & All Waitākere</h1>
             <p style={styles.heroSubtitle}>
-              Waitākere's trusted underfloor heating and under floor heating specialists. We serve Henderson, New Lynn, Glen Eden, Avondale, Te Atatū, Massey, and all Waitākere suburbs 
-              with reliable electric and hydronic heating installations for family homes, rental properties, and commercial buildings.
+              Among Waitākere's experienced underfloor heating and under floor heating specialists. We serve Henderson, New Lynn, Glen Eden, Avondale, Te Atatū, Massey, and all Waitākere suburbs 
+              with reliable electric heating installations for family homes, rental properties, and commercial buildings.
             </p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
@@ -130,7 +130,7 @@ const UnderfloorHeatingWaitakerePage = () => {
             </div>
             <div style={styles.feature}>
               <h3>Reliable Local Service</h3>
-              <p>We're committed to serving Waitakere communities with dependable service, fast response times, and ongoing maintenance support.</p>
+              <p>We're committed to serving Waitakere communities with dependable service, fast response times, and ongoing customer support.</p>
             </div>
           </div>
         </section>
@@ -173,15 +173,11 @@ const UnderfloorHeatingWaitakerePage = () => {
           <div style={styles.faq}>
             <div style={styles.faqItem}>
               <h3>How much does underfloor heating cost in Waitākere?</h3>
-              <p>Underfloor heating and under floor heating costs in Waitākere typically range from $80-$150 per square meter for electric systems and $115-$185 per square meter for hydronic systems, including installation. Waitākere offers competitive pricing with excellent value for money throughout Henderson, New Lynn, Glen Eden, and all Waitākere suburbs.</p>
+              <p>Contact us for a free custom quote based on your specific floor plan and project requirements.</p>
             </div>
             <div style={styles.faqItem}>
-              <h3>Do you service underfloor heating systems in Waitākere?</h3>
-              <p>Yes, we provide comprehensive maintenance and repair services for underfloor heating and under floor heating systems throughout Waitākere, including Henderson, New Lynn, Glen Eden, Avondale, Te Atatū, Massey, and all surrounding suburbs.</p>
-            </div>
-            <div style={styles.faqItem}>
-              <h3>What's the best heating system for Waitākere family homes?</h3>
-              <p>For Waitākere family homes, we typically recommend hydronic systems for whole-house heating or electric systems for specific rooms like bathrooms and kitchens. The choice depends on your home's size, insulation, and family heating needs throughout all Waitākere areas.</p>
+              <h3>s the best heating system for Waitākere family homes?</h3>
+              <p>For Waitākere family homes, we typically recommend electric systems for whole-house heating or electric systems for specific rooms like bathrooms and kitchens. The choice depends on your home's size, insulation, and family heating needs throughout all Waitākere areas.</p>
             </div>
             <div style={styles.faqItem}>
               <h3>Do you install under floor heating in Henderson?</h3>

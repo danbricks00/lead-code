@@ -22,7 +22,7 @@ const UnderfloorHeatingRodneyPage = () => {
       "@type": "Place",
       "name": "Rodney, Auckland"
     },
-    "serviceType": "Underfloor heating installation, maintenance & repair",
+    "serviceType": "Underfloor heating installation, installation",
     "description": "Professional underfloor heating installation and service in Rodney, including Warkworth, Orewa, and surrounding areas."
   };
 
@@ -35,7 +35,7 @@ const UnderfloorHeatingRodneyPage = () => {
         "name": "How much does underfloor heating cost in Rodney?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Underfloor heating costs in Rodney typically range from $85-$160 per square meter for electric systems and $120-$190 per square meter for hydronic systems, including installation. Rural properties may have slightly higher costs due to access requirements."
+          "text": "Contact us for a free custom quote based on your specific floor plan and project requirements."
         }
       },
       {
@@ -53,9 +53,9 @@ const UnderfloorHeatingRodneyPage = () => {
     <Layout>
       <SEO
         title="Underfloor Heating Rodney — Warkworth & Orewa Installation | Heat NZ"
-        description="Professional underfloor heating installation in Rodney, Auckland. Warkworth, Orewa, Silverdale & surrounding areas. Electric & hydronic systems from $85/m². Free quotes for Rodney homes."
+        description="Professional underfloor heating installation in Rodney, Auckland. Warkworth, Orewa, Silverdale & surrounding areas. Electric systems custom quote. Free quotes for Rodney homes."
         canonical="https://heat.nz/services/underfloor-heating-rodney"
-        keywords="underfloor heating Rodney, heating installation Rodney, electric heating Rodney, hydronic heating Rodney, Warkworth heating, Orewa heating, Silverdale heating, Rodney heating contractors, heating service Rodney"
+        keywords="underfloor heating Rodney, heating installation Rodney, electric heating Rodney, electric heating Rodney, Warkworth heating, Orewa heating, Silverdale heating, Rodney heating contractors, heating service Rodney"
         structuredData={[structuredData]}
         faqData={faqData}
       />
@@ -66,8 +66,8 @@ const UnderfloorHeatingRodneyPage = () => {
           <div style={styles.heroContent}>
             <h1>Professional Underfloor Heating Rodney — Warkworth & Orewa Specialists</h1>
             <p style={styles.heroSubtitle}>
-              Rodney's trusted underfloor heating specialists. We serve Warkworth, Orewa, Silverdale, and all Rodney areas 
-              with reliable electric and hydronic heating installations for rural properties, lifestyle blocks, and coastal homes.
+              Among Rodney's experienced underfloor heating specialists. We serve Warkworth, Orewa, Silverdale, and all Rodney areas 
+              with reliable electric heating installations for rural properties, lifestyle blocks, and coastal homes.
             </p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
@@ -147,15 +147,11 @@ const UnderfloorHeatingRodneyPage = () => {
           <div style={styles.faq}>
             <div style={styles.faqItem}>
               <h3>How much does underfloor heating cost in Rodney?</h3>
-              <p>Underfloor heating costs in Rodney typically range from $85-$160 per square meter for electric systems and $120-$190 per square meter for hydronic systems, including installation. Rural properties may have slightly higher costs due to access requirements.</p>
-            </div>
-            <div style={styles.faqItem}>
-              <h3>Do you install underfloor heating in Rodney rural properties?</h3>
-              <p>Yes, we specialize in installing underfloor heating in Rodney's rural properties, lifestyle blocks, and coastal homes, understanding the unique requirements of country living and off-grid systems.</p>
+              <p>Contact us for a free custom quote based on your specific floor plan and project requirements."s rural properties, lifestyle blocks, and coastal homes, understanding the unique requirements of country living and off-grid systems.</p>
             </div>
             <div style={styles.faqItem}>
               <h3>What heating system is best for Rodney lifestyle blocks?</h3>
-              <p>For Rodney lifestyle blocks, we typically recommend hydronic systems for whole-house heating or electric systems for specific areas. The choice depends on your property's size, insulation, and whether you're on-grid or off-grid.</p>
+              <p>For Rodney lifestyle blocks, we typically recommend electric systems for whole-house heating or electric systems for specific areas. The choice depends on your property's size, insulation, and whether you're on-grid or off-grid.</p>
             </div>
           </div>
         </section>

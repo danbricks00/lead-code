@@ -3,11 +3,11 @@ import { useRouter } from 'next/router';
 
 export default function SEO({
   title = "Heat NZ | Underfloor Heating Auckland — Free Quote",
-  description = "Underfloor heating specialists in Auckland. Supply, install & service electric and hydronic systems. Fast quotes & warranties.",
+  description = "Underfloor heating specialists in Auckland. Premium electric underfloor heating installation. Fast quotes & 10-year warranties.",
   canonical = null,
   ogImage = "/social-share.png",
   type = "website",
-  keywords = "underfloor heating Auckland, electric underfloor heating, hydronic heating, heating installation Auckland",
+  keywords = "underfloor heating Auckland, electric underfloor heating, heating installation Auckland",
   noindex = false,
   structuredData = null,
   faqData = null
@@ -30,12 +30,12 @@ export default function SEO({
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     "name": "Heat NZ",
-    "description": "Professional underfloor heating installation and service in Auckland",
+    "description": "Professional electric underfloor heating installation in Auckland",
     "url": "https://www.heat.nz",
     "telephone": "+64-9-123-4567",
     "email": "info@heat.nz",
     "image": "https://www.heat.nz/logo.png",
-    "priceRange": "$80-$150 per m²",
+    "priceRange": "Custom quote",
     "paymentAccepted": "Cash, Credit Card, Bank Transfer",
     "currenciesAccepted": "NZD",
     "openingHours": "Mo-Fr 08:00-17:00, Sa 09:00-15:00",
@@ -243,8 +243,8 @@ export default function SEO({
     "areaServed": {
       "name": "Auckland"
     },
-    "serviceType": "Underfloor heating installation, maintenance & repair",
-    "description": "Supply and professional installation of electric and hydronic underfloor heating systems across Auckland. Free site quotes and warranties available."
+    "serviceType": "Electric underfloor heating installation",
+    "description": "Supply and professional installation of premium electric underfloor heating systems across Auckland. Free custom site quotes and 10-year warranties available."
   };
 
   // Default FAQ structured data
@@ -254,26 +254,18 @@ export default function SEO({
     "mainEntity": [
       {
         "@type": "Question",
-        "name": "How much does underfloor heating cost in Auckland?",
+        "name": "How much does electric underfloor heating cost in Auckland?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Underfloor heating costs in Auckland typically range from $80-$150 per square meter for electric systems and $120-$200 per square meter for hydronic systems, including installation. We provide free quotes for all projects."
+          "text": "Every home is different. Costs depend on your floor plan, room sizes, and system requirements. We provide free, no-obligation custom quotes tailored to your specific project."
         }
       },
       {
         "@type": "Question", 
-        "name": "How long does underfloor heating installation take?",
+        "name": "How long does electric underfloor heating installation take?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Installation time varies by system type and room size. Electric underfloor heating typically takes 1-3 days, while hydronic systems may take 3-7 days. We provide detailed timelines with every quote."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Do you service underfloor heating systems in Auckland?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes, we provide comprehensive maintenance and repair services for both electric and hydronic underfloor heating systems throughout Auckland and surrounding areas."
+          "text": "Installation timeframes vary depending on the scope of your project and floor type. We provide a detailed timeline with every custom quote."
         }
       },
       {
@@ -281,7 +273,7 @@ export default function SEO({
         "name": "What types of underfloor heating do you install?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "We install both electric and hydronic underfloor heating systems. Electric systems are ideal for smaller areas and renovations, while hydronic systems are more efficient for larger spaces and new builds."
+          "text": "We specialise exclusively in premium electric underfloor heating systems for bathrooms, kitchens, living areas, and whole-home installations."
         }
       },
       {
@@ -289,7 +281,7 @@ export default function SEO({
         "name": "Do you provide warranties on your installations?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Yes, all our installations come with comprehensive warranties covering both materials and workmanship. Warranty periods vary by system type and manufacturer."
+          "text": "Yes, all our electric underfloor heating installations come with a 10-year warranty covering both materials and workmanship."
         }
       }
     ]
@@ -309,8 +301,8 @@ export default function SEO({
       {
         "@type": "ListItem",
         "position": 2,
-        "name": "Underfloor Heating Auckland",
-        "item": "https://www.heat.nz/services/underfloor-heating"
+        "name": "Electric Underfloor Heating",
+        "item": "https://www.heat.nz/services/electric-underfloor-heating"
       }
     ]
   };
@@ -319,8 +311,8 @@ export default function SEO({
   const defaultPricingData = {
     "@context": "https://schema.org",
     "@type": "Service",
-    "name": "Underfloor Heating Installation",
-    "description": "Professional underfloor heating installation in Auckland",
+    "name": "Electric Underfloor Heating Installation",
+    "description": "Professional electric underfloor heating installation in Auckland",
     "provider": {
       "@type": "LocalBusiness",
       "name": "Heat NZ"
@@ -329,36 +321,8 @@ export default function SEO({
       {
         "@type": "Offer",
         "name": "Electric Underfloor Heating",
-        "description": "Electric underfloor heating installation for bathrooms, kitchens, and living areas",
-        "price": "80",
-        "priceCurrency": "NZD",
-        "priceSpecification": {
-          "@type": "UnitPriceSpecification",
-          "price": "80",
-          "priceCurrency": "NZD",
-          "unitText": "per square meter",
-          "unitCode": "MTK"
-        },
-        "availability": "https://schema.org/InStock",
-        "validFrom": "2024-01-01",
-        "validThrough": "2025-12-31"
-      },
-      {
-        "@type": "Offer",
-        "name": "Hydronic Underfloor Heating",
-        "description": "Hydronic underfloor heating installation for whole-house heating",
-        "price": "120",
-        "priceCurrency": "NZD",
-        "priceSpecification": {
-          "@type": "UnitPriceSpecification",
-          "price": "120",
-          "priceCurrency": "NZD",
-          "unitText": "per square meter",
-          "unitCode": "MTK"
-        },
-        "availability": "https://schema.org/InStock",
-        "validFrom": "2024-01-01",
-        "validThrough": "2025-12-31"
+        "description": "Premium electric underfloor heating installation — custom quote based on your floor plan",
+        "availability": "https://schema.org/InStock"
       }
     ],
     "areaServed": {

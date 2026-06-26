@@ -35,7 +35,7 @@ const TileHeatingNewmarketPage = () => {
         "name": "How much does tile heating cost in Newmarket?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Tile heating costs in Newmarket typically range from $85-$165 per square meter for electric systems, including installation. Newmarket's central location may have slightly higher costs due to access requirements and parking considerations."
+          "text": "Contact us for a free custom quote based on your specific floor plan and project requirements."
         }
       },
       {
@@ -53,7 +53,7 @@ const TileHeatingNewmarketPage = () => {
     <Layout>
       <SEO
         title="Tile Heating Newmarket — Electric Under Tile Heating Installation | Heat NZ"
-        description="Professional tile heating installation in Newmarket, Auckland. Electric under tile heating for bathrooms, kitchens & wet areas. From $85-$165/m². Free quotes for Newmarket properties."
+        description="Professional tile heating installation in Newmarket, Auckland. Electric under tile heating for bathrooms, kitchens & wet areas. From custom quote. Free quotes for Newmarket properties."
         canonical="https://heat.nz/services/tile-heating-newmarket"
         keywords="tile heating Newmarket, under tile heating Newmarket, floor heating Newmarket, electric tile heating Newmarket, electric under tile heating Newmarket, tile heating Auckland Newmarket, under tile heating Auckland Newmarket, electric tile heating Auckland Newmarket, bathroom heating Newmarket, kitchen heating Newmarket, wet area heating Newmarket, tile floor heating Newmarket, electric under tile heating Auckland Newmarket, heating mats under tiles Newmarket, tile heating installation Newmarket, under tile heating installation Newmarket, electric heating mats Newmarket, tile heating cost Newmarket, bathroom tile heating Newmarket, kitchen tile heating Newmarket, wet area tile heating Newmarket, ceramic tile heating Newmarket, porcelain tile heating Newmarket, stone tile heating Newmarket, mosaic tile heating Newmarket, electric heating cables under tiles Newmarket, tile heating systems Newmarket, bathroom underfloor heating Newmarket, kitchen underfloor heating Newmarket, electric floor heating tiles Newmarket, radiant tile heating Newmarket, electric heating installation under tiles Newmarket, tile heating thermostat Newmarket, tile heating timer Newmarket, tile heating energy efficient Newmarket, tile heating insulation Newmarket, tile heating installation time Newmarket, tile heating warranty Newmarket, tile heating guarantee Newmarket, tile heating retrofit Newmarket, tile heating new build Newmarket, tile heating renovation Newmarket"
         structuredData={[structuredData, faqData]}

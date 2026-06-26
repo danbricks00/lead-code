@@ -22,7 +22,7 @@ const UnderfloorHeatingPonsonbyPage = () => {
       "@type": "Place",
       "name": "Ponsonby, Auckland"
     },
-    "serviceType": "Underfloor heating installation, maintenance & repair",
+    "serviceType": "Underfloor heating installation, installation",
     "description": "Modern underfloor heating installation and service in Ponsonby, Auckland's trendy inner-city suburb."
   };
 
@@ -35,7 +35,7 @@ const UnderfloorHeatingPonsonbyPage = () => {
         "name": "How much does underfloor heating cost in Ponsonby?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Underfloor heating costs in Ponsonby typically range from $90-$160 per square meter for electric systems and $120-$190 per square meter for hydronic systems. Costs may vary based on the age and type of property."
+          "text": "Contact us for a free custom quote based on your specific floor plan and project requirements."
         }
       },
       {
@@ -53,9 +53,9 @@ const UnderfloorHeatingPonsonbyPage = () => {
     <Layout>
       <SEO
         title="Underfloor Heating Ponsonby — Modern Villa Heating Installation | Heat NZ"
-        description="Contemporary underfloor heating installation in Ponsonby, Auckland. Specialists in character villas and modern homes. Electric & hydronic systems with smart controls. Free quotes for Ponsonby homeowners."
+        description="Contemporary underfloor heating installation in Ponsonby, Auckland. Specialists in character villas and modern homes. Electric systems with smart controls. Free quotes for Ponsonby homeowners."
         canonical="https://heat.nz/services/underfloor-heating-ponsonby"
-        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating Ponsonby, under floor heating Ponsonby, under-floor heating Ponsonby, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating Ponsonby, under tile heating Auckland, tile heating Ponsonby, tile heating Auckland, floor heating Ponsonby, floor heating Auckland, electric tile heating Ponsonby, electric tile heating Auckland, electric under floor Ponsonby, electric under floor Auckland, bathroom tile heating Ponsonby, bathroom tile heating Auckland, bathroom heating Ponsonby, bathroom heating Auckland, heating installation Ponsonby, electric heating Ponsonby, hydronic heating Ponsonby, villa heating Ponsonby, character home heating Ponsonby, kitchen heating Ponsonby, heating contractors Ponsonby"
+        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating Ponsonby, under floor heating Ponsonby, under-floor heating Ponsonby, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating Ponsonby, under tile heating Auckland, tile heating Ponsonby, tile heating Auckland, floor heating Ponsonby, floor heating Auckland, electric tile heating Ponsonby, electric tile heating Auckland, electric under floor Ponsonby, electric under floor Auckland, bathroom tile heating Ponsonby, bathroom tile heating Auckland, bathroom heating Ponsonby, bathroom heating Auckland, heating installation Ponsonby, electric heating Ponsonby, electric heating Ponsonby, villa heating Ponsonby, character home heating Ponsonby, kitchen heating Ponsonby, heating contractors Ponsonby"
         structuredData={[structuredData]}
         faqData={faqData}
       />
@@ -66,7 +66,7 @@ const UnderfloorHeatingPonsonbyPage = () => {
           <div style={styles.heroContent}>
             <h1>Contemporary Underfloor Heating Ponsonby — Modern Villa Heating Specialists</h1>
             <p style={styles.heroSubtitle}>
-              Ponsonby's leading underfloor heating specialists. We combine modern heating technology with the character of Ponsonby's 
+              Among Ponsonby's experienced underfloor heating specialists. We combine modern heating technology with the character of Ponsonby's 
               beautiful villas and contemporary homes, providing efficient, stylish heating solutions.
             </p>
             <div style={styles.heroStats}>
@@ -139,11 +139,7 @@ const UnderfloorHeatingPonsonbyPage = () => {
           <div style={styles.faq}>
             <div style={styles.faqItem}>
               <h3>How much does underfloor heating cost in Ponsonby?</h3>
-              <p>Underfloor heating costs in Ponsonby typically range from $90-$160 per square meter for electric systems and $120-$190 per square meter for hydronic systems. Costs may vary based on the age and type of property.</p>
-            </div>
-            <div style={styles.faqItem}>
-              <h3>Do you install underfloor heating in Ponsonby villas?</h3>
-              <p>Yes, we specialize in installing underfloor heating in Ponsonby's character villas and modern homes. We work with both heritage and contemporary properties to provide the best heating solution.</p>
+              <p>Contact us for a free custom quote based on your specific floor plan and project requirements."s character villas and modern homes. We work with both heritage and contemporary properties to provide the best heating solution.</p>
             </div>
             <div style={styles.faqItem}>
               <h3>Can you integrate underfloor heating with smart home systems in Ponsonby?</h3>

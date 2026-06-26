@@ -82,6 +82,51 @@ const nextConfig = {
     ];
   },
 
+  async redirects() {
+    return [
+      {
+        source: '/blog/electric-vs-hydronic-underfloor-heating',
+        destination: '/services/electric-underfloor-heating',
+        permanent: true,
+      },
+      {
+        source: '/blog/underfloor-heating-maintenance-tips',
+        destination: '/services/electric-underfloor-heating',
+        permanent: true,
+      },
+      {
+        source: '/services/underfloor-heating',
+        destination: '/services/electric-underfloor-heating',
+        permanent: true,
+      },
+      {
+        source: '/services/hydronic-underfloor-heating',
+        destination: '/services/electric-underfloor-heating',
+        permanent: true,
+      },
+      {
+        source: '/services/heating-maintenance',
+        destination: '/services/electric-underfloor-heating',
+        permanent: true,
+      },
+      {
+        source: '/blog/choosing-right-underfloor-heating-system-auckland',
+        destination: '/services/electric-underfloor-heating',
+        permanent: true,
+      },
+      {
+        source: '/blog/energy-efficient-heating-solutions',
+        destination: '/services/electric-underfloor-heating',
+        permanent: true,
+      },
+      {
+        source: '/blog/renovation-heating-options',
+        destination: '/services/electric-underfloor-heating',
+        permanent: true,
+      },
+    ];
+  },
+
   async rewrites() {
     return [
       {

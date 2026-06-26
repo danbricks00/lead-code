@@ -69,7 +69,7 @@ const UnderTileHeatingPage = () => {
     "description": "Professional under tile heating installation in Auckland. Electric heating systems installed directly under tile flooring for bathrooms, kitchens, and wet areas.",
     "offers": {
       "@type": "Offer",
-      "priceRange": "$80-$150 per square meter",
+      "priceRange": "custom quote based on your floor plan",
       "availability": "https://schema.org/InStock"
     },
     "category": "Home Improvement",
@@ -137,7 +137,7 @@ const UnderTileHeatingPage = () => {
     <Layout>
       <SEO
         title="Under Tile Heating Auckland — Electric Heating Under Tiles | Heat NZ"
-        description="Professional under tile heating installation in Auckland. Electric heating systems installed directly under tiles for bathrooms, kitchens & wet areas. From $80-$150/m². Free quotes."
+        description="Professional under tile heating installation in Auckland. Electric heating systems installed directly under tiles for bathrooms, kitchens & wet areas. Custom quote. Free quotes."
         canonical="https://heat.nz/services/under-tile-heating"
         keywords="under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, under tile heating Auckland, electric heating under tiles, tile floor heating Auckland, bathroom heating under tiles, wet area heating Auckland, electric underfloor heating tiles, heating mats under tiles, tile heating installation, under tile heating installation Auckland, electric under tile heating, electric heating cables under tiles, bathroom under tile heating, kitchen under tile heating, wet area under tile heating, ceramic tile heating under, porcelain tile heating under, stone tile heating under, mosaic tile heating under, electric heating mats under tiles, tile heating cost Auckland, under tile heating systems, radiant heating under tiles, electric floor heating under tiles, bathroom floor heating under tiles, kitchen floor heating under tiles, shower heating under tiles, bathroom heating installation under tiles, wet area heating installation, electric heating installation under tiles, under tile heating contractors Auckland, professional under tile heating"
         structuredData={[structuredData, faqData]}
@@ -154,7 +154,7 @@ const UnderTileHeatingPage = () => {
             </p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
-                <strong>From:</strong> $80-$150/m²
+                <strong>From:</strong> custom quote
               </div>
               <div style={styles.stat}>
                 <strong>Compatible:</strong> All tile types

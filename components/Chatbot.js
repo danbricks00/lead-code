@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ChatMessage from './ChatMessage';
 import { parseRoomNumber, handleRoomNumberInput } from '../utils/roomValidation';
+import {
+  PHONE_PREFIX_OPTIONS,
+  DEFAULT_PHONE_PREFIX,
+  validatePhoneWithPrefix,
+} from '../utils/phonePrefixes';
+import { validateFreestyleSuburb } from '../utils/freestyleSuburbValidation';
 
 // Email validation utility (inline for frontend)
 const commonProviders = {
@@ -183,6 +189,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
   const [isCompleted, setIsCompleted] = useState(false);
   const [editingField, setEditingField] = useState(null); // Track which field is being edited
   const [emailCorrection, setEmailCorrection] = useState(null); // Track email correction suggestion
+  const [phonePrefix, setPhonePrefix] = useState(DEFAULT_PHONE_PREFIX);
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 }); // Track window size for responsive styles
   const messagesEndRef = useRef(null);
 
@@ -527,12 +535,8 @@ const Chatbot = ({ handleClose, handleReset }) => {
             // Allow alphabet characters, spaces, hyphens, apostrophes, and periods (for initials like P.J)
             return /^[a-zA-Z\s'-\.]{2,}$/.test(value) ? null : "Please enter a valid last name (letters only, e.g., Smith, P.J, O'Connor).";
         case 'ask_phone':
-            // Allow only numbers and + sign, 8-10 digits total
-            const cleanPhone = value.replace(/[\s()-]/g, ''); // Remove spaces, parentheses, hyphens
-            const phoneRegex = /^\+?[0-9]{8,10}$/;
-            return phoneRegex.test(cleanPhone) ? null : "Please enter a valid phone number (8-10 digits, + allowed for international).";
+            return null; // Validated via prefix + number UI
         case 'ask_suburb':
-            // Allow any suburb input - we'll handle unlisted suburbs separately
             return value.trim().length > 0 ? null : "Please enter a suburb name.";
         case 'ask_email':
             const emailValidation = validateEmailFrontend(value);
@@ -642,21 +646,13 @@ const Chatbot = ({ handleClose, handleReset }) => {
             nextStep('ask_phone');
             break;
         case 'ask_phone':
-            setLeadData(prev => ({ ...prev, customerPhone: input }));
-            updateProgress();
-            if (zoneData.length > 0) {
-                nextStep('ask_suburb');
-            } else {
-                addMessage("Location data isn't available, so we'll skip to the final step.");
-                nextStep('ask_email');
-            }
+            // Handled by handlePhoneSubmit
             break;
         case 'ask_suburb':
             // Check if suburb is in our list
             const selectedZone = zoneData.find(zone => zone.suburb.toLowerCase() === input.toLowerCase());
             
             if (selectedZone) {
-                // Suburb is in our list - proceed normally
                 setLeadData(prev => ({ 
                     ...prev, 
                     suburb: selectedZone.suburb,
@@ -666,13 +662,17 @@ const Chatbot = ({ handleClose, handleReset }) => {
                 updateProgress();
                 nextStep('ask_email');
             } else {
-                // Suburb not in our list - proceed as normal lead but mark as unlisted
+                const suburbCheck = validateFreestyleSuburb(input);
+                if (!suburbCheck.valid) {
+                    addMessage(suburbCheck.error);
+                    return;
+                }
                 setLeadData(prev => ({ 
                     ...prev, 
                     suburb: input,
                     area: 'Unlisted Suburb',
                     isUnlistedSuburb: true,
-                    suburbAdditionalInfo: '' // Will be filled during lead submission
+                    suburbAdditionalInfo: ''
                 }));
                 updateProgress();
                 nextStep('ask_email');
@@ -918,6 +918,28 @@ const Chatbot = ({ handleClose, handleReset }) => {
     }
   };
 
+  const handlePhoneSubmit = (e) => {
+    e.preventDefault();
+    if (isLoading) return;
+
+    const validation = validatePhoneWithPrefix(phonePrefix, phoneNumber);
+    if (!validation.valid) {
+      addMessage(validation.error);
+      return;
+    }
+
+    addMessage(validation.fullNumber, true);
+    setLeadData(prev => ({ ...prev, customerPhone: validation.fullNumber }));
+    setPhoneNumber('');
+    updateProgress();
+    if (zoneData.length > 0) {
+      nextStep('ask_suburb');
+    } else {
+      addMessage("Location data isn't available, so we'll skip to the final step.");
+      nextStep('ask_email');
+    }
+  };
+
   const handleSuburbSubmit = (e) => {
     e.preventDefault();
     const suburbInput = suburbSearch.trim();
@@ -933,7 +955,7 @@ const Chatbot = ({ handleClose, handleReset }) => {
   // Show text input for all steps except suburb search, timeline options, room name, and review data
   // BUT show it when editing a field in review mode
   const showTextInput = !isChatEnded && 
-    !['ask_suburb', 'ask_timeline', 'ask_room_name', 'review_data'].includes(step) || 
+    !['ask_suburb', 'ask_timeline', 'ask_room_name', 'review_data', 'ask_phone'].includes(step) || 
     editingField;
 
   const timelineOptions = ["Immediately", "In a week", "In a couple of months", "Other"];
@@ -1034,6 +1056,45 @@ const Chatbot = ({ handleClose, handleReset }) => {
       )}
       
       
+      {step === 'ask_phone' && !isLoading && (
+        <div style={currentStyles.suburbSearchContainer}>
+            <div style={{marginBottom: '10px', fontSize: '14px', color: '#666'}}>
+                Select your phone prefix and enter your number
+            </div>
+            <form onSubmit={handlePhoneSubmit} style={{display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap'}}>
+                <select
+                    value={phonePrefix}
+                    onChange={(e) => setPhonePrefix(e.target.value)}
+                    style={{...currentStyles.inputField, flex: '0 0 160px'}}
+                    aria-label="Phone prefix"
+                >
+                    {PHONE_PREFIX_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                </select>
+                <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value.replace(/[^\d\s\-().]/g, ''))}
+                    style={{...currentStyles.inputField, flex: 1, minWidth: '120px'}}
+                    placeholder="Phone number"
+                    autoFocus
+                />
+                <button 
+                    type="submit" 
+                    style={{
+                        ...currentStyles.submitButton,
+                        padding: '10px 15px',
+                        fontSize: '14px'
+                    }}
+                    disabled={!phoneNumber.trim()}
+                >
+                    Submit
+                </button>
+            </form>
+        </div>
+      )}
+
       {step === 'ask_suburb' && !isLoading && (
         <div style={currentStyles.suburbSearchContainer}>
             <div style={{marginBottom: '10px', fontSize: '14px', color: '#666'}}>

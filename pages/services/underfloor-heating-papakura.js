@@ -22,7 +22,7 @@ const UnderfloorHeatingPapakuraPage = () => {
       "@type": "Place",
       "name": "Papakura, Auckland"
     },
-    "serviceType": "Underfloor heating installation, maintenance & repair",
+    "serviceType": "Underfloor heating installation, installation",
     "description": "Professional underfloor heating installation and service in Papakura, including rural properties and surrounding areas."
   };
 
@@ -35,7 +35,7 @@ const UnderfloorHeatingPapakuraPage = () => {
         "name": "How much does underfloor heating cost in Papakura?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Underfloor heating costs in Papakura typically range from $75-$145 per square meter for electric systems and $110-$175 per square meter for hydronic systems, including installation. Papakura offers competitive pricing with excellent value for money."
+          "text": "Contact us for a free custom quote based on your specific floor plan and project requirements."
         }
       },
       {
@@ -43,7 +43,7 @@ const UnderfloorHeatingPapakuraPage = () => {
         "name": "Do you service underfloor heating systems in Papakura?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Yes, we provide comprehensive maintenance and repair services for underfloor heating systems throughout Papakura, including rural properties and surrounding areas."
+          "text": "Yes, we provide comprehensive installation services for underfloor heating systems throughout Papakura, including rural properties and surrounding areas."
         }
       }
     ]
@@ -53,9 +53,9 @@ const UnderfloorHeatingPapakuraPage = () => {
     <Layout>
       <SEO
         title="Underfloor Heating Papakura — Rural Properties Installation | Heat NZ"
-        description="Professional underfloor heating installation in Papakura, Auckland. Rural properties & surrounding areas. Electric & hydronic systems from $75/m². Free quotes for Papakura homes."
+        description="Professional underfloor heating installation in Papakura, Auckland. Rural properties & surrounding areas. Electric systems custom quote. Free quotes for Papakura homes."
         canonical="https://heat.nz/services/underfloor-heating-papakura"
-        keywords="underfloor heating Papakura, heating installation Papakura, electric heating Papakura, hydronic heating Papakura, rural heating Papakura, Papakura heating contractors, heating service Papakura"
+        keywords="underfloor heating Papakura, heating installation Papakura, electric heating Papakura, electric heating Papakura, rural heating Papakura, Papakura heating contractors, heating service Papakura"
         structuredData={[structuredData]}
         faqData={faqData}
       />
@@ -66,8 +66,8 @@ const UnderfloorHeatingPapakuraPage = () => {
           <div style={styles.heroContent}>
             <h1>Professional Underfloor Heating Papakura — Rural Properties Specialists</h1>
             <p style={styles.heroSubtitle}>
-              Papakura's trusted underfloor heating specialists. We serve Papakura and surrounding rural areas 
-              with reliable electric and hydronic heating installations for rural properties, lifestyle blocks, and country homes.
+              Among Papakura's experienced underfloor heating specialists. We serve Papakura and surrounding rural areas 
+              with reliable electric heating installations for rural properties, lifestyle blocks, and country homes.
             </p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
@@ -104,7 +104,7 @@ const UnderfloorHeatingPapakuraPage = () => {
             </div>
             <div style={styles.feature}>
               <h3>Reliable Local Service</h3>
-              <p>We're committed to serving Papakura communities with dependable service, fast response times, and ongoing maintenance support for rural properties.</p>
+              <p>We're committed to serving Papakura communities with dependable service, fast response times, and ongoing customer support for rural properties.</p>
             </div>
           </div>
         </section>
@@ -147,15 +147,7 @@ const UnderfloorHeatingPapakuraPage = () => {
           <div style={styles.faq}>
             <div style={styles.faqItem}>
               <h3>How much does underfloor heating cost in Papakura?</h3>
-              <p>Underfloor heating costs in Papakura typically range from $75-$145 per square meter for electric systems and $110-$175 per square meter for hydronic systems, including installation. Papakura offers competitive pricing with excellent value for money.</p>
-            </div>
-            <div style={styles.faqItem}>
-              <h3>Do you service underfloor heating systems in Papakura?</h3>
-              <p>Yes, we provide comprehensive maintenance and repair services for underfloor heating systems throughout Papakura, including rural properties and surrounding areas.</p>
-            </div>
-            <div style={styles.faqItem}>
-              <h3>What heating system is best for Papakura rural properties?</h3>
-              <p>For Papakura rural properties, we typically recommend hydronic systems for whole-house heating or electric systems for specific areas. The choice depends on your property's size, insulation, and whether you're on-grid or off-grid.</p>
+              <p>Contact us for a free custom quote based on your specific floor plan and project requirements."s size, insulation, and whether you're on-grid or off-grid.</p>
             </div>
           </div>
         </section>

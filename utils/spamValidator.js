@@ -409,7 +409,7 @@ export function validateEmailPattern(email) {
  * @param {number} minTime - Minimum time in milliseconds (default: 3000 = 3 seconds)
  * @returns {Object} Timing validation result
  */
-export function validateSubmissionTiming(timeOnPage, minTime = 3000) {
+export function validateSubmissionTiming(timeOnPage, minTime = 4000) {
   if (!timeOnPage || typeof timeOnPage !== 'number') {
     // If timing not provided, don't penalize (might be legitimate)
     return { isValid: true, score: 0, reason: 'Timing not provided' };

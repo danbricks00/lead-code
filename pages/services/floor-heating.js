@@ -39,7 +39,7 @@ const FloorHeatingPage = () => {
   const benefits = [
     "Complete floor heating solutions for any space",
     "Works with tile, carpet, vinyl, and hardwood floors",
-    "Electric and hydronic heating options available",
+    "electric heating options available",
     "Zone-controlled heating for energy efficiency",
     "Professional installation and maintenance",
     "Long-term warranty and support",
@@ -48,7 +48,7 @@ const FloorHeatingPage = () => {
   ];
 
   const applications = [
-    { area: "Residential Homes", description: "Complete home heating with electric or hydronic systems" },
+    { area: "Residential Homes", description: "Complete home heating with electric or electric systems" },
     { area: "Bathrooms", description: "Luxury bathroom heating with quick warm-up times" },
     { area: "Kitchens", description: "Kitchen floor heating for added comfort while cooking" },
     { area: "Living Areas", description: "Living room and bedroom heating for year-round comfort" },
@@ -67,11 +67,11 @@ const FloorHeatingPage = () => {
     "areaServed": {
       "name": "Auckland"
     },
-    "serviceType": "Floor heating installation, electric floor heating, hydronic floor heating",
-    "description": "Complete floor heating solutions in Auckland. Professional installation of electric and hydronic floor heating systems for residential and commercial applications.",
+    "serviceType": "Floor heating installation, electric floor heating, electric floor heating",
+    "description": "Complete floor heating solutions in Auckland. Professional installation of electric floor heating systems for residential and commercial applications.",
     "offers": {
       "@type": "Offer",
-      "priceRange": "$80-$220 per square meter",
+      "priceRange": "Custom quote",
       "availability": "https://schema.org/InStock"
     },
     "category": "Home Improvement",
@@ -90,7 +90,7 @@ const FloorHeatingPage = () => {
           "@type": "Offer",
           "itemOffered": {
             "@type": "Service",
-            "name": "Hydronic Floor Heating"
+            "name": "Electric Floor Heating"
           }
         },
         {
@@ -113,7 +113,7 @@ const FloorHeatingPage = () => {
         "name": "What types of floor heating systems do you install?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "We install both electric and hydronic floor heating systems. Electric systems use heating cables or mats for targeted heating, while hydronic systems use hot water pipes for whole-home heating. We'll recommend the best option based on your needs and budget."
+          "text": "We install both electric floor heating systems. Electric systems use heating cables or mats for targeted heating, while electric systems use hot water pipes for whole-home heating. We'll recommend the best option based on your needs and budget."
         }
       },
       {
@@ -129,7 +129,7 @@ const FloorHeatingPage = () => {
         "name": "How energy efficient is floor heating compared to traditional heating?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Floor heating is generally more energy efficient than traditional heating because it operates at lower temperatures, provides even heat distribution, and can be zone-controlled. Electric systems are particularly efficient for targeted heating, while hydronic systems offer excellent efficiency for whole-home heating."
+          "text": "Floor heating is generally more energy efficient than traditional heating because it operates at lower temperatures, provides even heat distribution, and can be zone-controlled. Electric systems are particularly efficient for targeted heating, while electric systems offer excellent efficiency for whole-home heating."
         }
       }
     ]
@@ -139,9 +139,9 @@ const FloorHeatingPage = () => {
     <Layout>
       <SEO
         title="Floor Heating Auckland — Complete Floor Heating Solutions | Heat NZ"
-        description="Complete floor heating solutions in Auckland. Electric & hydronic floor heating installation for homes & commercial spaces. From $80-$220/m². Professional installation & maintenance. Free quotes."
+        description="Complete floor heating solutions in Auckland. Electric floor heating installation for homes & commercial spaces. From custom quote. Professional installation & maintenance. Free quotes."
         canonical="https://heat.nz/services/floor-heating"
-        keywords="floor heating Auckland, floor heating installation Auckland, electric floor heating Auckland, hydronic floor heating Auckland, radiant floor heating, whole house heating, home heating systems Auckland, commercial floor heating, tile heating Auckland, under tile heating Auckland, electric tile heating Auckland, electric under tile heating Auckland, electric floor heating systems, hydronic floor heating systems, radiant heating Auckland, floor heating contractors Auckland, electric heating installation Auckland, hydronic heating installation Auckland, whole home heating Auckland, residential floor heating, commercial floor heating Auckland, floor heating cost Auckland, floor heating maintenance Auckland, floor heating repairs Auckland, electric heating mats Auckland, heating cables Auckland, floor heating thermostats, zone heating Auckland, energy efficient floor heating, eco friendly floor heating, heat pump floor heating, solar floor heating Auckland, floor heating design Auckland, floor heating planning, floor heating consultation, floor heating quote Auckland, floor heating installation service, professional floor heating installers"
+        keywords="floor heating Auckland, floor heating installation Auckland, electric floor heating Auckland, electric floor heating Auckland, radiant floor heating, whole house heating, home heating systems Auckland, commercial floor heating, tile heating Auckland, under tile heating Auckland, electric tile heating Auckland, electric under tile heating Auckland, electric floor heating systems, electric floor heating systems, radiant heating Auckland, floor heating contractors Auckland, electric heating installation Auckland, electric heating installation Auckland, whole home heating Auckland, residential floor heating, commercial floor heating Auckland, floor heating cost Auckland, floor heating maintenance Auckland, floor heating repairs Auckland, electric heating mats Auckland, heating cables Auckland, floor heating thermostats, zone heating Auckland, energy efficient floor heating, eco friendly floor heating, heat pump floor heating, solar floor heating Auckland, floor heating design Auckland, floor heating planning, floor heating consultation, floor heating quote Auckland, floor heating installation service, professional floor heating installers"
         structuredData={[structuredData, faqData]}
       />
       
@@ -152,14 +152,14 @@ const FloorHeatingPage = () => {
             <h1>Floor Heating Auckland</h1>
             <p style={styles.heroSubtitle}>
               Complete floor heating solutions for residential and commercial spaces. 
-              Electric and hydronic systems installed by Auckland's heating specialists.
+              electric systems installed by experienced Auckland heating installers.
             </p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
-                <strong>From:</strong> $80-$220/m²
+                <strong>From:</strong> custom quote
               </div>
               <div style={styles.stat}>
-                <strong>Systems:</strong> Electric & Hydronic
+                <strong>Systems:</strong> Electric
               </div>
               <div style={styles.stat}>
                 <strong>Coverage:</strong> All Auckland
@@ -180,7 +180,7 @@ const FloorHeatingPage = () => {
                 evenly across the entire floor surface.
               </p>
               <p>
-                We offer both electric and hydronic floor heating solutions, each designed 
+                We offer both electric floor heating solutions, each designed 
                 for different applications and budgets, providing year-round comfort in 
                 homes, offices, and commercial spaces.
               </p>
@@ -228,33 +228,21 @@ const FloorHeatingPage = () => {
           </div>
         </section>
 
-        {/* System Comparison */}
+        {/* Why Electric Floor Heating */}
         <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Electric vs Hydronic Floor Heating</h2>
+          <h2 style={styles.sectionTitle}>Why Choose Electric Floor Heating?</h2>
           <div style={styles.comparisonGrid}>
             <div style={styles.comparisonCard}>
-              <h3>Electric Floor Heating</h3>
+              <h3>Premium Electric Floor Heating</h3>
               <div style={styles.comparisonList}>
-                <p>✓ Quick installation (1-3 days)</p>
-                <p>✓ Lower upfront costs</p>
-                <p>✓ Perfect for targeted heating</p>
+                <p>✓ Custom quote based on your floor plan</p>
+                <p>✓ Perfect for targeted and whole-home heating</p>
                 <p>✓ Zone-controlled heating</p>
-                <p>✓ Ideal for renovations</p>
-                <p>✓ No boiler required</p>
+                <p>✓ Ideal for renovations and new builds</p>
+                <p>✓ 10-year warranty</p>
+                <p>✓ 25+ years serving Auckland</p>
               </div>
-              <div style={styles.priceRange}>From $80-$150/m²</div>
-            </div>
-            <div style={styles.comparisonCard}>
-              <h3>Hydronic Floor Heating</h3>
-              <div style={styles.comparisonList}>
-                <p>✓ Lower running costs</p>
-                <p>✓ Whole house heating</p>
-                <p>✓ Long-term efficiency</p>
-                <p>✓ Compatible with heat pumps</p>
-                <p>✓ Ideal for new builds</p>
-                <p>✓ Excellent for large areas</p>
-              </div>
-              <div style={styles.priceRange}>From $130-$220/m²</div>
+              <div style={styles.priceRange}>Request a custom quote</div>
             </div>
           </div>
         </section>

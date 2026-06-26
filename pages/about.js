@@ -7,7 +7,7 @@ const AboutPage = () => {
     <Layout>
       <SEO
         title="About Heat NZ | Professional Underfloor Heating Services"
-        description="Learn about Heat NZ, Auckland's trusted underfloor heating specialists. Professional installation, maintenance, and service for electric and hydronic systems."
+        description="Learn about Heat NZ, Auckland's trusted electric underfloor heating specialists. Over 25 years of professional installation experience."
         canonical="https://heat.nz/about"
         keywords="about heat nz, underfloor heating company auckland, professional heating services"
       />

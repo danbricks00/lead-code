@@ -48,7 +48,7 @@ const UnderfloorHeatingNorthShorePage = () => {
         "name": "Glenfield"
       }
     ],
-    "serviceType": "Underfloor heating installation, under floor heating installation, maintenance & repair",
+    "serviceType": "Underfloor heating installation, under floor heating installation, installation",
     "description": "Professional underfloor heating and under floor heating installation and service on the North Shore, including Takapuna, Devonport, Browns Bay, Albany, Milford, Glenfield, and surrounding areas."
   };
 
@@ -61,7 +61,7 @@ const UnderfloorHeatingNorthShorePage = () => {
         "name": "How much does underfloor heating cost on the North Shore?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Underfloor heating costs on the North Shore typically range from $90-$170 per square meter for electric systems and $125-$200 per square meter for hydronic systems, including installation. Premium locations like Takapuna and Devonport may have slightly higher costs."
+          "text": "Contact us for a free custom quote based on your specific floor plan and project requirements."
         }
       },
       {
@@ -79,9 +79,9 @@ const UnderfloorHeatingNorthShorePage = () => {
     <Layout>
       <SEO
         title="Underfloor Heating North Shore | Under Floor Heating Takapuna, Devonport | Heat NZ"
-        description="Professional underfloor heating & under floor heating on Auckland's North Shore. Takapuna, Devonport, Browns Bay, Albany, Milford, Glenfield & surrounding areas. Electric & hydronic systems from $90/m². Free quotes for North Shore homes."
+        description="Professional underfloor heating & under floor heating on Auckland's North Shore. Takapuna, Devonport, Browns Bay, Albany, Milford, Glenfield & surrounding areas. Electric systems custom quote. Free quotes for North Shore homes."
         canonical="https://www.heat.nz/services/underfloor-heating-north-shore"
-        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating North Shore, under floor heating North Shore, under-floor heating North Shore, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating North Shore, under tile heating Auckland, tile heating North Shore, tile heating Auckland, floor heating North Shore, floor heating Auckland, electric tile heating North Shore, electric tile heating Auckland, electric under floor North Shore, electric under floor Auckland, bathroom tile heating North Shore, bathroom tile heating Auckland, bathroom heating North Shore, bathroom heating Auckland, underfloor heating Takapuna, under floor heating Takapuna, under-floor heating Takapuna, underfloor heating Devonport, under floor heating Devonport, under-floor heating Devonport, underfloor heating Browns Bay, under floor heating Browns Bay, under-floor heating Browns Bay, underfloor heating Albany, under floor heating Albany, under-floor heating Albany, underfloor heating Milford, under floor heating Milford, under-floor heating Milford, heating installation North Shore, electric heating North Shore, hydronic heating North Shore, North Shore heating contractors, heating service North Shore"
+        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating North Shore, under floor heating North Shore, under-floor heating North Shore, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating North Shore, under tile heating Auckland, tile heating North Shore, tile heating Auckland, floor heating North Shore, floor heating Auckland, electric tile heating North Shore, electric tile heating Auckland, electric under floor North Shore, electric under floor Auckland, bathroom tile heating North Shore, bathroom tile heating Auckland, bathroom heating North Shore, bathroom heating Auckland, underfloor heating Takapuna, under floor heating Takapuna, under-floor heating Takapuna, underfloor heating Devonport, under floor heating Devonport, under-floor heating Devonport, underfloor heating Browns Bay, under floor heating Browns Bay, under-floor heating Browns Bay, underfloor heating Albany, under floor heating Albany, under-floor heating Albany, underfloor heating Milford, under floor heating Milford, under-floor heating Milford, heating installation North Shore, electric heating North Shore, electric heating North Shore, North Shore heating contractors, heating service North Shore"
         structuredData={[structuredData]}
         faqData={faqData}
       />
@@ -92,8 +92,8 @@ const UnderfloorHeatingNorthShorePage = () => {
           <div style={styles.heroContent}>
             <h1>Professional Underfloor Heating North Shore | Under Floor Heating Takapuna, Devonport & All North Shore</h1>
             <p style={styles.heroSubtitle}>
-              North Shore's premier underfloor heating and under floor heating specialists. We serve Takapuna, Devonport, Browns Bay, Albany, Milford, Glenfield, and all North Shore suburbs 
-              with premium electric and hydronic heating installations for coastal homes, luxury properties, and family residences.
+              Among North Shore's experienced underfloor heating and under floor heating specialists. We serve Takapuna, Devonport, Browns Bay, Albany, Milford, Glenfield, and all North Shore suburbs 
+              with premium electric heating installations for coastal homes, luxury properties, and family residences.
             </p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
@@ -130,7 +130,7 @@ const UnderfloorHeatingNorthShorePage = () => {
             </div>
             <div style={styles.feature}>
               <h3>Established Local Service</h3>
-              <p>We're the established North Shore heating specialists, providing reliable service and maintenance across all North Shore communities.</p>
+              <p>We provide electric underfloor heating across North Shore communities, providing reliable service and maintenance across all North Shore communities.</p>
             </div>
           </div>
         </section>
@@ -173,15 +173,7 @@ const UnderfloorHeatingNorthShorePage = () => {
           <div style={styles.faq}>
             <div style={styles.faqItem}>
               <h3>How much does underfloor heating cost on the North Shore?</h3>
-              <p>Underfloor heating and under floor heating costs on the North Shore typically range from $90-$170 per square meter for electric systems and $125-$200 per square meter for hydronic systems, including installation. Premium locations like Takapuna and Devonport may have slightly higher costs.</p>
-            </div>
-            <div style={styles.faqItem}>
-              <h3>Do you install underfloor heating in North Shore coastal properties?</h3>
-              <p>Yes, we specialize in installing underfloor heating and under floor heating in North Shore coastal properties, understanding the unique requirements of waterfront homes and managing salt air considerations throughout Takapuna, Devonport, Milford, and all coastal North Shore areas.</p>
-            </div>
-            <div style={styles.faqItem}>
-              <h3>What heating system is best for North Shore luxury homes?</h3>
-              <p>For North Shore luxury homes in Takapuna, Devonport, and Milford, we typically recommend hydronic systems for whole-house heating with smart controls, or electric systems for specific areas like bathrooms and kitchens. The choice depends on your home's size and heating requirements.</p>
+              <p>Contact us for a free custom quote based on your specific floor plan and project requirements.</p>
             </div>
             <div style={styles.faqItem}>
               <h3>Do you install under floor heating in Takapuna?</h3>

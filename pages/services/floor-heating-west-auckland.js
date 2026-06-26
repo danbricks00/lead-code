@@ -22,7 +22,7 @@ const FloorHeatingWestAucklandPage = () => {
       "@type": "Place",
       "name": "West Auckland"
     },
-    "serviceType": "Floor heating installation, maintenance & repair",
+    "serviceType": "Floor heating installation, installation",
     "description": "Professional floor heating installation and service in West Auckland, including Henderson, New Lynn, Glen Eden, and surrounding areas."
   };
 
@@ -35,7 +35,7 @@ const FloorHeatingWestAucklandPage = () => {
         "name": "How much does floor heating cost in West Auckland?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Floor heating costs in West Auckland typically range from $80-$150 per square meter for electric systems and $115-$185 per square meter for hydronic systems, including installation. West Auckland offers competitive pricing with excellent value for money."
+          "text": "Floor heating costs in West Auckland typically range from custom quote based on your floor plan for electric systems and Contact us for a free custom quote based on your specific floor plan and project requirements."
         }
       },
       {
@@ -53,9 +53,9 @@ const FloorHeatingWestAucklandPage = () => {
     <Layout>
       <SEO
         title="Floor Heating West Auckland — Professional Installation & Service | Heat NZ"
-        description="Professional floor heating installation in West Auckland. Electric & hydronic floor heating for Henderson, New Lynn, Glen Eden & all West Auckland suburbs. From $80-$185/m². Free quotes."
+        description="Professional floor heating installation in West Auckland. Electric floor heating for Henderson, New Lynn, Glen Eden & all West Auckland suburbs. Free custom quotes."
         canonical="https://heat.nz/services/floor-heating-west-auckland"
-        keywords="floor heating West Auckland, floor heating Henderson, floor heating New Lynn, floor heating Glen Eden, floor heating Avondale, electric floor heating West Auckland, hydronic floor heating West Auckland, radiant floor heating West Auckland, floor heating installation West Auckland, bathroom floor heating West Auckland, kitchen floor heating West Auckland, tile floor heating West Auckland, wooden floor heating West Auckland, concrete floor heating West Auckland, floor heating cost West Auckland, floor heating quotes West Auckland, floor heating maintenance West Auckland, floor heating repair West Auckland, underfloor heating West Auckland, heated floors West Auckland, floor warming systems West Auckland, electric heating mats West Auckland, floor heating thermostat West Auckland, floor heating timer West Auckland, floor heating energy efficient West Auckland, floor heating insulation West Auckland, floor heating insulation requirements West Auckland, floor heating installation time West Auckland, floor heating warranty West Auckland, floor heating guarantee West Auckland, floor heating retrofit West Auckland, floor heating new build West Auckland, floor heating renovation West Auckland"
+        keywords="floor heating West Auckland, floor heating Henderson, floor heating New Lynn, floor heating Glen Eden, floor heating Avondale, electric floor heating West Auckland, electric floor heating West Auckland, radiant floor heating West Auckland, floor heating installation West Auckland, bathroom floor heating West Auckland, kitchen floor heating West Auckland, tile floor heating West Auckland, wooden floor heating West Auckland, concrete floor heating West Auckland, floor heating cost West Auckland, floor heating quotes West Auckland, floor heating maintenance West Auckland, floor heating repair West Auckland, underfloor heating West Auckland, heated floors West Auckland, floor warming systems West Auckland, electric heating mats West Auckland, floor heating thermostat West Auckland, floor heating timer West Auckland, floor heating energy efficient West Auckland, floor heating insulation West Auckland, floor heating insulation requirements West Auckland, floor heating installation time West Auckland, floor heating warranty West Auckland, floor heating guarantee West Auckland, floor heating retrofit West Auckland, floor heating new build West Auckland, floor heating renovation West Auckland"
         structuredData={[structuredData, faqData]}
       />
       
@@ -91,7 +91,7 @@ const FloorHeatingWestAucklandPage = () => {
             <h2 style={{ color: '#333', marginBottom: '20px' }}>⚡ Floor Heating Solutions</h2>
             <ul style={{ listStyle: 'none', padding: 0 }}>
               <li style={{ marginBottom: '10px' }}>✓ Electric floor heating</li>
-              <li style={{ marginBottom: '10px' }}>✓ Hydronic floor heating</li>
+              <li style={{ marginBottom: '10px' }}>✓ Electric floor heating</li>
               <li style={{ marginBottom: '10px' }}>✓ Bathroom floor heating</li>
               <li style={{ marginBottom: '10px' }}>✓ Kitchen floor heating</li>
               <li style={{ marginBottom: '10px' }}>✓ Whole house floor heating</li>

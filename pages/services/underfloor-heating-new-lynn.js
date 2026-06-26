@@ -22,7 +22,7 @@ const UnderfloorHeatingNewLynnPage = () => {
       "@type": "Place",
       "name": "New Lynn, West Auckland"
     },
-    "serviceType": "Underfloor heating installation, under floor heating installation, maintenance & repair",
+    "serviceType": "Underfloor heating installation, under floor heating installation, installation",
     "description": "Professional underfloor heating and under floor heating installation and service in New Lynn, West Auckland. Expert installation for apartments, diverse housing, and residential properties."
   };
 
@@ -35,7 +35,7 @@ const UnderfloorHeatingNewLynnPage = () => {
         "name": "How much does underfloor heating cost in New Lynn?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Underfloor heating and under floor heating costs in New Lynn typically range from $80-$150 per square meter for electric systems and $115-$185 per square meter for hydronic systems, including installation. We provide free quotes for all New Lynn properties."
+          "text": "Underfloor heating and under floor heating costs in New Lynn typically range from custom quote based on your floor plan for electric systems and Contact us for a free custom quote based on your specific floor plan and project requirements."
         }
       },
       {
@@ -53,9 +53,9 @@ const UnderfloorHeatingNewLynnPage = () => {
     <Layout>
       <SEO
         title="Underfloor Heating New Lynn | Under Floor Heating New Lynn, West Auckland | Heat NZ"
-        description="Professional underfloor heating & under floor heating in New Lynn, West Auckland. Expert installation for New Lynn apartments, diverse housing & residential properties. Electric & hydronic systems from $80/m². Free quotes for New Lynn properties."
+        description="Professional underfloor heating & under floor heating in New Lynn, West Auckland. Expert installation for New Lynn apartments, diverse housing & residential properties. Electric systems custom quote. Free quotes for New Lynn properties."
         canonical="https://www.heat.nz/services/underfloor-heating-new-lynn"
-        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating New Lynn, under floor heating New Lynn, under-floor heating New Lynn, underfloor heating New Lynn West Auckland, under floor heating New Lynn West Auckland, under-floor heating New Lynn West Auckland, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating New Lynn, under tile heating Auckland, tile heating New Lynn, tile heating Auckland, floor heating New Lynn, floor heating Auckland, electric tile heating New Lynn, electric tile heating Auckland, electric under floor New Lynn, electric under floor Auckland, bathroom tile heating New Lynn, bathroom tile heating Auckland, bathroom heating New Lynn, bathroom heating Auckland, heating installation New Lynn, electric heating New Lynn, hydronic heating New Lynn, New Lynn heating contractors"
+        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating New Lynn, under floor heating New Lynn, under-floor heating New Lynn, underfloor heating New Lynn West Auckland, under floor heating New Lynn West Auckland, under-floor heating New Lynn West Auckland, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating New Lynn, under tile heating Auckland, tile heating New Lynn, tile heating Auckland, floor heating New Lynn, floor heating Auckland, electric tile heating New Lynn, electric tile heating Auckland, electric under floor New Lynn, electric under floor Auckland, bathroom tile heating New Lynn, bathroom tile heating Auckland, bathroom heating New Lynn, bathroom heating Auckland, heating installation New Lynn, electric heating New Lynn, electric heating New Lynn, New Lynn heating contractors"
         structuredData={[structuredData]}
         faqData={faqData}
       />
@@ -66,7 +66,7 @@ const UnderfloorHeatingNewLynnPage = () => {
           <div style={styles.heroContent}>
             <h1>Professional Underfloor Heating New Lynn | Under Floor Heating New Lynn, West Auckland</h1>
             <p style={styles.heroSubtitle}>
-              New Lynn's trusted underfloor heating and under floor heating specialists. We provide expert installation for New Lynn apartments, 
+              Among New Lynn's experienced underfloor heating and under floor heating specialists. We provide professional installation for New Lynn apartments, 
               diverse housing, and residential properties throughout New Lynn and surrounding areas.
             </p>
             <div style={styles.heroStats}>
@@ -104,7 +104,7 @@ const UnderfloorHeatingNewLynnPage = () => {
             </div>
             <div style={styles.feature}>
               <h3>Local New Lynn Knowledge</h3>
-              <p>As West Auckland specialists, we understand New Lynn's unique character, local conditions, and provide fast, reliable service throughout New Lynn.</p>
+              <p>Serving West Auckland, we understand New Lynn's unique character, local conditions, and provide fast, reliable service throughout New Lynn.</p>
             </div>
           </div>
         </section>
@@ -139,15 +139,11 @@ const UnderfloorHeatingNewLynnPage = () => {
           <div style={styles.faq}>
             <div style={styles.faqItem}>
               <h3>How much does underfloor heating cost in New Lynn?</h3>
-              <p>Underfloor heating and under floor heating costs in New Lynn typically range from $80-$150 per square meter for electric systems and $115-$185 per square meter for hydronic systems, including installation. We provide free quotes for all New Lynn properties.</p>
-            </div>
-            <div style={styles.faqItem}>
-              <h3>Can you install under floor heating in New Lynn?</h3>
-              <p>Absolutely! We provide professional underfloor heating and under floor heating installation in New Lynn for apartments, diverse housing, and residential properties. Our team understands New Lynn's unique housing mix and provides tailored solutions.</p>
+              <p>Contact us for a free custom quote based on your specific floor plan and project requirements.</p>
             </div>
             <div style={styles.faqItem}>
               <h3>What's the best heating system for New Lynn apartments?</h3>
-              <p>For New Lynn apartments and units, we typically recommend electric underfloor heating systems due to their compact design, individual room control, and suitability for smaller spaces. Hydronic systems work well for larger apartments and whole-building solutions.</p>
+              <p>For New Lynn apartments and units, we typically recommend electric underfloor heating systems due to their compact design, individual room control, and suitability for smaller spaces. electric systems work well for larger apartments and whole-building solutions.</p>
             </div>
           </div>
         </section>

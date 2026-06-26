@@ -1,6 +1,7 @@
 import { getGoogleSheetsClient } from '../../lib/googleSheets.js';
 import { assertLeadWriteOnly } from '../../utils/writeGuard.js';
 import { validateAndCorrectEmail, logEmailValidation } from '../../utils/emailValidator.js';
+import { validateFreestyleSuburb } from '../../utils/freestyleSuburbValidation.js';
 import nodemailer from "nodemailer";
 import crypto from "crypto";
 
@@ -92,6 +93,13 @@ export default async function handler(req, res) {
 
     if (!customerName || !customerEmail) {
       return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    if (isUnlistedSuburb && suburb) {
+      const suburbCheck = validateFreestyleSuburb(suburb);
+      if (!suburbCheck.valid) {
+        return res.status(400).json({ error: suburbCheck.error });
+      }
     }
 
     // Smart email validation with autocorrect and MX checking

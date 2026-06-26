@@ -20,13 +20,13 @@ const ElectricUnderfloorHeatingPage = () => {
       icon: "⚡"
     },
     {
-      title: "Low Maintenance",
-      description: "Minimal maintenance required with long-lasting heating elements.",
+      title: "Premium Quality",
+      description: "Long-lasting heating elements backed by our 10-year warranty.",
       icon: "🔧"
     },
     {
-      title: "Cost Effective",
-      description: "Lower upfront costs compared to hydronic systems, ideal for targeted heating.",
+      title: "Tailored Solutions",
+      description: "Custom-designed systems quoted to suit your specific floor plan.",
       icon: "💰"
     },
     {
@@ -40,18 +40,11 @@ const ElectricUnderfloorHeatingPage = () => {
     "Perfect for bathrooms, kitchens, and living areas",
     "Ideal for renovations and retrofits",
     "Individual room temperature control",
-    "Fast installation (1-3 days typically)",
-    "Low maintenance requirements",
-    "Cost-effective for smaller areas",
+    "Professional installation by experienced technicians",
+    "Reliable, long-lasting performance",
+    "Custom quote based on your floor plan",
     "Silent operation",
     "Compatible with most floor coverings"
-  ];
-
-  const costs = [
-    { area: "Small Bathroom (5-10m²)", cost: "$400-$1,200", time: "1 day" },
-    { area: "Kitchen (15-25m²)", cost: "$1,200-$2,500", time: "1-2 days" },
-    { area: "Living Room (20-40m²)", cost: "$1,600-$4,000", time: "2-3 days" },
-    { area: "Whole House (100m²+)", cost: "$8,000-$15,000", time: "3-5 days" }
   ];
 
   const structuredData = {
@@ -65,11 +58,11 @@ const ElectricUnderfloorHeatingPage = () => {
     "areaServed": {
       "name": "Auckland"
     },
-    "serviceType": "Electric underfloor heating installation, maintenance & repair",
+    "serviceType": "Electric underfloor heating installation",
     "description": "Professional electric underfloor heating installation in Auckland. Perfect for renovations, bathrooms, kitchens, and individual room heating.",
     "offers": {
       "@type": "Offer",
-      "priceRange": "$80-$150 per square meter",
+      "priceRange": "Custom quote",
       "availability": "https://schema.org/InStock"
     },
     "category": "Home Improvement",
@@ -106,7 +99,7 @@ const ElectricUnderfloorHeatingPage = () => {
     <Layout>
       <SEO
         title="Electric Underfloor Heating Auckland — Bathroom & Kitchen Heating Installation"
-        description="Professional electric underfloor heating installation in Auckland. Perfect for bathrooms, kitchens & renovations. From $80-$150/m² with 1-3 day installation. Free quotes for all Auckland suburbs."
+        description="Professional electric underfloor heating installation in Auckland. Perfect for bathrooms, kitchens & renovations. Free custom quotes for all Auckland suburbs. 10-year warranty."
         canonical="https://heat.nz/services/electric-underfloor-heating"
         keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, electric underfloor heating Auckland, tile heating Auckland, under tile heating Auckland, floor heating Auckland, electric tile heating Auckland, electric under tile heating Auckland, bathroom heating Auckland, kitchen heating Auckland, electric floor heating Auckland, heating mats Auckland, electric heating installation Auckland, renovation heating Auckland, bathroom floor heating"
         structuredData={structuredData}
@@ -123,13 +116,13 @@ const ElectricUnderfloorHeatingPage = () => {
             </p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
-                <strong>From:</strong> $80-$150/m²
+                <strong>Pricing:</strong> Custom quote
               </div>
               <div style={styles.stat}>
-                <strong>Installation:</strong> 1-3 days
+                <strong>Experience:</strong> 25+ years
               </div>
               <div style={styles.stat}>
-                <strong>Warranty:</strong> Up to 25 years
+                <strong>Warranty:</strong> Up to 10 years
               </div>
             </div>
           </div>
@@ -181,26 +174,14 @@ const ElectricUnderfloorHeatingPage = () => {
           </div>
         </section>
 
-        {/* Cost Guide */}
+        {/* Custom Quote Section */}
         <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Electric Underfloor Heating Costs</h2>
-          <div style={styles.costTable}>
-            <div style={styles.tableHeader}>
-              <div style={styles.tableCell}>Room Size</div>
-              <div style={styles.tableCell}>Typical Cost</div>
-              <div style={styles.tableCell}>Installation Time</div>
-            </div>
-            {costs.map((cost, index) => (
-              <div key={index} style={index === costs.length - 1 ? styles.tableRowLast : styles.tableRow}>
-                <div style={styles.tableCell}>{cost.area}</div>
-                <div style={styles.tableCell}>{cost.cost}</div>
-                <div style={styles.tableCellLast}>{cost.time}</div>
-              </div>
-            ))}
-          </div>
+          <h2 style={styles.sectionTitle}>Get a Custom Quote</h2>
           <p style={styles.costNote}>
-            *Prices include materials, installation, and basic thermostat. Final costs depend on 
-            room size, floor type, and specific requirements.
+            Every home is different. The cost of electric underfloor heating depends on your floor plan,
+            room sizes, floor type, and system requirements. Contact us for a free, no-obligation custom
+            quote tailored to your specific project — we&apos;ll assess your space and provide a detailed
+            breakdown with no fixed pricing surprises.
           </p>
         </section>
 

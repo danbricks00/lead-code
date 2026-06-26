@@ -45,7 +45,7 @@ const ElectricTileHeatingEastAucklandPage = () => {
     <Layout>
       <SEO
         title="Electric Tile Heating East Auckland — Electric Heating Under Tiles | Heat NZ"
-        description="Professional electric tile heating installation in East Auckland. Electric heating systems for tiles in bathrooms, kitchens & wet areas in Howick, Pakuranga, Botany & surrounding areas. From $80-$150/m²."
+        description="Professional electric tile heating installation in East Auckland. Electric heating systems for tiles in bathrooms, kitchens & wet areas in Howick, Pakuranga, Botany & surrounding areas. Custom quote."
         canonical="https://heat.nz/services/electric-tile-heating-east-auckland"
         keywords="electric tile heating East Auckland, electric heating under tiles East Auckland, tile heating East Auckland, electric tile heating Howick, electric tile heating Pakuranga, electric tile heating Botany, electric tile heating Flat Bush, electric under tile heating East Auckland, electric heating mats East Auckland, electric heating cables under tiles East Auckland, bathroom heating East Auckland, kitchen heating East Auckland, wet area heating East Auckland, tile floor heating East Auckland, electric tile heating installation East Auckland, electric heating installation under tiles East Auckland, electric tile heating cost East Auckland, electric tile heating systems East Auckland, bathroom electric tile heating East Auckland, kitchen electric tile heating East Auckland, wet area electric tile heating East Auckland, ceramic tile heating East Auckland, porcelain tile heating East Auckland, stone tile heating East Auckland, mosaic tile heating East Auckland, electric heating mats under tiles East Auckland, tile heating contractors East Auckland, professional electric tile heating East Auckland, electric tile heating Half Moon Bay, electric tile heating Bucklands Beach, electric tile heating Dannemora, electric tile heating Somerville, electric heating under tiles Howick, electric heating under tiles Pakuranga, electric heating under tiles Botany"
         structuredData={[structuredData, faqData]}
@@ -62,7 +62,7 @@ const ElectricTileHeatingEastAucklandPage = () => {
             </p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
-                <strong>From:</strong> $80-$150/m²
+                <strong>From:</strong> custom quote
               </div>
               <div style={styles.stat}>
                 <strong>Areas:</strong> All East Auckland
@@ -130,7 +130,7 @@ const ElectricTileHeatingEastAucklandPage = () => {
         {/* CTA Section */}
         <section style={styles.ctaSection}>
           <h2>Experience Electric Tile Heating in East Auckland</h2>
-          <p>Transform your tiled floors with professional electric heating systems. Get your free quote from East Auckland's electric tile heating specialists.</p>
+          <p>Transform your tiled floors with professional electric heating systems. Get your free custom quote for electric tile heating in East Auckland.</p>
           <button 
             style={styles.ctaButton}
             onClick={() => window.open('/', '_self')}

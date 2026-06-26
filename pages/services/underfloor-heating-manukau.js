@@ -44,7 +44,7 @@ const UnderfloorHeatingManukauPage = () => {
         "name": "Flat Bush"
       }
     ],
-    "serviceType": "Underfloor heating installation, under floor heating installation, maintenance & repair",
+    "serviceType": "Underfloor heating installation, under floor heating installation, installation",
     "description": "Professional underfloor heating and under floor heating installation and service in Manukau, including Manukau City, Papatoetoe, Otahuhu, Mangere, Manurewa, Flat Bush, and surrounding areas."
   };
 
@@ -57,7 +57,7 @@ const UnderfloorHeatingManukauPage = () => {
         "name": "How much does underfloor heating cost in Manukau?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Underfloor heating costs in Manukau typically range from $75-$145 per square meter for electric systems and $110-$175 per square meter for hydronic systems, including installation. Manukau offers excellent value with competitive pricing."
+          "text": "Contact us for a free custom quote based on your specific floor plan and project requirements."
         }
       },
       {
@@ -65,7 +65,7 @@ const UnderfloorHeatingManukauPage = () => {
         "name": "Do you service underfloor heating systems in Manukau?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Yes, we provide comprehensive maintenance and repair services for underfloor heating systems throughout Manukau, including Papatoetoe, Otahuhu, Mangere, and all surrounding suburbs."
+          "text": "Yes, we provide comprehensive installation services for underfloor heating systems throughout Manukau, including Papatoetoe, Otahuhu, Mangere, and all surrounding suburbs."
         }
       }
     ]
@@ -75,9 +75,9 @@ const UnderfloorHeatingManukauPage = () => {
     <Layout>
       <SEO
         title="Underfloor Heating Manukau | Under Floor Heating Papatoetoe, Otahuhu, Mangere | Heat NZ"
-        description="Professional underfloor heating & under floor heating in Manukau, Auckland. Manukau City, Papatoetoe, Otahuhu, Mangere, Manurewa, Flat Bush & surrounding areas. Electric & hydronic systems from $75/m². Free quotes for Manukau homes."
+        description="Professional underfloor heating & under floor heating in Manukau, Auckland. Manukau City, Papatoetoe, Otahuhu, Mangere, Manurewa, Flat Bush & surrounding areas. Electric systems custom quote. Free quotes for Manukau homes."
         canonical="https://www.heat.nz/services/underfloor-heating-manukau"
-        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating Manukau, under floor heating Manukau, under-floor heating Manukau, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating Manukau, under tile heating Auckland, tile heating Manukau, tile heating Auckland, floor heating Manukau, floor heating Auckland, electric tile heating Manukau, electric tile heating Auckland, electric under floor Manukau, electric under floor Auckland, bathroom tile heating Manukau, bathroom tile heating Auckland, bathroom heating Manukau, bathroom heating Auckland, underfloor heating Papatoetoe, under floor heating Papatoetoe, under-floor heating Papatoetoe, underfloor heating Otahuhu, under floor heating Otahuhu, under-floor heating Otahuhu, underfloor heating Mangere, under floor heating Mangere, under-floor heating Mangere, underfloor heating Manurewa, under floor heating Manurewa, under-floor heating Manurewa, underfloor heating Flat Bush, under floor heating Flat Bush, under-floor heating Flat Bush, heating installation Manukau, electric heating Manukau, hydronic heating Manukau, Manukau heating contractors, heating service Manukau"
+        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating Manukau, under floor heating Manukau, under-floor heating Manukau, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating Manukau, under tile heating Auckland, tile heating Manukau, tile heating Auckland, floor heating Manukau, floor heating Auckland, electric tile heating Manukau, electric tile heating Auckland, electric under floor Manukau, electric under floor Auckland, bathroom tile heating Manukau, bathroom tile heating Auckland, bathroom heating Manukau, bathroom heating Auckland, underfloor heating Papatoetoe, under floor heating Papatoetoe, under-floor heating Papatoetoe, underfloor heating Otahuhu, under floor heating Otahuhu, under-floor heating Otahuhu, underfloor heating Mangere, under floor heating Mangere, under-floor heating Mangere, underfloor heating Manurewa, under floor heating Manurewa, under-floor heating Manurewa, underfloor heating Flat Bush, under floor heating Flat Bush, under-floor heating Flat Bush, heating installation Manukau, electric heating Manukau, electric heating Manukau, Manukau heating contractors, heating service Manukau"
         structuredData={[structuredData]}
         faqData={faqData}
       />
@@ -88,8 +88,8 @@ const UnderfloorHeatingManukauPage = () => {
           <div style={styles.heroContent}>
             <h1>Professional Underfloor Heating Manukau | Under Floor Heating Papatoetoe, Otahuhu & All Manukau</h1>
             <p style={styles.heroSubtitle}>
-              Manukau's trusted underfloor heating and under floor heating specialists. We serve Manukau City, Papatoetoe, Otahuhu, Mangere, Manurewa, Flat Bush, and all Manukau suburbs 
-              with affordable electric and hydronic heating installations for homes, rental properties, and commercial buildings.
+              Among Manukau's experienced underfloor heating and under floor heating specialists. We serve Manukau City, Papatoetoe, Otahuhu, Mangere, Manurewa, Flat Bush, and all Manukau suburbs 
+              with affordable electric heating installations for homes, rental properties, and commercial buildings.
             </p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
@@ -169,15 +169,7 @@ const UnderfloorHeatingManukauPage = () => {
           <div style={styles.faq}>
             <div style={styles.faqItem}>
               <h3>How much does underfloor heating cost in Manukau?</h3>
-              <p>Underfloor heating and under floor heating costs in Manukau typically range from $75-$145 per square meter for electric systems and $110-$175 per square meter for hydronic systems, including installation. Manukau offers excellent value with competitive pricing throughout Manukau City, Papatoetoe, Otahuhu, and all Manukau areas.</p>
-            </div>
-            <div style={styles.faqItem}>
-              <h3>Do you service underfloor heating systems in Manukau?</h3>
-              <p>Yes, we provide comprehensive maintenance and repair services for underfloor heating and under floor heating systems throughout Manukau, including Manukau City, Papatoetoe, Otahuhu, Mangere, Manurewa, Flat Bush, and all surrounding suburbs.</p>
-            </div>
-            <div style={styles.faqItem}>
-              <h3>Are your heating solutions suitable for Manukau rental properties?</h3>
-              <p>Absolutely! We provide heating solutions suitable for Manukau's rental market, including cost-effective electric systems and durable installations that appeal to both landlords and tenants throughout all Manukau suburbs.</p>
+              <p>Contact us for a free custom quote based on your specific floor plan and project requirements.</p>
             </div>
             <div style={styles.faqItem}>
               <h3>Do you install under floor heating in Papatoetoe?</h3>

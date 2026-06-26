@@ -95,7 +95,7 @@ const ElectricUnderTileHeatingPage = () => {
     "description": "Professional electric under tile heating installation in Auckland. Electric heating cables installed directly under tiles for bathrooms, kitchens, and wet areas.",
     "offers": {
       "@type": "Offer",
-      "priceRange": "$80-$150 per square meter",
+      "priceRange": "custom quote based on your floor plan",
       "availability": "https://schema.org/InStock"
     },
     "category": "Home Improvement",
@@ -163,7 +163,7 @@ const ElectricUnderTileHeatingPage = () => {
     <Layout>
       <SEO
         title="Electric Under Tile Heating Auckland — Electric Heating Cables Under Tiles | Heat NZ"
-        description="Professional electric under tile heating installation in Auckland. Electric heating cables installed directly under tiles for bathrooms, kitchens & wet areas. From $80-$150/m². Free quotes."
+        description="Professional electric under tile heating installation in Auckland. Electric heating cables installed directly under tiles for bathrooms, kitchens & wet areas. Custom quote. Free quotes."
         canonical="https://heat.nz/services/electric-under-tile-heating"
         keywords="under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, electric under tile heating Auckland, electric heating cables under tiles, electric underfloor heating tiles, bathroom electric heating under tiles, electric tile floor heating, wet area electric heating, electric heating under ceramic tiles"
         structuredData={[structuredData, faqData]}
@@ -180,7 +180,7 @@ const ElectricUnderTileHeatingPage = () => {
             </p>
             <div style={styles.heroStats}>
               <div style={styles.stat}>
-                <strong>From:</strong> $80-$150/m²
+                <strong>From:</strong> custom quote
               </div>
               <div style={styles.stat}>
                 <strong>System:</strong> Electric Cables
@@ -317,7 +317,7 @@ const ElectricUnderTileHeatingPage = () => {
             </div>
             <div style={styles.specCard}>
               <h3>Warranty</h3>
-              <p>Up to 25 years system warranty</p>
+              <p>Up to 10 years system warranty</p>
             </div>
             <div style={styles.specCard}>
               <h3>Thermostat Options</h3>
@@ -356,7 +356,7 @@ const ElectricUnderTileHeatingPage = () => {
         {/* CTA Section */}
         <section style={styles.ctaSection}>
           <h2>Transform Your Tiled Floors</h2>
-          <p>Experience the luxury of electric under tile heating. Get your free quote from Auckland's heating specialists.</p>
+          <p>Experience the luxury of electric under tile heating. Get your free custom quote for electric heating in Auckland.</p>
           <button 
             style={styles.ctaButton}
             onClick={() => window.open('/', '_self')}

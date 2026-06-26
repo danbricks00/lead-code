@@ -22,8 +22,8 @@ const UnderfloorHeatingRemueraPage = () => {
       "@type": "Place",
       "name": "Remuera, Auckland"
     },
-    "serviceType": "Underfloor heating installation, maintenance & repair",
-    "description": "Professional underfloor heating installation and service in Remuera, Auckland's premier suburb."
+    "serviceType": "Underfloor heating installation, installation",
+    "description": "Professional underfloor heating installation and service in Remuera, an established Auckland suburb."
   };
 
   const faqData = {
@@ -35,7 +35,7 @@ const UnderfloorHeatingRemueraPage = () => {
         "name": "How much does underfloor heating cost in Remuera?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Underfloor heating costs in Remuera typically range from $100-$180 per square meter for electric systems and $130-$220 per square meter for hydronic systems, including installation. Premium locations may have slightly higher costs due to luxury home requirements."
+          "text": "Contact us for a free custom quote based on your specific floor plan and project requirements."
         }
       },
       {
@@ -53,9 +53,9 @@ const UnderfloorHeatingRemueraPage = () => {
     <Layout>
       <SEO
         title="Underfloor Heating Remuera — Luxury Home Heating Installation | Heat NZ"
-        description="Premium underfloor heating installation in Remuera, Auckland. Specialists in luxury and heritage homes. Electric & hydronic systems with discreet installation. Free quotes for Remuera homeowners."
+        description="Premium underfloor heating installation in Remuera, Auckland. Specialists in luxury and heritage homes. Electric systems with discreet installation. Free quotes for Remuera homeowners."
         canonical="https://heat.nz/services/underfloor-heating-remuera"
-        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating Remuera, under floor heating Remuera, under-floor heating Remuera, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating Remuera, under tile heating Auckland, tile heating Remuera, tile heating Auckland, floor heating Remuera, floor heating Auckland, electric tile heating Remuera, electric tile heating Auckland, electric under floor Remuera, electric under floor Auckland, bathroom tile heating Remuera, bathroom tile heating Auckland, bathroom heating Remuera, bathroom heating Auckland, heating installation Remuera, electric heating Remuera, hydronic heating Remuera, luxury home heating Remuera, heritage home heating Remuera, kitchen heating Remuera, heating contractors Remuera"
+        keywords="underfloor heating, under floor heating, under-floor heating, under tile heating, tile heating, floor heating, electric tile heating, electric under floor, electric under-floor, bathroom tile heating, bathroom heating, underfloor heating Remuera, under floor heating Remuera, under-floor heating Remuera, underfloor heating Auckland, under floor heating Auckland, under-floor heating Auckland, under tile heating Remuera, under tile heating Auckland, tile heating Remuera, tile heating Auckland, floor heating Remuera, floor heating Auckland, electric tile heating Remuera, electric tile heating Auckland, electric under floor Remuera, electric under floor Auckland, bathroom tile heating Remuera, bathroom tile heating Auckland, bathroom heating Remuera, bathroom heating Auckland, heating installation Remuera, electric heating Remuera, electric heating Remuera, luxury home heating Remuera, heritage home heating Remuera, kitchen heating Remuera, heating contractors Remuera"
         structuredData={[structuredData]}
         faqData={faqData}
       />
@@ -66,7 +66,7 @@ const UnderfloorHeatingRemueraPage = () => {
           <div style={styles.heroContent}>
             <h1>Premium Underfloor Heating Remuera — Luxury Home Heating Specialists</h1>
             <p style={styles.heroSubtitle}>
-              Remuera's premier underfloor heating specialists. We understand the unique requirements of luxury and heritage homes, 
+              Among Remuera's experienced underfloor heating specialists. We understand the unique requirements of luxury and heritage homes, 
               providing discreet, efficient heating solutions that enhance your property's value and comfort.
             </p>
             <div style={styles.heroStats}>
@@ -139,15 +139,11 @@ const UnderfloorHeatingRemueraPage = () => {
           <div style={styles.faq}>
             <div style={styles.faqItem}>
               <h3>How much does underfloor heating cost in Remuera?</h3>
-              <p>Underfloor heating costs in Remuera typically range from $100-$180 per square meter for electric systems and $130-$220 per square meter for hydronic systems, including installation. Premium locations may have slightly higher costs due to luxury home requirements.</p>
-            </div>
-            <div style={styles.faqItem}>
-              <h3>Do you install underfloor heating in Remuera heritage homes?</h3>
-              <p>Yes, we specialize in installing underfloor heating in Remuera's heritage and luxury homes. We work carefully with heritage restrictions and use appropriate systems that complement the home's character.</p>
+              <p>Contact us for a free custom quote based on your specific floor plan and project requirements."s heritage and luxury homes. We work carefully with heritage restrictions and use appropriate systems that complement the home's character.</p>
             </div>
             <div style={styles.faqItem}>
               <h3>What's the best underfloor heating system for Remuera homes?</h3>
-              <p>For Remuera homes, we typically recommend hydronic systems for whole-house heating or electric systems for individual rooms like bathrooms and kitchens. The choice depends on your home's structure, heritage status, and heating requirements.</p>
+              <p>For Remuera homes, we typically recommend electric systems for whole-house heating or electric systems for individual rooms like bathrooms and kitchens. The choice depends on your home's structure, heritage status, and heating requirements.</p>
             </div>
           </div>
         </section>

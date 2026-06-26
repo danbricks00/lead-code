@@ -2,6 +2,7 @@
 const path = require('path');
 
 const nextConfig = {
+  outputFileTracingRoot: path.join(__dirname),
   // Performance optimizations
   compress: true,
   poweredByHeader: false,

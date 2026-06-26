@@ -2,7 +2,7 @@ import React from 'react';
 import Layout from '../components/Layout';
 import SEO from '../components/SEO';
 
-const PrivacyPage = () => {
+const PrivacyPage = ({ adminEmail }) => {
   return (
     <Layout>
       <SEO
@@ -76,8 +76,16 @@ const PrivacyPage = () => {
           <h2 style={styles.subHeader}>Contact Us</h2>
           <p style={styles.paragraph}>
             If you have any questions about this Privacy Policy or wish to make a privacy-related
-            request, please contact us at{' '}
-            <a href="mailto:support@heat.nz" style={styles.link}>support@heat.nz</a> or via our{' '}
+            request, please contact us
+            {adminEmail ? (
+              <>
+                {' '}at{' '}
+                <a href={`mailto:${adminEmail}`} style={styles.link}>{adminEmail}</a>
+                {' '}or via our{' '}
+              </>
+            ) : (
+              ' via our '
+            )}
             <a href="/contact" style={styles.link}>Contact page</a>.
           </p>
         </div>
@@ -137,5 +145,13 @@ const styles = {
     textDecoration: 'none',
   },
 };
+
+export async function getServerSideProps() {
+  return {
+    props: {
+      adminEmail: process.env.ADMIN_EMAIL || null,
+    },
+  };
+}
 
 export default PrivacyPage;

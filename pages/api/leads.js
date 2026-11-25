@@ -1,7 +1,7 @@
 // pages/api/leads.js - Consolidated Lead/Quote Lifecycle API
 import { google } from 'googleapis';
 import { getGoogleSheetsClient, getSpreadsheetId } from '../../lib/googleSheets.js';
-import { sendEmail, createLeadIntakeEmails, createQuoteSubmissionEmails, createQuoteDecisionEmails } from '../../lib/emailHelper.js';
+import { sendEmail, getTradespersonLeadEmail, createLeadIntakeEmails, createQuoteSubmissionEmails, createQuoteDecisionEmails } from '../../lib/emailHelper.js';
 
 export default async function handler(req, res) {
   console.log("✅ Loaded API leads.js");
@@ -82,7 +82,7 @@ async function handleLeadCreate(req, res) {
   const totalRooms = rooms.length;
   const areaValue = area || "";
   const suburbValue = suburb || "";
-  const quoteFormUrl = `${process.env.SITE_URL || "https://lead-code.vercel.app"}/quote-submit/${leadId}`;
+  const quoteFormUrl = `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/quote-submit/${leadId}`;
   const roomsEmailList = rooms.map(room => 
     `<li><strong>${room.roomName}:</strong> ${room.dimensions}</li>`
   ).join("");
@@ -127,7 +127,7 @@ async function handleLeadCreate(req, res) {
 
       await sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
-        range: "Leads!A:Z",
+        range: "Leads!A:L",
         valueInputOption: "RAW",
         insertDataOption: "INSERT_ROWS",
         requestBody: {
@@ -151,9 +151,9 @@ async function handleLeadCreate(req, res) {
   // Environment checks
   console.log("🔧 Environment variables check:", {
     GMAIL_USER: process.env.GMAIL_USER || "MISSING",
-    GMAIL_PASS: process.env.GMAIL_PASS ? "SET" : "MISSING",
+    GMAIL_APP_PASSWORD: process.env.GMAIL_APP_PASSWORD ? "SET" : "MISSING",
     ADMIN_EMAIL: process.env.ADMIN_EMAIL || "MISSING",
-    TEAM_EMAIL: process.env.TEAM_EMAIL || "MISSING"
+    TRADES_LEAD_EMAIL: getTradespersonLeadEmail() ? "SET" : "MISSING"
   });
 
   try {
@@ -166,7 +166,7 @@ async function handleLeadCreate(req, res) {
       secure: true,
       auth: {
         user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS
+        pass: process.env.GMAIL_APP_PASSWORD
       }
     });
 
@@ -211,8 +211,8 @@ async function handleLeadCreate(req, res) {
       console.log("⚠️ ADMIN_EMAIL not configured, skipping admin notification");
     }
 
-    // Send tradesperson notification email
-    if (process.env.TEAM_EMAIL) {
+    const tradesLeadTo = getTradespersonLeadEmail();
+    if (tradesLeadTo) {
       try {
         const tradespersonSubject = `🆕 New Lead Available - ${serviceType} in ${suburbValue}`;
         const tradespersonHtml = `
@@ -234,10 +234,10 @@ async function handleLeadCreate(req, res) {
           </div>
         `;
 
-        console.log(`📤 Sending tradesperson notification email to: ${process.env.TEAM_EMAIL}`);
+        console.log(`📤 Sending tradesperson notification email to: ${tradesLeadTo}`);
         const tradespersonResult = await transporter.sendMail({
           from: process.env.GMAIL_USER,
-          to: process.env.TEAM_EMAIL,
+          to: tradesLeadTo,
           subject: tradespersonSubject,
           html: tradespersonHtml
         });
@@ -247,7 +247,7 @@ async function handleLeadCreate(req, res) {
         console.error(`❌ Tradesperson email failed: ${error.message}`);
       }
     } else {
-      console.log("⚠️ TEAM_EMAIL not configured, skipping tradesperson notification");
+      console.log("⚠️ TRADESPERSON_EMAIL and ADMIN_EMAIL not configured, skipping tradesperson notification");
     }
 
     console.log(`📧 Stage 1 Lead intake emails sent for leadId ${leadId} (${emailsSent} emails sent)`);
@@ -304,7 +304,7 @@ async function handleSubmitQuote(req, res) {
     
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: 'Quotes!A:T',
+      range: 'Quotes!A:AZ',
     });
 
     const rows = response.data.values || [];
@@ -372,6 +372,9 @@ async function handleSubmitQuote(req, res) {
     const sheets = getGoogleSheetsClient();
     const sheetId = getSpreadsheetId();
     
+    // Generate a quote ID
+    const quoteId = `Q${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    
     const quoteRow = [
       new Date().toLocaleString('en-NZ', {
         timeZone: 'Pacific/Auckland',
@@ -398,12 +401,13 @@ async function handleSubmitQuote(req, res) {
       projectSize, // ProjectSize
       breakdown, // Breakdown
       notes || '', // Notes
-      companyName || '' // CompanyName
+      companyName || '', // CompanyName
+      quoteId, // Add QuoteID here
     ];
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
-      range: 'Quotes!A:Z',
+      range: 'Quotes!A:AZ',
       valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       requestBody: {
@@ -426,15 +430,15 @@ async function handleSubmitQuote(req, res) {
   // Environment checks
   console.log("🔧 Environment variables check:", {
     GMAIL_USER: process.env.GMAIL_USER || "MISSING",
-    GMAIL_PASS: process.env.GMAIL_PASS ? "SET" : "MISSING",
+    GMAIL_APP_PASSWORD: process.env.GMAIL_APP_PASSWORD ? "SET" : "MISSING",
     ADMIN_EMAIL: process.env.ADMIN_EMAIL || "MISSING",
     CUSTOMER_EMAIL: customerEmail || "MISSING",
     TRADESPERSON_EMAIL: tradesmanEmail || "MISSING"
   });
 
   try {
-    const SITE_URL = process.env.SITE_URL || 'https://lead-code.vercel.app';
-    const quoteViewUrl = `${SITE_URL}/quote-view?leadId=${leadId}`;
+    const SITE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const quoteViewUrl = `${SITE_URL}/quote/view/${leadId}`;
     const acceptUrl = `${SITE_URL}/api/leads?action=decision&leadId=${leadId}&action=accept`;
     const declineUrl = `${SITE_URL}/api/leads?action=decision&leadId=${leadId}&action=decline`;
 
@@ -607,7 +611,7 @@ async function handleDecision(req, res) {
     // Fetch quote data
     const quoteResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: "Quotes!A:Z"
+      range: "Quotes!A:AZ"
     });
     
     const quoteRows = quoteResponse.data.values || [];
@@ -633,7 +637,7 @@ async function handleDecision(req, res) {
     // Fetch lead data
     const leadResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: "Leads!A:Z"
+      range: "Leads!A:L"
     });
     
     const leadRows = leadResponse.data.values || [];
@@ -656,7 +660,7 @@ async function handleDecision(req, res) {
   // Environment checks
   console.log("🔧 Environment variables check:", {
     GMAIL_USER: process.env.GMAIL_USER || "MISSING",
-    GMAIL_PASS: process.env.GMAIL_PASS ? "SET" : "MISSING",
+    GMAIL_APP_PASSWORD: process.env.GMAIL_APP_PASSWORD ? "SET" : "MISSING",
     ADMIN_EMAIL: process.env.ADMIN_EMAIL || "MISSING",
     CUSTOMER_EMAIL: leadData?.customerEmail || "MISSING",
     TRADESPERSON_EMAIL: fullQuoteData?.tradesmanEmail || "MISSING"

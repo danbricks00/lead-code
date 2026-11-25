@@ -38,7 +38,7 @@ export default async function handler(req, res) {
           // Find the quote in the Quotes sheet
           const response = await sheets.spreadsheets.values.get({
             spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-            range: 'Quotes!A:T',
+            range: 'Quotes!A:AZ',
           });
 
           const rows = response.data.values || [];
@@ -88,7 +88,7 @@ export default async function handler(req, res) {
                   <p>If you have any questions, please contact us directly.</p>
               </div>
               
-              <a href="https://lead-code.vercel.app/" class="button">Back to Home</a>
+              <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/" class="button">Back to Home</a>
           </body>
           </html>
         `;
@@ -116,7 +116,7 @@ export default async function handler(req, res) {
                   <p>This quote has already been declined. If you'd like to discuss alternative options, please contact us directly.</p>
               </div>
               
-              <a href="https://lead-code.vercel.app/" class="button">Back to Home</a>
+              <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/" class="button">Back to Home</a>
           </body>
           </html>
         `;
@@ -141,7 +141,7 @@ export default async function handler(req, res) {
           // Find the row index and update status
           const response = await sheets.spreadsheets.values.get({
             spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-            range: 'Quotes!A:T',
+            range: 'Quotes!A:AZ',
           });
 
           const rows = response.data.values || [];
@@ -168,13 +168,13 @@ export default async function handler(req, res) {
           const transporter = nodemailer.default.createTransport({
             service: 'gmail',
             auth: {
-              user: 'danbricks18@gmail.com',
-              pass: 'ptmcojqgthvjbqom'
+              user: process.env.GMAIL_USER,
+              pass: process.env.GMAIL_APP_PASSWORD
             }
           });
 
           const tradesmanMailOptions = {
-            from: 'Kiwi Trade <danbricks18@gmail.com>',
+            from: `Heat.nz <${process.env.GMAIL_USER}>`,
             to: quoteData.tradesmanEmail,
             subject: `🎉 Quote ${quoteNumber} ACCEPTED by Customer!`,
             html: `
@@ -203,7 +203,7 @@ export default async function handler(req, res) {
                   </ul>
                 </div>
 
-                <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+                <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz System</strong></p>
               </div>
             `
           };
@@ -245,7 +245,7 @@ export default async function handler(req, res) {
                 </ul>
             </div>
             
-            <a href="https://lead-code.vercel.app/" class="button">Back to Home</a>
+            <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/" class="button">Back to Home</a>
         </body>
         </html>
       `;

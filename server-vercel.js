@@ -68,7 +68,7 @@ async function sendEmail(to, subject, body) {
             service: 'gmail',
             auth: {
                 user: process.env.GMAIL_USER,
-                pass: process.env.GMAIL_PASS
+                pass: process.env.GMAIL_APP_PASSWORD
             }
         });
 
@@ -118,7 +118,7 @@ app.post('/api/send-to-sheets', async (req, res) => {
 
         // Write to Google Sheets
         const response = await sheets.spreadsheets.values.append({
-            spreadsheetId: process.env.SPREADSHEET_ID,
+            spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
             range: 'Sheet1!A:J',
             valueInputOption: 'RAW',
             insertDataOption: 'INSERT_ROWS',
@@ -286,4 +286,4 @@ if (process.env.NODE_ENV !== 'production') {
     });
 }
 
-module.exports = app; 
+module.exports = app;

@@ -23,13 +23,93 @@ function formatNZTTime(timestamp) {
 
 // Generate mobile-friendly HTML quote
 function generateHtmlQuote(quoteData) {
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-NZ', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
+  console.log('🚀 generateHtmlQuote called with data:', {
+    quoteNumber: quoteData.quoteNumber,
+    validUntil: quoteData.validUntil,
+    validUntilType: typeof quoteData.validUntil,
+    validUntilString: String(quoteData.validUntil),
+    validUntilJSON: JSON.stringify(quoteData.validUntil)
+  });
+  const formatDate = (dateInput) => {
+    try {
+      console.log('🔍 formatDate input:', dateInput, 'Type:', typeof dateInput);
+      
+      if (!dateInput) {
+        console.log('🔍 No date input, using fallback');
+        // Return 2 weeks from now as fallback
+        const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+        return fallbackDate.toLocaleDateString('en-NZ', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+      }
+      
+      let date;
+      
+      // Handle different input types
+      if (typeof dateInput === 'number') {
+        // Handle Excel serial date (days since 1900-01-01)
+        if (dateInput > 25569) { // Excel date (after 1970)
+          date = new Date((dateInput - 25569) * 86400 * 1000);
+        } else {
+          // Google Sheets serial date (days since 1899-12-30)
+          date = new Date((dateInput - 2) * 86400 * 1000);
+        }
+        console.log('🔍 Parsed as serial date:', dateInput, '->', date);
+      } else if (typeof dateInput === 'string') {
+        // Handle string dates
+        const trimmed = dateInput.trim();
+        if (trimmed.includes('/')) {
+          // Handle DD/MM/YYYY format
+          const parts = trimmed.split('/');
+          if (parts.length === 3) {
+            date = new Date(parts[2], parts[1] - 1, parts[0]);
+          } else {
+            date = new Date(trimmed);
+          }
+        } else {
+          date = new Date(trimmed);
+        }
+        console.log('🔍 Parsed as string date:', dateInput, '->', date);
+      } else if (dateInput instanceof Date) {
+        date = dateInput;
+        console.log('🔍 Already a Date object:', date);
+      } else {
+        date = new Date(dateInput);
+        console.log('🔍 Parsed as generic:', dateInput, '->', date);
+      }
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.log('❌ Invalid date after parsing:', dateInput);
+        // Return 2 weeks from now as fallback
+        const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+        return fallbackDate.toLocaleDateString('en-NZ', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+      }
+      
+      const formatted = date.toLocaleDateString('en-NZ', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      
+      console.log('✅ Date formatted successfully:', dateInput, '->', formatted);
+      return formatted;
+    } catch (error) {
+      console.error('Date formatting error in quote-submission.js:', error, 'Input:', dateInput);
+      // Return 2 weeks from now as fallback
+      const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+      return fallbackDate.toLocaleDateString('en-NZ', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    }
   };
 
   const html = `
@@ -165,7 +245,7 @@ function generateHtmlQuote(quoteData) {
 <body>
     <div class="quote-container">
         <div class="header">
-            <div class="company-name">Kiwi Trade</div>
+            <div class="company-name">Heat.nz</div>
             <div class="quote-title">Professional Quote</div>
             <div class="quote-number">${quoteData.quoteNumber}</div>
         </div>
@@ -205,7 +285,15 @@ function generateHtmlQuote(quoteData) {
                 </div>
                 <div class="info-item">
                     <div class="info-label">Valid Until</div>
-                    <div class="info-value">${formatDate(quoteData.validUntil)}</div>
+                    <div class="info-value">${(() => {
+                      const formattedDate = formatDate(quoteData.validUntil);
+                      console.log('🎯 Quote-submission ValidUntil display:', {
+                        originalValue: quoteData.validUntil,
+                        formattedDate: formattedDate,
+                        quoteNumber: quoteData.quoteNumber
+                      });
+                      return formattedDate;
+                    })()}</div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Tradesman</div>
@@ -248,7 +336,7 @@ function generateHtmlQuote(quoteData) {
         ` : ''}
 
         <div class="footer">
-            <p><strong>Thank you for choosing Kiwi Trade!</strong></p>
+            <p><strong>Thank you for choosing Heat.nz!</strong></p>
             <p>This quote is valid until ${formatDate(quoteData.validUntil)}</p>
             <p>For questions or to accept this quote, please contact us.</p>
         </div>
@@ -422,7 +510,7 @@ export default async function handler(req, res) {
           // Check the Quotes sheet for existing quotes from this tradesman for this lead
           const response = await sheets.spreadsheets.values.get({
             spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-            range: 'Quotes!A:T',
+            range: 'Quotes!A:AZ',
           });
 
           const rows = response.data.values || [];
@@ -578,6 +666,43 @@ export default async function handler(req, res) {
           
           const values = [
             [
+              // Standardized column structure (A through AJ) - WITH CALCULATED TOTALS
+              new Date().toISOString(), // A: Timestamp
+              quoteData.quoteId, // B: QuoteID
+              quoteData.leadId, // C: LeadID
+              quoteData.tradesmanName, // D: TradePersonName
+              quoteData.tradesmanEmail, // E: TradespersonEmail
+              quoteData.tradesmanPhone, // F: TradespersonPhone
+              'submitted', // G: CustomerStatus
+              'submitted', // H: TradespersonStatus
+              'Not Required', // I: AdminStatus
+              quoteData.labourRate, // J: LabourRate
+              quoteData.labourHours, // K: LabourHours
+              quoteData.labourRate * quoteData.labourHours, // L: LabourTotal
+              quoteData.materialsCost, // M: MaterialsCost
+              quoteData.materialsQuantity, // N: MaterialsQuantity
+              quoteData.materialsCost * quoteData.materialsQuantity, // O: MaterialsTotal
+              quoteData.travelCost, // P: TravelCost
+              quoteData.travelDistance, // Q: TravelDistance
+              quoteData.travelCost * quoteData.travelDistance, // R: TravelTotal
+              quoteData.installationCost, // S: InstallationCost
+              quoteData.subtotal, // T: Subtotal
+              quoteData.gst, // U: GST
+              quoteData.totalQuote, // V: TotalQuote
+              quoteData.additionalNotes || '', // W: Notes
+              quoteData.validUntil, // X: ValidUntil
+              'No', // Y: ResubmissionAllowed
+              '', // Z: Decision
+              '', // AA: DecisionTimestamp
+              quoteData.customerName, // AB: CustomerName
+              quoteData.customerEmail, // AC: CustomerEmail
+              quoteData.customerPhone, // AD: CustomerPhone
+              quoteData.serviceType, // AE: ServiceType
+              quoteData.location, // AF: Location
+              quoteData.timeline, // AG: Timeline
+              quoteData.budget || '', // AH: Budget
+              JSON.stringify(quoteData.rooms || []), // AI: Rooms
+              '', // AJ: Breakdown
               new Date().toISOString(),
               quoteData.quoteId,
               quoteData.quoteNumber,
@@ -616,7 +741,8 @@ export default async function handler(req, res) {
 
           await sheets.spreadsheets.values.append({
             spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-            range: 'Quotes!A:AF',
+            range: 'Quotes!A:AZ',
+            range: 'Quotes!A:AZ',
             valueInputOption: 'RAW',
             insertDataOption: 'INSERT_ROWS',
             resource: { values }
@@ -630,8 +756,8 @@ export default async function handler(req, res) {
       }
 
       // Email configuration
-      const tradesmanEmail = 'quangbui0600@gmail.com';
-      const adminEmail = 'danbricks18@gmail.com';
+      const tradesmanEmail = process.env.TRADESMAN_EMAIL;
+      const adminEmail = process.env.ADMIN_EMAIL;
       const customerEmail = quoteData.customerEmail;
       
       console.log('📧 Email recipients configured:');
@@ -725,7 +851,7 @@ export default async function handler(req, res) {
               </ul>
             </div>
 
-            <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+            <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz System</strong></p>
           </div>
         `;
 
@@ -780,7 +906,7 @@ export default async function handler(req, res) {
               </ul>
             </div>
             
-            <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+            <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz System</strong></p>
           </div>
         `;
 
@@ -797,11 +923,9 @@ export default async function handler(req, res) {
       // 4. Send email to customer with attachment
       console.log('📧 Step 3: Sending customer quote...');
       try {
-        const currentUrl = process.env.VERCEL_URL ? 
-          `https://${process.env.VERCEL_URL}` : 
-          'https://lead-code.vercel.app';
+        const currentUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
-        const customerSubject = `Your Quote - ${quoteData.quoteNumber} - Kiwi Trade`;
+        const customerSubject = `Your Quote - ${quoteData.quoteNumber} - Heat.nz`;
         const customerHtml = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #2c3e50;">Your Quote is Ready!</h2>
@@ -845,11 +969,11 @@ export default async function handler(req, res) {
               <h3 style="color: #856404; margin-top: 0; font-size: 20px;">⚡ Quote Actions</h3>
               <p style="margin: 15px 0; color: #666; font-style: italic;">Choose your action below:</p>
               <div style="margin: 25px 0; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
-                <a href="${currentUrl}/api/accept-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+                <a href="${currentUrl}/api/customer-accept?quoteId=${quoteData.quoteId}&leadId=${quoteData.leadId}" 
                    style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-size: 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s ease;">
                    ✅ Accept Quote
                 </a>
-                <a href="${currentUrl}/api/decline-quote?quoteId=${quoteData.quoteId}&quoteNumber=${quoteData.quoteNumber}" 
+                <a href="${currentUrl}/api/customer-decline?quoteId=${quoteData.quoteId}&leadId=${quoteData.leadId}" 
                    style="background: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-size: 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s ease;">
                    ❌ Decline Quote
                 </a>
@@ -860,7 +984,7 @@ export default async function handler(req, res) {
             <p><strong>Reference:</strong> ${quoteData.quoteNumber}</p>
             <p>If you have any questions, please don't hesitate to contact us.</p>
             
-            <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade Team</strong></p>
+            <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz Team</strong></p>
           </div>
         `;
 

@@ -25,7 +25,7 @@ export default async function handler(req, res) {
 
   try {
     console.log('[Debug Sheets] 1. Checking for required environment variables...');
-    if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_SHEET_ID) {
+    if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_SPREADSHEET_ID) {
       console.error('[Debug Sheets] Missing one or more required Google Sheets environment variables.');
       return res.status(500).json({ success: false, error: 'Server is missing required Google Sheets environment variables.' });
     }
@@ -37,7 +37,7 @@ export default async function handler(req, res) {
 
     console.log('[Debug Sheets] 3. Attempting to read from "Leads" tab...');
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
       range: 'Leads!A1:I10', // Read the header and first 9 rows
     });
 

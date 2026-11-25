@@ -101,7 +101,7 @@ export default async function handler(req, res) {
     try {
       const nodemailer = require('nodemailer');
       
-      const transporter = nodemailer.createTransporter({
+      const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
           user: process.env.GMAIL_USER,
@@ -111,7 +111,7 @@ export default async function handler(req, res) {
 
       const mailOptions = {
         from: process.env.GMAIL_USER,
-        to: process.env.ADMIN_EMAIL || 'danbricks18@gmail.com',
+        to: process.env.ADMIN_EMAIL,
         subject: `🚨 UNLISTED SUBURB: ${suburbName} - Lead from ${customerName}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -155,7 +155,7 @@ export default async function handler(req, res) {
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6;">
               <p style="color: #6c757d; font-size: 12px;">
                 Timestamp: ${nzTimestamp}<br>
-                This is an automated notification from the Kiwi Trade lead system.
+                This is an automated notification from the Heat.nz lead system.
               </p>
             </div>
           </div>

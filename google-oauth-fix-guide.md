@@ -19,9 +19,7 @@ This error occurs because the JavaScript origins in Google Cloud Console don't m
 Add these URLs to the "Authorized JavaScript origins" list:
 
 ```
-https://lead-code.vercel.app
-https://lead-code-git-main-leadcode-b19d9acc.vercel.app
-https://lead-code-b5tt3ty3y-leadcode-b19d9acc.vercel.app
+https://heat.nz
 http://localhost:3000
 http://localhost:3001
 ```
@@ -30,9 +28,7 @@ http://localhost:3001
 Add these URLs to the "Authorized redirect URIs" list:
 
 ```
-https://lead-code.vercel.app/api/auth/callback/google
-https://lead-code-git-main-leadcode-b19d9acc.vercel.app/api/auth/callback/google
-https://lead-code-b5tt3ty3y-leadcode-b19d9acc.vercel.app/api/auth/callback/google
+https://heat.nz/api/auth/callback/google
 http://localhost:3000/api/auth/callback/google
 http://localhost:3001/api/auth/callback/google
 ```
@@ -52,6 +48,4 @@ http://localhost:3001/api/auth/callback/google
 - If you have multiple OAuth clients, update the one being used by your app
 
 ## Current Vercel URLs:
-- Production: `https://lead-code.vercel.app`
-- Preview: `https://lead-code-git-main-leadcode-b19d9acc.vercel.app`
-- Latest: `https://lead-code-b5tt3ty3y-leadcode-b19d9acc.vercel.app`
+- Production: `https://heat.nz`

@@ -4,8 +4,8 @@
 const tradesmenConfig = {
     // Building & Construction tradesmen
     builder: [
-        'danbricks18@gmail.com',
-        'danbricks18@gmail.com'
+        process.env.BUILDER_EMAIL_1 || 'builder1@example.com',
+        process.env.BUILDER_EMAIL_2 || 'builder2@example.com'
     ],
     
     // Electrical tradesmen
@@ -54,4 +54,4 @@ export {
     getTradesmenEmails,
     addTradesman,
     removeTradesman
-}; 
+};

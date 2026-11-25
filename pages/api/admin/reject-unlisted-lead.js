@@ -123,7 +123,7 @@ export default async function handler(req, res) {
     try {
       const nodemailer = require('nodemailer');
       
-      const transporter = nodemailer.createTransporter({
+      const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
           user: process.env.GMAIL_USER,
@@ -134,11 +134,11 @@ export default async function handler(req, res) {
       const mailOptions = {
         from: process.env.GMAIL_USER,
         to: customerEmail,
-        subject: `Service Area Update - Kiwi Trade`,
+        subject: `Service Area Update - Heat.nz`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #1976d2; border-bottom: 2px solid #1976d2; padding-bottom: 10px;">
-              Kiwi Trade - Service Area Update
+              Heat.nz - Service Area Update
             </h2>
             
             <p>Dear ${customerName},</p>
@@ -162,10 +162,10 @@ export default async function handler(req, res) {
               <p>If you're planning to move to an area we do service, or if you have any questions about our services, please don't hesitate to contact us.</p>
             </div>
 
-            <p>Thank you for considering Kiwi Trade for your underfloor heating needs.</p>
+            <p>Thank you for considering Heat.nz for your underfloor heating needs.</p>
             
             <p>Best regards,<br>
-            The Kiwi Trade Team</p>
+            The Heat.nz Team</p>
 
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6;">
               <p style="color: #6c757d; font-size: 12px;">

@@ -1,18 +1,29 @@
 import { useRouter } from 'next/router';
 import React, { useState, useEffect } from 'react';
 import Layout from '../../../components/Layout';
+import { google } from 'googleapis';
 
-const CustomerQuoteView = () => {
+const parseFloatValue = (value) => {
+  if (typeof value === 'number') return value;
+  if (typeof value !== 'string') return 0;
+  // Remove currency symbols, commas, and whitespace, then parse
+  const cleanedValue = value.replace(/[^\d.-]/g, '');
+  if (cleanedValue === '') return 0;
+  const number = parseFloat(cleanedValue);
+  return isNaN(number) ? 0 : number;
+};
+
+const CustomerQuoteView = ({ initialQuoteInfo, initialError }) => {
   const router = useRouter();
   const { quoteId, ts, token } = router.query;
-  const [quoteInfo, setQuoteInfo] = useState(null);
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [quoteInfo, setQuoteInfo] = useState(initialQuoteInfo);
+  const [error, setError] = useState(initialError);
+  const [isLoading, setIsLoading] = useState(!initialQuoteInfo && !initialError);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [decisionMade, setDecisionMade] = useState(false);
+  const [decisionMade, setDecisionMade] = useState(initialQuoteInfo?.quoteData?.Decision ? true : false);
 
   useEffect(() => {
-    if (router.isReady) {
+    if (router.isReady && !initialQuoteInfo && !initialError) {
       if (!quoteId || !ts || !token) {
         setError('This link is invalid or incomplete.');
         setIsLoading(false);
@@ -21,7 +32,9 @@ const CustomerQuoteView = () => {
 
       const fetchQuote = async () => {
         try {
-          const response = await fetch(`/api/get-quote-for-customer?quoteId=${quoteId}&ts=${ts}&token=${token}`);
+          // Normalize quoteId before sending to API
+          const normalizedQuoteId = quoteId.trim().toLowerCase();
+          const response = await fetch(`/api/get-quote-for-customer?quoteId=${normalizedQuoteId}&ts=${ts}&token=${token}`);
           const result = await response.json();
 
           if (result.success) {
@@ -34,7 +47,8 @@ const CustomerQuoteView = () => {
             setError(result.error || 'Could not retrieve quote.');
           }
         } catch (err) {
-          setError('An unexpected error occurred.');
+          console.error('Error fetching quote:', err);
+          setError('An unexpected error occurred while retrieving your quote.');
         } finally {
           setIsLoading(false);
         }
@@ -42,7 +56,7 @@ const CustomerQuoteView = () => {
 
       fetchQuote();
     }
-  }, [router.isReady, quoteId, ts, token]);
+  }, [router.isReady, quoteId, ts, token, initialQuoteInfo, initialError]);
 
   // Handle decision with client-side protection
   const handleDecision = async (decision) => {
@@ -54,7 +68,9 @@ const CustomerQuoteView = () => {
     setIsProcessing(true);
     
     try {
-      const decisionUrl = `/api/quote-decision/${decision}?quoteId=${quoteId}&ts=${ts}&token=${token}`;
+      // Normalize quoteId before sending to API
+      const normalizedQuoteId = quoteId.trim().toLowerCase();
+      const decisionUrl = `/api/customer-${decision}?quoteId=${normalizedQuoteId}`;
       
       // Open in new window to prevent double-clicking
       const newWindow = window.open(decisionUrl, '_blank');
@@ -77,54 +93,146 @@ const CustomerQuoteView = () => {
 
   const renderContent = () => {
     if (isLoading) {
-      return <p>Loading quote...</p>;
+      return <div style={styles.loadingContainer}>
+        <div style={styles.loadingSpinner}></div>
+        <p>Loading your quote...</p>
+      </div>;
     }
     if (error) {
-      return <div>
-        <h1>❌ Error</h1>
-        <p>{error}</p>
+      return <div style={styles.errorContainer}>
+        <div style={styles.errorIcon}>❌</div>
+        <h1 style={styles.errorTitle}>Quote Not Available</h1>
+        <p style={styles.errorMessage}>{error}</p>
+        <div style={styles.errorHelp}>
+          <p>If you believe this is a mistake, please:</p>
+          <ul>
+            <li>Check that you've copied the entire link from your email</li>
+            <li>Contact our customer support for assistance</li>
+          </ul>
+        </div>
       </div>;
     }
     if (quoteInfo) {
       const { quoteData, leadData } = quoteInfo;
       const parsedRooms = JSON.parse(leadData.Rooms || '[]');
+
+      // Parse all cost and quantity values to ensure they are numbers
+      const labourCost = parseFloatValue(quoteData['LabourRate']);
+      const labourHours = parseFloatValue(quoteData['LabourHours']);
+      const materialsCost = parseFloatValue(quoteData['MaterialsCost']);
+      const materialsQuantity = parseFloatValue(quoteData['MaterialsQuantity']);
+      const travelCost = parseFloatValue(quoteData['TravelCost']);
+      const travelDistance = parseFloatValue(quoteData['TravelDistance']);
+      const installationCost = parseFloatValue(quoteData['InstallationCost']);
+
+      const labourSubtotal = labourCost * labourHours;
+      const materialsSubtotal = materialsCost * materialsQuantity;
+      const travelSubtotal = travelCost * travelDistance;
+      const itemsTotal = labourSubtotal + materialsSubtotal + travelSubtotal + installationCost;
+      const gstAmount = itemsTotal * 0.15;
+      const finalTotal = itemsTotal + gstAmount;
       
       return (
         <div style={styles.invoiceBox}>
             {/* Header */}
             <div style={styles.header}>
-                <div className="company-details"><h1>Kiwi Trade</h1></div>
+                <div className="company-details"><h1>Heat.nz</h1></div>
                 <div style={styles.quoteDetails}>
-                    <strong>Quote #: {quoteData['Quote ID']}</strong><br />
-                    Valid Until: {new Date(quoteData['Quote Valid Until']).toLocaleDateString('en-NZ')}
+                    <strong>Quote #: {quoteData['QuoteID']}</strong><br />
+                    Valid Until: {(() => {
+                      try {
+                        const validUntilValue = quoteData['ValidUntil'];
+                        console.log('🔍 ValidUntil value:', validUntilValue, 'Type:', typeof validUntilValue);
+                        
+                        if (!validUntilValue) {
+                          console.log('🔍 No ValidUntil value, using fallback');
+                          const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+                          return fallbackDate.toLocaleDateString('en-NZ');
+                        }
+                        
+                        let date;
+                        
+                        // Handle different input types
+                        if (typeof validUntilValue === 'number') {
+                          // Handle Excel serial date (days since 1900-01-01)
+                          if (validUntilValue > 25569) { // Excel date (after 1970)
+                            date = new Date((validUntilValue - 25569) * 86400 * 1000);
+                          } else {
+                            // Google Sheets serial date (days since 1899-12-30)
+                            date = new Date((validUntilValue - 2) * 86400 * 1000);
+                          }
+                          console.log('🔍 Parsed as serial date:', validUntilValue, '->', date);
+                        } else if (typeof validUntilValue === 'string') {
+                          // Handle string dates
+                          const trimmed = validUntilValue.trim();
+                          if (trimmed.includes('/')) {
+                            // Handle DD/MM/YYYY format
+                            const parts = trimmed.split('/');
+                            if (parts.length === 3) {
+                              date = new Date(parts[2], parts[1] - 1, parts[0]);
+                            } else {
+                              date = new Date(trimmed);
+                            }
+                          } else {
+                            date = new Date(trimmed);
+                          }
+                          console.log('🔍 Parsed as string date:', validUntilValue, '->', date);
+                        } else {
+                          date = new Date(validUntilValue);
+                        }
+                        
+                        // Check if date is valid
+                        if (isNaN(date.getTime())) {
+                          console.log('❌ Invalid date after parsing:', validUntilValue);
+                          // Return 2 weeks from now as fallback
+                          const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+                          return fallbackDate.toLocaleDateString('en-NZ');
+                        }
+                        
+                        const formatted = date.toLocaleDateString('en-NZ');
+                        console.log('✅ Date formatted successfully:', validUntilValue, '->', formatted);
+                        return formatted;
+                      } catch (error) {
+                        console.error('Date formatting error:', error, 'Input:', quoteData['ValidUntil']);
+                        // Return 2 weeks from now as fallback
+                        const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+                        return fallbackDate.toLocaleDateString('en-NZ');
+                      }
+                    })()}
                 </div>
             </div>
             
             {/* Customer/Tradesperson Details */}
             <div style={styles.detailsGrid}>
-                <div><h2>For:</h2>{leadData['Customer Name']}<br />{leadData['Customer Email']}</div>
-                <div><h2>From:</h2>{quoteData['Tradesperson Name']}<br />{quoteData['Tradesperson Email']}</div>
+                <div><h2>For:</h2>{leadData['CustomerName']}<br />{leadData['CustomerEmail']}<br />{leadData['CustomerPhone']}</div>
+                <div><h2>From:</h2>{quoteData['TradePersonName']}<br />{quoteData['TradePersonEmail']}<br />{quoteData['TradePersonPhone']}</div>
             </div>
             
             {/* Cost Breakdown */}
             <h2>Cost Breakdown</h2>
             <table style={styles.itemsTable}>
-                <thead style={{backgroundColor: '#f9f9f9'}}>
-                    <tr><th>Description</th><th>Rate</th><th>Unit(s)</th><th>Subtotal</th></tr>
+                <thead>
+                    <tr>
+                        <th style={{textAlign: 'left', padding: '8px'}}>Description</th>
+                        <th style={{textAlign: 'left', padding: '8px'}}>Rate</th>
+                        <th style={{textAlign: 'left', padding: '8px'}}>Unit(s)</th>
+                        <th style={{textAlign: 'left', padding: '8px'}}>Subtotal</th>
+                    </tr>
                 </thead>
                 <tbody>
-                    <tr><td>Labour</td><td>${quoteData['Labour Cost']} / hr</td><td>{quoteData['Labour Hours']}</td><td>${(quoteData['Labour Cost'] * quoteData['Labour Hours']).toFixed(2)}</td></tr>
-                    <tr><td>Materials</td><td>${quoteData['Materials Cost']} / m²</td><td>{quoteData['Materials Quantity']}</td><td>${(quoteData['Materials Cost'] * quoteData['Materials Quantity']).toFixed(2)}</td></tr>
-                    <tr><td>Travel</td><td>${quoteData['Travel Cost']} / km</td><td>{quoteData['Travel Distance']}</td><td>${(quoteData['Travel Cost'] * quoteData['Travel Distance']).toFixed(2)}</td></tr>
-                    <tr><td>Installation</td><td colSpan="2"></td><td>${parseFloat(quoteData['Installation Cost']).toFixed(2)}</td></tr>
+                    <tr><td>Labour</td><td>${labourCost.toFixed(2)} / hr</td><td>{labourHours}</td><td>${labourSubtotal.toFixed(2)}</td></tr>
+                    <tr><td>Materials</td><td>${materialsCost.toFixed(2)} / m²</td><td>{materialsQuantity}</td><td>${materialsSubtotal.toFixed(2)}</td></tr>
+                    <tr><td>Travel</td><td>${travelCost.toFixed(2)} / km</td><td>{travelDistance}</td><td>${travelSubtotal.toFixed(2)}</td></tr>
+                    <tr><td>Installation</td><td></td><td></td><td>${installationCost.toFixed(2)}</td></tr>
+                    {/* Separator */}
+                    <tr><td colSpan="4" style={{borderTop: '1px solid #ccc', margin: '10px 0'}}></td></tr>
+                    {/* Totals */}
+                    <tr><td colSpan="3" style={{textAlign: 'right', fontWeight: 'bold', padding: '8px'}}>Subtotal</td><td style={{fontWeight: 'bold'}}>${itemsTotal.toFixed(2)}</td></tr>
+                    <tr><td colSpan="3" style={{textAlign: 'right', fontWeight: 'bold', padding: '8px'}}>GST (15%)</td><td style={{fontWeight: 'bold'}}>${gstAmount.toFixed(2)}</td></tr>
+                    <tr style={{borderTop: '1px solid #ccc'}}><td colSpan="3" style={{textAlign: 'right', fontWeight: 'bold', fontSize: '1.2em', padding: '8px'}}>Total</td><td style={{fontWeight: 'bold', fontSize: '1.2em'}}>${finalTotal.toFixed(2)}</td></tr>
                 </tbody>
             </table>
             
-            {/* Total */}
-            <div style={styles.totalSection}>
-                <div style={{fontWeight: 'bold', fontSize: '1.2em'}}>Total: ${parseFloat(quoteData['Total Quote']).toFixed(2)}</div>
-            </div>
-
             {/* Decision Buttons */}
             {quoteData.Decision || decisionMade ? (
                 <div style={styles.decisionMade}>
@@ -179,6 +287,257 @@ const CustomerQuoteView = () => {
   );
 };
 
+// Add server-side rendering
+export async function getServerSideProps(context) {
+  const { params } = context;
+  const { quoteId } = params;
+  
+  console.log("[SERVER] Quote view requested for ID:", quoteId);
+  console.log("🚀 [DEBUG] Using pages/quote/view/[quoteId].js - Server-side rendering path");
+  
+  // If we don't have ts and token, we can't use the get-quote-for-customer API
+  // Instead, we'll directly query the Google Sheets
+  try {
+    // Initialize Google Sheets
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        type: 'service_account',
+        project_id: process.env.GOOGLE_PROJECT_ID,
+        private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
+        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\n/g, '\n'),
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+        token_uri: 'https://oauth2.googleapis.com/token',
+        auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs'
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets']
+    });
+
+    const sheets = google.sheets({ version: 'v4', auth });
+    const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
+
+    // Normalize quoteId
+    const normalizedQuoteId = quoteId.trim().toLowerCase();
+    console.log("[SERVER] Normalized QuoteID:", normalizedQuoteId);
+    
+    // Fetch all rows from the "Quotes" sheet
+    const quotesResponse = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'Quotes!A:AZ'
+    });
+
+    const rows = quotesResponse.data.values;
+    if (!rows || rows.length === 0) {
+      console.log(`[SERVER] No quote data found in sheets`);
+      return {
+        props: {
+          initialError: 'No quote data found.',
+          initialQuoteInfo: null
+        }
+      };
+    }
+
+    const headers = rows[0];
+    // Find QuoteID column index
+    const quoteIdColIndex = headers.indexOf('QuoteID');
+    const quoteIdCol = quoteIdColIndex !== -1 ? quoteIdColIndex : 1; // Default to column B (index 1) if not found
+    
+    // Find quote row with case-insensitive comparison
+    let foundRow = null;
+    let foundIndex = -1;
+    
+    for (let index = 1; index < rows.length; index++) {
+      const row = rows[index];
+      if (row && row[quoteIdCol] && row[quoteIdCol].trim().toLowerCase() === normalizedQuoteId) {
+        foundRow = row;
+        foundIndex = index;
+        console.log("[SERVER] Quote match FOUND for ID:", normalizedQuoteId, "at row", index + 1);
+        break;
+      }
+    }
+    
+    if (!foundRow) {
+      console.warn("[SERVER] No matching quote found for ID:", normalizedQuoteId);
+      return {
+        props: {
+          initialError: 'Quote not found.',
+          initialQuoteInfo: null
+        }
+      };
+    }
+    const leadIdRaw = foundRow[2];
+    console.log(`[DEBUG] Raw Lead ID cell value: "${leadIdRaw}"`);
+    
+    const leadId = (leadIdRaw || "").toString().trim(); // Changed variable name from leadIdTrimmed to leadId
+    console.log(`[DEBUG] Processed Lead ID after trim: "${leadId}"`);
+    
+    if (!leadId) {
+      console.log(`[ERROR] Lead ID missing or empty after trim for quote ID: ${quoteId}`);
+    } else {
+      console.log(`[INFO] Lead ID found: ${leadId}`);
+    }
+    
+    // The rest of the code will now work correctly since leadId is defined
+    
+    // Check for existing decision in Column Z (index 25)
+    const existingDecision = (foundRow[25] || "").trim().toLowerCase();
+    const existingTimestamp = foundRow[26] || "";
+    
+    if (existingDecision === "accepted" || existingDecision === "declined") {
+      console.log(`[SERVER] Quote ${normalizedQuoteId} already has decision: ${existingDecision} at ${existingTimestamp}`);
+    }
+
+    // Convert row to object
+    const quoteData = headers.reduce((obj, key, index) => {
+      obj[key] = (foundRow[index] || '').toString().trim();
+      return obj;
+    }, {});
+    
+    // Debug: Log the ValidUntil field specifically
+    console.log("🔍 [DEBUG] ValidUntil field from Google Sheets:");
+    console.log("  - Raw value:", foundRow[23]);
+    console.log("  - Type:", typeof foundRow[23]);
+    console.log("  - String value:", String(foundRow[23]));
+    console.log("  - JSON value:", JSON.stringify(foundRow[23]));
+    console.log("  - quoteData.ValidUntil:", quoteData.ValidUntil);
+
+    // Get Lead ID from quote data
+    if (!leadId) {
+      return {
+        props: {
+          initialError: 'Quote information is incomplete (missing Lead ID).',
+          initialQuoteInfo: null
+        }
+      };
+    }
+
+    // Fetch lead data
+    const leadsResponse = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'Leads!A:AL'
+    });
+
+    const leadRows = leadsResponse.data.values;
+    if (!leadRows || leadRows.length === 0) {
+      console.log(`[SERVER] No lead data found in sheets`);
+      return {
+        props: {
+          initialError: 'Lead information not found.',
+          initialQuoteInfo: null
+        }
+      };
+    }
+
+    const leadHeaders = leadRows[0];
+    // Find Lead ID column index
+    const leadIdColIndex = leadHeaders.indexOf('Lead ID');
+    const leadIdCol = leadIdColIndex !== -1 ? leadIdColIndex : 0; // Default to column A (index 0) if not found
+    
+    // Find lead row with case-insensitive comparison
+    let foundLeadRow = null;
+    let foundLeadIndex = -1;
+    
+    for (let index = 1; index < leadRows.length; index++) {
+      const row = leadRows[index];
+      console.log("Checking lead row", index, "LeadID in sheet:", row[leadIdCol]);
+      
+      if (row[leadIdCol] && row[leadIdCol].trim().toLowerCase() === leadId.trim().toLowerCase()) {
+        foundLeadRow = row;
+        foundLeadIndex = index;
+        console.log("Lead match FOUND for ID:", leadId, "at row", index);
+        break;
+      }
+    }
+
+    if (!foundLeadRow) {
+      console.warn("No matching lead found for ID:", leadId);
+      return {
+        props: {
+          initialError: 'Customer information not found.',
+          initialQuoteInfo: null
+        }
+      };
+    }
+
+    // Convert lead row to object
+    const leadData = leadHeaders.reduce((obj, key, index) => {
+      obj[key] = foundLeadRow[index] || '';
+      return obj;
+    }, {});
+
+    console.log(`[SERVER] QuoteID ${normalizedQuoteId} searched, row found at index ${foundIndex}.`);
+    
+    // Create structured quote object from row data
+    const quote = { 
+      quoteId: (foundRow[1] || "").toString().trim(), 
+      leadId: (foundRow[2] || "").toString().trim() || " ",    
+      TradePersonName: (foundRow[3] || "").toString().trim(), 
+      tradePersonEmail: (foundRow[4] || "").toString().trim(), 
+      tradePersonPhone: (foundRow[5] || "").toString().trim(), 
+      customerStatus: (foundRow[6] || "").toString().trim(), 
+      tradePersonStatus: (foundRow[7] || "").toString().trim(), 
+      adminPersonStatus: (foundRow[8] || "").toString().trim(), 
+      labourRate: (foundRow[9] || "").toString().trim(), 
+      labourHours: (foundRow[10] || "").toString().trim(), 
+      labourTotal: (foundRow[11] || "").toString().trim(), 
+      materialsCost: (foundRow[12] || "").toString().trim(), 
+      materialsQuantity: (foundRow[13] || "").toString().trim(), 
+      materialsTotal: (foundRow[14] || "").toString().trim(), 
+      travelCost: (foundRow[15] || "").toString().trim(), 
+      travelDistance: (foundRow[16] || "").toString().trim(), 
+      travelTotal: (foundRow[17] || "").toString().trim(), 
+      installationCost: (foundRow[18] || "").toString().trim(), 
+      subtotal: (foundRow[19] || "").toString().trim(), 
+      gst: (foundRow[20] || "").toString().trim(), 
+      totalQuote: (foundRow[21] || "").toString().trim(), 
+      notes: (foundRow[22] || "").toString().trim(), 
+      validUntil: (foundRow[23] || "").toString().trim(), 
+      resubmissionAllowed: (foundRow[24] || "").toString().trim(), 
+      customerDecision: (foundRow[25] || "").toString().trim(), 
+      customerDecisionTimeStamp: (foundRow[26] || "").toString().trim(), 
+      customerName: (foundRow[27] || "").toString().trim(), 
+      customerEmail: (foundRow[28] || "").toString().trim(), 
+      customerPhone: (foundRow[29] || "").toString().trim(), 
+      serviceType: (foundRow[30] || "").toString().trim(), 
+      location: (foundRow[31] || "").toString().trim(), 
+      timeline: (foundRow[32] || "").toString().trim(), 
+      budget: (foundRow[33] || "").toString().trim(), 
+      rooms: (foundRow[34] || "").toString().trim(), 
+      breakDown: (foundRow[35] || "").toString().trim(), 
+      adminDecisionTimeStamp: (foundRow[36] || "").toString().trim(), 
+      adminDecision: (foundRow[37] || "").toString().trim() 
+    };
+    if (!quote.leadId || quote.leadId === " ") {
+      console.log(`[SERVER] Lead ID missing from quote data for quote ID: ${normalizedQuoteId}`);
+    } else {
+      console.log(`[SERVER] Lead ID found: ${quote.leadId}`);
+    }
+    
+   
+    
+    // Return the data as props
+    return {
+      props: {
+        initialQuoteInfo: {
+          quoteData,
+          leadData,
+          quote // Include the structured quote object
+        },
+        initialError: ''
+      }
+    };
+  } catch (error) {
+    console.error("Error fetching quote from Sheets:", error);
+    return {
+      props: {
+        initialError: 'An error occurred while retrieving the quote.',
+        initialQuoteInfo: null
+      }
+    };
+  }
+}
+
 const styles = {
     container: { fontFamily: 'Arial, sans-serif', padding: '20px', backgroundColor: '#f4f7f6', display: 'flex', justifyContent: 'center' },
     invoiceBox: { maxWidth: '800px', width: '100%', margin: 'auto', padding: '30px', border: '1px solid #eee', boxShadow: '0 0 10px rgba(0, 0, 0, 0.15)', backgroundColor: 'white' },
@@ -228,6 +587,56 @@ const styles = {
         color: '#666',
         marginTop: '5px',
         fontWeight: 'normal'
+    },
+    // New styles for improved error display
+    errorContainer: { 
+        maxWidth: '600px', 
+        margin: '40px auto', 
+        padding: '30px', 
+        backgroundColor: '#fff8f8', 
+        borderRadius: '10px', 
+        border: '2px solid #ffcdd2', 
+        textAlign: 'center',
+        boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+    },
+    errorIcon: { 
+        fontSize: '48px', 
+        color: '#f44336', 
+        marginBottom: '20px' 
+    },
+    errorTitle: { 
+        color: '#d32f2f', 
+        marginBottom: '15px' 
+    },
+    errorMessage: { 
+        fontSize: '18px', 
+        color: '#555', 
+        marginBottom: '25px' 
+    },
+    errorHelp: { 
+        backgroundColor: '#fff', 
+        padding: '15px', 
+        borderRadius: '5px', 
+        textAlign: 'left' 
+    },
+    loadingContainer: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px',
+        backgroundColor: 'white',
+        borderRadius: '10px',
+        boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)'
+    },
+    loadingSpinner: {
+        border: '4px solid #f3f3f3',
+        borderTop: '4px solid #3498db',
+        borderRadius: '50%',
+        width: '40px',
+        height: '40px',
+        animation: 'spin 1s linear infinite',
+        marginBottom: '20px'
     }
 };
 

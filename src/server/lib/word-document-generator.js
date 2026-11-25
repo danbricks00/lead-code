@@ -38,7 +38,7 @@ async function generateQuoteDocument(quoteData) {
           new Paragraph({
             children: [
               new TextRun({
-                text: "KIWI TRADE",
+                text: "HEAT.NZ",
                 size: 32,
                 bold: true,
                 color: "4A90E2",
@@ -396,7 +396,7 @@ async function generateQuoteDocument(quoteData) {
           new Paragraph({
             children: [
               new TextRun({
-                text: "Kiwi Trade",
+                text: "Heat.nz",
                 size: 16,
                 bold: true,
                 color: "4A90E2",
@@ -419,7 +419,7 @@ async function generateQuoteDocument(quoteData) {
           new Paragraph({
             children: [
               new TextRun({
-                text: "Thank you for choosing Kiwi Trade!",
+                text: "Thank you for choosing Heat.nz!",
                 size: 12,
                 color: "666666",
               }),

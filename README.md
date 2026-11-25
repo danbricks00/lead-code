@@ -25,7 +25,7 @@ Create a `.env.local` file with the required variables (see [ENVIRONMENT_VARIABL
 # Google OAuth
 GOOGLE_CLIENT_ID=your_client_id
 GOOGLE_CLIENT_SECRET=your_client_secret
-GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google
+GOOGLE_REDIRECT_URI=https://heat.nz/api/auth/callback/google
 
 # Google Sheets
 GOOGLE_CLIENT_EMAIL=your_service_account@project.iam.gserviceaccount.com
@@ -306,6 +306,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Support
 
 For support and questions:
-- Email: support@kiwitrade.co.nz
+- Email: support@heat.nz
 - Phone: +64 9 123 4567
 - Documentation: [ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md) 

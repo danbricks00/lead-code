@@ -112,7 +112,7 @@ export function generateHTMLQuote(quoteData) {
         <div class="section">
           <h2 class="section-title">Tradesperson Details</h2>
           <div class="info-grid">
-            <div><strong>Name:</strong> ${quoteData.tradespersonName || 'N/A'}</div>
+            <div><strong>Name:</strong> ${quoteData.TradePersonName || 'N/A'}</div>
             <div><strong>Email:</strong> ${quoteData.tradespersonEmail || 'N/A'}</div>
             <div><strong>Phone:</strong> ${quoteData.tradespersonPhone || 'N/A'}</div>
           </div>

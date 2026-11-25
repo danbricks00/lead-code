@@ -5,9 +5,22 @@ function loadFallbackZonesFromJSON() {
   try {
     const path = require("path");
     const fs = require("fs");
-    const filePath = path.join(process.cwd(), "lib", "zones.json");
+    const filePath = path.join(process.cwd(), "data", "zones.json");
     const jsonData = fs.readFileSync(filePath, "utf8");
-    return JSON.parse(jsonData);
+    const parsedData = JSON.parse(jsonData);
+    
+    // Handle the actual structure of zones.json which has a "suburbs" array
+    if (parsedData.suburbs && Array.isArray(parsedData.suburbs)) {
+      return parsedData.suburbs;
+    }
+    
+    // Fallback for direct array structure
+    if (Array.isArray(parsedData)) {
+      return parsedData;
+    }
+    
+    console.error("❌ Unexpected zones.json structure");
+    return [];
   } catch (e) {
     console.error("❌ Failed to load fallback JSON file:", e.message);
     return [];
@@ -42,7 +55,7 @@ export default async function handler(req, res) {
           }
           zonesData[item.area].push({
             suburb: item.suburb,
-            postcode: ""
+            postcode: item.postCode || ""
           });
         });
         
@@ -93,7 +106,7 @@ export default async function handler(req, res) {
           }
           zonesData[item.area].push({
             suburb: item.suburb,
-            postcode: ""
+            postcode: item.postCode || ""
           });
         });
         
@@ -136,7 +149,7 @@ export default async function handler(req, res) {
           }
           zonesData[item.area].push({
             suburb: item.suburb,
-            postcode: ""
+            postcode: item.postCode || ""
           });
         });
         
@@ -211,7 +224,7 @@ export default async function handler(req, res) {
         }
         zonesData[item.area].push({
           suburb: item.suburb,
-          postcode: ""
+          postcode: item.postCode || ""
         });
       });
       

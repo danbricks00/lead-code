@@ -15,12 +15,12 @@ export default async function handler(req, res) {
 
     const envVars = {
       GMAIL_USER: process.env.GMAIL_USER || "NOT_SET",
-      GMAIL_PASS: process.env.GMAIL_PASS ? "SET" : "NOT_SET",
+      GMAIL_APP_PASSWORD: process.env.GMAIL_APP_PASSWORD ? "SET" : "NOT_SET",
       ADMIN_EMAIL: process.env.ADMIN_EMAIL || "NOT_SET",
       TEAM_EMAIL: process.env.TEAM_EMAIL || "NOT_SET",
       GOOGLE_CLIENT_EMAIL: process.env.GOOGLE_CLIENT_EMAIL || "NOT_SET",
       GOOGLE_PRIVATE_KEY: process.env.GOOGLE_PRIVATE_KEY ? "SET" : "NOT_SET",
-      GOOGLE_SHEET_ID: process.env.GOOGLE_SHEET_ID || "NOT_SET",
+      GOOGLE_SPREADSHEET_ID: process.env.GOOGLE_SPREADSHEET_ID || "NOT_SET",
       GOOGLE_SPREADSHEET_ID: process.env.GOOGLE_SPREADSHEET_ID || "NOT_SET",
       SITE_URL: process.env.SITE_URL || "NOT_SET",
       NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET ? "SET" : "NOT_SET",

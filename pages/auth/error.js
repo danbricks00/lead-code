@@ -1,10 +1,18 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 
-export default function AuthError() {
+// Create a client-only component
+function AuthErrorClient() {
   const router = useRouter();
   const { error, message } = router.query;
   const [errorDetails, setErrorDetails] = useState(null);
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure we're on the client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     if (error) {
@@ -83,7 +91,7 @@ export default function AuthError() {
 
   const handleAction = () => {
     if (errorDetails?.action === 'Contact Support') {
-      window.location.href = 'mailto:support@kiwitrade.co.nz?subject=Authentication Error';
+      window.location.href = 'mailto:support@heat.nz?subject=Authentication Error';
     } else {
       router.push('/auth/signin');
     }
@@ -92,6 +100,16 @@ export default function AuthError() {
   const handleGoHome = () => {
     router.push('/');
   };
+
+  // Show loading state during SSR
+  if (!isClient) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner">⏳</div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   if (!errorDetails) {
     return (
@@ -135,7 +153,7 @@ export default function AuthError() {
             If you continue to experience issues, please contact our support team:
           </p>
           <div className="contact-info">
-            <p><strong>Email:</strong> support@kiwitrade.co.nz</p>
+            <p><strong>Email:</strong> support@heat.nz</p>
             <p><strong>Phone:</strong> +64 9 123 4567</p>
           </div>
         </div>
@@ -305,3 +323,14 @@ export default function AuthError() {
     </div>
   );
 }
+
+// Export with dynamic import to disable SSR
+export default dynamic(() => Promise.resolve(AuthErrorClient), {
+  ssr: false,
+  loading: () => (
+    <div className="loading-container">
+      <div className="loading-spinner">⏳</div>
+      <p>Loading...</p>
+    </div>
+  )
+});

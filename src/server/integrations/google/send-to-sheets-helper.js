@@ -1,4 +1,5 @@
 import { google } from 'googleapis';
+import { getTradespersonLeadEmail } from '../../../../lib/emailHelper.js';
 
 export async function sendToSheets(leadData) {
   console.log('🔍 sendToSheets function called');
@@ -29,7 +30,7 @@ export async function sendToSheets(leadData) {
     }
 
     // Send gamified welcome email
-    const welcomeEmailResponse = await fetch(`${process.env.BASE_URL || 'http://localhost:3000'}/api/send-gamified-email`, {
+    const welcomeEmailResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL || 'http://localhost:3000'}/api/send-gamified-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -61,8 +62,8 @@ export async function sendToSheets(leadData) {
     const transporter = nodemailer.default.createTransport({
       service: 'gmail',
       auth: {
-        user: 'danbricks18@gmail.com',
-        pass: 'ptmcojqgthvjbqom'
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD
       }
     });
 
@@ -77,9 +78,10 @@ export async function sendToSheets(leadData) {
     console.log('📧 Quote link generated:', quoteLink);
 
     console.log('📧 Creating tradesman email options...');
+    const tradesLeadTo = getTradespersonLeadEmail();
     const tradesmanMailOptions = {
-      from: 'Kiwi Trade <danbricks18@gmail.com>',
-      to: 'quangbui0600@gmail.com',
+      from: `Heat.nz <${process.env.GMAIL_USER}>`,
+      to: tradesLeadTo,
       subject: 'New Lead - Underfloor Heating Project',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -111,13 +113,17 @@ export async function sendToSheets(leadData) {
     console.log('📧 Sending tradesman email...');
     console.log('📧 Email options:', {
       from: tradesmanMailOptions.from,
-      to: tradesmanMailOptions.to,
+      to: tradesmanMailOptions.to || '(unset)',
       subject: tradesmanMailOptions.subject
     });
     
-    await transporter.sendMail(tradesmanMailOptions);
-    console.log('✅ Tradesman notification email sent successfully');
-    tradesmanNotified = true;
+    if (!tradesLeadTo) {
+      console.warn('⚠️ TRADESPERSON_EMAIL and ADMIN_EMAIL unset — skipping tradesman notification');
+    } else {
+      await transporter.sendMail(tradesmanMailOptions);
+      console.log('✅ Tradesman notification email sent successfully');
+      tradesmanNotified = true;
+    }
   } catch (emailError) {
     console.error('❌ Tradesman email error:', emailError.message);
     console.error('❌ Tradesman email error stack:', emailError.stack);
@@ -130,14 +136,14 @@ export async function sendToSheets(leadData) {
     const transporter = nodemailer.default.createTransport({
       service: 'gmail',
       auth: {
-        user: 'danbricks18@gmail.com',
-        pass: 'ptmcojqgthvjbqom'
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD
       }
     });
 
     const adminMailOptions = {
-      from: 'Kiwi Trade <danbricks18@gmail.com>',
-      to: 'danbricks18@gmail.com',
+      from: `Heat.nz <${process.env.GMAIL_USER}>`,
+      to: process.env.ADMIN_EMAIL,
       subject: '🎯 New Lead Captured - Admin Dashboard',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -214,7 +220,7 @@ export async function sendToSheets(leadData) {
               <p style="margin-top: 15px;"><em>No immediate action required - the system is handling the lead automatically.</em></p>
             </div>
             
-            <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+            <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz System</strong></p>
           </div>
         </div>
       `
@@ -297,7 +303,11 @@ export async function sendToSheets(leadData) {
           leadData.specificDetails || '', // Specific details
           customerEmailSent ? 'Sent' : 'Failed',
           tradesmanNotified ? 'Sent' : 'Failed',
-          'New'
+          'New',
+          JSON.stringify(leadData.rooms || []), // Rooms data as JSON string
+          leadData.totalSqm || '', // Total square meters
+          leadData.area || '', // Area
+          leadData.suburb || '' // Suburb
         ]
       ];
 
@@ -328,4 +338,4 @@ export async function sendToSheets(leadData) {
       timestamp: timestamp
     }
   };
-} 
+}

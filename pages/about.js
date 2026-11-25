@@ -1,14 +1,21 @@
 import React from 'react';
 import Layout from '../components/Layout';
+import SEO from '../components/SEO';
 
 const AboutPage = () => {
   return (
     <Layout>
+      <SEO
+        title="About Heat NZ | Professional Underfloor Heating Services"
+        description="Learn about Heat NZ, Auckland's trusted electric underfloor heating specialists. Over 25 years of professional installation experience."
+        canonical="https://heat.nz/about"
+        keywords="about heat nz, underfloor heating company auckland, professional heating services"
+      />
       <div style={styles.container}>
         <div style={styles.card}>
-          <h1 style={styles.header}>About Kiwi Trade</h1>
+          <h1 style={styles.header}>About Heat.nz</h1>
           <p style={styles.paragraph}>
-            Founded on the principle of bridging the gap between homeowners and skilled tradespeople, Kiwi Trade is dedicated to making property maintenance and improvement projects simpler, faster, and more transparent for everyone involved.
+            Founded on the principle of bridging the gap between homeowners and skilled tradespeople, Heat.nz is dedicated to making property maintenance and improvement projects simpler, faster, and more transparent for everyone involved.
           </p>
           <h2 style={styles.subHeader}>Our Mission</h2>
           <p style={styles.paragraph}>
@@ -16,7 +23,7 @@ const AboutPage = () => {
           </p>
           <h2 style={styles.subHeader}>Why We Started</h2>
           <p style={styles.paragraph}>
-            We've all experienced the frustration of finding a reliable tradesperson. The endless phone calls, the uncertainty of quality, and the confusing quotes are pain points we wanted to eliminate. Kiwi Trade was born from a desire to create a trusted, efficient platform where quality workmanship and customer satisfaction are at the forefront.
+            We've all experienced the frustration of finding a reliable tradesperson. The endless phone calls, the uncertainty of quality, and the confusing quotes are pain points we wanted to eliminate. Heat.nz was born from a desire to create a trusted, efficient platform where quality workmanship and customer satisfaction are at the forefront.
           </p>
         </div>
       </div>

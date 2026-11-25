@@ -31,8 +31,8 @@ export async function getQuoteRowByQuoteId(quoteId) {
   try {
     const sheets = await getGoogleSheetsClient();
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: 'Quotes!A:Z',
+      spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+      range: 'Quotes!A:AZ',
     });
 
     const rows = response.data.values || [];
@@ -94,7 +94,7 @@ export async function updateQuoteRow(rowIndex, data) {
     // First get the headers to ensure we're updating the right columns
     const sheets = await getGoogleSheetsClient();
     const headerResponse = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
+      spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
       range: 'Quotes!A1:Z1',
     });
     
@@ -113,7 +113,7 @@ export async function updateQuoteRow(rowIndex, data) {
     
     // Update the row
     await sheets.spreadsheets.values.update({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
+      spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
       range: `Quotes!A${rowIndex}:${String.fromCharCode(65 + headers.length - 1)}${rowIndex}`,
       valueInputOption: 'USER_ENTERED',
       resource: {
@@ -131,13 +131,22 @@ export async function updateQuoteRow(rowIndex, data) {
 
 // Quotes tab headers (exact order from your schema)
 const QUOTES_HEADERS = [
-  'TimeStamp', 'QuoteID', 'LeadID', 'TradePersonName', 'TradePersonEmail', 'TradePersonPhone',
+  'Timestamp',
+  'QuoteID',
+  'LeadID', 'TradePersonName', 'TradePersonEmail', 'TradePersonPhone',
   'CustomerStatus', 'TradePersonStatus', 'AdminPersonStatus',
   'LabourRate', 'LabourHours', 'LabourTotal', 'MaterialsCost', 'MaterialsQuantity', 'MaterialsTotal',
   'TravelCost', 'TravelDistance', 'TravelTotal', 'InstallationCost',
   'Subtotal', 'GST', 'TotalQuote', 'Notes', 'ValidUntil', 'ResubmissionAllowed',
   'Decision', 'DecisionTimestamp',
-  'CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Location', 'Timeline', 'Budget', 'Rooms', 'BreakDown'
+  'CustomerName', 'CustomerEmail', 'CustomerPhone', 'ServiceType', 'Location', 'Timeline', 'Budget', 'Rooms', 'Breakdown',
+  'AdminDecisionTimeStamp', // AK
+  'AdminDecision', // AL
+  'Address', // AM
+  '', // AN
+  '', // AO
+  '', // AP
+  'TotalSQM', // AQ
 ];
 
 /**
@@ -329,34 +338,51 @@ export async function readSheetAsObjects(sheetName, sheets, spreadsheetId) {
   }
 }
 
-/**
- * Get lead by ID from the Leads sheet
- * @param {string} leadId - The LeadID to find
- * @returns {object|null} Lead data object or null if not found
- */
+// New function moved from pages/api/get-lead-by-id.js
 export async function getLeadById(leadId) {
-  try {
-    const sheets = getGoogleSheetsClient();
-    const spreadsheetId = getSpreadsheetId();
-    const { headers, rows } = await readSheetAsObjects('Leads', sheets, spreadsheetId);
-    
-    const leadIdColIndex = headers.findIndex(h => h === 'LeadID' || h === 'Lead');
-    if (leadIdColIndex === -1) {
-      console.error('LeadID column not found in Leads sheet');
-      return null;
+    if (!leadId) {
+        console.error('getLeadById: Lead ID is required');
+        return null;
     }
-    
-    for (const row of rows) {
-      if (String(row[headers[leadIdColIndex]] || '').trim() === String(leadId).trim()) {
-        return row;
-      }
+
+    try {
+        const sheets = await getGoogleSheetsClient();
+        const spreadsheetId = getSpreadsheetId();
+
+        const range = 'Leads!A:P';
+        const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
+        const rows = response.data.values;
+        
+        if (!rows || rows.length < 2) {
+            return null;
+        }
+        
+        const header = rows[0];
+        const leadIndex = header.indexOf('Lead');
+        
+        if (leadIndex === -1) {
+            return null;
+        }
+        
+        const dataRow = rows.find(row => row[leadIndex] === leadId);
+        
+        if (!dataRow) {
+            return null;
+        }
+        
+        const lead = {};
+        header.forEach((headerName, index) => {
+            if (headerName && dataRow[index]) {
+                lead[headerName] = dataRow[index];
+            }
+        });
+        
+        return lead;
+
+    } catch (error) {
+        console.error('Error fetching lead data:', error);
+        return null;
     }
-    
-    return null;
-  } catch (error) {
-    console.error(`[SHEETS] Error getting lead ${leadId}:`, error);
-    return null;
-  }
 }
 
 /**
@@ -399,7 +425,7 @@ export async function getQuotesByLeadId(leadId) {
     const sheets = getGoogleSheetsClient();
     const spreadsheetId = getSpreadsheetId();
     
-    const range = 'Quotes!A:Z';
+    const range = 'Quotes!A:AZ';
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
     const rows = response.data.values || [];
     

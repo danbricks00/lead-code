@@ -62,7 +62,7 @@ Make sure your `package.json` has the correct start script:
 ## Step 4: Get Your Domain
 
 After deployment, Vercel will give you a URL like:
-`https://your-project-name.vercel.app`
+`https://heat.nz`
 
 ## Step 5: Update Google Cloud Console
 
@@ -70,7 +70,7 @@ After deployment, Vercel will give you a URL like:
 2. Navigate to APIs & Services → Credentials
 3. Edit your OAuth 2.0 Client ID
 4. Add to "Authorized JavaScript origins":
-   - `https://your-project-name.vercel.app`
+   - `https://heat.nz`
 5. Add to "Authorized redirect URIs":
    - `https://your-project-name.vercel.app/login`
    - `https://your-project-name.vercel.app/`
@@ -91,7 +91,7 @@ For security, set these in Vercel:
    - `GOOGLE_API_KEY`
    - `SPREADSHEET_ID`
    - `GMAIL_USER`
-   - `GMAIL_PASS`
+   - `GMAIL_APP_PASSWORD`
 
 ## Troubleshooting
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Quote Review - Kiwi Trade</title>
+    <title>Admin Quote Review - Heat.nz</title>
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
@@ -428,16 +428,14 @@
             }
 
             try {
-                const response = await fetch('/api/admin-quote-review', {
+                const response = await fetch('/api/admin/approve', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        action: 'approve',
-                        leadId: leadId,
-                        adminEmail: currentAdminEmail,
-                        adminPassword: currentAdminPassword
+                        quoteId: leadId,
+                        adminEmail: currentAdminEmail
                     })
                 });
 
@@ -475,17 +473,15 @@
             }
 
             try {
-                const response = await fetch('/api/admin-quote-review', {
+                const response = await fetch('/api/admin/decline', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        action: 'reject',
-                        leadId: currentRejectLeadId,
+                        quoteId: currentRejectLeadId,
                         adminEmail: currentAdminEmail,
-                        adminPassword: currentAdminPassword,
-                        rejectionReason: rejectionReason
+                        declineReason: rejectionReason
                     })
                 });
 

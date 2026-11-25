@@ -1,0 +1,194 @@
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+import crypto from 'crypto';
+import dynamic from 'next/dynamic';
+
+// Create a client-only component
+function AdminDeclineClient() {
+  const router = useRouter();
+  const { quoteId } = router.query;
+  const [status, setStatus] = useState('processing');
+  const [message, setMessage] = useState('Processing Quote Decline...');
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure we're on the client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
+    console.log('🔍 [ADMIN-PAGE] Component mounted, quoteId:', quoteId);
+    console.log('🔍 [ADMIN-PAGE] Current URL:', window.location.href);
+    console.log('🔍 [ADMIN-PAGE] Router query:', router.query);
+    
+    if (quoteId) {
+      console.log('🔍 [ADMIN-PAGE] Starting decline process for quoteId:', quoteId);
+      
+      // First, test if we can reach any admin API endpoint
+      console.log('🔍 [ADMIN-PAGE] Testing admin API connectivity...');
+      fetch('/api/admin/test', { method: 'GET' })
+        .then(testResponse => {
+          console.log('🔍 [ADMIN-PAGE] Test API response:', {
+            status: testResponse.status,
+            ok: testResponse.ok,
+            statusText: testResponse.statusText
+          });
+          return testResponse.json();
+        })
+        .then(testData => {
+          console.log('🔍 [ADMIN-PAGE] Test API data:', testData);
+        })
+        .catch(testError => {
+          console.error('🔍 [ADMIN-PAGE] Test API failed:', testError);
+        });
+
+      // Test the actual decline endpoint directly
+      console.log('🔍 [ADMIN-PAGE] Testing decline endpoint directly...');
+      fetch('/api/admin-decline?quoteId=test123&ts=1234567890&token=test', { method: 'GET' })
+        .then(testResponse => {
+          console.log('🔍 [ADMIN-PAGE] Decline endpoint test response:', {
+            status: testResponse.status,
+            ok: testResponse.ok,
+            statusText: testResponse.statusText,
+            url: testResponse.url
+          });
+        })
+        .catch(testError => {
+          console.error('🔍 [ADMIN-PAGE] Decline endpoint test failed:', testError);
+        });
+      
+      // Generate the proper decline link with token
+      const ts = Date.now().toString();
+      const token = generateToken(quoteId, ts);
+      
+      const apiUrl = `/api/admin-decline?quoteId=${quoteId}&ts=${ts}&token=${token}`;
+      console.log('🔍 [ADMIN-PAGE] Making request to:', apiUrl);
+      console.log('🔍 [ADMIN-PAGE] Current window location:', window.location.href);
+      console.log('🔍 [ADMIN-PAGE] Base URL should be:', window.location.origin);
+      
+      // Call the API endpoint with GET method and proper parameters
+      fetch(apiUrl, {
+        method: 'GET',
+      })
+      .then(response => {
+        console.log('🔍 [ADMIN-PAGE] Response received:', {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok
+        });
+        
+        if (response.ok) {
+          setStatus('success');
+          setMessage('Quote declined successfully! Tradesperson has been notified.');
+        } else {
+          setStatus('error');
+          setMessage(`Failed to decline quote. Status: ${response.status}`);
+        }
+      })
+      .catch(error => {
+        console.error('🔍 [ADMIN-PAGE] Error declining quote:', error);
+        setStatus('error');
+        setMessage('An error occurred while declining the quote.');
+      });
+    }
+  }, [quoteId]);
+
+  // Generate token for API call
+  function generateToken(id, ts) {
+    const hmac = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET || 'fallback-secret');
+    hmac.update(`${id}|${ts}`);
+    return hmac.digest("hex");
+  }
+
+  // Show loading state during SSR
+  if (!isClient) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontFamily: 'Arial, sans-serif'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <h2>Loading...</h2>
+          <p>Initializing admin interface...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      height: '100vh',
+      fontFamily: 'Arial, sans-serif'
+    }}>
+      <div style={{ textAlign: 'center' }}>
+        <h2 style={{ color: status === 'success' ? '#28a745' : status === 'error' ? '#dc3545' : '#333' }}>
+          {status === 'success' ? '✅ Quote Declined!' : 
+           status === 'error' ? '❌ Decline Failed' : 
+           'Processing Quote Decline...'}
+        </h2>
+        <p>{message}</p>
+        {status === 'processing' && (
+          <div style={{ 
+            width: '40px', 
+            height: '40px', 
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #dc3545',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '20px auto'
+          }}></div>
+        )}
+        {status !== 'processing' && (
+          <button 
+            onClick={() => window.close()}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              marginTop: '20px'
+            }}
+          >
+            Close Window
+          </button>
+        )}
+        <style jsx>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    </div>
+  );
+}
+
+// Export with dynamic import to disable SSR
+export default dynamic(() => Promise.resolve(AdminDeclineClient), {
+  ssr: false,
+  loading: () => (
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      height: '100vh',
+      fontFamily: 'Arial, sans-serif'
+    }}>
+      <div style={{ textAlign: 'center' }}>
+        <h2>Loading...</h2>
+        <p>Initializing admin interface...</p>
+      </div>
+    </div>
+  )
+});

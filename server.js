@@ -151,13 +151,13 @@ async function sendEmail(to, subject, body) {
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: 'danbricks18@gmail.com', // Your Gmail address
-                pass: 'ptmcojqgthvjbqom' // You'll need to generate an app password
+                user: process.env.GMAIL_USER, 
+                pass: process.env.GMAIL_APP_PASSWORD
             }
         });
 
         const mailOptions = {
-            from: '"LeadBot" <danbricks18@gmail.com>',
+            from: `"LeadBot" <${process.env.GMAIL_USER}>`,
             to: to,
             subject: subject,
             html: body
@@ -293,6 +293,13 @@ async function sendQuoteEmail(quoteData, req) {
     }
 }
 
+async function notifyAdmin(subject, body) {
+    const adminEmail = process.env.ADMIN_EMAIL; // Your admin email
+    if (adminEmail) {
+        await sendEmail(adminEmail, subject, body);
+    }
+}
+
 // Function to send admin quote email
 async function sendAdminQuoteEmail(quoteData, req) {
     try {
@@ -383,12 +390,12 @@ async function sendAdminQuoteEmail(quoteData, req) {
                         <p>You'll receive another notification when the customer accepts or declines the quote.</p>
                     </div>
 
-                    <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+                    <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz System</strong></p>
                 </div>
             </div>
         `;
 
-        const adminEmail = 'danbricks18@gmail.com'; // Your admin email
+        const adminEmail = process.env.ADMIN_EMAIL; // Your admin email
         const success = await sendEmail(adminEmail, `📊 New Quote Generated - ${quoteData.quoteNumber} - $${quoteData.total}`, emailContent);
         
         if (success) {
@@ -548,7 +555,7 @@ app.post('/api/generate-quote', async (req, res) => {
             tradesmanName,
             tradesmanEmail,
             tradesmanPhone,
-            companyName = 'Kiwi Trade ',
+            companyName = 'Heat.nz ',
             companyAddress = 'Auckland, New Zealand',
             gstNumber = '120-681-729',
             items = []
@@ -658,7 +665,7 @@ app.get('/api/generate-quote', async (req, res) => {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Quote ${quoteId} - Kiwi Trade</title>
+            <title>Quote ${quoteId} - Heat.nz</title>
             <style>
                 body { font-family: Arial, sans-serif; margin: 40px; }
                 .actions { text-align: center; margin-bottom: 40px; padding: 20px; background: #f8f9fa; }
@@ -671,10 +678,10 @@ app.get('/api/generate-quote', async (req, res) => {
         <body>
             <div class="quote-container">
                 <div class="actions">
-                    <a href="/api/quote-responses?action=accept&quoteId=${quoteId}" class="action-btn accept-btn">
+                    <a href="/api/customer-accept?quoteId=${quoteId}&leadId=${leadId}" class="action-btn accept-btn">
                         ✅ Accept Quote
                     </a>
-                    <a href="/api/quote-responses?action=decline&quoteId=${quoteId}" class="action-btn decline-btn">
+                    <a href="/api/customer-decline?quoteId=${quoteId}&leadId=${leadId}" class="action-btn decline-btn">
                         ❌ Decline Quote
                     </a>
                 </div>
@@ -898,7 +905,7 @@ app.post('/api/send-to-sheets', async (req, res) => {
                     
                     <p style="margin-top: 30px;">If you have any questions, please don't hesitate to contact the admin team.</p>
                     
-                    <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade Team</strong></p>
+                    <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz Team</strong></p>
                 </div>
                 
                 <script>
@@ -1113,7 +1120,7 @@ app.post('/api/update-tradesman-progress', async (req, res) => {
             });
         }
 
-        const spreadsheetId = process.env.GOOGLE_SHEETS_ID;
+        const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
         if (!spreadsheetId) {
             return res.status(500).json({ 
                 success: false, 
@@ -1198,7 +1205,7 @@ app.post('/api/update-tradesman-progress', async (req, res) => {
 
         // If quote was sent, send notification to admin
         if (step === 'quote_sent' && status === 'completed') {
-            const adminEmail = process.env.ADMIN_EMAIL || 'admin@kiwitrade.co.nz';
+            const adminEmail = process.env.ADMIN_EMAIL || 'admin@heat.nz';
             const adminSubject = `📋 Quote Sent: ${service} Project`;
             const adminBody = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -1218,7 +1225,7 @@ app.post('/api/update-tradesman-progress', async (req, res) => {
                     
                     <p style="margin-top: 30px;">The customer will now review the quote and make their decision.</p>
                     
-                    <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+                    <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz System</strong></p>
                 </div>
             </div>
             `;
@@ -1228,7 +1235,7 @@ app.post('/api/update-tradesman-progress', async (req, res) => {
 
         // If quote decision was made, send notification to admin
         if (step === 'quote_decision') {
-            const adminEmail = process.env.ADMIN_EMAIL || 'admin@kiwitrade.co.nz';
+            const adminEmail = process.env.ADMIN_EMAIL || 'admin@heat.nz';
             const decisionText = status === 'accepted' ? 'Accepted' : 'Declined';
             const adminSubject = `🎯 Quote Decision: ${decisionText} - ${service} Project`;
             const adminBody = `
@@ -1252,7 +1259,7 @@ app.post('/api/update-tradesman-progress', async (req, res) => {
                         '<p style="margin-top: 20px;"><strong>📝 The project was not accepted. Consider following up with the customer for feedback.</strong></p>'
                     }
                     
-                    <p style="margin-top: 30px;">Best regards,<br><strong>Kiwi Trade System</strong></p>
+                    <p style="margin-top: 30px;">Best regards,<br><strong>Heat.nz System</strong></p>
                 </div>
             </div>
             `;

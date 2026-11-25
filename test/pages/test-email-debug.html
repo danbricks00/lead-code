@@ -21,7 +21,7 @@
     <div class="test-section">
         <h2>Test Email Sending</h2>
         <p>Enter an email address to test:</p>
-        <input type="email" id="testEmail" placeholder="Enter email address" value="danbricks18@gmail.com">
+        <input type="email" id="testEmail" placeholder="Enter email address" value="">
         <button onclick="testEmail()">Send Test Email</button>
         <div id="emailResult"></div>
     </div>
@@ -34,7 +34,7 @@
     </div>
 
     <script>
-                 const baseUrl = 'https://lead-code-dgua8a9mf-leadcode-b19d9acc.vercel.app';
+                 const baseUrl = window.location.origin;
 
         async function testEmail() {
             const resultDiv = document.getElementById('emailResult');
@@ -87,7 +87,7 @@
             
             const testData = {
                 customerName: 'Debug Test Customer',
-                customerEmail: 'danbricks18@gmail.com',
+                customerEmail: 'debug@test.com',
                 customerPhone: '1234567890',
                 selectedService: 'underfloor_heating',
                 projectDetails: 'Debug test project',

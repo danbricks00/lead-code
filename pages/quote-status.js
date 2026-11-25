@@ -4,43 +4,115 @@ import Layout from '../components/Layout';
 
 const QuoteStatusPage = () => {
   const router = useRouter();
-  const { status, message } = router.query;
+  const { status, message, decision, timestamp } = router.query;
   const [displayMessage, setDisplayMessage] = useState('');
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [isExpired, setIsExpired] = useState(false);
+  const [statusType, setStatusType] = useState('');
+  const [displayTimestamp, setDisplayTimestamp] = useState('');
+  const [additionalMessage, setAdditionalMessage] = useState('');
 
   useEffect(() => {
-    if (status === 'success') {
-      setIsSuccess(true);
-      setDisplayMessage(message || 'Your decision has been recorded.');
-    } else if (status === 'error') {
-      setIsSuccess(false);
-      setDisplayMessage(message || 'An unexpected error occurred.');
-      
-      // Check if it's an expired quote error
-      if (message && message.toLowerCase().includes('expired')) {
-        setIsExpired(true);
-      }
+    // Log all query parameters for debugging
+    console.log("[QUOTE-STATUS] Params:", router.query);
+    
+    if (!router.isReady) return;
+    
+    // Handle missing status parameter
+    if (!status) {
+      setStatusType('error');
+      setDisplayMessage('Missing status parameter.');
+      return;
     }
-  }, [status, message]);
+    
+    setStatusType(status);
+    setDisplayTimestamp(timestamp || '');
+    
+    switch(status) {
+      case 'accepted':
+        setDisplayMessage('You have accepted this quote.');
+        setAdditionalMessage('Please await our next contact. We will be in touch shortly to discuss the next steps.');
+        break;
+      case 'declined':
+        setDisplayMessage('You have declined this quote.');
+        setAdditionalMessage('If this was a mistake, please contact the tradesperson or admin for assistance.');
+        break;
+      case 'expired':
+        setDisplayMessage('This quote has expired. Request a new quote.');
+        break;
+      case 'locked':
+        const formattedDecision = decision ? decision.charAt(0).toUpperCase() + decision.slice(1).toLowerCase() : 'Processed';
+        setDisplayMessage('Decision Already Made');
+        setAdditionalMessage(`${formattedDecision} on ${timestamp || 'Unknown date'} NZST`);
+        break;
+      case 'error':
+        setDisplayMessage('Error');
+        setAdditionalMessage(message || 'Failed to update quote status.');
+        break;
+      default:
+        setStatusType('error');
+        setDisplayMessage('Unknown status response.');
+        setAdditionalMessage('Please check your email link or contact support.');
+    }
+  }, [router.isReady, router.query, status, message, decision, timestamp]);
 
-  const isExpiredQuote = isExpired && message && message.toLowerCase().includes('expired');
+  const getStatusIcon = () => {
+    switch(statusType) {
+      case 'accepted': return '✅';
+      case 'declined': return '❌';
+      case 'expired': return '⏳';
+      case 'locked': return '🔒';
+      case 'error': return '🚨';
+      default: return '📄';
+    }
+  };
+
+  const getStatusColor = () => {
+    switch(statusType) {
+      case 'accepted': return '#28a745';
+      case 'declined': return '#dc3545';
+      case 'expired': return '#ffc107';
+      case 'locked': return '#6c757d';
+      case 'error': return '#dc3545';
+      default: return '#007bff';
+    }
+  };
+
+  const getStatusTitle = () => {
+    switch(statusType) {
+      case 'accepted': return 'Quote Accepted';
+      case 'declined': return 'Quote Declined';
+      case 'expired': return 'Quote Expired';
+      case 'locked': return 'Decision Already Made';
+      case 'error': return 'Error';
+      default: return 'Quote Status';
+    }
+  };
 
   return (
     <Layout>
       <div style={styles.container}>
         <div style={styles.card}>
-          <h1 style={isSuccess ? styles.successHeader : styles.errorHeader}>
-            {isSuccess ? '✅ Success!' : isExpiredQuote ? '⏰ Quote Expired' : '❌ An Error Occurred'}
+          <div style={{...styles.statusIcon, backgroundColor: getStatusColor()}}>
+            {getStatusIcon()}
+          </div>
+          <h1 style={{...styles.header, color: getStatusColor()}}>
+            {getStatusTitle()}
           </h1>
           <p style={styles.message}>{displayMessage}</p>
           
-          {isExpiredQuote && (
+          {additionalMessage && (
+            <p style={styles.additionalMessage}>{additionalMessage}</p>
+          )}
+          
+          {displayTimestamp && statusType !== 'locked' && (
+            <p style={styles.timestamp}>Timestamp: {displayTimestamp} NZST</p>
+          )}
+          
+          {statusType === 'expired' && (
             <div style={styles.contactInfo}>
               <p style={styles.contactTitle}>Need a new quote?</p>
               <p style={styles.contactText}>Contact us to request a fresh quote:</p>
               <div style={styles.contactMethods}>
-                <p><strong>📧 Email:</strong> <a href="mailto:info@kiwitrade.co.nz" style={styles.link}>info@kiwitrade.co.nz</a></p>
+                <p><strong>📧 Email:</strong> <a href="mailto:info@heat.nz" style={styles.link}>info@heat.nz</a></p>
                 <p><strong>📞 Phone:</strong> <a href="tel:+6421234567" style={styles.link}>+64 21 234 567</a></p>
               </div>
             </div>
@@ -60,8 +132,9 @@ const styles = {
     card: { background: 'white', padding: '40px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', textAlign: 'center', maxWidth: '500px', width: '100%' },
     successHeader: { color: '#4caf50' },
     errorHeader: { color: '#f44336' },
-    message: { fontSize: '1.1em', color: '#555', margin: '20px 0' },
-    button: { background: '#667eea', color: 'white', border: 'none', padding: '12px 20px', borderRadius: '5px', fontSize: '1em', cursor: 'pointer' },
+    message: { fontSize: '1.2em', fontWeight: 'bold', color: '#333', margin: '20px 0 10px' },
+    additionalMessage: { fontSize: '1.1em', color: '#555', margin: '0 0 20px' },
+    button: { background: '#667eea', color: 'white', border: 'none', padding: '12px 20px', borderRadius: '5px', fontSize: '1em', cursor: 'pointer', marginTop: '20px' },
     contactInfo: { 
         background: '#f8f9fa', 
         border: '1px solid #e9ecef', 
@@ -88,6 +161,27 @@ const styles = {
     link: { 
         color: '#667eea', 
         textDecoration: 'none' 
+    },
+    statusIcon: {
+      width: '70px',
+      height: '70px',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      margin: '0 auto 20px',
+      fontSize: '32px',
+      color: 'white'
+    },
+    header: {
+      margin: '0 0 20px 0',
+      fontSize: '26px'
+    },
+    timestamp: {
+      fontSize: '0.9em',
+      color: '#666',
+      marginBottom: '20px',
+      fontStyle: 'italic'
     }
 };
 

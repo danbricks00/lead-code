@@ -13,6 +13,89 @@ const QuoteViewPage = () => {
   const [error, setError] = useState(null);
   const [decisionMade, setDecisionMade] = useState(false);
 
+  // Function to safely format dates
+  const formatDate = (dateInput) => {
+    try {
+      console.log('🔍 formatDate input:', dateInput, 'Type:', typeof dateInput);
+      
+      if (!dateInput) {
+        console.log('🔍 No date input, using fallback');
+        // Return 2 weeks from now as fallback
+        const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+        return fallbackDate.toLocaleDateString('en-NZ', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        });
+      }
+      
+      let date;
+      
+      // Handle different input types
+      if (typeof dateInput === 'number') {
+        // Handle Excel serial date (days since 1900-01-01)
+        if (dateInput > 25569) { // Excel date (after 1970)
+          date = new Date((dateInput - 25569) * 86400 * 1000);
+        } else {
+          // Google Sheets serial date (days since 1899-12-30)
+          date = new Date((dateInput - 2) * 86400 * 1000);
+        }
+        console.log('🔍 Parsed as serial date:', dateInput, '->', date);
+      } else if (typeof dateInput === 'string') {
+        // Handle string dates
+        const trimmed = dateInput.trim();
+        if (trimmed.includes('/')) {
+          // Handle DD/MM/YYYY format
+          const parts = trimmed.split('/');
+          if (parts.length === 3) {
+            date = new Date(parts[2], parts[1] - 1, parts[0]);
+          } else {
+            date = new Date(trimmed);
+          }
+        } else {
+          date = new Date(trimmed);
+        }
+        console.log('🔍 Parsed as string date:', dateInput, '->', date);
+      } else if (dateInput instanceof Date) {
+        date = dateInput;
+        console.log('🔍 Already a Date object:', date);
+      } else {
+        date = new Date(dateInput);
+        console.log('🔍 Parsed as generic:', dateInput, '->', date);
+      }
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.log('❌ Invalid date after parsing:', dateInput);
+        // Return 2 weeks from now as fallback
+        const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+        return fallbackDate.toLocaleDateString('en-NZ', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        });
+      }
+      
+      const formatted = date.toLocaleDateString('en-NZ', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+      
+      console.log('✅ Date formatted successfully:', dateInput, '->', formatted);
+      return formatted;
+    } catch (error) {
+      console.error('Date formatting error:', error, 'Input:', dateInput);
+      // Return 2 weeks from now as fallback
+      const fallbackDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+      return fallbackDate.toLocaleDateString('en-NZ', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    }
+  };
+
   // Verify token function (same as in backend)
   const verifyToken = (id, timestamp) => {
     const hmac = crypto.createHmac("sha256", process.env.QUOTE_LINK_SECRET || 'default-secret');
@@ -37,6 +120,7 @@ const QuoteViewPage = () => {
 
   const fetchQuoteData = async () => {
     try {
+      console.log("🚀 [DEBUG] Using pages/quote-view.js - Client-side rendering path");
       const response = await fetch(`/api/get-quote-details?quoteId=${quoteId}`);
       const result = await response.json();
       
@@ -126,6 +210,10 @@ const QuoteViewPage = () => {
           <h1 style={styles.header}>📋 Your Quote</h1>
           <p style={styles.subHeader}>Professional quote for {leadData.ServiceType}</p>
           <p style={styles.quoteId}>Quote ID: {quoteId}</p>
+          <div style={styles.dateInfo}>
+            <p><strong>Quote Date:</strong> {formatDate(quoteData.QuoteDate || quoteData.quoteDate || new Date())}</p>
+            <p><strong>Valid Until:</strong> {formatDate(quoteData.ValidUntil || quoteData.validUntil || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000))}</p>
+          </div>
         </div>
 
         {/* Customer Details */}
@@ -289,6 +377,13 @@ const styles = {
     margin: '0',
     fontSize: '1em',
     fontWeight: 'bold'
+  },
+  dateInfo: {
+    marginTop: '15px',
+    padding: '10px',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '4px',
+    border: '1px solid #dee2e6'
   },
   section: {
     marginBottom: '30px',
